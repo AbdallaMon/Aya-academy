@@ -1,0 +1,39 @@
+{
+  "name": "app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "16.1.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.7",
+    "@mui/material-nextjs": "^7.3.5",
+    "@mui/x-date-pickers": "^8.19.0",
+    "dayjs": "^1.11.19",
+    "framer-motion": "^12.23.25",
+    "gsap": "^3.14.2",
+    "mui-tel-input": "^9.0.1",
+    "react-hook-form": "^7.70.0",
+    "react-icons": "^5.5.0",
+    "react-toastify": "^11.0.5",
+    "socket.io-client": "^4.8.3",
+    "stylis-plugin-rtl": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "typescript": "^5"
+  }
+}
