@@ -1,4 +1,4 @@
-import { Setter } from "../types/general";
+import { Setter } from '../types/general';
 
 export type FetcherArgs<TData> = {
   path: string;
@@ -8,7 +8,7 @@ export type FetcherArgs<TData> = {
   setError?: Setter<string | null>;
   setMessage?: Setter<string>;
   toastMessage?: string;
-  method?: "POST" | "PUT" | "PATCH" | "DELETE" | "GET";
+  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
   credentials?: RequestCredentials;
 };
 
@@ -33,3 +33,28 @@ export type GetData<TData> = FetcherArgs<TData> & {
   search?: string;
   sort?: string;
 };
+
+// export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
+
+export type ChunkUploadProgress = {
+  loadedChunks: number;
+  totalChunks: number;
+  percentage: number;
+};
+export type ChunkUploadResult<T = unknown> = {
+  status: boolean;
+  url?: string;
+  thumbnailUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileMimeType?: string;
+  extraData?: T;
+};
+export type ChunkUploadHandlers = {
+  setProgress: (progress: number) => void;
+  setOverlay?: (isVisible: boolean) => void;
+};
+export type ChunkUploadArgs = {
+  file: File;
+  isClient?: boolean;
+} & ChunkUploadHandlers;

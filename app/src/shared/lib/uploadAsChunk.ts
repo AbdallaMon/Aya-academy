@@ -1,8 +1,14 @@
-import { toast } from "react-toastify";
-import { Failed, Success } from "../utlis/toastStatus";
+import { toast } from 'react-toastify';
+import { Failed, Success } from '../utlis/toastStatus';
+import { ChunkUploadArgs, ChunkUploadResult } from './types';
 
-export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
-  const toastId = toast.loading("Uploading");
+export async function uploadInChunks({
+  file,
+  setProgress,
+  setOverlay,
+  isClient,
+}: ChunkUploadArgs): Promise<ChunkUploadResult | undefined> {
+  const toastId = toast.loading('Uploading');
   try {
     const chunkSize = 1 * 1024 * 1024; // 1MB
     const totalChunks = Math.ceil(file.size / chunkSize);
@@ -16,19 +22,19 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
       const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
 
       const formData = new FormData();
-      formData.append("chunk", chunk);
-      formData.append("filename", file.name);
-      formData.append("chunkIndex", i);
-      formData.append("totalChunks", totalChunks);
+      formData.append('chunk', chunk);
+      formData.append('filename', file.name);
+      formData.append('chunkIndex', i.toString());
+      formData.append('totalChunks', totalChunks.toString());
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_URL}/${
-          isClient ? "client/upload-chunk" : "utility/upload-chunk"
+          isClient ? 'client/upload-chunk' : 'utility/upload-chunk'
         }`,
         {
-          method: "POST",
+          method: 'POST',
           body: formData,
-          credentials: "include",
+          credentials: 'include',
         }
       );
 
@@ -50,11 +56,17 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
     if (setOverlay) {
       setOverlay(false);
     }
-    toast.update(toastId, Success("Uploaded successfully"));
-
+    toast.update(toastId, Success('Uploaded successfully'));
+    if (finalPayload === null) {
+      finalPayload = {
+        url: undefined,
+        thumbnailUrl: undefined,
+        fileName: file.name,
+        fileSize: file.size,
+        fileMimeType: file.type || null,
+      };
+    }
     return {
-      thumbnailUrl: finalPayload.thumbnailUrl,
-      url: finalPayload.url,
       status: finalPayload.url && 200,
       ...finalPayload,
     };
@@ -62,6 +74,6 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
     if (setOverlay) {
       setOverlay(false);
     }
-    toast.update(toastId, Failed("Upload failed"));
+    toast.update(toastId, Failed('Upload failed'));
   }
 }
