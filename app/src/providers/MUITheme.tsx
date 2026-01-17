@@ -1,31 +1,30 @@
-"use client";
+'use client';
 
-import { colors } from "@/shared/utlis/constants";
-import { ThemeProvider, CssBaseline } from "@mui/material";
-import { createTheme, alpha, darken, lighten } from "@mui/material/styles";
+import { getCurrentColorScheme } from '@/shared/utlis/constants';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { createTheme, alpha, darken, lighten } from '@mui/material/styles';
 
 // Extend MUI theme types
-declare module "@mui/material/styles" {
+declare module '@mui/material/styles' {
   interface TypeBackground {
     white: string;
   }
 }
 
-declare module "@mui/material/Button" {
+declare module '@mui/material/Button' {
   interface ButtonPropsVariantOverrides {
     outlinedYellow: true;
   }
 }
 
 function buildTheme({
-  direction = "ltr",
-  mode = "light",
+  direction = 'ltr',
+  mode = 'light',
 }: {
-  direction?: "ltr" | "rtl";
-  mode?: "light" | "dark";
+  direction?: 'ltr' | 'rtl';
+  mode?: 'light' | 'dark';
 }): ReturnType<typeof createTheme> {
-  const base = colors;
-
+  const base = getCurrentColorScheme(mode);
   const primaryMain = base.primary;
   const primaryLight = lighten(primaryMain, 0.15);
   const primaryDark = darken(primaryMain, 0.15);
@@ -34,12 +33,11 @@ function buildTheme({
   const secondaryLight = lighten(secondaryMain, 0.12);
   const secondaryDark = darken(secondaryMain, 0.12);
 
-  const backgroundDefault = mode === "light" ? base.background : "#071923";
-  const backgroundPaper = mode === "light" ? base.paperBackground : "#0E2431";
+  const backgroundDefault = base.background;
+  const backgroundPaper = base.paperBackground;
 
-  const textPrimary = mode === "light" ? base.text : base.white;
-  const textSecondary =
-    mode === "light" ? base.mutedText : alpha(base.white, 0.75);
+  const textPrimary = base.text;
+  const textSecondary = base.mutedText;
 
   return createTheme({
     direction,
@@ -50,14 +48,15 @@ function buildTheme({
         main: primaryMain,
         light: primaryLight,
         dark: primaryDark,
-        contrastText: "#FFFFFF",
+        contrastText: '#FFFFFF',
       },
       secondary: {
         main: secondaryMain,
         light: secondaryLight,
         dark: secondaryDark,
-        contrastText: "#25313F",
+        contrastText: '#25313F',
       },
+
       success: {
         main: base.support,
       },
@@ -93,39 +92,39 @@ function buildTheme({
     spacing: 8,
     colorSchemes: {},
     typography: {
-      fontFamily: ["Nunito", "system-ui", "sans-serif"].join(","),
+      fontFamily: ['Nunito', 'system-ui', 'sans-serif'].join(','),
       h1: {
         fontWeight: 800,
-        fontSize: "2.4rem",
-        letterSpacing: "-0.03em",
+        fontSize: '2.4rem',
+        letterSpacing: '-0.03em',
         color: textPrimary,
       },
       h2: {
         fontWeight: 700,
-        fontSize: "2rem",
-        letterSpacing: "-0.02em",
+        fontSize: '2rem',
+        letterSpacing: '-0.02em',
         color: textPrimary,
       },
       h3: {
         fontWeight: 600,
-        fontSize: "1.6rem",
+        fontSize: '1.6rem',
         color: textPrimary,
       },
       h4: {
         fontWeight: 600,
-        fontSize: "1.4rem",
+        fontSize: '1.4rem',
         color: textPrimary,
       },
       body1: {
-        fontSize: "1rem",
+        fontSize: '1rem',
         color: textSecondary,
       },
       body2: {
-        fontSize: "0.9rem",
+        fontSize: '0.9rem',
         color: textSecondary,
       },
       button: {
-        textTransform: "none",
+        textTransform: 'none',
         fontWeight: 600,
       },
     },
@@ -144,7 +143,7 @@ function buildTheme({
 
       MuiCssBaseline: {
         styleOverrides: {
-          ":root": {
+          ':root': {
             colorScheme: mode,
           },
           body: {
@@ -154,23 +153,23 @@ function buildTheme({
             color: textPrimary,
             direction,
           },
-          "::selection": {
+          '::selection': {
             backgroundColor: base.accent,
             color: base.black,
           },
-          "::-moz-selection": {
+          '::-moz-selection': {
             backgroundColor: base.accent,
             color: base.black,
           },
-          "*::-webkit-scrollbar": {
+          '*::-webkit-scrollbar': {
             width: 10,
             height: 10,
           },
-          "*::-webkit-scrollbar-thumb": {
+          '*::-webkit-scrollbar-thumb': {
             backgroundColor: alpha(primaryMain, 0.3),
             borderRadius: 8,
           },
-          "*::-webkit-scrollbar-track": {
+          '*::-webkit-scrollbar-track': {
             backgroundColor: alpha(primaryMain, 0.06),
           },
         },
@@ -178,7 +177,7 @@ function buildTheme({
       MuiPaper: {
         styleOverrides: {
           root: {
-            backgroundImage: "none",
+            backgroundImage: 'none',
             backgroundColor: backgroundPaper,
           },
         },
@@ -186,13 +185,13 @@ function buildTheme({
       MuiButton: {
         variants: [
           {
-            props: { variant: "outlinedYellow" },
+            props: { variant: 'outlinedYellow' },
             style: {
               borderColor: base.accent,
               color: base.accent,
               backgroundColor: base.white,
-              border: "1px solid",
-              "&:hover": {
+              border: '1px solid',
+              '&:hover': {
                 borderColor: base.accent,
                 backgroundColor: alpha(base.accent, 0.08),
               },
@@ -210,7 +209,7 @@ function buildTheme({
             paddingBlock: 10,
           },
           contained: {
-            color: colors.lightText,
+            color: base.lightText,
           },
           // outlinedYellow:{
 
@@ -222,7 +221,7 @@ function buildTheme({
           },
           containedPrimary: {
             boxShadow: `0 8px 18px ${alpha(primaryMain, 0.25)}`,
-            color: colors.lightText,
+            color: base.lightText,
           },
           outlined: {
             borderColor: alpha(primaryMain, 0.5),
@@ -234,9 +233,9 @@ function buildTheme({
         styleOverrides: {
           root: {
             color: primaryMain,
-            textDecoration: "none",
-            transition: "0.3s",
-            "&:hover": {
+            textDecoration: 'none',
+            transition: '0.3s',
+            '&:hover': {
               color: primaryDark,
             },
           },
@@ -248,13 +247,13 @@ function buildTheme({
             borderRadius: 12,
             boxShadow: `0 4px 12px ${alpha(primaryMain, 0.08)}`,
             backgroundColor:
-              mode === "light" ? base.white : alpha("#000000", 0.1),
+              mode === 'light' ? base.white : alpha('#000000', 0.1),
           },
           notchedOutline: {
             borderColor: alpha(primaryMain, 0.25),
           },
           input: {
-            "::placeholder": {
+            '::placeholder': {
               opacity: 0.7,
             },
           },
@@ -291,9 +290,9 @@ function buildTheme({
       MuiSwitch: {
         styleOverrides: {
           switchBase: {
-            "&.Mui-checked": {
+            '&.Mui-checked': {
               color: primaryMain,
-              "+ .MuiSwitch-track": {
+              '+ .MuiSwitch-track': {
                 backgroundColor: alpha(primaryMain, 0.5),
               },
             },
@@ -306,14 +305,14 @@ function buildTheme({
 
 export function MUIThemeProvider({
   children,
-  locale = "en",
-  mode = "light",
+  locale = 'en',
+  mode = 'light',
 }: {
   children: React.ReactNode;
-  locale?: "en" | "ar";
-  mode?: "light" | "dark";
+  locale?: 'en' | 'ar';
+  mode?: 'light' | 'dark';
 }) {
-  const direction = locale === "ar" ? "rtl" : "ltr";
+  const direction = locale === 'ar' ? 'rtl' : 'ltr';
   const theme = buildTheme({ direction, mode });
 
   return (

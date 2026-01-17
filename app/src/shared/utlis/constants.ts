@@ -1,41 +1,64 @@
-// ayaColors.js
-export const colors = {
-  primary: "#1ABC9C", // Turquoise - main brand color
-  lightPrimary: "#1abc9c1c", // for gradients and overlays
-  accent: "#F6C453", // Warm yellow - highlights, badges, CTA accents
-  support: "#1E6F5C", // Deep green - support / success / Quran feel
-  background: "#ffffff", // Soft light background for pages
-  paperBackground: "#F9FBFF", // White paper background for cards, modals
-  text: "#25313F", // Main text (navy-ish)
-  mutedText: "#6B7A8C", // Secondary text
-  white: "#FFFFFF",
-  black: "#101318",
-  lightText: "#F0F3F7", // For dark mode or dark backgrounds
+import { PageTheme } from '../types/general';
+import { ColorsTokens } from './types';
+
+export const colors: ColorsTokens = {
+  // Brand
+  primary: '#1ABC9C',
+  lightPrimary: '#1abc9c1c',
+  accent: '#F6C453',
+  support: '#1E6F5C',
+
+  // Surfaces (LIGHT) - keep your identity
+  background: '#ffffff',
+  paperBackground: '#F9FBFF',
+  elevatedBackground: '#FFFFFF',
+  surface: '#FFFFFF',
+
+  // Text
+  text: '#25313F',
+  mutedText: '#6B7A8C',
+  lightText: '#F0F3F7',
+
+  // Utility
+  border: '#E6EEF7',
+  overlay: 'rgba(16, 19, 24, 0.45)',
+
+  // Constants
+  white: '#FFFFFF',
+  black: '#101318',
 };
 
-// ayaDarkColors.ts
-export const darkColors = {
-  // === Brand Core (kept close to original) ===
-  primary: "#1ABC9C", // keep turquoise brand
-  lightPrimary: "#1abc9c33", // visible on dark bg
-  accent: "#F6C453", // stars / moon yellow
-  support: "#1E6F5C",
+export const darkColors: ColorsTokens = {
+  // Brand (keep identity)
+  primary: '#1ABC9C',
+  lightPrimary: '#1abc9c33',
+  accent: '#F6C453',
+  support: '#1E6F5C',
 
-  // === Dark Backgrounds (from image) ===
-  background: "#0E1A2B", // deep night blue (main bg)
-  paperBackground: "#132238", // cards, modals, surfaces
-  elevatedBackground: "#182B45", // hover, raised cards
+  // Surfaces (DARK) - Aya “night” feel
+  background: '#0B1524', // deep navy
+  paperBackground: '#0F1D30', // cards/modals
+  elevatedBackground: '#13243B', // hover/raised
+  surface: '#122136', // inputs
 
-  // === Text ===
-  text: "#E8EDF4", // main text on dark
-  mutedText: "#A8B3C7", // secondary text
-  lightText: "#FFFFFF",
+  // Text
+  text: '#EAF1FA',
+  mutedText: '#A7B5C9',
+  lightText: '#FFFFFF',
 
-  // === Utility ===
-  border: "#223A5E", // subtle borders
-  overlay: "rgba(14, 26, 43, 0.85)",
+  // Utility
+  border: '#1E3552',
+  overlay: 'rgba(11, 21, 36, 0.82)',
 
-  // === Constants ===
-  white: "#0A0D12",
-  black: "#FFFFFF",
+  // Constants (keep literal meaning)
+  white: '#FFFFFF',
+  black: '#101318',
+};
+export function getCurrentColorScheme(mode: PageTheme) {
+  return mode === 'light' ? colors : darkColors;
+}
+
+export const sectionYPadding = {
+  xs: 6,
+  md: 8,
 };

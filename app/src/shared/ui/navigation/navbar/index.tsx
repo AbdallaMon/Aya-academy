@@ -1,4 +1,4 @@
-import { navActions, navLinks } from "@/shared/data/navigation/navbar";
+import { navActions, navLinks } from '@/shared/data/navigation/navbar';
 import {
   AppBar,
   Box,
@@ -7,16 +7,16 @@ import {
   Link,
   Stack,
   Toolbar,
-} from "@mui/material";
-import NavbarDrawer from "./NavbarDrawer";
+} from '@mui/material';
+import NavbarDrawer from './components/NavbarDrawer';
 
 export default function Navbar() {
   return (
     <AppBar
       position="static"
       sx={{
-        "& .MuiPaper-root": {
-          backgroundColor: "background.paper",
+        '& .MuiPaper-root': {
+          backgroundColor: 'background.paper',
         },
       }}
     >
@@ -24,14 +24,14 @@ export default function Navbar() {
         <Toolbar disableGutters sx={{}}>
           <Box
             sx={{
-              width: "100%",
-              alignItems: "center",
-              display: "flex",
+              width: '100%',
+              alignItems: 'center',
+              display: 'flex',
               gap: 2,
             }}
           >
             <Box
-              component={"img"}
+              component={'img'}
               src="/logos/logo.png"
               alt="Logo"
               sx={{ height: 70 }}
@@ -39,8 +39,8 @@ export default function Navbar() {
             <Box
               sx={{
                 flex: 1,
-                display: { xs: "none", md: "flex" },
-                justifyContent: "center",
+                display: { xs: 'none', md: 'flex' },
+                justifyContent: 'center',
                 gap: 2.5,
               }}
             >
@@ -50,7 +50,7 @@ export default function Navbar() {
                   key={link.text}
                   href={link.href}
                   sx={{
-                    color: "text.primary",
+                    color: 'text.primary',
                   }}
                 >
                   {link.text}
@@ -59,8 +59,8 @@ export default function Navbar() {
             </Box>
             <Box
               sx={{
-                width: " fit-content",
-                display: { xs: "none", md: "block" },
+                width: ' fit-content',
+                display: { xs: 'none', md: 'block' },
               }}
             >
               <Stack direction="row" spacing={2}>
@@ -70,7 +70,7 @@ export default function Navbar() {
                       component="a"
                       key={action.text}
                       href={action.href}
-                      variant={action.type === "link" ? "text" : "contained"}
+                      variant={action.type === 'link' ? 'text' : 'contained'}
                     >
                       {action.text}
                     </Button>

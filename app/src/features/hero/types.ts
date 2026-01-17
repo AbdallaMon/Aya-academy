@@ -1,12 +1,12 @@
-import { Action } from "@/shared/types/general";
-import React from "react";
+import { Action } from '@/shared/types/general';
+import { IconType } from 'react-icons/lib';
 
 export type HeroTextData = {
   eyebrow: string;
   title: string;
   description: string;
   note: string;
-  noteIcon: React.ComponentType;
+  noteIcon: IconType;
 };
 export type HeroActionData = {
   journey: Action;
