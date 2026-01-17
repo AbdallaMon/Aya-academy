@@ -14,7 +14,7 @@ export function Levels({ pageTheme }: { pageTheme: PageTheme }) {
     <Box
       sx={{
         py: sectionYPadding,
-        background: `linear-gradient(to bottom, ${colors.paperBackground} 0%, ${lighten(isLightMode ? colors.primary : colors.lightPrimary, isLightMode ? 0.8 : 0.1)} 100%)`,
+        background: `linear-gradient(to bottom, ${colors.background} 0%, ${lighten(isLightMode ? colors.primary : colors.lightPrimary, isLightMode ? 0.8 : 0.1)} 100%)`,
         px: 1,
       }}
     >
