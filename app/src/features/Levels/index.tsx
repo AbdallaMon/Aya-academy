@@ -9,11 +9,12 @@ import { LevelCard } from './components/LevelCard';
 
 export function Levels({ pageTheme }: { pageTheme: PageTheme }) {
   const colors = getCurrentColorScheme(pageTheme);
+  const isLightMode = pageTheme === 'light';
   return (
     <Box
       sx={{
         py: sectionYPadding,
-        background: `linear-gradient(to bottom, ${colors.background} 0%, ${lighten(colors.primary, 0.8)} 100%)`,
+        background: `linear-gradient(to bottom, ${colors.background} 0%, ${lighten(isLightMode ? colors.primary : colors.lightPrimary, isLightMode ? 0.8 : 0.1)} 100%)`,
         px: 1,
       }}
     >

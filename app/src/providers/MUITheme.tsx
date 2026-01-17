@@ -3,6 +3,7 @@
 import { getCurrentColorScheme } from '@/shared/utlis/constants';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { createTheme, alpha, darken, lighten } from '@mui/material/styles';
+import { PageTheme } from '@/shared/types/general';
 
 // Extend MUI theme types
 declare module '@mui/material/styles' {
@@ -306,14 +307,14 @@ function buildTheme({
 export function MUIThemeProvider({
   children,
   locale = 'en',
-  mode = 'light',
+  pageTheme,
 }: {
   children: React.ReactNode;
   locale?: 'en' | 'ar';
-  mode?: 'light' | 'dark';
+  pageTheme?: PageTheme;
 }) {
   const direction = locale === 'ar' ? 'rtl' : 'ltr';
-  const theme = buildTheme({ direction, mode });
+  const theme = buildTheme({ direction, mode: pageTheme });
 
   return (
     <ThemeProvider theme={theme}>

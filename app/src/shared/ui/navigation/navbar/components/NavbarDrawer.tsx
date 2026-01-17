@@ -1,8 +1,9 @@
-"use client";
-import { navActions, navLinks } from "@/shared/data/navigation/navbar";
-import { Box, Button, Drawer, IconButton, List, ListItem } from "@mui/material";
-import { useState } from "react";
-import { IoMdClose, IoMdMenu } from "react-icons/io";
+'use client';
+import { navActions, navLinks } from '@/shared/data/navigation/navbar';
+import { ThemeSwitch } from '@/shared/ui/buttons/ThemeSwitch';
+import { Box, Button, Drawer, IconButton, List, ListItem } from '@mui/material';
+import { useState } from 'react';
+import { IoMdClose, IoMdMenu } from 'react-icons/io';
 
 export default function NavbarDrawer() {
   const [open, setOpen] = useState(false);
@@ -12,11 +13,13 @@ export default function NavbarDrawer() {
   return (
     <Box
       sx={{
-        display: { xs: "flex", md: "none" },
-        justifyContent: "flex-end",
+        display: { xs: 'flex', md: 'none' },
+        justifyContent: 'flex-end',
         flex: 1,
       }}
     >
+      <ThemeSwitch />
+
       <IconButton onClick={toggleDrawer} size="medium">
         <IoMdMenu />
       </IconButton>
@@ -24,15 +27,15 @@ export default function NavbarDrawer() {
         <Box sx={{ width: 300, padding: 2 }}>
           <Box
             sx={{
-              display: "flex",
-              position: "relative",
+              display: 'flex',
+              position: 'relative',
               mb: 2,
-              justifyContent: "space-between",
-              alignItems: "center",
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <Box
-              component={"img"}
+              component={'img'}
               src="/logos/logo.png"
               alt="Logo"
               sx={{ height: 60 }}
@@ -42,8 +45,8 @@ export default function NavbarDrawer() {
                 onClick={toggleDrawer}
                 size="medium"
                 sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
+                  border: '1px solid',
+                  borderColor: 'divider',
                 }}
                 color="primary"
               >
@@ -71,12 +74,12 @@ export default function NavbarDrawer() {
                   key={action.text}
                   component="a"
                   href={action.href}
-                  variant={action.type === "button" ? "contained" : "outlined"}
+                  variant={action.type === 'button' ? 'contained' : 'outlined'}
                   sx={{
                     marginRight: 2,
-                    display: "block",
+                    display: 'block',
                     marginBottom: 2,
-                    textAlign: "center",
+                    textAlign: 'center',
                   }}
                 >
                   {action.text}

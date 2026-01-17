@@ -9,6 +9,7 @@ import {
   Toolbar,
 } from '@mui/material';
 import NavbarDrawer from './components/NavbarDrawer';
+import { ThemeSwitch } from '../../buttons/ThemeSwitch';
 
 export default function Navbar() {
   return (
@@ -76,6 +77,7 @@ export default function Navbar() {
                     </Button>
                   );
                 })}
+                <ThemeSwitch />
               </Stack>
             </Box>
             <NavbarDrawer />
