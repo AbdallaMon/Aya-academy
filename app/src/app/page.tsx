@@ -1,3 +1,4 @@
+import { ChildDashboardHome } from '@/features/childDashboard';
 import Hero from '@/features/hero';
 import HowItWorks from '@/features/howItWorks';
 import { Levels } from '@/features/Levels';
@@ -15,6 +16,7 @@ export default async function Home() {
       <HeroReviews pageTheme={pageTheme} />
       <HowItWorks pageTheme={pageTheme} />
       <Levels pageTheme={pageTheme} />
+      <ChildDashboardHome pageTheme={pageTheme} />
     </>
   );
 }
