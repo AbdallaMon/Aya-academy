@@ -10,13 +10,13 @@ import { ChildDashboardCard } from './components/ChildDashboardCard';
 
 export function ChildDashboardHome({ pageTheme }: { pageTheme: PageTheme }) {
   const colors = getCurrentColorScheme(pageTheme);
-
+  const isLightMode = pageTheme === 'light';
   return (
     <Box
       sx={{
         py: sectionYPadding,
-        // background: `linear-gradient(to top, ${colors.paperBackground} 0%, ${lighten(colors.paperBackground, 0.8)} 100%)`,
-        backgroundColor: colors.paperBackground,
+        background: `linear-gradient(to bottom, ${colors.lightPrimary} 0%, ${isLightMode ? lighten(colors.paperBackground, 0.8) : colors.paperBackground} 100%)`,
+        // backgroundColor: colors.paperBackground,
       }}
     >
       <Container maxWidth="lg">
