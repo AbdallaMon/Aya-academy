@@ -1,8 +1,10 @@
+import { About } from '@/features/about';
 import { ChildDashboardHome } from '@/features/childDashboard';
 import Hero from '@/features/hero';
 import HowItWorks from '@/features/howItWorks';
 import { Levels } from '@/features/Levels';
 import HeroReviews from '@/features/reviews/HeroReviews';
+import { WhyAyah } from '@/features/whyAyah/WhyAyah';
 import { PageTheme } from '@/shared/types/general';
 import { cookies } from 'next/headers';
 
@@ -17,6 +19,8 @@ export default async function Home() {
       <HowItWorks pageTheme={pageTheme} />
       <Levels pageTheme={pageTheme} />
       <ChildDashboardHome pageTheme={pageTheme} />
+      <About pageTheme={pageTheme} />
+      <WhyAyah pageTheme={pageTheme} />
     </>
   );
 }

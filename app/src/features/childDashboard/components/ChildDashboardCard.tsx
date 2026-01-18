@@ -29,7 +29,7 @@ export function ChildDashboardCard({
   return (
     <Card
       sx={{
-        background: `linear-gradient(to top, ${lighten(isLightMode ? colors.accent : colors.lightPrimary, isLightMode ? 0.6 : 0.9)} 0%, ${lighten(colors.lightPrimary, 0.1)} 100%)`,
+        background: `linear-gradient(to top, ${lighten(isLightMode ? colors.accent : colors.lightPrimary, isLightMode ? 0.6 : 0.6)} 0%, ${lighten(colors.lightPrimary, 0.1)} 100%)`,
       }}
     >
       <CardHeader>{card.title}</CardHeader>

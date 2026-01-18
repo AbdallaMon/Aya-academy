@@ -15,8 +15,8 @@ export function ChildDashboardHome({ pageTheme }: { pageTheme: PageTheme }) {
     <Box
       sx={{
         py: sectionYPadding,
-        background: `linear-gradient(to bottom, ${colors.lightPrimary} 0%, ${isLightMode ? lighten(colors.paperBackground, 0.8) : colors.paperBackground} 100%)`,
-        // backgroundColor: colors.paperBackground,
+        // background: `linear-gradient(to bottom, ${colors.lightPrimary} 0%, ${isLightMode ? lighten(colors.paperBackground, 0.8) : colors.paperBackground} 100%)`,
+        backgroundColor: colors.paperBackground,
       }}
     >
       <Container maxWidth="lg">

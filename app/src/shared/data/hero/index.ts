@@ -35,8 +35,8 @@ export const heroImagesData: HeroImagesData = {
   },
   background: {
     src: {
-      dark: '/hero-bg-dark.png',
-      light: '/hero-bg-light.png',
+      dark: '/hero-bg-dark-1.png',
+      light: '/hero-bg-light-1.png',
     },
     alt: 'Hero Background',
   },

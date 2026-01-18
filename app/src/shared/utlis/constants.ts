@@ -7,6 +7,8 @@ export const colors: ColorsTokens = {
   lightPrimary: '#1abc9c1c',
   accent: '#F6C453',
   support: '#1E6F5C',
+  danger: '#E74C3C',
+  warning: '#F39C12',
 
   // Surfaces (LIGHT) - keep your identity
   background: '#ffffff',
@@ -34,7 +36,8 @@ export const darkColors: ColorsTokens = {
   lightPrimary: '#1abc9c33',
   accent: '#F6C453',
   support: '#1E6F5C',
-
+  danger: '#E74C3C',
+  warning: '#F39C12',
   // Surfaces (DARK) - Aya “night” feel
   background: '#0B1524', // deep navy
   paperBackground: '#0F1D30', // cards/modals

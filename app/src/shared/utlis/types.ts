@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconType } from 'react-icons/lib';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 export type ToastStatus = {
@@ -19,6 +20,8 @@ export type ColorsTokens = {
   lightPrimary: string;
   accent: string;
   support: string;
+  danger: string;
+  warning: string;
 
   // Surfaces
   background: string; // page background
@@ -38,4 +41,9 @@ export type ColorsTokens = {
   // Constants (real colors)
   white: string;
   black: string;
+};
+export type KeyFeature = {
+  title: string;
+  icon: IconType;
+  color?: string;
 };

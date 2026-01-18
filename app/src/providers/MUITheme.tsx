@@ -57,7 +57,6 @@ function buildTheme({
         dark: secondaryDark,
         contrastText: '#25313F',
       },
-
       success: {
         main: base.support,
       },
