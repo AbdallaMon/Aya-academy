@@ -85,6 +85,14 @@ export const CERTIFICATE_PERMISSIONS = {
   CREATE: "certificate.create",
   LIST: "certificate.list",
   VIEW: "certificate.view",
+  // Admin manages reusable certificate templates (fixed copy + style).
+  MANAGE_TEMPLATES: "certificate.manage_templates",
+};
+
+// File uploads (avatars, certificate photos). Any authenticated user may upload;
+// object-scope is enforced where the attachment is consumed (e.g. avatar).
+export const ATTACHMENT_PERMISSIONS = {
+  UPLOAD: "attachment.upload",
 };
 
 export const REWARD_PERMISSIONS = {
@@ -122,6 +130,21 @@ export const BACKUP_PERMISSIONS = {
   MANAGE: "backup.manage",
 };
 
+// Per-subscription invoices. VIEW/LIST are readable by parent/student (scoped);
+// GENERATE/EDIT are admin-only.
+export const INVOICE_PERMISSIONS = {
+  LIST: "invoice.list",
+  VIEW: "invoice.view",
+  GENERATE: "invoice.generate",
+  EDIT: "invoice.edit",
+};
+
+// Global payment-template settings — admin-only management.
+export const PAYMENT_TEMPLATE_PERMISSIONS = {
+  VIEW: "payment_template.view",
+  MANAGE: "payment_template.manage",
+};
+
 export const DASHBOARD_PERMISSIONS = {
   VIEW_ADMIN: "dashboard.view_admin",
   VIEW_PARENT: "dashboard.view_parent",
@@ -144,6 +167,9 @@ export const PERMISSIONS = {
   BACKUP: BACKUP_PERMISSIONS,
   BADGE: BADGE_PERMISSIONS,
   POINT: POINT_PERMISSIONS,
+  ATTACHMENT: ATTACHMENT_PERMISSIONS,
+  INVOICE: INVOICE_PERMISSIONS,
+  PAYMENT_TEMPLATE: PAYMENT_TEMPLATE_PERMISSIONS,
 };
 
 /** Every permission code defined above, flattened. */
@@ -162,6 +188,8 @@ export const ROLE_PERMISSIONS = {
     SUBSCRIPTION_PERMISSIONS.VIEW,
     SUBSCRIPTION_PERMISSIONS.LIST,
     SUBSCRIPTION_PERMISSIONS.REQUEST,
+    INVOICE_PERMISSIONS.VIEW,
+    INVOICE_PERMISSIONS.LIST,
     SESSION_PERMISSIONS.VIEW,
     SESSION_PERMISSIONS.LIST,
     GAME_PERMISSIONS.VIEW,
@@ -178,6 +206,7 @@ export const ROLE_PERMISSIONS = {
     NOTIFICATION_PERMISSIONS.LIST,
     NOTIFICATION_PERMISSIONS.READ,
     POINT_PERMISSIONS.VIEW_LEADERBOARD,
+    ATTACHMENT_PERMISSIONS.UPLOAD,
     DASHBOARD_PERMISSIONS.VIEW_PARENT,
   ],
   [USER_ROLES.STUDENT]: [
@@ -188,12 +217,14 @@ export const ROLE_PERMISSIONS = {
     QUIZ_PERMISSIONS.VIEW,
     CERTIFICATE_PERMISSIONS.LIST,
     CERTIFICATE_PERMISSIONS.VIEW,
+    INVOICE_PERMISSIONS.VIEW,
     REWARD_PERMISSIONS.LIST,
     REWARD_PERMISSIONS.VIEW,
     REWARD_PERMISSIONS.CLAIM,
     NOTIFICATION_PERMISSIONS.LIST,
     NOTIFICATION_PERMISSIONS.READ,
     POINT_PERMISSIONS.VIEW_LEADERBOARD,
+    ATTACHMENT_PERMISSIONS.UPLOAD,
     DASHBOARD_PERMISSIONS.VIEW_STUDENT,
   ],
 };

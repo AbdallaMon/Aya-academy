@@ -18,4 +18,7 @@ export const messagesNames = {
   backupMessages: "backup-messages",
   badgeMessages: "badge-messages",
   pointMessages: "point-messages",
+  attachmentMessages: "attachment-messages",
+  invoiceMessages: "invoice-messages",
+  paymentTemplateMessages: "payment-template-messages",
 };

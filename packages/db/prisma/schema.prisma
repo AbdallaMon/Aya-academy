@@ -78,6 +78,14 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+// Invoice lifecycle. Payment is not real yet — status is set manually; a
+// gateway can flip it to PAID later.
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  VOID
+}
+
 enum LessonStatus {
   SCHEDULED
   COMPLETED
@@ -253,14 +261,16 @@ model User {
   categoriesCreated QuestionCategory[] @relation("CategoryCreatedBy")
 
   certificates        Certificate[]
-  createdCertificates Certificate[]  @relation("CertificateCreatedBy")
+  createdCertificates Certificate[]     @relation("CertificateCreatedBy")
   rewards             Reward[]
   notifications       Notification[]
   studentBadges       StudentBadge[]
-  pointsLedger        Point[]        @relation("StudentPoints")
-  awardedPoints       Point[]        @relation("PointAwardedBy")
-  uploads             Attachment[]   @relation("AttachmentUploadedBy")
+  pointsLedger        Point[]           @relation("StudentPoints")
+  awardedPoints       Point[]           @relation("PointAwardedBy")
+  uploads             Attachment[]      @relation("AttachmentUploadedBy")
   auditLogs           AuditLog[]
+  createdInvoices     Invoice[]         @relation("InvoiceCreatedBy")
+  paymentTemplates    PaymentTemplate[] @relation("PaymentTemplateUpdatedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -389,6 +399,7 @@ model Subscription {
   createdBy      User?              @relation("SubscriptionCreatedBy", fields: [createdById], references: [id])
 
   lessons LessonSession[]
+  invoice Invoice?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -396,6 +407,63 @@ model Subscription {
   @@index([studentId])
   @@index([status])
   @@index([endDate])
+}
+
+// ============================================================
+// INVOICES & PAYMENT TEMPLATE
+// ============================================================
+
+// Singleton global payment template — the "main template" every invoice
+// inherits from. The whole editable template (company, theme colors, fees,
+// customer notes, footer, payment instructions, due-days) lives in configJson,
+// following the repo's JSON-config convention (Game.configJson / Certificate.themeJson).
+model PaymentTemplate {
+  id          Int   @id @default(autoincrement())
+  configJson  Json
+  updatedById Int?
+  updatedBy   User? @relation("PaymentTemplateUpdatedBy", fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// One invoice per subscription (1:1). Amounts are snapshotted from the
+// subscription at generate/regenerate time; configJson is a per-invoice copy
+// of the global template that an admin can tweak.
+model Invoice {
+  id             Int           @id @default(autoincrement())
+  subscriptionId Int           @unique
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(UNPAID)
+
+  // Snapshot amounts (derived — not directly editable).
+  currency    String   @default("GBP")
+  hours       Decimal? @db.Decimal(8, 2)
+  hourlyRate  Decimal? @db.Decimal(10, 2)
+  subtotal    Decimal  @default(0) @db.Decimal(10, 2)
+  transferFee Decimal  @default(0) @db.Decimal(10, 2)
+  total       Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Admin-adjustable figures.
+  freeHours      Decimal @default(0) @db.Decimal(8, 2)
+  previousCredit Decimal @default(0) @db.Decimal(10, 2)
+  previousDebt   Decimal @default(0) @db.Decimal(10, 2)
+
+  // Per-invoice copy of the template (editable subset).
+  configJson         Json
+  issueDate          DateTime  @default(now())
+  billingPeriodLabel String?
+  dueDate            DateTime?
+  notes              String?   @db.Text
+
+  createdById Int?
+  createdBy   User? @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
 }
 
 model LessonSession {
@@ -739,6 +807,41 @@ model QuizAttempt {
 // CERTIFICATES, REWARDS, NOTIFICATIONS, BADGES, ATTACHMENTS
 // ============================================================
 
+// Reusable certificate template carrying the FIXED, inheritable copy (intro,
+// blessing/body, congrats, thanks, heading, signature) + style. Admin-editable
+// in the dashboard; seeded with a default ornate "Achievement" template.
+// Per-certificate dynamic data (student name, reason/purpose, photo) lives on
+// the Certificate row, not here.
+model CertificateTemplate {
+  id     Int    @id @default(autoincrement())
+  key    String @unique
+  nameAr String
+  nameEn String
+
+  headingAr        String? // e.g. "شهادة تقدير"
+  headingEn        String? // e.g. "Certificate of Achievement"
+  introAr          String? @db.Text // line before the student name
+  introEn          String? @db.Text
+  bodyAr           String? @db.Text // blessing/body; supports a {reason} token
+  bodyEn           String? @db.Text
+  congratsAr       String? @db.Text
+  congratsEn       String? @db.Text
+  thanksAr         String? @db.Text
+  thanksEn         String? @db.Text
+  signatureName    String? // e.g. "Aya"
+  signatureTitleAr String? // e.g. "المعلمة"
+  signatureTitleEn String? // e.g. "Teacher"
+
+  themeJson Json? // style: decoration, orientation, colors, showPhoto, borderStyle…
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
+
+  certificates Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model Certificate {
   id            Int             @id @default(autoincrement())
   type          CertificateType
@@ -748,24 +851,39 @@ model Certificate {
   gameAttempt   GameAttempt?    @relation(fields: [gameAttemptId], references: [id])
   quizAttemptId Int?            @unique
   quizAttempt   QuizAttempt?    @relation(fields: [quizAttemptId], references: [id])
-  titleAr       String?
-  titleEn       String?
-  studentName   String
-  themeJson     Json?
-  templateKey   String?
-  bodyAr        String?         @db.Text
-  bodyEn        String?         @db.Text
-  fileId        Int?
-  file          Attachment?     @relation("CertificateFile", fields: [fileId], references: [id])
-  createdById   Int?
-  createdBy     User?           @relation("CertificateCreatedBy", fields: [createdById], references: [id])
-  issuedAt      DateTime        @default(now())
+
+  // optional link to a reusable template (carries the fixed copy + style)
+  templateId Int?
+  template   CertificateTemplate? @relation(fields: [templateId], references: [id])
+
+  titleAr     String?
+  titleEn     String?
+  studentName String
+  // dynamic per-certificate purpose/reason (e.g. "memorizing At-Tashahhud")
+  reasonAr    String? @db.Text
+  reasonEn    String? @db.Text
+  themeJson   Json?
+  templateKey String?
+  bodyAr      String? @db.Text
+  bodyEn      String? @db.Text
+
+  // optional student photo shown on the certificate (snapshot, falls back to
+  // the student's avatar at render time when absent)
+  photoId Int?
+  photo   Attachment? @relation("CertificatePhoto", fields: [photoId], references: [id])
+
+  fileId      Int?
+  file        Attachment? @relation("CertificateFile", fields: [fileId], references: [id])
+  createdById Int?
+  createdBy   User?       @relation("CertificateCreatedBy", fields: [createdById], references: [id])
+  issuedAt    DateTime    @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([studentId])
   @@index([createdById])
+  @@index([templateId])
 }
 
 model Reward {
@@ -866,10 +984,11 @@ model Attachment {
   uploadedById Int?
   uploadedBy   User?               @relation("AttachmentUploadedBy", fields: [uploadedById], references: [id])
 
-  reportLinks  ReportAttachment[]
-  userAvatars  User[]             @relation("UserAvatar")
-  gameCovers   Game[]             @relation("GameCover")
-  certificates Certificate[]      @relation("CertificateFile")
+  reportLinks       ReportAttachment[]
+  userAvatars       User[]             @relation("UserAvatar")
+  gameCovers        Game[]             @relation("GameCover")
+  certificates      Certificate[]      @relation("CertificateFile")
+  certificatePhotos Certificate[]      @relation("CertificatePhoto")
 
   createdAt DateTime @default(now())
 

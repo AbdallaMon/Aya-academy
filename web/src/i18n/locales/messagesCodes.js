@@ -25,6 +25,7 @@ import {
   notificationMessagesCodes,
   badgeMessagesCodes,
   pointMessagesCodes,
+  attachmentMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 
@@ -200,6 +201,10 @@ const ar = {
     [certificateMessagesCodes.CERTIFICATE_STUDENT_NOT_FOUND]: "الطالب غير موجود",
     [certificateMessagesCodes.CERTIFICATE_STUDENT_REQUIRED]: "الطالب مطلوب",
     [certificateMessagesCodes.CERTIFICATE_TITLE_REQUIRED]: "عنوان الشهادة مطلوب",
+    [certificateMessagesCodes.TEMPLATE_NOT_FOUND]: "القالب غير موجود",
+    [certificateMessagesCodes.TEMPLATE_KEY_REQUIRED]: "مُعرّف القالب مطلوب",
+    [certificateMessagesCodes.TEMPLATE_KEY_EXISTS]: "مُعرّف القالب مستخدم بالفعل",
+    [certificateMessagesCodes.TEMPLATE_NAME_REQUIRED]: "اسم القالب مطلوب",
   },
   // ── reward-messages ───────────────────────────────────────────────────────
   [messagesNames.rewardMessages]: {
@@ -238,6 +243,15 @@ const ar = {
     [pointMessagesCodes.INVALID_AMOUNT]: "عدد النقاط غير صالح",
     [pointMessagesCodes.CANNOT_ACCESS_POINTS]: "لا يمكنك الوصول لنقاط هذا الطالب",
     [pointMessagesCodes.POINTS_GRANTED]: "تم منح النقاط",
+  },
+  [messagesNames.attachmentMessages]: {
+    [attachmentMessagesCodes.NO_FILE]: "لم يتم اختيار ملف",
+    [attachmentMessagesCodes.FILE_TOO_LARGE]: "حجم الملف كبير جدًا",
+    [attachmentMessagesCodes.UNSUPPORTED_TYPE]: "نوع الملف غير مدعوم",
+    [attachmentMessagesCodes.UPLOAD_FAILED]: "فشل رفع الملف",
+    [attachmentMessagesCodes.ATTACHMENT_NOT_FOUND]: "الملف غير موجود",
+    [attachmentMessagesCodes.CANNOT_SET_AVATAR]: "لا يمكنك تعيين هذه الصورة",
+    [attachmentMessagesCodes.AVATAR_UPDATED]: "تم تحديث الصورة",
   },
 };
 

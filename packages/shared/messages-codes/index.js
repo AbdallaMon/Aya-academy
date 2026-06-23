@@ -15,3 +15,6 @@ export * from "./dashboard.js";
 export * from "./notification.js";
 export * from "./badge.js";
 export * from "./point.js";
+export * from "./attachment.js";
+export * from "./invoice.js";
+export * from "./paymentTemplate.js";
