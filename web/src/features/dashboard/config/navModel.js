@@ -30,6 +30,7 @@ import {
   MdSchool,
   MdEventNote,
   MdLocalOffer,
+  MdLeaderboard,
 } from "react-icons/md";
 
 const ICONS = {
@@ -51,6 +52,7 @@ const ICONS = {
   notifications: MdNotifications,
   children: MdChildCare,
   badges: MdMilitaryTech,
+  leaderboard: MdLeaderboard,
 };
 
 function adminNav() {
@@ -69,6 +71,8 @@ function adminNav() {
     { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.CREATE_INVITE },
     { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
     { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
+    { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.BADGE.LIST },
+    { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
     { key: "backups", labelKey: "backups", href: "/dashboard/backups", icon: ICONS.backups, permission: PERMISSIONS.BACKUP.MANAGE },
     { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
   ];
@@ -82,6 +86,7 @@ function parentNav() {
     { key: "subscriptions", labelKey: "subscriptions", href: "/dashboard/subscriptions", icon: ICONS.subscriptions, permission: PERMISSIONS.SUBSCRIPTION.LIST },
     { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
     { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
+    { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
     { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
   ];
 }
@@ -93,6 +98,7 @@ function studentNav() {
     { key: "quizzes", labelKey: "quizzes", href: "/dashboard/quizzes", icon: ICONS.quizzes, anyPermission: [PERMISSIONS.QUIZ.VIEW, PERMISSIONS.QUIZ.ATTEMPT] },
     { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
     { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.REWARD.LIST },
+    { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
     { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
   ];
 }
