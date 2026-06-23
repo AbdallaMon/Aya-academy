@@ -1,4 +1,5 @@
 export const CERTIFICATES_URL = "certificates";
+export const CERTIFICATE_TEMPLATES_URL = "certificate-templates";
 
 // Endpoint for the admin student picker in the create dialog.
 export const STUDENTS_PICKER_URL = "users";
@@ -66,11 +67,17 @@ export const DEFAULT_ORIENTATION = "landscape";
 
 // Frame treatment around the certificate surface.
 //   foil   → the current double (thick + hairline) frame (default)
+//   ornate → an Islamic green/gold decorative frame with corner arabesques
 //   double → two equal-weight rules
 //   simple → a single clean rule
 //   none   → no frame (background/decoration only)
-export const BORDER_STYLES = ["foil", "double", "simple", "none"];
+export const BORDER_STYLES = ["foil", "ornate", "double", "simple", "none"];
 export const DEFAULT_BORDER_STYLE = "foil";
+
+// The Bismillah line optionally rendered at the very top of a certificate
+// (themeJson.showBismillah). Kept as a constant so the card and any builder
+// preview share one canonical string.
+export const BISMILLAH_TEXT = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
 // Header logo size.
 export const LOGO_SIZES = ["sm", "md", "lg"];

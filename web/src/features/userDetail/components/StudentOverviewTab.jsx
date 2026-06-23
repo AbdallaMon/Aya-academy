@@ -18,6 +18,7 @@ import { MdStar, MdPerson } from "react-icons/md";
 import { useTranslation } from "../../../i18n/client.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { localePath } from "../../../i18n/routing.js";
+import { PhotoUpload } from "../../../shared/components/index.js";
 import { USERS_URL, LEVELS, levelLabel } from "../config/constant.js";
 
 /**
@@ -43,13 +44,48 @@ export default function StudentOverviewTab({ overview, txt, canSetLevel, onRefet
     onSuccess: () => onRefetch?.(),
   });
 
+  // Set the student's avatar from an uploaded attachment.
+  const avatarReq = useRequest({
+    url: USERS_URL,
+    method: "patch",
+    autoFetch: false,
+    syncToUrl: false,
+    shouldAutoToast: true,
+    onSuccess: () => onRefetch?.(),
+  });
+
   function saveLevel() {
     if (!level || level === user.studentLevel) return;
     levelReq.fetchData(`${user.id}/level`, { studentLevel: level });
   }
 
+  function onPhotoUploaded(attachment) {
+    if (!attachment?.id || !user.id) return;
+    avatarReq.fetchData(`${user.id}/avatar`, { attachmentId: attachment.id });
+  }
+
   return (
     <Grid container spacing={2}>
+      <Grid size={{ xs: 12 }}>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 2 }}>
+              {txt.photoTitle}
+            </Typography>
+            <PhotoUpload
+              value={user.avatar}
+              onUploaded={onPhotoUploaded}
+              disabled={avatarReq.isLoading}
+              buttonLabel={txt.choosePhoto}
+              uploadingLabel={txt.uploadingPhoto}
+              hintLabel={txt.photoHint}
+              invalidTypeLabel={txt.photoInvalidType}
+              tooLargeLabel={txt.photoTooLarge}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
       <Grid size={{ xs: 12, md: 6 }}>
         <Card variant="outlined" sx={{ height: "100%" }}>
           <CardContent>

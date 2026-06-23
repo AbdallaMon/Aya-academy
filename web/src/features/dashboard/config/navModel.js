@@ -31,6 +31,7 @@ import {
   MdEventNote,
   MdLocalOffer,
   MdLeaderboard,
+  MdReceiptLong,
 } from "react-icons/md";
 
 const ICONS = {
@@ -48,11 +49,13 @@ const ICONS = {
   invitations: MdMarkEmailRead,
   reports: MdAssessment,
   certificates: MdWorkspacePremium,
+  certificateTemplates: MdWorkspacePremium,
   backups: MdBackup,
   notifications: MdNotifications,
   children: MdChildCare,
   badges: MdMilitaryTech,
   leaderboard: MdLeaderboard,
+  paymentTemplate: MdReceiptLong,
 };
 
 function adminNav() {
@@ -63,6 +66,7 @@ function adminNav() {
     { key: "students", labelKey: "students", href: "/dashboard/students", icon: ICONS.students, permission: PERMISSIONS.USER.LIST },
     { key: "plans", labelKey: "plans", href: "/dashboard/plans", icon: ICONS.plans, permission: PERMISSIONS.PLAN.LIST },
     { key: "subscriptions", labelKey: "subscriptions", href: "/dashboard/subscriptions", icon: ICONS.subscriptions, permission: PERMISSIONS.SUBSCRIPTION.LIST },
+    { key: "paymentTemplate", labelKey: "paymentTemplate", href: "/dashboard/payment-template-settings", icon: ICONS.paymentTemplate, permission: PERMISSIONS.PAYMENT_TEMPLATE.VIEW },
     { key: "sessions", labelKey: "sessions", href: "/dashboard/sessions", icon: ICONS.sessions, permission: PERMISSIONS.SESSION.LIST },
     { key: "coupons", labelKey: "coupons", href: "/dashboard/coupons", icon: ICONS.coupons, permission: PERMISSIONS.COUPON.LIST },
     { key: "games", labelKey: "games", href: "/dashboard/games", icon: ICONS.games, permission: PERMISSIONS.GAME.LIST },
@@ -71,6 +75,7 @@ function adminNav() {
     { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.CREATE_INVITE },
     { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
     { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
+    { key: "certificateTemplates", labelKey: "certificateTemplates", href: "/dashboard/certificate-templates", icon: ICONS.certificateTemplates, permission: PERMISSIONS.CERTIFICATE.MANAGE_TEMPLATES },
     { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.BADGE.LIST },
     { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
     { key: "backups", labelKey: "backups", href: "/dashboard/backups", icon: ICONS.backups, permission: PERMISSIONS.BACKUP.MANAGE },

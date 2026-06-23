@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Alert,
@@ -17,12 +17,14 @@ import {
   Typography,
 } from "@mui/material";
 import { MdCheck, MdInfoOutline } from "react-icons/md";
-import { FormDialog } from "../../../shared/components/index.js";
+import { FormDialog, PhotoUpload } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
+import { useTranslation } from "../../../i18n/client.js";
 import { useCertificatesText } from "../config/certificatesText.js";
 import {
   CERTIFICATES_URL,
+  CERTIFICATE_TEMPLATES_URL,
   STUDENTS_PICKER_URL,
   STUDENTS_PICKER_PARAMS,
   TEMPLATE_KEYS,
@@ -52,6 +54,11 @@ const FORM_ID = "create-certificate-form";
 
 const EMPTY_VALUES = {
   studentId: "",
+  // template path
+  templateId: "", // "" = custom / no template
+  reasonAr: "",
+  reasonEn: "",
+  photoId: "",
   titleAr: "",
   titleEn: "",
   subtitleAr: "",
@@ -93,6 +100,7 @@ const ORIENTATION_LABEL_KEY = {
 };
 const BORDER_LABEL_KEY = {
   foil: "borderFoil",
+  ornate: "borderOrnate",
   double: "borderDouble",
   simple: "borderSimple",
   none: "borderNone",
@@ -135,14 +143,21 @@ function buildThemeJson(v) {
 
 export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
   const txt = useCertificatesText();
+  const { lng } = useTranslation();
 
   const { control, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: EMPTY_VALUES,
     mode: "onTouched",
   });
 
+  // The uploaded photo attachment ({ id, url }) for the preview circle.
+  const [photo, setPhoto] = useState(null);
+
   useEffect(() => {
-    if (open) reset(EMPTY_VALUES);
+    if (open) {
+      reset(EMPTY_VALUES);
+      setPhoto(null);
+    }
   }, [open, reset]);
 
   // Student picker — admin only endpoint. Fetched lazily when the dialog opens.
@@ -155,6 +170,32 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
     initialParams: STUDENTS_PICKER_PARAMS,
   });
   const students = useMemo(() => studentsReq.data || [], [studentsReq.data]);
+
+  // Template picker — admin certificate templates.
+  const templatesReq = useRequest({
+    url: CERTIFICATE_TEMPLATES_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: open,
+    syncToUrl: false,
+    initialParams: { limit: 100 },
+  });
+  const templates = useMemo(() => templatesReq.data || [], [templatesReq.data]);
+
+  // Default-select the isDefault template (if any) once per open, after the
+  // templates load. A ref guard keeps this from clobbering a manual choice.
+  const defaultedRef = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      defaultedRef.current = false;
+      return;
+    }
+    if (defaultedRef.current || templates.length === 0) return;
+    defaultedRef.current = true;
+    const def = templates.find((t) => t.isDefault && t.isActive !== false);
+    if (def) setValue("templateId", String(def.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, templates]);
 
   const createMut = useMultiRequest({
     url: CERTIFICATES_URL,
@@ -169,23 +210,70 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
     () => students.find((s) => String(s.id) === String(values.studentId)),
     [students, values.studentId],
   );
+  const selectedTemplate = useMemo(
+    () => templates.find((t) => String(t.id) === String(values.templateId)),
+    [templates, values.templateId],
+  );
+  const usingTemplate = Boolean(selectedTemplate);
+
+  // Default the photo to the selected student's avatar when none chosen yet.
+  const previewPhoto = photo || selectedStudent?.avatar || null;
 
   // Live preview object shaped exactly like the API certificate.
-  const previewCertificate = useMemo(
-    () => ({
+  const previewCertificate = useMemo(() => {
+    const base = {
+      studentName: selectedStudent?.name || txt.studentPlaceholder,
+      issuedAt: new Date().toISOString(),
+    };
+    if (usingTemplate) {
+      return {
+        ...base,
+        templateId: selectedTemplate.id,
+        reasonAr: values.reasonAr,
+        reasonEn: values.reasonEn,
+        photo: previewPhoto?.url ? { url: previewPhoto.url } : undefined,
+        student: selectedStudent?.avatar ? { avatar: selectedStudent.avatar } : undefined,
+        template: {
+          headingAr: selectedTemplate.headingAr,
+          headingEn: selectedTemplate.headingEn,
+          introAr: selectedTemplate.introAr,
+          introEn: selectedTemplate.introEn,
+          bodyAr: selectedTemplate.bodyAr,
+          bodyEn: selectedTemplate.bodyEn,
+          congratsAr: selectedTemplate.congratsAr,
+          congratsEn: selectedTemplate.congratsEn,
+          thanksAr: selectedTemplate.thanksAr,
+          thanksEn: selectedTemplate.thanksEn,
+          signatureName: selectedTemplate.signatureName,
+          signatureTitleAr: selectedTemplate.signatureTitleAr,
+          signatureTitleEn: selectedTemplate.signatureTitleEn,
+          themeJson: selectedTemplate.themeJson,
+        },
+      };
+    }
+    return {
+      ...base,
       titleAr: values.titleAr,
       titleEn: values.titleEn,
       bodyAr: values.bodyAr,
       bodyEn: values.bodyEn,
       templateKey: values.templateKey,
-      studentName: selectedStudent?.name || txt.studentPlaceholder,
-      issuedAt: new Date().toISOString(),
       themeJson: buildThemeJson(values),
-    }),
-    [values, selectedStudent, txt.studentPlaceholder],
-  );
+    };
+  }, [values, selectedStudent, selectedTemplate, usingTemplate, previewPhoto, txt.studentPlaceholder]);
 
   async function submit(v) {
+    if (usingTemplate) {
+      const payload = {
+        studentId: Number(v.studentId),
+        templateId: Number(v.templateId),
+        reasonAr: v.reasonAr || undefined,
+        reasonEn: v.reasonEn || undefined,
+        photoId: photo?.id ? Number(photo.id) : undefined,
+      };
+      await createMut.postRequest(null, payload);
+      return;
+    }
     const payload = {
       studentId: Number(v.studentId),
       titleAr: v.titleAr || undefined,
@@ -198,9 +286,12 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
     await createMut.postRequest(null, payload);
   }
 
-  // At least one title (ar OR en) is required by the contract. RHF passes the
-  // current value + the whole form values object to a validate fn.
+  // At least one title (ar OR en) is required for the free-form (no-template)
+  // path. When a template is selected the fixed copy comes from the template, so
+  // the title requirement does not apply. RHF passes the current value + the
+  // whole form values object to a validate fn.
   const requireTitle = (_value, formValues) =>
+    Boolean(formValues.templateId) ||
     Boolean(formValues.titleAr?.trim()) ||
     Boolean(formValues.titleEn?.trim()) ||
     txt.titleRequired;
@@ -254,6 +345,71 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                 />
               </Grid>
 
+              {/* Template picker — default to the isDefault template. */}
+              <Grid size={{ xs: 12 }}>
+                <Controller
+                  name="templateId"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField {...field} select fullWidth label={txt.template}>
+                      <MenuItem value="">{txt.customNoTemplate}</MenuItem>
+                      {templates.map((t) => (
+                        <MenuItem key={t.id} value={String(t.id)}>
+                          {(lng === "en" ? t.nameEn : t.nameAr) || t.nameAr || t.nameEn || t.key}
+                          {t.isDefault ? " ★" : ""}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+
+              {/* ── Template path: dynamic reason + photo ── */}
+              {usingTemplate && (
+                <>
+                  <Grid size={{ xs: 12 }}>
+                    <Alert icon={<MdInfoOutline />} severity="info" sx={{ py: 0.25 }}>
+                      {txt.templateTextsNote}
+                    </Alert>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Controller
+                      name="reasonAr"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label={txt.reasonAr} />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Controller
+                      name="reasonEn"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label={txt.reasonEn} />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                      {txt.reasonHint}
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      {txt.studentPhoto}
+                    </Typography>
+                    <PhotoUpload
+                      value={previewPhoto}
+                      onUploaded={(att) => {
+                        setPhoto(att);
+                        setValue("photoId", att?.id ? String(att.id) : "");
+                      }}
+                      buttonLabel={txt.uploadPhoto}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="titleAr"
@@ -270,6 +426,8 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
+              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="titleEn"
@@ -286,7 +444,9 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
 
+              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="subtitleAr"
@@ -296,6 +456,8 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
+              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="subtitleEn"
@@ -305,7 +467,9 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
 
+              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="bodyAr"
@@ -315,6 +479,8 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
+              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="bodyEn"
@@ -324,7 +490,9 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
 
+              {!usingTemplate && (
               <Grid size={{ xs: 12 }}>
                 <Controller
                   name="signature"
@@ -339,8 +507,11 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                   )}
                 />
               </Grid>
+              )}
             </Grid>
 
+            {!usingTemplate && (
+            <>
             <Divider sx={{ my: 2.5 }} />
 
             {/* Style section */}
@@ -721,6 +892,8 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                 />
               </Grid>
             </Grid>
+              </>
+              )}
           </Box>
         </Grid>
 

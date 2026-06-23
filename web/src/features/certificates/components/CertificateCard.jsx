@@ -40,11 +40,13 @@
 // the root carries id="certificate-print" + color-adjust hints.
 
 import { Box, Stack, Typography } from "@mui/material";
-import { MdWorkspacePremium, MdSchool } from "react-icons/md";
+import { MdWorkspacePremium, MdSchool, MdPerson } from "react-icons/md";
 import { useTranslation } from "../../../i18n/client.js";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 import { useCertificatesText } from "../config/certificatesText.js";
 import {
   ACADEMY_LOGO_SRC,
+  BISMILLAH_TEXT,
   DEFAULT_ACCENT,
   DEFAULT_BACKGROUND,
   DEFAULT_BORDER_STYLE,
@@ -251,6 +253,144 @@ function Flourish({ color, corner = "tl", size = 96 }) {
   );
 }
 
+// ── Ornate (Islamic) frame primitives ─────────────────────────────────────────
+
+// A single arabesque corner motif (interlaced leaf/swirl). Mirrored per corner.
+function ArabesqueCorner({ accent, gold, corner = "tl", size = 116 }) {
+  const flipX = corner === "tr" || corner === "br";
+  const flipY = corner === "bl" || corner === "br";
+  const pos = {
+    tl: { top: 26, left: 26 },
+    tr: { top: 26, right: 26 },
+    bl: { bottom: 26, left: 26 },
+    br: { bottom: 26, right: 26 },
+  }[corner];
+  return (
+    <Box
+      component="span"
+      sx={{
+        position: "absolute",
+        lineHeight: 0,
+        transform: `scale(${flipX ? -1 : 1}, ${flipY ? -1 : 1})`,
+        transformOrigin: "center",
+        pointerEvents: "none",
+        ...pos,
+      }}
+    >
+      <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
+        {/* Outer sweeping vine */}
+        <path
+          d="M4 4 C 4 46 26 60 70 64 M4 4 C 46 4 60 26 64 70"
+          stroke={accent}
+          strokeWidth="3"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Inner gold vine */}
+        <path
+          d="M14 14 C 14 44 30 54 60 58 M14 14 C 44 14 54 30 58 60"
+          stroke={gold}
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Leaf buds */}
+        <path d="M64 70 q14 2 18 16 q-16 -2 -18 -16Z" fill={accent} opacity="0.9" />
+        <path d="M70 64 q2 14 16 18 q-2 -16 -16 -18Z" fill={accent} opacity="0.9" />
+        <circle cx="60" cy="58" r="4" fill={gold} />
+        <circle cx="8" cy="8" r="3.5" fill={gold} />
+        {/* Small accent petals near the corner */}
+        <path
+          d="M30 30 q8 -6 14 0 q-6 8 -14 0Z"
+          fill={gold}
+          opacity="0.85"
+        />
+      </svg>
+    </Box>
+  );
+}
+
+// The ornate green/gold frame: layered borders + a subtle geometric pattern
+// band + arabesque corners. Painted absolutely behind the content.
+function OrnateFrame({ accent, gold }) {
+  const patternId = "ornate-geo";
+  return (
+    <>
+      {/* Subtle geometric pattern wash across the whole surface. */}
+      <Box
+        component="svg"
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0.06,
+          pointerEvents: "none",
+        }}
+      >
+        <defs>
+          <pattern id={patternId} width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <path
+              d="M17 1 L33 17 L17 33 L1 17 Z"
+              fill="none"
+              stroke={accent}
+              strokeWidth="1.4"
+            />
+            <circle cx="17" cy="17" r="3" fill={gold} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+      </Box>
+
+      {/* Layered borders. */}
+      <Box sx={{ position: "absolute", inset: 8, borderRadius: 3, border: `6px solid ${accent}`, pointerEvents: "none" }} />
+      <Box sx={{ position: "absolute", inset: 16, borderRadius: 2.5, border: `2px solid ${gold}`, pointerEvents: "none" }} />
+      <Box sx={{ position: "absolute", inset: 22, borderRadius: 2, border: `1px solid ${accent}`, pointerEvents: "none" }} />
+
+      {/* Arabesque corner motifs. */}
+      <ArabesqueCorner accent={accent} gold={gold} corner="tl" />
+      <ArabesqueCorner accent={accent} gold={gold} corner="tr" />
+      <ArabesqueCorner accent={accent} gold={gold} corner="bl" />
+      <ArabesqueCorner accent={accent} gold={gold} corner="br" />
+    </>
+  );
+}
+
+// Circular student photo (or a neutral placeholder when none / on error).
+function StudentPhoto({ src, accent, gold }) {
+  return (
+    <Box
+      sx={{
+        width: 86,
+        height: 86,
+        borderRadius: "50%",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: tint(accent, 0.85),
+        color: tint(accent, 0.2),
+        border: `3px solid ${accent}`,
+        boxShadow: `0 0 0 3px ${gold}`,
+        flexShrink: 0,
+      }}
+    >
+      {src ? (
+        <Box
+          component="img"
+          src={src}
+          alt=""
+          onError={hideOnError}
+          sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <MdPerson size={46} />
+      )}
+    </Box>
+  );
+}
+
 // ── Motif chooser ─────────────────────────────────────────────────────────────
 
 function Decoration({ decoration, accent }) {
@@ -399,7 +539,15 @@ export default function CertificateCard({ certificate, printable = false }) {
   const txt = useCertificatesText();
   if (!certificate) return null;
 
-  const theme = parseTheme(certificate.themeJson);
+  // Template-driven certificates carry a `template` object with the fixed copy
+  // and its own themeJson. The template style is the BASE; the certificate's own
+  // themeJson overrides it (so per-cert tweaks still win).
+  const tpl = certificate.template || null;
+  const isTemplate = Boolean(tpl);
+  const certTheme = parseTheme(certificate.themeJson);
+  const tplTheme = parseTheme(tpl?.themeJson);
+  const theme = isTemplate ? { ...tplTheme, ...certTheme } : certTheme;
+
   const accent = theme.accent || theme.color || DEFAULT_ACCENT;
   const background = theme.background || DEFAULT_BACKGROUND;
   const rawDecoration =
@@ -407,10 +555,12 @@ export default function CertificateCard({ certificate, printable = false }) {
 
   // A certificate is EXAM-styled when its template/decoration says so, or when
   // the backend typed it as a QUIZ certificate. EXAM overrides everything else.
+  // Template-driven certificates never use the EXAM look.
   const isExam =
-    rawDecoration === EXAM_TEMPLATE_KEY ||
-    certificate.templateKey === EXAM_TEMPLATE_KEY ||
-    certificate.type === "QUIZ";
+    !isTemplate &&
+    (rawDecoration === EXAM_TEMPLATE_KEY ||
+      certificate.templateKey === EXAM_TEMPLATE_KEY ||
+      certificate.type === "QUIZ");
 
   // Exam uses a regal accent unless the theme explicitly supplied one.
   const examAccent = theme.accent || theme.color || "#7C4DFF";
@@ -444,27 +594,77 @@ export default function CertificateCard({ certificate, printable = false }) {
 
   const emoji = theme.emoji || certificate.emoji || "";
 
-  // Title: prefer the theme-embedded title (per-game look), then the row title,
-  // then a sensible localized fallback (the unified exam title for exams).
-  const title =
-    (lng === "en" ? theme.titleEn : theme.titleAr) ||
-    (lng === "en" ? certificate.titleEn : certificate.titleAr) ||
-    (isExam ? txt.examTitle : "");
-  const subtitle = lng === "en" ? theme.subtitleEn : theme.subtitleAr;
-  const body = lng === "en" ? certificate.bodyEn : certificate.bodyAr;
+  const en = lng === "en";
+  const pick = (ar2, en2) => (en ? en2 : ar2);
+
+  // Reason (the dynamic purpose of a template certificate, e.g. "حفظ التشهد").
+  const reason = pick(certificate.reasonAr, certificate.reasonEn) || "";
+
+  // ── Content: template-driven vs free-form ──
+  let heading = "";
+  let intro = "";
+  let title = "";
+  let subtitle = "";
+  let body = "";
+  let congrats = "";
+  let thanks = "";
+
+  if (isTemplate) {
+    heading = pick(tpl.headingAr, tpl.headingEn) || txt.certificateOf;
+    intro = pick(tpl.introAr, tpl.introEn) || "";
+    congrats = pick(tpl.congratsAr, tpl.congratsEn) || "";
+    thanks = pick(tpl.thanksAr, tpl.thanksEn) || "";
+    // Body: substitute the {reason} token; if the token is absent, append the
+    // reason on its own line.
+    const rawBody = pick(tpl.bodyAr, tpl.bodyEn) || "";
+    if (rawBody.includes("{reason}")) {
+      body = rawBody.replace(/\{reason\}/g, reason);
+    } else if (reason) {
+      body = rawBody ? `${rawBody}\n${reason}` : reason;
+    } else {
+      body = rawBody;
+    }
+  } else {
+    // Title: prefer the theme-embedded title (per-game look), then the row title,
+    // then a sensible localized fallback (the unified exam title for exams).
+    title =
+      (en ? theme.titleEn : theme.titleAr) ||
+      (en ? certificate.titleEn : certificate.titleAr) ||
+      (isExam ? txt.examTitle : "");
+    subtitle = en ? theme.subtitleEn : theme.subtitleAr;
+    body = en ? certificate.bodyEn : certificate.bodyAr;
+    heading = txt.certificateOf;
+  }
+
   const studentName = certificate.studentName || certificate.student?.name || "";
   const issued = certificate.issuedAt
     ? new Date(certificate.issuedAt).toLocaleDateString(
-        lng === "en" ? "en-GB" : "ar-EG",
+        en ? "en-GB" : "ar-EG",
         { year: "numeric", month: "long", day: "numeric" },
       )
     : "";
 
   // showSeal defaults to true unless explicitly disabled.
   const showSeal = theme.showSeal !== false;
-  const signature = (theme.signature || "").trim() || txt.defaultSignature;
-  const signatureTitle = (theme.signatureTitle || "").trim() || txt.signatureLabel;
+  // Signature: template signatureName/Title take precedence for template certs.
+  const tplSignature = isTemplate ? (tpl.signatureName || "").trim() : "";
+  const tplSignatureTitle = isTemplate
+    ? (pick(tpl.signatureTitleAr, tpl.signatureTitleEn) || "").trim()
+    : "";
+  const signature =
+    tplSignature || (theme.signature || "").trim() || txt.defaultSignature;
+  const signatureTitle =
+    tplSignatureTitle || (theme.signatureTitle || "").trim() || txt.signatureLabel;
   const sealLabel = (theme.sealText || "").trim() || txt.sealText;
+
+  // ── Ornate / photo / bismillah (template-aware, but theme-driven) ──
+  const isOrnate = borderStyle === "ornate";
+  const ornateGold = theme.secondary || "#C9A227";
+  const showBismillah = theme.showBismillah === true;
+  const showPhoto = theme.showPhoto === true;
+  const photoUrl = showPhoto
+    ? buildFileUrl(certificate.photo?.url || certificate.student?.avatar?.url)
+    : null;
 
   const surface = isExam
     ? `radial-gradient(120% 120% at 50% 0%, ${tint(examAccent, 0.86)} 0%, #fffdfa 55%)`
@@ -493,8 +693,13 @@ export default function CertificateCard({ certificate, printable = false }) {
         printColorAdjust: "exact",
       }}
     >
+      {/* Ornate Islamic frame — its own layered borders + corner arabesques. */}
+      {!isExam && isOrnate && (
+        <OrnateFrame accent={effectiveAccent} gold={ornateGold} />
+      )}
+
       {/* Frame — treatment depends on borderStyle (exam keeps its regal foil). */}
-      {(isExam || borderStyle !== "none") && (
+      {!isOrnate && (isExam || borderStyle !== "none") && (
         <Box
           sx={{
             position: "absolute",
@@ -515,7 +720,7 @@ export default function CertificateCard({ certificate, printable = false }) {
         />
       )}
       {/* Inner hairline — only for the richer frame styles. */}
-      {(isExam || borderStyle === "foil" || borderStyle === "double") && (
+      {!isOrnate && (isExam || borderStyle === "foil" || borderStyle === "double") && (
         <Box
           sx={{
             position: "absolute",
@@ -552,11 +757,14 @@ export default function CertificateCard({ certificate, printable = false }) {
         />
       )}
 
-      {/* Playful / ornamental motif behind the content (non-exam only). */}
-      {!isExam && <Decoration decoration={rawDecoration} accent={effectiveAccent} />}
+      {/* Playful / ornamental motif behind the content (non-exam, non-ornate). */}
+      {!isExam && !isOrnate && (
+        <Decoration decoration={rawDecoration} accent={effectiveAccent} />
+      )}
 
-      {/* Corner scallops (skipped for the frame-less style). */}
-      {(isExam || borderStyle !== "none") &&
+      {/* Corner scallops (skipped for the frame-less + ornate styles). */}
+      {!isOrnate &&
+        (isExam || borderStyle !== "none") &&
         [
           { top: 16, left: 16 },
           { top: 16, right: 16 },
@@ -587,6 +795,22 @@ export default function CertificateCard({ certificate, printable = false }) {
           textAlign: "center",
         }}
       >
+        {/* Optional Bismillah line at the very top. */}
+        {showBismillah && (
+          <Typography
+            sx={{
+              fontFamily,
+              fontWeight: 700,
+              color: accentDark,
+              fontSize: { xs: 13, md: 17 },
+              lineHeight: 1.2,
+              mb: 0.25,
+            }}
+          >
+            {BISMILLAH_TEXT}
+          </Typography>
+        )}
+
         {/* ── Academy brand (on every certificate) ── */}
         <Stack
           direction="row"
@@ -652,31 +876,35 @@ export default function CertificateCard({ certificate, printable = false }) {
           justifyContent="center"
           sx={{ flexGrow: 1, minHeight: 0 }}
         >
-          {/* Emblem: emoji bubble, exam mortarboard, or default medal. */}
-          <Box
-            sx={{
-              color: "#fff",
-              background: `linear-gradient(135deg, ${tint(effectiveAccent, 0.15)}, ${effectiveAccent})`,
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 34,
-              boxShadow: `0 0 0 5px ${tint(effectiveAccent, 0.72)}`,
-            }}
-          >
-            {emoji ? (
-              <Box component="span" sx={{ lineHeight: 1 }}>
-                {emoji}
-              </Box>
-            ) : isExam ? (
-              <MdSchool size={38} />
-            ) : (
-              <MdWorkspacePremium size={38} />
-            )}
-          </Box>
+          {/* Student photo (when enabled) OR the emblem bubble. */}
+          {showPhoto ? (
+            <StudentPhoto src={photoUrl} accent={effectiveAccent} gold={ornateGold} />
+          ) : (
+            <Box
+              sx={{
+                color: "#fff",
+                background: `linear-gradient(135deg, ${tint(effectiveAccent, 0.15)}, ${effectiveAccent})`,
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 34,
+                boxShadow: `0 0 0 5px ${tint(effectiveAccent, 0.72)}`,
+              }}
+            >
+              {emoji ? (
+                <Box component="span" sx={{ lineHeight: 1 }}>
+                  {emoji}
+                </Box>
+              ) : isExam ? (
+                <MdSchool size={38} />
+              ) : (
+                <MdWorkspacePremium size={38} />
+              )}
+            </Box>
+          )}
 
           {/* Header line — exam flanks it with laurels. */}
           <Stack direction="row" spacing={1.5} alignItems="center">
@@ -686,13 +914,13 @@ export default function CertificateCard({ certificate, printable = false }) {
               fontWeight={900}
               sx={{ color: effectiveAccent, letterSpacing: 1.5, lineHeight: 1.1, fontFamily }}
             >
-              {txt.certificateOf}
+              {heading}
             </Typography>
             {isExam && <Laurel color={effectiveAccent} flip />}
           </Stack>
 
           <Typography variant="caption" color="text.secondary">
-            {txt.awardedTo}
+            {intro || txt.awardedTo}
           </Typography>
 
           <Typography
@@ -765,8 +993,27 @@ export default function CertificateCard({ certificate, printable = false }) {
           )}
 
           {body && (
-            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 560 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ maxWidth: 600, whiteSpace: "pre-line", lineHeight: 1.5 }}
+            >
               {body}
+            </Typography>
+          )}
+
+          {congrats && (
+            <Typography
+              variant="subtitle1"
+              sx={{ color: effectiveAccent, fontWeight: 800, fontFamily, mt: 0.2 }}
+            >
+              {congrats}
+            </Typography>
+          )}
+
+          {thanks && (
+            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 560 }}>
+              {thanks}
             </Typography>
           )}
         </Stack>

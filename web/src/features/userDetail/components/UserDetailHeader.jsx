@@ -26,6 +26,7 @@ import {
 import { USER_ROLES } from "@aya/shared";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 import { formatDate } from "../config/constant.js";
 
 const ROLE_COLOR = { ADMIN: "secondary", PARENT: "info", STUDENT: "primary" };
@@ -56,6 +57,7 @@ export default function UserDetailHeader({
         : txt.roleStudent;
   const displayName = user.name || user.email;
   const initial = String(user.nickname || displayName || "?").charAt(0).toUpperCase();
+  const avatarUrl = buildFileUrl(user.avatar);
 
   // Ban/unban is hidden entirely for ADMIN targets (backend blocks it too).
   const showBanMenu = can.ban && !isAdminTarget;
@@ -80,7 +82,10 @@ export default function UserDetailHeader({
         justifyContent="space-between"
       >
         <Stack direction="row" spacing={2} alignItems="center">
-          <Avatar sx={{ bgcolor: "primary.main", width: 64, height: 64, fontWeight: 800, fontSize: 28 }}>
+          <Avatar
+            src={avatarUrl || undefined}
+            sx={{ bgcolor: "primary.main", width: 64, height: 64, fontWeight: 800, fontSize: 28 }}
+          >
             {initial}
           </Avatar>
           <Box>
