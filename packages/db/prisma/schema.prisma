@@ -1,0 +1,969 @@
+// Aya Academy — Prisma schema (PostgreSQL)
+// Conventions: Int autoincrement ids, createdAt/updatedAt on operational models,
+// @db.Text for long text, real enums for closed sets (mirrored in @aya/shared),
+// @@index on FKs/hot filters. Dynamic user-facing text stored as *Ar / *En pairs.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================================
+// ENUMS (mirror packages/shared/src/constants/enums.ts)
+// ============================================================
+
+enum UserRole {
+  ADMIN
+  PARENT
+  STUDENT
+}
+
+enum ParentRelation {
+  FATHER
+  MOTHER
+  GUARDIAN
+  OTHER
+}
+
+// Pedagogical level an admin assigns to a student. Distinct from the numeric
+// `User.level` (gamification progression).
+enum StudentLevel {
+  BEGINNER
+  EXPLORER
+  BUILDER
+  CONFIDENT_READER
+}
+
+// Origin of a points-ledger entry. BADGE is the only writer enabled this round;
+// GAME/QUIZ/MANUAL/ADJUSTMENT are reserved for later wiring.
+enum PointSource {
+  BADGE
+  GAME
+  QUIZ
+  MANUAL
+  ADJUSTMENT
+}
+
+enum BillingPeriod {
+  MONTHLY
+  YEARLY
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum DiscountConstraint {
+  COUNT
+  DURATION
+}
+
+enum CouponSource {
+  MANUAL
+  GAME_REWARD
+  QUIZ_REWARD
+  ADMIN_GIFT
+}
+
+enum SubscriptionStatus {
+  PENDING
+  UPCOMING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum LessonStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  MISSED
+}
+
+enum GameType {
+  INTERACTIVE
+  QUIZ
+  STORY
+}
+
+enum GameQuestionKind {
+  MULTIPLE_CHOICE
+  PHONE_CALL
+  EMOJI_CHOICE
+  SCENARIO
+  TAP_CHOICE
+  DIALPAD
+  TONE_SLIDER
+  MATCHING
+  COMPASS
+  CALENDAR_DROP
+  COLORING
+  BOARD_DICE
+}
+
+// ── Backup / encryption-at-rest (mirrors C:\coding\asmaa) ──
+enum BackupTrigger {
+  AUTO
+  MANUAL
+}
+
+enum BackupStatus {
+  SUCCESS
+  FAILED
+}
+
+// Drive account kind: KEY (stores encryption keys) | DB (stores DB dumps).
+enum DriveAccountType {
+  KEY
+  DB
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum QuizInviteStatus {
+  PENDING
+  OPENED
+  BUILT
+  COMPLETED
+  EXPIRED
+}
+
+enum QuizItemSource {
+  BANK
+  CUSTOM
+}
+
+enum CertificateType {
+  GAME
+  QUIZ
+  MANUAL
+}
+
+enum RewardType {
+  COUPON
+  FREE_LECTURES
+  BADGE
+}
+
+enum RewardStatus {
+  PENDING
+  CLAIMED
+  EXPIRED
+}
+
+enum NotificationType {
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_EXPIRING
+  SUBSCRIPTION_RENEWED
+  SUBSCRIPTION_EXPIRED
+  REPORT_RECEIVED
+  GAME_ASSIGNED
+  QUIZ_INVITE
+  QUIZ_PASSED
+  QUIZ_FAILED
+  GIFT_RECEIVED
+  LESSON_SCHEDULED
+  GENERIC
+}
+
+enum AttachmentOwnerType {
+  REPORT
+  USER
+  CERTIFICATE
+  GAME
+  GENERIC
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  ASSIGN
+  ISSUE
+}
+
+// ============================================================
+// USERS & ACCESS
+// ============================================================
+
+model User {
+  id             Int         @id @default(autoincrement())
+  name           String
+  email          String      @unique
+  username       String?     @unique
+  passwordHash   String
+  role           UserRole    @default(STUDENT)
+  phone          String?
+  locale         String      @default("ar")
+  isActive       Boolean     @default(true)
+  sessionVersion Int         @default(0)
+  avatarId       Int?
+  avatar         Attachment? @relation("UserAvatar", fields: [avatarId], references: [id])
+
+  // student-specific (nullable for non-students)
+  birthDate    DateTime?
+  nickname     String?
+  points       Int           @default(0)
+  level        Int           @default(1)
+  studentLevel StudentLevel?
+  lastLoginAt  DateTime?
+
+  // account ban (distinct from soft deactivation); ban sets isActive=false too
+  banReason String?   @db.Text
+  bannedAt  DateTime?
+
+  createdById  Int?
+  createdBy    User?  @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[] @relation("UserCreatedBy")
+
+  // parent/student links (M:N self-relation through ParentStudent)
+  parentLinks  ParentStudent[] @relation("ParentToStudent")
+  studentLinks ParentStudent[] @relation("StudentToParent")
+
+  subscriptions        Subscription[]  @relation("StudentSubscriptions")
+  createdSubscriptions Subscription[]  @relation("SubscriptionCreatedBy")
+  lessons              LessonSession[] @relation("StudentLessons")
+  createdLessons       LessonSession[] @relation("LessonCreatedBy")
+
+  gameAssignments GameAssignment[] @relation("StudentGameAssignments")
+  assignedGames   GameAssignment[] @relation("GameAssignedBy")
+  gameAttempts    GameAttempt[]
+
+  reportsCreated Report[]        @relation("ReportCreatedBy")
+  reportLinks    ReportStudent[]
+
+  quizInvitesCreated  QuizInvite[]      @relation("QuizInviteCreatedBy")
+  quizInvitesReceived QuizInvite[]      @relation("QuizInviteParent")
+  quizzesBuilt        Quiz[]            @relation("QuizCreatedByParent")
+  quizParticipations  QuizParticipant[]
+  quizAttempts        QuizAttempt[]
+
+  questionsCreated  QuizQuestion[]     @relation("QuizQuestionCreatedBy")
+  categoriesCreated QuestionCategory[] @relation("CategoryCreatedBy")
+
+  certificates        Certificate[]
+  createdCertificates Certificate[]  @relation("CertificateCreatedBy")
+  rewards             Reward[]
+  notifications       Notification[]
+  studentBadges       StudentBadge[]
+  pointsLedger        Point[]        @relation("StudentPoints")
+  awardedPoints       Point[]        @relation("PointAwardedBy")
+  uploads             Attachment[]   @relation("AttachmentUploadedBy")
+  auditLogs           AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([isActive])
+  @@index([createdById])
+}
+
+model ParentStudent {
+  id        Int            @id @default(autoincrement())
+  parentId  Int
+  parent    User           @relation("ParentToStudent", fields: [parentId], references: [id], onDelete: Cascade)
+  studentId Int
+  student   User           @relation("StudentToParent", fields: [studentId], references: [id], onDelete: Cascade)
+  relation  ParentRelation @default(GUARDIAN)
+  createdAt DateTime       @default(now())
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+}
+
+// ============================================================
+// PLANS, DISCOUNTS, COUPONS
+// ============================================================
+
+model Plan {
+  id            Int           @id @default(autoincrement())
+  titleAr       String
+  titleEn       String
+  descriptionAr String?       @db.Text
+  descriptionEn String?       @db.Text
+  billingPeriod BillingPeriod @default(MONTHLY)
+  hours         Int
+  hourlyRate    Decimal       @db.Decimal(10, 2)
+  currency      String        @default("GBP")
+  isActive      Boolean       @default(true)
+  isFeatured    Boolean       @default(false)
+  sortOrder     Int           @default(0)
+
+  discounts     PlanDiscount[]
+  coupons       CouponPlan[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model PlanDiscount {
+  id               Int                @id @default(autoincrement())
+  planId           Int
+  plan             Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+  type             DiscountType
+  value            Decimal            @db.Decimal(10, 2)
+  constraint       DiscountConstraint
+  maxRedemptions   Int?
+  redemptionsCount Int                @default(0)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  isActive         Boolean            @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([planId])
+  @@index([isActive])
+}
+
+model Coupon {
+  id               Int          @id @default(autoincrement())
+  code             String       @unique
+  type             DiscountType
+  value            Decimal      @db.Decimal(10, 2)
+  source           CouponSource @default(MANUAL)
+  maxRedemptions   Int?
+  redemptionsCount Int          @default(0)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  isActive         Boolean      @default(true)
+
+  plans         CouponPlan[]
+  subscriptions Subscription[]
+  rewards       Reward[]
+  quizAttempts  QuizAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model CouponPlan {
+  id       Int    @id @default(autoincrement())
+  couponId Int
+  coupon   Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  planId   Int
+  plan     Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, planId])
+  @@index([planId])
+}
+
+// ============================================================
+// SUBSCRIPTIONS & LESSONS
+// ============================================================
+
+model Subscription {
+  id             Int                @id @default(autoincrement())
+  studentId      Int
+  student        User               @relation("StudentSubscriptions", fields: [studentId], references: [id], onDelete: Cascade)
+  planId         Int?
+  plan           Plan?              @relation(fields: [planId], references: [id])
+  status         SubscriptionStatus @default(ACTIVE)
+  startDate      DateTime
+  endDate        DateTime
+  totalHours     Int?
+  remainingHours Int?
+  currency       String             @default("GBP")
+  priceCharged   Decimal?           @db.Decimal(10, 2)
+  couponId       Int?
+  coupon         Coupon?            @relation(fields: [couponId], references: [id])
+  notes          String?            @db.Text
+  createdById    Int?
+  createdBy      User?              @relation("SubscriptionCreatedBy", fields: [createdById], references: [id])
+
+  lessons LessonSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+  @@index([endDate])
+}
+
+model LessonSession {
+  id             Int           @id @default(autoincrement())
+  studentId      Int
+  student        User          @relation("StudentLessons", fields: [studentId], references: [id], onDelete: Cascade)
+  subscriptionId Int?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  title          String?
+  startsAt       DateTime
+  endsAt         DateTime
+  status         LessonStatus  @default(SCHEDULED)
+  meetingLink    String?
+  notes          String?       @db.Text
+  createdById    Int?
+  createdBy      User?         @relation("LessonCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([startsAt])
+  @@index([status])
+}
+
+// ============================================================
+// GAMES (interactive — authored via seed)
+// ============================================================
+
+model Game {
+  id            Int         @id @default(autoincrement())
+  slug          String      @unique
+  titleAr       String
+  titleEn       String
+  descriptionAr String?     @db.Text
+  descriptionEn String?     @db.Text
+  type          GameType    @default(INTERACTIVE)
+  isPublic      Boolean     @default(false)
+  isActive      Boolean     @default(true)
+  // The single public "free trial" game shown on the marketing /free-game page.
+  // At most one game is true at a time (the usecase clears the others on set).
+  isFree        Boolean     @default(false)
+  passThreshold Int?
+  coverImageId  Int?
+  coverImage    Attachment? @relation("GameCover", fields: [coverImageId], references: [id])
+  configJson    Json?
+
+  questions   GameQuestion[]
+  assignments GameAssignment[]
+  attempts    GameAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([isPublic])
+  @@index([isFree])
+}
+
+model GameQuestion {
+  id        Int              @id @default(autoincrement())
+  gameId    Int
+  game      Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  order     Int              @default(0)
+  kind      GameQuestionKind @default(MULTIPLE_CHOICE)
+  promptAr  String           @db.Text
+  promptEn  String           @db.Text
+  mediaJson Json?
+
+  options GameOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gameId])
+}
+
+model GameOption {
+  id         Int          @id @default(autoincrement())
+  questionId Int
+  question   GameQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  order      Int          @default(0)
+  labelAr    String       @db.Text
+  labelEn    String       @db.Text
+  emoji      String?
+  isCorrect  Boolean      @default(false)
+  feedbackAr String?      @db.Text
+  feedbackEn String?      @db.Text
+
+  @@index([questionId])
+}
+
+model GameAssignment {
+  id           Int              @id @default(autoincrement())
+  gameId       Int
+  game         Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  studentId    Int
+  student      User             @relation("StudentGameAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  assignedById Int?
+  assignedBy   User?            @relation("GameAssignedBy", fields: [assignedById], references: [id])
+  status       AssignmentStatus @default(ASSIGNED)
+  dueAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([gameId, studentId])
+  @@index([studentId])
+}
+
+model GameAttempt {
+  id             Int       @id @default(autoincrement())
+  gameId         Int
+  game           Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  studentId      Int
+  student        User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  score          Int       @default(0)
+  correctCount   Int       @default(0)
+  totalQuestions Int       @default(0)
+  passed         Boolean   @default(false)
+  answersJson    Json?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  certificate Certificate?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gameId])
+  @@index([studentId])
+}
+
+// ============================================================
+// REPORTS
+// ============================================================
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  title       String
+  body        String   @db.Text
+  reportDate  DateTime @default(now())
+  createdById Int?
+  createdBy   User?    @relation("ReportCreatedBy", fields: [createdById], references: [id])
+
+  students    ReportStudent[]
+  attachments ReportAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reportDate])
+  @@index([createdById])
+}
+
+model ReportStudent {
+  id        Int    @id @default(autoincrement())
+  reportId  Int
+  report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  studentId Int
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, studentId])
+  @@index([studentId])
+}
+
+model ReportAttachment {
+  id           Int        @id @default(autoincrement())
+  reportId     Int
+  report       Report     @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  attachmentId Int
+  attachment   Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, attachmentId])
+}
+
+// ============================================================
+// QUIZZES (admin bank + parent-built via invite link)
+// ============================================================
+
+model QuestionCategory {
+  id          Int    @id @default(autoincrement())
+  nameAr      String
+  nameEn      String
+  createdById Int?
+  createdBy   User?  @relation("CategoryCreatedBy", fields: [createdById], references: [id])
+
+  questions QuizQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuizQuestion {
+  id          Int               @id @default(autoincrement())
+  categoryId  Int?
+  category    QuestionCategory? @relation(fields: [categoryId], references: [id])
+  textAr      String            @db.Text
+  textEn      String            @db.Text
+  isActive    Boolean           @default(true)
+  createdById Int?
+  createdBy   User?             @relation("QuizQuestionCreatedBy", fields: [createdById], references: [id])
+
+  options     QuizQuestionOption[]
+  inviteLinks QuizInviteQuestion[]
+  quizItems   QuizItem[]           @relation("QuizItemSourceQuestion")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+}
+
+model QuizQuestionOption {
+  id         Int          @id @default(autoincrement())
+  questionId Int
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  order      Int          @default(0)
+  labelAr    String       @db.Text
+  labelEn    String       @db.Text
+  isCorrect  Boolean      @default(false)
+
+  @@index([questionId])
+}
+
+model QuizInvite {
+  id          Int              @id @default(autoincrement())
+  token       String           @unique
+  createdById Int?
+  createdBy   User?            @relation("QuizInviteCreatedBy", fields: [createdById], references: [id])
+  parentId    Int
+  parent      User             @relation("QuizInviteParent", fields: [parentId], references: [id], onDelete: Cascade)
+  status      QuizInviteStatus @default(PENDING)
+  expiresAt   DateTime?
+
+  questions QuizInviteQuestion[]
+  quiz      Quiz?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+  @@index([status])
+}
+
+model QuizInviteQuestion {
+  id         Int          @id @default(autoincrement())
+  inviteId   Int
+  invite     QuizInvite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  questionId Int
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([inviteId, questionId])
+}
+
+model Quiz {
+  id                Int         @id @default(autoincrement())
+  inviteId          Int?        @unique
+  invite            QuizInvite? @relation(fields: [inviteId], references: [id])
+  title             String
+  createdByParentId Int?
+  createdByParent   User?       @relation("QuizCreatedByParent", fields: [createdByParentId], references: [id])
+  passThreshold     Int         @default(1)
+  giftName          String?
+  giftThemeJson     Json?
+
+  items        QuizItem[]
+  participants QuizParticipant[]
+  attempts     QuizAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdByParentId])
+}
+
+model QuizItem {
+  id               Int            @id @default(autoincrement())
+  quizId           Int
+  quiz             Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  order            Int            @default(0)
+  source           QuizItemSource @default(BANK)
+  sourceQuestionId Int?
+  sourceQuestion   QuizQuestion?  @relation("QuizItemSourceQuestion", fields: [sourceQuestionId], references: [id])
+  textAr           String         @db.Text
+  textEn           String         @db.Text
+
+  options QuizItemOption[]
+
+  @@index([quizId])
+}
+
+model QuizItemOption {
+  id        Int      @id @default(autoincrement())
+  itemId    Int
+  item      QuizItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  order     Int      @default(0)
+  labelAr   String   @db.Text
+  labelEn   String   @db.Text
+  isCorrect Boolean  @default(false)
+
+  @@index([itemId])
+}
+
+model QuizParticipant {
+  id        Int  @id @default(autoincrement())
+  quizId    Int
+  quiz      Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId Int
+  student   User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, studentId])
+  @@index([studentId])
+}
+
+model QuizAttempt {
+  id             Int       @id @default(autoincrement())
+  quizId         Int
+  quiz           Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId      Int
+  student        User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  score          Int       @default(0)
+  correctCount   Int       @default(0)
+  totalQuestions Int       @default(0)
+  passed         Boolean   @default(false)
+  answersJson    Json?
+  couponId       Int?
+  coupon         Coupon?   @relation(fields: [couponId], references: [id])
+  completedAt    DateTime?
+
+  certificate Certificate?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([quizId])
+  @@index([studentId])
+}
+
+// ============================================================
+// CERTIFICATES, REWARDS, NOTIFICATIONS, BADGES, ATTACHMENTS
+// ============================================================
+
+model Certificate {
+  id            Int             @id @default(autoincrement())
+  type          CertificateType
+  studentId     Int
+  student       User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  gameAttemptId Int?            @unique
+  gameAttempt   GameAttempt?    @relation(fields: [gameAttemptId], references: [id])
+  quizAttemptId Int?            @unique
+  quizAttempt   QuizAttempt?    @relation(fields: [quizAttemptId], references: [id])
+  titleAr       String?
+  titleEn       String?
+  studentName   String
+  themeJson     Json?
+  templateKey   String?
+  bodyAr        String?         @db.Text
+  bodyEn        String?         @db.Text
+  fileId        Int?
+  file          Attachment?     @relation("CertificateFile", fields: [fileId], references: [id])
+  createdById   Int?
+  createdBy     User?           @relation("CertificateCreatedBy", fields: [createdById], references: [id])
+  issuedAt      DateTime        @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([studentId])
+  @@index([createdById])
+}
+
+model Reward {
+  id               Int          @id @default(autoincrement())
+  type             RewardType
+  status           RewardStatus @default(PENDING)
+  userId           Int?
+  user             User?        @relation(fields: [userId], references: [id])
+  couponId         Int?
+  coupon           Coupon?      @relation(fields: [couponId], references: [id])
+  freeLectureCount Int?
+  sourceType       String?
+  sourceId         Int?
+  claimedAt        DateTime?
+  createdAt        DateTime     @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  titleAr   String?
+  titleEn   String?
+  bodyAr    String?          @db.Text
+  bodyEn    String?          @db.Text
+  dataJson  Json?
+  link      String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model Badge {
+  id            Int     @id @default(autoincrement())
+  code          String  @unique
+  nameAr        String
+  nameEn        String
+  descriptionAr String? @db.Text
+  descriptionEn String? @db.Text
+  icon          String?
+  emoji         String?
+  bgColor       String? // hex, e.g. #1ABC9C
+  textColor     String? // hex
+  score         Int     @default(0) // points granted when awarded
+  isActive      Boolean @default(true)
+
+  students StudentBadge[]
+
+  createdAt DateTime @default(now())
+}
+
+model StudentBadge {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  badgeId     Int
+  badge       Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedById Int?
+  awardedAt   DateTime @default(now())
+
+  @@unique([studentId, badgeId])
+  @@index([studentId])
+}
+
+// Append-only points ledger. Total per student is cached on User.points; this
+// table is the history and powers weekly/all-time leaderboards.
+model Point {
+  id          Int         @id @default(autoincrement())
+  studentId   Int
+  student     User        @relation("StudentPoints", fields: [studentId], references: [id], onDelete: Cascade)
+  amount      Int
+  source      PointSource
+  sourceId    Int?
+  badgeId     Int?
+  reason      String?     @db.Text
+  awardedById Int?
+  awardedBy   User?       @relation("PointAwardedBy", fields: [awardedById], references: [id])
+  createdAt   DateTime    @default(now())
+
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+model Attachment {
+  id           Int                 @id @default(autoincrement())
+  url          String
+  storageKey   String?
+  filename     String
+  mimeType     String?
+  size         Int?
+  ownerType    AttachmentOwnerType @default(GENERIC)
+  uploadedById Int?
+  uploadedBy   User?               @relation("AttachmentUploadedBy", fields: [uploadedById], references: [id])
+
+  reportLinks  ReportAttachment[]
+  userAvatars  User[]             @relation("UserAvatar")
+  gameCovers   Game[]             @relation("GameCover")
+  certificates Certificate[]      @relation("CertificateFile")
+
+  createdAt DateTime @default(now())
+
+  @@index([uploadedById])
+}
+
+model AuditLog {
+  id        Int         @id @default(autoincrement())
+  action    AuditAction
+  entity    String
+  entityId  Int?
+  userId    Int?
+  user      User?       @relation(fields: [userId], references: [id])
+  dataJson  Json?
+  createdAt DateTime    @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+}
+
+// ============================================================
+// BACKUP / ENCRYPTION-AT-REST / GOOGLE DRIVE (mirrors C:\coding\asmaa)
+// Key material lives ONLY on Drive (KEY accounts). Our DB stores metadata
+// only. MASTER_KEY (env, AES-256-GCM) encrypts Drive OAuth tokens at rest.
+// ============================================================
+
+model Backup {
+  id           Int           @id @default(autoincrement())
+  fileName     String
+  createdAt    DateTime      @default(now())
+  trigger      BackupTrigger
+  status       BackupStatus
+  errorMessage String?       @db.Text
+  encrypted    Boolean       @default(true)
+
+  // storage destination: "drive" (default) | "local" | "s3"
+  provider   String  @default("drive")
+  storageKey String? // local path or S3 key, per provider
+
+  driveFileId       String?
+  driveAccountId    Int?
+  driveAccountEmail String?
+  localDeletedAt    DateTime?
+  driveDeletedAt    DateTime?
+
+  // the key this backup was encrypted with (resolves the key account on restore)
+  encryptionKeyId Int?
+
+  driveAccount  DriveAccount?  @relation(fields: [driveAccountId], references: [id])
+  encryptionKey EncryptionKey? @relation(fields: [encryptionKeyId], references: [id])
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([driveAccountId])
+  @@index([encryptionKeyId])
+}
+
+model DriveAccount {
+  id              Int              @id @default(autoincrement())
+  email           String?
+  googleUserId    String?          @unique
+  label           String?
+  // KEY (stores encryption keys) | DB (stores DB dumps). Default DB.
+  type            DriveAccountType @default(DB)
+  isActive        Boolean          @default(false)
+  tokensCipher    String?          @db.Text
+  tokensIv        String?
+  tokensTag       String?
+  folderId        String?
+  lastConnectedAt DateTime?
+  lastErrorCode   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  backups        Backup[]
+  encryptionKeys EncryptionKey[]
+
+  @@index([isActive])
+  @@index([type])
+}
+
+// EncryptionKey — metadata only. The 32-byte material lives on Drive as a .pem.
+model EncryptionKey {
+  id           Int      @id @default(autoincrement())
+  name         String
+  isPrimary    Boolean  @default(false)
+  keyAccountId Int
+  driveFileId  String
+  fingerprint  String
+  createdAt    DateTime @default(now())
+
+  keyAccount DriveAccount @relation(fields: [keyAccountId], references: [id])
+  backups    Backup[]
+
+  @@index([isPrimary])
+  @@index([keyAccountId])
+}

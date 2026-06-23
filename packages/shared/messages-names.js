@@ -1,0 +1,21 @@
+// Maps a translationKey on a response/error to an i18n namespace on the frontend.
+// Frontend resolves: t(`${translationKey}.${messageCode}`).
+export const messagesNames = {
+  generalMessages: "general-messages",
+  authMessages: "auth-messages",
+  userMessages: "user-messages",
+  planMessages: "plan-messages",
+  couponMessages: "coupon-messages",
+  subscriptionMessages: "subscription-messages",
+  sessionMessages: "session-messages",
+  gameMessages: "game-messages",
+  reportMessages: "report-messages",
+  quizMessages: "quiz-messages",
+  certificateMessages: "certificate-messages",
+  rewardMessages: "reward-messages",
+  dashboardMessages: "dashboard-messages",
+  notificationMessages: "notification-messages",
+  backupMessages: "backup-messages",
+  badgeMessages: "badge-messages",
+  pointMessages: "point-messages",
+};

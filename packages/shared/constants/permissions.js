@@ -1,0 +1,203 @@
+import { USER_ROLES } from "./roles.js";
+
+// Language-neutral permission codes. Authorize on codes, never on role names.
+export const USER_PERMISSIONS = {
+  CREATE: "user.create",
+  LIST: "user.list",
+  VIEW: "user.view",
+  EDIT: "user.edit",
+  DELETE: "user.delete",
+  // Admin sets a student's pedagogical StudentLevel.
+  SET_LEVEL: "user.set_level",
+  // Admin bans/unbans an account (blocks login).
+  BAN: "user.ban",
+};
+
+export const PLAN_PERMISSIONS = {
+  CREATE: "plan.create",
+  LIST: "plan.list",
+  VIEW: "plan.view",
+  EDIT: "plan.edit",
+  DELETE: "plan.delete",
+};
+
+export const COUPON_PERMISSIONS = {
+  CREATE: "coupon.create",
+  LIST: "coupon.list",
+  VIEW: "coupon.view",
+  EDIT: "coupon.edit",
+  DELETE: "coupon.delete",
+};
+
+export const SUBSCRIPTION_PERMISSIONS = {
+  CREATE: "subscription.create",
+  LIST: "subscription.list",
+  VIEW: "subscription.view",
+  EDIT: "subscription.edit",
+  DELETE: "subscription.delete",
+  // Parent asks for a plan for a child → PENDING request.
+  REQUEST: "subscription.request",
+  // Admin approves a PENDING request → ACTIVE/UPCOMING (or rejects it).
+  APPROVE: "subscription.approve",
+  // Admin cancels a PENDING/UPCOMING/ACTIVE subscription → CANCELLED.
+  CANCEL: "subscription.cancel",
+};
+
+export const SESSION_PERMISSIONS = {
+  CREATE: "session.create",
+  LIST: "session.list",
+  VIEW: "session.view",
+  EDIT: "session.edit",
+  DELETE: "session.delete",
+};
+
+export const GAME_PERMISSIONS = {
+  LIST: "game.list",
+  VIEW: "game.view",
+  ASSIGN: "game.assign",
+  ATTEMPT: "game.attempt",
+  // Admin-only: manage game settings, e.g. pick which game is the public free
+  // trial. ADMIN gets it automatically via getAllPermissions().
+  MANAGE: "game.manage",
+};
+
+export const REPORT_PERMISSIONS = {
+  CREATE: "report.create",
+  LIST: "report.list",
+  VIEW: "report.view",
+  EDIT: "report.edit",
+  DELETE: "report.delete",
+};
+
+export const QUIZ_PERMISSIONS = {
+  CREATE_BANK: "quiz.create_bank",
+  LIST_BANK: "quiz.list_bank",
+  EDIT_BANK: "quiz.edit_bank",
+  DELETE_BANK: "quiz.delete_bank",
+  CREATE_INVITE: "quiz.create_invite",
+  LIST: "quiz.list",
+  BUILD: "quiz.build",
+  ATTEMPT: "quiz.attempt",
+  VIEW: "quiz.view",
+};
+
+export const CERTIFICATE_PERMISSIONS = {
+  CREATE: "certificate.create",
+  LIST: "certificate.list",
+  VIEW: "certificate.view",
+};
+
+export const REWARD_PERMISSIONS = {
+  LIST: "reward.list",
+  VIEW: "reward.view",
+  CLAIM: "reward.claim",
+};
+
+export const NOTIFICATION_PERMISSIONS = {
+  LIST: "notification.list",
+  READ: "notification.read",
+};
+
+// Admin-managed badge definitions + awarding/revoking to students.
+export const BADGE_PERMISSIONS = {
+  CREATE: "badge.create",
+  LIST: "badge.list",
+  VIEW: "badge.view",
+  EDIT: "badge.edit",
+  DELETE: "badge.delete",
+  AWARD: "badge.award",
+  REVOKE: "badge.revoke",
+};
+
+// Points ledger + leaderboard. VIEW_LEADERBOARD is readable by parent/student
+// (scoped); LIST/AWARD are admin-only.
+export const POINT_PERMISSIONS = {
+  LIST: "point.list",
+  AWARD: "point.award",
+  VIEW_LEADERBOARD: "point.view_leaderboard",
+};
+
+// Backup / encryption keys / Drive accounts — admin-only management.
+export const BACKUP_PERMISSIONS = {
+  MANAGE: "backup.manage",
+};
+
+export const DASHBOARD_PERMISSIONS = {
+  VIEW_ADMIN: "dashboard.view_admin",
+  VIEW_PARENT: "dashboard.view_parent",
+  VIEW_STUDENT: "dashboard.view_student",
+};
+
+export const PERMISSIONS = {
+  USER: USER_PERMISSIONS,
+  PLAN: PLAN_PERMISSIONS,
+  COUPON: COUPON_PERMISSIONS,
+  SUBSCRIPTION: SUBSCRIPTION_PERMISSIONS,
+  SESSION: SESSION_PERMISSIONS,
+  GAME: GAME_PERMISSIONS,
+  REPORT: REPORT_PERMISSIONS,
+  QUIZ: QUIZ_PERMISSIONS,
+  CERTIFICATE: CERTIFICATE_PERMISSIONS,
+  REWARD: REWARD_PERMISSIONS,
+  NOTIFICATION: NOTIFICATION_PERMISSIONS,
+  DASHBOARD: DASHBOARD_PERMISSIONS,
+  BACKUP: BACKUP_PERMISSIONS,
+  BADGE: BADGE_PERMISSIONS,
+  POINT: POINT_PERMISSIONS,
+};
+
+/** Every permission code defined above, flattened. */
+export function getAllPermissions() {
+  return Object.values(PERMISSIONS).flatMap((group) => Object.values(group));
+}
+
+// Default permission profile per role. ADMIN gets everything.
+export const ROLE_PERMISSIONS = {
+  [USER_ROLES.ADMIN]: getAllPermissions(),
+  [USER_ROLES.PARENT]: [
+    USER_PERMISSIONS.CREATE,
+    USER_PERMISSIONS.VIEW,
+    USER_PERMISSIONS.LIST,
+    USER_PERMISSIONS.EDIT,
+    SUBSCRIPTION_PERMISSIONS.VIEW,
+    SUBSCRIPTION_PERMISSIONS.LIST,
+    SUBSCRIPTION_PERMISSIONS.REQUEST,
+    SESSION_PERMISSIONS.VIEW,
+    SESSION_PERMISSIONS.LIST,
+    GAME_PERMISSIONS.VIEW,
+    GAME_PERMISSIONS.LIST,
+    REPORT_PERMISSIONS.VIEW,
+    REPORT_PERMISSIONS.LIST,
+    QUIZ_PERMISSIONS.LIST,
+    QUIZ_PERMISSIONS.BUILD,
+    QUIZ_PERMISSIONS.VIEW,
+    CERTIFICATE_PERMISSIONS.LIST,
+    CERTIFICATE_PERMISSIONS.VIEW,
+    REWARD_PERMISSIONS.LIST,
+    REWARD_PERMISSIONS.VIEW,
+    NOTIFICATION_PERMISSIONS.LIST,
+    NOTIFICATION_PERMISSIONS.READ,
+    POINT_PERMISSIONS.VIEW_LEADERBOARD,
+    DASHBOARD_PERMISSIONS.VIEW_PARENT,
+  ],
+  [USER_ROLES.STUDENT]: [
+    GAME_PERMISSIONS.LIST,
+    GAME_PERMISSIONS.VIEW,
+    GAME_PERMISSIONS.ATTEMPT,
+    QUIZ_PERMISSIONS.ATTEMPT,
+    QUIZ_PERMISSIONS.VIEW,
+    CERTIFICATE_PERMISSIONS.LIST,
+    CERTIFICATE_PERMISSIONS.VIEW,
+    REWARD_PERMISSIONS.LIST,
+    REWARD_PERMISSIONS.VIEW,
+    REWARD_PERMISSIONS.CLAIM,
+    NOTIFICATION_PERMISSIONS.LIST,
+    NOTIFICATION_PERMISSIONS.READ,
+    POINT_PERMISSIONS.VIEW_LEADERBOARD,
+    DASHBOARD_PERMISSIONS.VIEW_STUDENT,
+  ],
+};
+
+export function getPermissionsForRole(role) {
+  return ROLE_PERMISSIONS[role] ?? [];
+}
