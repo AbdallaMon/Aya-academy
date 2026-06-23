@@ -1,0 +1,378 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
+import Link from "next/link";
+import { MdAdd, MdCheck, MdClose, MdCancel } from "react-icons/md";
+import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { usePermission } from "../../../hooks/usePermission.js";
+import { useAuth } from "../../../hooks/useAuth.js";
+import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
+import { useOpen } from "../../../hooks/useOpen.js";
+import { useTranslation } from "../../../i18n/client.js";
+import { localePath } from "../../../i18n/routing.js";
+import {
+  DataTable,
+  FormDialog,
+  useConfirm,
+} from "../../../shared/components/index.js";
+import {
+  SUBSCRIPTIONS_URL,
+  SUBSCRIPTION_STATUSES,
+  STATUS_COLOR,
+  formatGBP,
+} from "../config/constant.js";
+import { useSubscriptionsText } from "../config/subscriptionsText.js";
+import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
+
+export default function SubscriptionsPage() {
+  const txt = useSubscriptionsText();
+  const { lng } = useTranslation();
+  const confirm = useConfirm();
+  const { user } = useAuth();
+  const { hasPermission } = usePermission();
+  const canList = hasPermission(PERMISSIONS.SUBSCRIPTION.LIST);
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
+  const canApprove = hasPermission(PERMISSIONS.SUBSCRIPTION.APPROVE) || isAdmin;
+  const canCreate = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE) || isAdmin;
+  const canCancel = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL) || isAdmin;
+  const hasRowActions = canApprove || canCancel;
+
+  const {
+    data,
+    total,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    isLoading,
+    filters,
+    setFilters,
+    triggerRefetch,
+  } = useRequest({
+    url: SUBSCRIPTIONS_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: canList,
+  });
+
+  const mut = useMultiRequest({
+    url: SUBSCRIPTIONS_URL,
+    onSuccess: () => triggerRefetch(),
+  });
+
+  const createDialog = useOpen();
+  const rejectDialog = useOpen();
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  async function approve(row) {
+    const ok = await confirm({ title: txt.confirmApprove, intent: "info" });
+    if (!ok) return;
+    await mut.postRequest(`${row.id}/approve`, {});
+  }
+  function openReject(row) {
+    setRejectTarget(row);
+    setRejectReason("");
+    rejectDialog.open();
+  }
+  async function confirmReject() {
+    if (!rejectTarget) return;
+    await mut.postRequest(`${rejectTarget.id}/reject`, {
+      reason: rejectReason || undefined,
+    });
+    rejectDialog.close();
+  }
+  async function cancel(row) {
+    const ok = await confirm({ title: txt.confirmCancel, intent: "danger" });
+    if (!ok) return;
+    await mut.postRequest(`${row.id}/cancel`, {});
+  }
+  async function create(payload) {
+    await mut.postRequest(null, payload);
+    createDialog.close();
+  }
+
+  const CANCELLABLE = ["PENDING", "UPCOMING", "ACTIVE"];
+
+  const description = isAdmin
+    ? txt.pageDescriptionAdmin
+    : user?.role === USER_ROLES.PARENT
+      ? txt.pageDescriptionParent
+      : txt.pageDescriptionStudent;
+
+  const columns = useMemo(
+    () => [
+      {
+        field: "student",
+        headerName: txt.student,
+        width: 180,
+        renderCell: ({ row }) =>
+          row.student?.id ? (
+            <MuiLink
+              component={Link}
+              href={localePath(lng, `/dashboard/users/${row.student.id}`)}
+              underline="hover"
+              fontWeight={700}
+            >
+              {row.student.name || `#${row.student.id}`}
+            </MuiLink>
+          ) : (
+            row.student?.name || `#${row.studentId}`
+          ),
+      },
+      {
+        field: "studentEmail",
+        headerName: txt.studentEmail,
+        width: 220,
+        sortable: false,
+        renderCell: ({ row }) => row.student?.email || "—",
+      },
+      {
+        field: "parents",
+        headerName: txt.parents,
+        width: 200,
+        sortable: false,
+        renderCell: ({ row }) => {
+          const parents = row.student?.parents || [];
+          if (parents.length === 0) return "—";
+          return (
+            <Stack spacing={0.25}>
+              {parents.map((p) => (
+                <MuiLink
+                  key={p.id}
+                  component={Link}
+                  href={localePath(lng, `/dashboard/users/${p.id}`)}
+                  underline="hover"
+                  variant="body2"
+                >
+                  {p.name || `#${p.id}`}
+                </MuiLink>
+              ))}
+            </Stack>
+          );
+        },
+      },
+      {
+        field: "parentPhone",
+        headerName: txt.parentPhone,
+        width: 150,
+        sortable: false,
+        renderCell: ({ row }) => {
+          const parents = row.student?.parents || [];
+          if (parents.length === 0) return "—";
+          return (
+            <Stack spacing={0.25}>
+              {parents.map((p) => (
+                <Typography key={p.id} variant="body2">
+                  {p.phone || "—"}
+                </Typography>
+              ))}
+            </Stack>
+          );
+        },
+      },
+      {
+        field: "parentEmail",
+        headerName: txt.parentEmail,
+        width: 220,
+        sortable: false,
+        renderCell: ({ row }) => {
+          const parents = row.student?.parents || [];
+          if (parents.length === 0) return "—";
+          return (
+            <Stack spacing={0.25}>
+              {parents.map((p) => (
+                <Typography key={p.id} variant="body2" noWrap>
+                  {p.email || "—"}
+                </Typography>
+              ))}
+            </Stack>
+          );
+        },
+      },
+      {
+        field: "plan",
+        headerName: txt.plan,
+        width: 170,
+        renderCell: ({ row }) =>
+          row.plan ? (lng === "en" ? row.plan.titleEn : row.plan.titleAr) : "—",
+      },
+      {
+        field: "status",
+        headerName: txt.status,
+        width: 150,
+        renderCell: ({ row }) => (
+          <Chip
+            size="small"
+            color={STATUS_COLOR[row.status] || "default"}
+            label={txt[row.status] || row.status}
+          />
+        ),
+      },
+      {
+        field: "price",
+        headerName: txt.price,
+        width: 100,
+        renderCell: ({ row }) => formatGBP(row.priceCharged),
+      },
+      {
+        field: "end",
+        headerName: txt.end,
+        width: 120,
+        renderCell: ({ row }) =>
+          row.endDate ? new Date(row.endDate).toLocaleDateString() : "—",
+      },
+      ...(hasRowActions
+        ? [
+            {
+              field: "actions",
+              type: "actions",
+              headerName: txt.actions,
+              width: 300,
+              renderCell: ({ row }) => {
+                const showApprove = canApprove && row.status === "PENDING";
+                const showCancel =
+                  canCancel && CANCELLABLE.includes(row.status);
+                if (!showApprove && !showCancel) return "—";
+                return (
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                    {showApprove && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="success"
+                        startIcon={<MdCheck />}
+                        onClick={() => approve(row)}
+                      >
+                        {txt.approve}
+                      </Button>
+                    )}
+                    {showApprove && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<MdClose />}
+                        onClick={() => openReject(row)}
+                      >
+                        {txt.reject}
+                      </Button>
+                    )}
+                    {showCancel && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<MdCancel />}
+                        onClick={() => cancel(row)}
+                      >
+                        {txt.cancelSubscription}
+                      </Button>
+                    )}
+                  </Stack>
+                );
+              },
+            },
+          ]
+        : []),
+    ],
+    [txt, lng, canApprove, canCancel, hasRowActions],
+  );
+
+  const filterConfig = useMemo(
+    () => [
+      {
+        type: "enum",
+        key: "status",
+        label: txt.status,
+        options: SUBSCRIPTION_STATUSES.reduce(
+          (acc, s) => ({ ...acc, [s]: txt[s] }),
+          {},
+        ),
+      },
+    ],
+    [txt],
+  );
+
+  if (!canList) return null;
+
+  return (
+    <Box>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+        sx={{ mb: 3 }}
+        flexWrap="wrap"
+        gap={2}
+      >
+        <Box>
+          <Typography variant="h4" fontWeight={800}>
+            {txt.pageTitle}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {description}
+          </Typography>
+        </Box>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<MdAdd />}
+            onClick={createDialog.open}
+          >
+            {txt.create}
+          </Button>
+        )}
+      </Stack>
+
+      <DataTable
+        initialRows={data || []}
+        columns={columns}
+        total={total}
+        page={page}
+        rowsPerPage={pageSize}
+        setPage={setPage}
+        setRowsPerPage={setPageSize}
+        loading={isLoading}
+        filters={filters}
+        setFilters={setFilters}
+        filterConfig={filterConfig}
+        noContainer
+      />
+
+      {canCreate && (
+        <SubscriptionCreateDialog
+          open={createDialog.isOpen}
+          onClose={createDialog.close}
+          onCreate={create}
+          txt={txt}
+          loading={mut.isPostRequestLoading}
+        />
+      )}
+
+      <FormDialog
+        open={rejectDialog.isOpen}
+        onClose={rejectDialog.close}
+        title={txt.rejectTitle}
+        maxWidth="xs"
+        loading={mut.isPostRequestLoading}
+        submitText={txt.reject}
+        cancelText={txt.cancel}
+        submitColor="error"
+        onSubmit={confirmReject}
+      >
+        <TextField
+          label={txt.rejectReason}
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+          fullWidth
+          multiline
+          minRows={2}
+          sx={{ mt: 1 }}
+        />
+      </FormDialog>
+    </Box>
+  );
+}
