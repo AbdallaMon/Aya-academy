@@ -1,0 +1,51 @@
+// Safe certificate projection (includes a thin student summary).
+export const certificateSelect = {
+  id: true,
+  type: true,
+  studentId: true,
+  gameAttemptId: true,
+  quizAttemptId: true,
+  titleAr: true,
+  titleEn: true,
+  bodyAr: true,
+  bodyEn: true,
+  templateKey: true,
+  studentName: true,
+  themeJson: true,
+  fileId: true,
+  createdById: true,
+  issuedAt: true,
+  // template-driven render fields
+  templateId: true,
+  reasonAr: true,
+  reasonEn: true,
+  photoId: true,
+  template: {
+    select: {
+      headingAr: true,
+      headingEn: true,
+      introAr: true,
+      introEn: true,
+      bodyAr: true,
+      bodyEn: true,
+      congratsAr: true,
+      congratsEn: true,
+      thanksAr: true,
+      thanksEn: true,
+      signatureName: true,
+      signatureTitleAr: true,
+      signatureTitleEn: true,
+      themeJson: true,
+    },
+  },
+  photo: { select: { id: true, url: true } },
+  // student summary (+ avatar fallback for the render)
+  student: {
+    select: {
+      id: true,
+      name: true,
+      nickname: true,
+      avatar: { select: { id: true, url: true } },
+    },
+  },
+};
