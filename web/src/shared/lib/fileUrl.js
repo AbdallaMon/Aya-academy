@@ -1,28 +1,33 @@
-// buildFileUrl — turn an attachment url (or attachment object) into a fully
-// qualified, browser-loadable URL.
+// buildFileUrl — turn an attachment (or its url) into a browser-loadable URL.
 //
-// Uploaded attachments are served by the API *server origin* at a ROOT-relative
-// path like "/uploads/123.png" — NOT under the "/api/vN" prefix that
-// NEXT_PUBLIC_API_URL points at. So we strip a trailing "/api/vN" from the API
-// URL to recover the server origin and join the path onto it.
+// Uploaded files are NOT served publicly. They are streamed only to logged-in
+// users by the API at `GET {NEXT_PUBLIC_API_URL}/attachments/:id/raw` (behind
+// requireAuth). The auth cookie is sent automatically on same-site <img>
+// subresource requests, so a plain <img src> works for authenticated users.
 //
 // Accepts:
-//   - a string url ("/uploads/1.png" or "https://cdn/...")
-//   - an object carrying `.url`
+//   - an attachment object `{ id, url }` (preferred — uses the auth route)
+//   - a string url ("https://cdn/..." absolute, or a legacy "/uploads/x.png")
 // Returns:
-//   - an absolute http(s) url, unchanged if already absolute
-//   - the origin-joined url for root-relative paths
+//   - the authenticated raw-file URL when an id is available
+//   - an absolute http(s) url unchanged
 //   - null for empty / missing input
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
 // "http://localhost:4000/api/v1" -> "http://localhost:4000"
 function apiOrigin() {
-  return API_URL.replace(/\/api\/v\d+\/?$/i, "").replace(/\/+$/, "");
+  return API_URL.replace(/\/api\/v\d+$/i, "");
 }
 
 export function buildFileUrl(urlOrAttachment) {
   if (!urlOrAttachment) return null;
+
+  // Preferred: an attachment object with an id → authenticated raw route.
+  if (typeof urlOrAttachment === "object" && urlOrAttachment.id != null) {
+    return `${API_URL}/attachments/${urlOrAttachment.id}/raw`;
+  }
+
   const url =
     typeof urlOrAttachment === "string" ? urlOrAttachment : urlOrAttachment.url;
   if (!url) return null;
@@ -30,7 +35,7 @@ export function buildFileUrl(urlOrAttachment) {
   // Already absolute (http/https or protocol-relative) → use as-is.
   if (/^([a-z]+:)?\/\//i.test(url)) return url;
 
-  const origin = apiOrigin();
+  // Legacy root-relative path fallback (e.g. "/uploads/x.png").
   const path = url.startsWith("/") ? url : `/${url}`;
-  return `${origin}${path}`;
+  return `${apiOrigin()}${path}`;
 }

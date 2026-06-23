@@ -662,8 +662,10 @@ export default function CertificateCard({ certificate, printable = false }) {
   const ornateGold = theme.secondary || "#C9A227";
   const showBismillah = theme.showBismillah === true;
   const showPhoto = theme.showPhoto === true;
+  // Pass the attachment OBJECT (with id) so buildFileUrl can use the
+  // authenticated raw route, not the (now non-public) stored url.
   const photoUrl = showPhoto
-    ? buildFileUrl(certificate.photo?.url || certificate.student?.avatar?.url)
+    ? buildFileUrl(certificate.photo || certificate.student?.avatar)
     : null;
 
   const surface = isExam
