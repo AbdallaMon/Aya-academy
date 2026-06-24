@@ -201,6 +201,21 @@ enum AuditAction {
   ISSUE
 }
 
+enum RevelationPlace {
+  MAKKI
+  MADANI
+}
+
+enum SegmentStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum LessonAssignmentKind {
+  MEMORIZE
+  REVIEW
+}
+
 // ============================================================
 // USERS & ACCESS
 // ============================================================
@@ -243,6 +258,9 @@ model User {
   createdSubscriptions Subscription[]  @relation("SubscriptionCreatedBy")
   lessons              LessonSession[] @relation("StudentLessons")
   createdLessons       LessonSession[] @relation("LessonCreatedBy")
+
+  segmentProgress        StudentSegmentProgress[] @relation("StudentQuranProgress")
+  segmentProgressUpdates StudentSegmentProgress[] @relation("SegmentProgressUpdatedBy")
 
   gameAssignments GameAssignment[] @relation("StudentGameAssignments")
   assignedGames   GameAssignment[] @relation("GameAssignedBy")
@@ -478,6 +496,8 @@ model LessonSession {
   status         LessonStatus  @default(SCHEDULED)
   meetingLink    String?
   notes          String?       @db.Text
+  homework       String?       @db.Text
+  assignments    LessonAssignment[]
   createdById    Int?
   createdBy      User?         @relation("LessonCreatedBy", fields: [createdById], references: [id])
 
@@ -487,6 +507,83 @@ model LessonSession {
   @@index([studentId])
   @@index([startsAt])
   @@index([status])
+}
+
+// ============================================================
+// QURAN REFERENCE (seeded, read-only at runtime) + PROGRESS
+// ============================================================
+
+model QuranSurah {
+  id              Int             @id @default(autoincrement())
+  number          Int             @unique // 1..114, also display order
+  nameAr          String
+  nameEn          String
+  ayahCount       Int
+  revelationPlace RevelationPlace
+
+  segments    QuranJuzSegment[]
+  assignments LessonAssignment[]
+}
+
+model QuranJuz {
+  id     Int    @id @default(autoincrement())
+  number Int    @unique // 1..30
+  nameAr String
+  nameEn String
+
+  segments QuranJuzSegment[]
+}
+
+model QuranJuzSegment {
+  id       Int        @id @default(autoincrement())
+  juzId    Int
+  juz      QuranJuz   @relation(fields: [juzId], references: [id], onDelete: Cascade)
+  surahId  Int
+  surah    QuranSurah @relation(fields: [surahId], references: [id], onDelete: Cascade)
+  fromAyah Int
+  toAyah   Int
+  order    Int        @default(0) // position of this segment within the juz'
+
+  progress StudentSegmentProgress[]
+
+  @@unique([juzId, surahId])
+  @@index([juzId])
+  @@index([surahId])
+}
+
+model StudentSegmentProgress {
+  id          Int             @id @default(autoincrement())
+  studentId   Int
+  student     User            @relation("StudentQuranProgress", fields: [studentId], references: [id], onDelete: Cascade)
+  segmentId   Int
+  segment     QuranJuzSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  status      SegmentStatus
+  currentAyah Int?
+  completedAt DateTime?
+  updatedById Int?
+  updatedBy   User?           @relation("SegmentProgressUpdatedBy", fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, segmentId])
+  @@index([studentId])
+}
+
+model LessonAssignment {
+  id       Int                  @id @default(autoincrement())
+  lessonId Int
+  lesson   LessonSession        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  kind     LessonAssignmentKind
+  surahId  Int
+  surah    QuranSurah           @relation(fields: [surahId], references: [id])
+  fromAyah Int? // null + null toAyah = whole surah
+  toAyah   Int?
+  order    Int                  @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([lessonId])
 }
 
 // ============================================================

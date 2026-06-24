@@ -72,6 +72,13 @@ export function activeSubscriptionWhere(now = new Date()) {
   };
 }
 
+// Invoice lifecycle. Payment is not real yet — status is set manually.
+export const INVOICE_STATUSES = {
+  UNPAID: "UNPAID",
+  PAID: "PAID",
+  VOID: "VOID",
+};
+
 export const LESSON_STATUSES = {
   SCHEDULED: "SCHEDULED",
   COMPLETED: "COMPLETED",
@@ -189,4 +196,19 @@ export const BACKUP_PROVIDERS = {
 export const DRIVE_ACCOUNT_TYPES = {
   KEY: "KEY",
   DB: "DB",
+};
+
+export const REVELATION_PLACES = {
+  MAKKI: "MAKKI",
+  MADANI: "MADANI",
+};
+
+export const SEGMENT_STATUSES = {
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+};
+
+export const LESSON_ASSIGNMENT_KINDS = {
+  MEMORIZE: "MEMORIZE",
+  REVIEW: "REVIEW",
 };
