@@ -1,0 +1,11 @@
+{
+  "name": "@aya/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "dayjs": "^1.11.19",
+    "zod": "^4.3.6"
+  }
+}

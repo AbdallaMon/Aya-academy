@@ -1,0 +1,11 @@
+// Language-neutral message codes for the invoices module.
+// Surfaced to the frontend via translationKey `messagesNames.invoiceMessages`.
+export const invoiceMessagesCodes = {
+  INVOICE_NOT_FOUND: "INVOICE_NOT_FOUND",
+  CANNOT_ACCESS_INVOICE: "CANNOT_ACCESS_INVOICE",
+  SUBSCRIPTION_NOT_FOUND: "INVOICE_SUBSCRIPTION_NOT_FOUND",
+  SUBSCRIPTION_NOT_PRICED: "SUBSCRIPTION_NOT_PRICED",
+  INVOICE_GENERATED: "INVOICE_GENERATED",
+  INVOICE_REGENERATED: "INVOICE_REGENERATED",
+  INVOICE_UPDATED: "INVOICE_UPDATED",
+};

@@ -6,6 +6,7 @@ export * from "./plan.js";
 export * from "./coupon.js";
 export * from "./subscription.js";
 export * from "./session.js";
+export * from "./quran.js";
 export * from "./game.js";
 export * from "./report.js";
 export * from "./quiz.js";
