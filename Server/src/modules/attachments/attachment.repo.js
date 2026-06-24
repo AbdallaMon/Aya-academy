@@ -14,6 +14,28 @@ class AttachmentRepo {
       select: { ...attachmentSelect, storageKey: true },
     });
   }
+
+  /**
+   * The student(s) an attachment is tied to: users using it as their avatar +
+   * the students of certificates using it as their photo. Empty array means the
+   * attachment is generic (not a student-private photo).
+   */
+  async getOwnerStudentIds(attachmentId) {
+    const [avatarUsers, certPhotos] = await Promise.all([
+      prisma.user.findMany({
+        where: { avatarId: attachmentId },
+        select: { id: true },
+      }),
+      prisma.certificate.findMany({
+        where: { photoId: attachmentId },
+        select: { studentId: true },
+      }),
+    ]);
+    const ids = new Set();
+    avatarUsers.forEach((u) => ids.add(u.id));
+    certPhotos.forEach((c) => ids.add(c.studentId));
+    return [...ids];
+  }
 }
 
 export const attachmentRepo = new AttachmentRepo();

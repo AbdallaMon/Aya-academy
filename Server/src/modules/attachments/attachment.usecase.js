@@ -1,8 +1,11 @@
-import { ATTACHMENT_OWNER_TYPES, messagesNames } from "@aya/shared";
-import { AppError } from "../../shared/errors/AppError.js";
+import fs from "fs";
+import path from "path";
+import { ATTACHMENT_OWNER_TYPES, USER_ROLES, messagesNames } from "@aya/shared";
+import { AppError, notFound } from "../../shared/errors/AppError.js";
 import { attachmentRepo } from "./attachment.repo.js";
+import { userRepo } from "../users/user.repo.js";
 import { attachmentMessagesCodes } from "./attachment.messages.js";
-import { UPLOAD_URL_PREFIX } from "./storage.js";
+import { UPLOAD_DIR, UPLOAD_URL_PREFIX } from "./storage.js";
 
 class AttachmentUsecase {
   /**
@@ -27,6 +30,50 @@ class AttachmentUsecase {
       ownerType: ownerType ?? ATTACHMENT_OWNER_TYPES.GENERIC,
       uploadedById: authUser.id,
     });
+  }
+
+  /**
+   * Whether `authUser` may view an attachment. A student-private photo (used as
+   * a user avatar or a certificate photo) is visible only to that student, their
+   * parent(s), and admins. Generic attachments (no student link) are visible to
+   * any authenticated user. Returns false → the caller responds 404 (so the file
+   * presence isn't leaked to unauthorized users).
+   */
+  async canView(authUser, attachmentId) {
+    if (authUser?.role === USER_ROLES.ADMIN) return true;
+    const ownerStudentIds = await attachmentRepo.getOwnerStudentIds(attachmentId);
+    if (ownerStudentIds.length === 0) return true; // generic, not student-private
+    if (ownerStudentIds.includes(authUser.id)) return true; // the student
+    if (authUser?.role === USER_ROLES.PARENT) {
+      for (const studentId of ownerStudentIds) {
+        if (await userRepo.isStudentOfParent(authUser.id, studentId)) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Resolve a stored file for an authenticated, AUTHORIZED download. Files are
+   * NOT served publicly — only logged-in users reach this (route behind
+   * requireAuth) and student-private photos are further scoped to the student,
+   * their parents, and admins. Throws notFound for missing OR unauthorized (no
+   * existence leak).
+   */
+  async getFile(authUser, id) {
+    const att = await attachmentRepo.getById(id);
+    if (!att || !att.storageKey) {
+      throw notFound(attachmentMessagesCodes.ATTACHMENT_NOT_FOUND);
+    }
+    if (!(await this.canView(authUser, id))) {
+      throw notFound(attachmentMessagesCodes.ATTACHMENT_NOT_FOUND);
+    }
+    // Guard against path traversal: only ever use the bare stored filename.
+    const safeName = path.basename(att.storageKey);
+    const absolutePath = path.join(UPLOAD_DIR, safeName);
+    if (!fs.existsSync(absolutePath)) {
+      throw notFound(attachmentMessagesCodes.ATTACHMENT_NOT_FOUND);
+    }
+    return { absolutePath, mimeType: att.mimeType, filename: att.filename };
   }
 }
 
