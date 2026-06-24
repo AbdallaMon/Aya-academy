@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { Box, CircularProgress, Stack } from "@mui/material";
 import { usePathname, useSearchParams } from "next/navigation";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, QURAN_PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
@@ -26,6 +26,7 @@ import SendReportDialog from "../components/SendReportDialog.jsx";
 import SendInviteDialog from "../components/SendInviteDialog.jsx";
 import AddSubscriptionDialog from "../components/AddSubscriptionDialog.jsx";
 import BanDialog from "../components/BanDialog.jsx";
+import QuranProgressTab from "../components/QuranProgressTab.jsx";
 
 export default function UserDetailPage({ userId }) {
   const txt = useUserDetailText();
@@ -42,6 +43,7 @@ export default function UserDetailPage({ userId }) {
   const canSendInvite = hasPermission(PERMISSIONS.QUIZ.CREATE_INVITE);
   const canAddSub = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE);
   const canCancelSub = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL);
+  const canManageQuranProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_MANAGE);
 
   const {
     data: overview,
@@ -83,21 +85,27 @@ export default function UserDetailPage({ userId }) {
   // ── Tabs (role-adaptive) ──────────────────────────────────────────────────
   const validTabs = useMemo(() => {
     if (isStudent) {
-      return ["overview", "badges", "certificates", "evaluations", "subscriptions"];
+      const tabs = ["overview", "badges", "certificates", "evaluations", "subscriptions"];
+      if (canManageQuranProgress) tabs.push("quranProgress");
+      return tabs;
     }
     if (isParent) return ["overview", "children"];
     return ["overview"];
-  }, [isStudent, isParent]);
+  }, [isStudent, isParent, canManageQuranProgress]);
 
   const sections = useMemo(() => {
     if (isStudent) {
-      return [
+      const s = [
         { key: "overview", label: txt.tabOverview },
         { key: "badges", label: txt.tabBadges, count: overview?.badges?.length ?? 0 },
         { key: "certificates", label: txt.tabCertificates },
         { key: "evaluations", label: txt.tabEvaluations },
         { key: "subscriptions", label: txt.tabSubscriptions },
       ];
+      if (canManageQuranProgress) {
+        s.push({ key: "quranProgress", label: txt.tabQuranProgress });
+      }
+      return s;
     }
     if (isParent) {
       return [
@@ -106,7 +114,7 @@ export default function UserDetailPage({ userId }) {
       ];
     }
     return [{ key: "overview", label: txt.tabOverview }];
-  }, [isStudent, isParent, overview, txt]);
+  }, [isStudent, isParent, overview, txt, canManageQuranProgress]);
 
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -181,6 +189,14 @@ export default function UserDetailPage({ userId }) {
         );
       case "children":
         return <ParentChildrenTab overview={overview} txt={txt} canView={canView} />;
+      case "quranProgress":
+        return (
+          <QuranProgressTab
+            studentId={userId}
+            txt={txt}
+            canManage={canManageQuranProgress}
+          />
+        );
       default:
         return null;
     }
