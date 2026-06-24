@@ -1,0 +1,140 @@
+/* ============================================================
+   Aya Kids Games — shared style kit (RTL, child-friendly)
+   Used by every game prototype under /games. Load with:
+   <link rel="stylesheet" href="kit.css">
+   ============================================================ */
+:root {
+  --bg1: #fde9f3;
+  --bg2: #eaf2ff;
+  --card: #ffffff;
+  --ink: #2b2350;
+  --muted: #6b6790;
+  --primary: #7c4dff;
+  --primary-d: #6536e0;
+  --green: #18c08f;
+  --green-d: #0fa377;
+  --yellow: #ffd33d;
+  --pink: #ff5fa2;
+  --blue: #3b82f6;
+  --good: #18c08f;
+  --good-bg: #e7fbf3;
+  --bad: #ff6b8a;
+  --bad-bg: #ffeef2;
+  --warn: #f6a609;
+  --warn-bg: #fff6e2;
+  --line: #ece8ff;
+  --radius: 22px;
+  --shadow: 0 18px 50px rgba(70, 50, 140, 0.18);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: "Cairo", "Tajawal", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 0% 0%, #ffe3f1 0%, transparent 55%),
+    radial-gradient(1200px 600px at 100% 100%, #dbe8ff 0%, transparent 55%),
+    linear-gradient(160deg, var(--bg1), var(--bg2));
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 12px;
+}
+.brand {
+  position: fixed; top: 14px; inset-inline-start: 18px;
+  font-weight: 800; color: #9a93c7; font-size: 14px; z-index: 2;
+}
+.home-link {
+  position: fixed; top: 14px; inset-inline-end: 18px;
+  font-weight: 800; color: #9a93c7; font-size: 14px; text-decoration: none; z-index: 2;
+}
+
+/* phone / game frame */
+.phone { width: 440px; max-width: 100%; background: #c7c1f7; border-radius: 40px; padding: 12px; box-shadow: var(--shadow); }
+.screen { background: var(--card); border-radius: 30px; overflow: hidden; position: relative; min-height: 730px; display: flex; flex-direction: column; }
+
+/* header */
+.hdr { background: linear-gradient(90deg, #7c4dff, #ff4f9a); color: #fff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.hdr .title { text-align: start; line-height: 1.3; }
+.hdr .title b { font-size: 17px; font-weight: 900; display: block; }
+.hdr .title span { font-size: 12px; opacity: 0.92; }
+.hdr .ava { width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,0.18); display: grid; place-items: center; font-size: 26px; flex: none; }
+.hbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 12px; background: linear-gradient(90deg, #7c4dff, #ff4f9a); color: #fff; }
+.stars { font-size: 22px; letter-spacing: 2px; }
+.stars .s { display: inline-block; transition: transform 0.25s; }
+.badge { background: rgba(0,0,0,0.22); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; }
+.sound { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+
+/* guide bubble */
+.guide { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-bottom: 4px solid var(--yellow); background: var(--warn-bg); transition: background 0.3s, border-color 0.3s; }
+.guide.good { background: var(--good-bg); border-color: var(--green); }
+.guide.bad { background: var(--bad-bg); border-color: var(--pink); }
+.guide .txt { font-weight: 700; font-size: 14px; line-height: 1.6; flex: 1; }
+.guide .gava { width: 52px; height: 52px; border-radius: 14px; flex: none; background: #fff; display: grid; place-items: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); animation: bob 2.4s ease-in-out infinite; }
+
+/* body & common text */
+.body { padding: 18px 16px 16px; flex: 1; display: flex; flex-direction: column; }
+.hero-emoji { font-size: 64px; text-align: center; line-height: 1; margin: 6px 0; animation: bob 3s ease-in-out infinite; }
+.h-title { text-align: center; color: var(--primary); font-weight: 900; font-size: 19px; }
+.h-sub { text-align: center; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.hint { text-align: center; color: var(--muted); font-size: 12px; margin: 14px 0 8px; }
+
+/* buttons */
+.btn { border: none; border-radius: 16px; padding: 15px 18px; font-family: inherit; font-weight: 900; font-size: 16px; cursor: pointer; width: 100%; color: #fff; transition: transform 0.12s, filter 0.15s; margin-top: 14px; }
+.btn:active { transform: scale(0.97); }
+.btn:hover { filter: brightness(1.03); }
+.btn.green { background: linear-gradient(180deg, #20cf99, var(--green-d)); box-shadow: 0 8px 18px rgba(24,192,143,0.35); }
+.btn.purple { background: linear-gradient(180deg, #8a5bff, var(--primary-d)); box-shadow: 0 8px 18px rgba(124,77,255,0.35); }
+.btn.orange { background: linear-gradient(180deg, #ffb43d, #f6970a); box-shadow: 0 8px 18px rgba(246,151,10,0.35); }
+.btn.grad { background: linear-gradient(90deg, #ff5fa2, #7c4dff); }
+.btn.ghost { background: #eef0fb; color: var(--ink); }
+
+/* option cards */
+.opt { border: 2px solid var(--line); border-radius: 16px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; margin-top: 12px; background: #fff; font-weight: 700; font-size: 14px; line-height: 1.6; transition: transform 0.15s, box-shadow 0.15s; text-align: start; }
+.opt:hover { transform: translateY(-2px); }
+.opt .ic { font-size: 24px; flex: none; }
+.opt.warn { background: var(--warn-bg); border-color: #ffe2a6; }
+.opt.good { background: var(--good-bg); border-color: #b5f0db; }
+.opt.bad { background: var(--bad-bg); border-color: #ffd5de; }
+.opt.correct { box-shadow: 0 0 0 4px #c8f6e6; border-color: var(--green); }
+
+/* grids / chips */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.note { margin-top: 16px; border: 2px dashed #cdbcff; border-radius: 16px; padding: 12px 14px; background: #f7f3ff; font-size: 13px; font-weight: 700; color: var(--primary-d); text-align: center; line-height: 1.6; }
+
+/* modal / certificate */
+.overlay { position: absolute; inset: 0; background: rgba(40,30,80,0.55); display: grid; place-items: center; padding: 18px; z-index: 5; }
+.cert { background: #fff; border: 6px solid var(--yellow); border-radius: 24px; padding: 22px; text-align: center; animation: pop 0.4s; }
+.cert .crown { font-size: 52px; animation: bob 2.4s ease-in-out infinite; }
+.cert h3 { color: var(--warn); margin: 8px 0; font-size: 20px; }
+.cert p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.cert .who { border: 2px dashed #cdbcff; border-radius: 14px; padding: 12px; margin: 14px 0; font-weight: 900; color: var(--primary-d); }
+.cert .who small { display: block; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+
+.foot { text-align: center; color: var(--muted); font-size: 11px; padding: 10px; border-top: 1px solid var(--line); }
+
+/* confetti & floating bursts (created by kit.js) */
+.confetti { position: fixed; top: -30px; font-size: 22px; z-index: 50; pointer-events: none; animation: fall linear forwards; }
+.burst { position: fixed; z-index: 60; pointer-events: none; font-size: 28px; animation: burst 0.7s ease-out forwards; }
+
+/* animation utilities */
+.is-shake { animation: shake 0.45s; }
+.is-pop { animation: pop 0.4s; }
+.is-pulse { animation: pulse 1.4s ease-in-out infinite; }
+.is-wiggle { animation: wiggle 0.6s ease-in-out infinite; }
+.is-float { animation: floatY 3s ease-in-out infinite; }
+.starpop { animation: starpop 0.5s; }
+
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+@keyframes pop { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+@keyframes starpop { 0%{transform:scale(0.2) rotate(-30deg)} 60%{transform:scale(1.4) rotate(10deg)} 100%{transform:scale(1)} }
+@keyframes fall { to { transform: translateY(110vh) rotate(360deg); opacity: 0.9; } }
+@keyframes burst { 0%{transform:scale(0.5) translateY(0);opacity:1} 100%{transform:scale(1.4) translateY(-60px);opacity:0} }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+@keyframes wiggle { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+@keyframes riseUp { from { transform: translateY(0); } to { transform: translateY(-120%); } }
+@keyframes flipIn { from { transform: rotateY(90deg); opacity: 0; } to { transform: rotateY(0); opacity: 1; } }

@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>نجوم الأركان</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="kit.css" />
+  <style>
+    /* ===== Mosque build area ===== */
+    .mosque-wrap {
+      position: relative;
+      border-radius: 22px;
+      padding: 12px 10px 8px;
+      background:
+        radial-gradient(120px 70px at 50% 8%, #fff7d6 0%, transparent 70%),
+        linear-gradient(180deg, #cfe4ff 0%, #eaf2ff 60%, #f7f3ff 100%);
+      border: 2px solid #dfe9ff;
+      overflow: hidden;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .sky-star {
+      position: absolute;
+      font-size: 13px;
+      opacity: 0;
+      animation: floatY 3.6s ease-in-out infinite;
+    }
+    .sky-star.lit { opacity: 1; transition: opacity 0.5s; }
+
+    .top-emoji {
+      text-align: center;
+      font-size: 40px;
+      line-height: 1;
+      margin-bottom: 4px;
+      min-height: 44px;
+    }
+    .top-emoji .crescent { display: inline-block; animation: bob 2.6s ease-in-out infinite; }
+
+    /* the stacked pillars (column blocks) */
+    .stack {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 7px;
+      align-items: stretch;
+      position: relative;
+      z-index: 2;
+    }
+    .block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 14px;
+      box-shadow: 0 6px 14px rgba(70,50,140,0.18);
+      animation: blockRise 0.6s cubic-bezier(.22,1.2,.36,1) both;
+      position: relative;
+    }
+    .block .b-ic { font-size: 26px; flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
+    .block .b-tx { flex: 1; line-height: 1.3; }
+    .block .b-star {
+      font-size: 20px;
+      animation: starpop 0.6s 0.25s both;
+    }
+    .block.p0 { background: linear-gradient(180deg,#8a5bff,#6536e0); }
+    .block.p1 { background: linear-gradient(180deg,#3b9bff,#2476e0); }
+    .block.p2 { background: linear-gradient(180deg,#20cf99,#0fa377); }
+    .block.p3 { background: linear-gradient(180deg,#ffa83d,#f6970a); }
+    .block.p4 { background: linear-gradient(180deg,#ff6fa8,#e23b7d); }
+
+    .base {
+      margin-top: 7px;
+      text-align: center;
+      font-weight: 900;
+      color: #6b6790;
+      font-size: 12px;
+      background: #efeaff;
+      border-radius: 12px;
+      padding: 6px;
+      border: 2px dashed #cdbcff;
+    }
+
+    .empty-hint {
+      text-align: center;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 28px 8px;
+    }
+    .empty-hint .mm { font-size: 46px; display: block; margin-bottom: 6px; animation: bob 3s ease-in-out infinite; }
+
+    @keyframes blockRise {
+      from { transform: translateY(40px) scale(0.85); opacity: 0; }
+      to   { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    /* flying star animation on correct */
+    .fly-star {
+      position: fixed;
+      z-index: 80;
+      font-size: 30px;
+      pointer-events: none;
+      animation: flyUp 0.9s ease-in forwards;
+    }
+    @keyframes flyUp {
+      0%   { transform: translateY(0) scale(1); opacity: 1; }
+      70%  { opacity: 1; }
+      100% { transform: translateY(-220px) scale(0.4); opacity: 0; }
+    }
+
+    .q-title {
+      text-align: center;
+      color: var(--primary);
+      font-weight: 900;
+      font-size: 18px;
+      margin: 14px 0 2px;
+    }
+    .q-sub { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .opt .num {
+      width: 26px; height: 26px; flex: none;
+      background: #efeaff; color: var(--primary-d);
+      border-radius: 50%; display: grid; place-items: center;
+      font-weight: 900; font-size: 13px;
+    }
+    .opts-area { margin-top: 6px; }
+
+    .final-mosque { text-align: center; padding: 6px 0 2px; }
+    .final-mosque .big { font-size: 70px; line-height: 1; animation: bob 3s ease-in-out infinite; }
+    .final-mosque .row5 { font-size: 22px; letter-spacing: 4px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="brand">Aya Academy ✦</div>
+  <a class="home-link" href="index.html">كل الألعاب ←</a>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="hdr">
+        <div class="title">
+          <b>نجوم الأركان</b>
+          <span>اِبْنِ المسجد بأركان الإسلام الخمسة</span>
+        </div>
+        <div class="ava">🕌</div>
+      </div>
+
+      <div class="hbar">
+        <button class="sound" id="sound" aria-label="الصوت">🔊</button>
+        <div class="stars" id="stars"></div>
+        <div class="badge" id="score">0 / 5 ⭐</div>
+      </div>
+
+      <div class="guide" id="guide">
+        <div class="gava" id="gava">🧕</div>
+        <div class="txt" id="guideTxt">مرحباً يا بطل! هيا نبني المسجد بأركان الإسلام الخمسة بالترتيب. اختر الركن الصحيح!</div>
+      </div>
+
+      <div class="body">
+        <!-- mosque build -->
+        <div class="mosque-wrap" id="mosqueWrap">
+          <div class="top-emoji" id="topEmoji"></div>
+          <div class="stack" id="stack"></div>
+          <div class="empty-hint" id="emptyHint">
+            <span class="mm">🏗️</span>
+            ابدأ البناء... ضع الركن الأول!
+          </div>
+          <div class="base" id="base" style="display:none">أساس المسجد 🟫</div>
+        </div>
+
+        <!-- question -->
+        <div id="qArea">
+          <div class="q-title" id="qTitle">ما الرُّكن التالي؟</div>
+          <div class="q-sub" id="qSub">الركن رقم ١</div>
+          <div class="opts-area" id="opts"></div>
+        </div>
+
+        <button class="btn ghost" id="restart" style="display:none">إعادة اللعب 🔄</button>
+      </div>
+
+      <div class="foot">أركان الإسلام الخمسة • أكاديمية آية</div>
+    </div>
+  </div>
+
+  <script src="kit.js"></script>
+  <script>
+    (function () {
+      var soundBtn = document.getElementById("sound");
+      AyaKit.wireMute(soundBtn);
+
+      var starsEl = document.getElementById("stars");
+      var scoreEl = document.getElementById("score");
+      var guide = document.getElementById("guide");
+      var guideTxt = document.getElementById("guideTxt");
+      var gava = document.getElementById("gava");
+      var stackEl = document.getElementById("stack");
+      var emptyHint = document.getElementById("emptyHint");
+      var baseEl = document.getElementById("base");
+      var topEmoji = document.getElementById("topEmoji");
+      var mosqueWrap = document.getElementById("mosqueWrap");
+      var qArea = document.getElementById("qArea");
+      var qTitle = document.getElementById("qTitle");
+      var qSub = document.getElementById("qSub");
+      var optsEl = document.getElementById("opts");
+      var restartBtn = document.getElementById("restart");
+
+      var TOTAL = 5;
+
+      // the 5 pillars IN ORDER
+      var PILLARS = [
+        { ic: "🕋", name: "الشهادتان", why: "نشهد أن لا إله إلا الله وأن محمداً رسول الله 🤍" },
+        { ic: "🤲", name: "الصلاة", why: "نصلي خمس صلوات كل يوم ونحب الله 🤲" },
+        { ic: "💰", name: "الزكاة", why: "نعطي من مالنا للفقراء فيفرح قلبنا 💛" },
+        { ic: "🌙", name: "صوم رمضان", why: "نصوم في رمضان من الفجر إلى المغرب 🌙" },
+        { ic: "🕋", name: "الحج", why: "نذهب إلى مكة لزيارة بيت الله الحرام 🕋" }
+      ];
+
+      // distractors (non-pillar simple actions + other pillars)
+      var EXTRAS = [
+        { ic: "🎮", name: "اللعب" },
+        { ic: "😴", name: "النوم" },
+        { ic: "🍭", name: "أكل الحلوى" },
+        { ic: "📺", name: "مشاهدة التلفاز" },
+        { ic: "🏃", name: "الجري" }
+      ];
+
+      var ARNUM = ["١", "٢", "٣", "٤", "٥"];
+      var step = 0;
+      var locked = false;
+
+      function rnumAr(n) { return ARNUM[n] || (n + 1); }
+
+      function setGuide(cls, mascot, msg) {
+        guide.className = "guide" + (cls ? " " + cls : "");
+        gava.textContent = mascot;
+        guideTxt.textContent = msg;
+      }
+
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+
+      function buildOptions() {
+        optsEl.innerHTML = "";
+        var correct = PILLARS[step];
+
+        // pick 2 distractors: prefer other pillars + extras, never the correct one
+        var pool = [];
+        // other pillars (not current correct)
+        for (var i = 0; i < PILLARS.length; i++) {
+          if (i !== step) pool.push({ ic: PILLARS[i].ic, name: PILLARS[i].name });
+        }
+        pool = pool.concat(EXTRAS);
+        pool = shuffle(pool).slice(0, 2);
+
+        var choices = shuffle([{ ic: correct.ic, name: correct.name, ok: true }].concat(
+          pool.map(function (p) { return { ic: p.ic, name: p.name, ok: false }; })
+        ));
+
+        choices.forEach(function (c, idx) {
+          var b = document.createElement("button");
+          b.className = "opt is-pop";
+          b.style.animationDelay = (idx * 0.07) + "s";
+          b.innerHTML =
+            '<span class="num">' + rumNum(idx) + '</span>' +
+            '<span class="ic">' + c.ic + '</span>' +
+            '<span style="flex:1">' + c.name + '</span>';
+          b.addEventListener("click", function (ev) {
+            onChoose(c, b, ev);
+          });
+          optsEl.appendChild(b);
+        });
+      }
+
+      function rumNum(idx) { return ["أ", "ب", "ج"][idx] || (idx + 1); }
+
+      function onChoose(c, btn, ev) {
+        if (locked) return;
+        if (!c.ok) {
+          AyaKit.sound.wrong();
+          AyaKit.shake(btn);
+          btn.classList.add("bad");
+          setTimeout(function () { btn.classList.remove("bad"); }, 700);
+          setGuide("bad", "😢", "ليس هذا الركن... لا بأس يا حبيبي، حاول مرة أخرى! ابحث عن الركن الصحيح.");
+          return;
+        }
+
+        locked = true;
+        var pillar = PILLARS[step];
+
+        // correct!
+        btn.classList.add("good", "correct");
+        AyaKit.sound.correct();
+
+        // flying star from the option toward the mosque
+        flyStarTo(ev, mosqueWrap);
+
+        setTimeout(function () {
+          AyaKit.sound.star();
+          addBlock(pillar, step);
+          AyaKit.confetti(16);
+          AyaKit.burst("⭐", window.innerWidth / 2, window.innerHeight / 2 - 60);
+
+          // light a sky star
+          litSkyStar(step);
+
+          // header stars
+          AyaKit.renderStars(starsEl, step + 1, TOTAL);
+          scoreEl.textContent = (step + 1) + " / " + TOTAL + " ⭐";
+
+          setGuide("good", "😄", "أحسنت! " + pillar.name + " — " + pillar.why);
+
+          step++;
+          if (step >= TOTAL) {
+            setTimeout(finish, 1100);
+          } else {
+            setTimeout(function () {
+              locked = false;
+              nextQuestion();
+            }, 1200);
+          }
+        }, 650);
+      }
+
+      function flyStarTo(ev, target) {
+        var sx = ev ? ev.clientX : window.innerWidth / 2;
+        var sy = ev ? ev.clientY : window.innerHeight / 2;
+        var s = document.createElement("div");
+        s.className = "fly-star";
+        s.textContent = "⭐";
+        s.style.left = (sx - 15) + "px";
+        s.style.top = (sy - 15) + "px";
+        document.body.appendChild(s);
+        setTimeout(function () { s.remove(); }, 950);
+      }
+
+      function addBlock(pillar, idx) {
+        emptyHint.style.display = "none";
+        baseEl.style.display = "block";
+        var b = document.createElement("div");
+        b.className = "block p" + idx;
+        b.innerHTML =
+          '<span class="b-ic">' + pillar.ic + '</span>' +
+          '<span class="b-tx">' + rumAr(idx) + '. ' + pillar.name + '</span>' +
+          '<span class="b-star">⭐</span>';
+        stackEl.appendChild(b);
+      }
+
+      var skyStars = [];
+      function makeSkyStars() {
+        // place 5 dim sky stars
+        var positions = [
+          { l: 14, t: 14 }, { l: 78, t: 10 }, { l: 46, t: 6 },
+          { l: 28, t: 26 }, { l: 66, t: 28 }
+        ];
+        positions.forEach(function (p, i) {
+          var s = document.createElement("div");
+          s.className = "sky-star";
+          s.textContent = "🌟";
+          s.style.left = p.l + "%";
+          s.style.top = p.t + "%";
+          s.style.animationDelay = (i * 0.4) + "s";
+          mosqueWrap.appendChild(s);
+          skyStars.push(s);
+        });
+      }
+      function litSkyStar(i) {
+        if (skyStars[i]) skyStars[i].classList.add("lit");
+      }
+
+      function rumAr(idx) { return ARNUM[idx] || (idx + 1); }
+
+      function nextQuestion() {
+        qTitle.textContent = "ما الرُّكن التالي؟";
+        qSub.textContent = "الركن رقم " + rnumAr(step) + " من ٥";
+        if (step === 0) {
+          setGuide("", "🧕", "نبدأ بأول ركن... ما هو أساس الإسلام؟ اختر الإجابة الصحيحة!");
+        } else {
+          setGuide("", "🧕", "رائع! والآن... ما الركن التالي بالترتيب؟");
+        }
+        buildOptions();
+      }
+
+      function finish() {
+        AyaKit.sound.win();
+        AyaKit.confetti(40);
+
+        // show complete mosque on top
+        topEmoji.innerHTML = '<span class="crescent">🌙</span>';
+        // replace question area with final mosque visual
+        qArea.innerHTML =
+          '<div class="final-mosque">' +
+          '<div class="big">🕌</div>' +
+          '<div class="row5">⭐⭐⭐⭐⭐</div>' +
+          '<div class="q-sub" style="margin-top:6px;font-weight:900;color:#0fa377">اكتمل بناء المسجد!</div>' +
+          '</div>';
+
+        setGuide("good", "🥳", "مبارك يا بطل! بنيتَ المسجد بأركان الإسلام الخمسة كاملة!");
+
+        showCert();
+      }
+
+      function showCert() {
+        var ov = document.createElement("div");
+        ov.className = "overlay";
+        ov.innerHTML =
+          '<div class="cert">' +
+          '<div class="crown">👑</div>' +
+          '<h3>بطل أركان الإسلام</h3>' +
+          '<p>أكملتَ بناء المسجد بالأركان الخمسة بالترتيب الصحيح!<br>أنت رائع 🌟</p>' +
+          '<div class="who"><small>هذه الجائزة للبطل</small>بطل أركان الإسلام 🕌</div>' +
+          '<button class="btn green" id="certClose">شكراً! 🎉</button>' +
+          '</div>';
+        document.querySelector(".screen").appendChild(ov);
+        restartBtn.style.display = "block";
+        AyaKit.confetti(30);
+        document.getElementById("certClose").addEventListener("click", function () {
+          ov.remove();
+        });
+      }
+
+      function reset() {
+        step = 0;
+        locked = false;
+        stackEl.innerHTML = "";
+        topEmoji.innerHTML = "";
+        emptyHint.style.display = "block";
+        baseEl.style.display = "none";
+        skyStars.forEach(function (s) { s.classList.remove("lit"); });
+        AyaKit.renderStars(starsEl, 0, TOTAL);
+        scoreEl.textContent = "0 / " + TOTAL + " ⭐";
+        // restore question area
+        qArea.innerHTML =
+          '<div class="q-title" id="qTitle">ما الرُّكن التالي؟</div>' +
+          '<div class="q-sub" id="qSub">الركن رقم ١</div>' +
+          '<div class="opts-area" id="opts"></div>';
+        qTitle = document.getElementById("qTitle");
+        qSub = document.getElementById("qSub");
+        optsEl = document.getElementById("opts");
+        restartBtn.style.display = "none";
+        var ov = document.querySelector(".overlay");
+        if (ov) ov.remove();
+        nextQuestion();
+      }
+
+      restartBtn.addEventListener("click", reset);
+
+      // init
+      makeSkyStars();
+      AyaKit.renderStars(starsEl, 0, TOTAL);
+      nextQuestion();
+    })();
+  </script>
+</body>
+</html>

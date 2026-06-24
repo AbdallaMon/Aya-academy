@@ -1,0 +1,89 @@
+"use client";
+
+import { useTranslation } from "../../../i18n/client.js";
+
+export const childrenText = {
+  ar: {
+    pageTitle: "أبنائي",
+    pageDescription:
+      "أضِف أبناءك واختر خطة مناسبة لكل ابن — يُرسل الطلب للإدارة للموافقة.",
+    addChild: "إضافة ابن",
+    choosePlan: "اختيار خطة",
+    changePlan: "تغيير الخطة",
+    noSubscription: "لا يوجد اشتراك",
+    certificates: "الشهادات",
+    nickname: "اللقب",
+    pending: "بانتظار موافقة الإدارة",
+    statusLabel: "الحالة",
+    PENDING: "بانتظار الموافقة",
+    UPCOMING: "قادم",
+    ACTIVE: "نشط",
+    EXPIRED: "منتهٍ",
+    CANCELLED: "ملغى",
+    empty: "لا يوجد أبناء بعد — أضِف أول ابن لك.",
+    // add child form
+    addChildTitle: "إضافة ابن جديد",
+    name: "الاسم",
+    email: "البريد الإلكتروني",
+    password: "كلمة المرور",
+    nicknameField: "اللقب (اختياري)",
+    required: "هذا الحقل مطلوب",
+    invalidEmail: "بريد غير صالح",
+    minPassword: "٦ أحرف على الأقل",
+    save: "حفظ",
+    cancel: "إلغاء",
+    // plan picker
+    pickPlanTitle: "اختر خطة لـ",
+    perMonth: "/ شهريًا",
+    perYear: "/ سنويًا",
+    request: "اطلب هذه الخطة",
+    requesting: "جارٍ الإرسال...",
+    requestSent: "تم إرسال الطلب — بانتظار موافقة الإدارة.",
+    hours: "ساعة",
+    noPlans: "لا توجد خطط متاحة حاليًا.",
+    was: "بدلاً من",
+  },
+  en: {
+    pageTitle: "My children",
+    pageDescription:
+      "Add your children and choose a plan for each — the request is sent to admin for approval.",
+    addChild: "Add child",
+    choosePlan: "Choose a plan",
+    changePlan: "Change plan",
+    noSubscription: "No subscription",
+    certificates: "Certificates",
+    nickname: "Nickname",
+    pending: "Awaiting admin approval",
+    statusLabel: "Status",
+    PENDING: "Pending approval",
+    UPCOMING: "Upcoming",
+    ACTIVE: "Active",
+    EXPIRED: "Expired",
+    CANCELLED: "Cancelled",
+    empty: "No children yet — add your first child.",
+    addChildTitle: "Add a new child",
+    name: "Name",
+    email: "Email",
+    password: "Password",
+    nicknameField: "Nickname (optional)",
+    required: "This field is required",
+    invalidEmail: "Invalid email",
+    minPassword: "At least 6 characters",
+    save: "Save",
+    cancel: "Cancel",
+    pickPlanTitle: "Choose a plan for",
+    perMonth: "/ month",
+    perYear: "/ year",
+    request: "Request this plan",
+    requesting: "Sending...",
+    requestSent: "Request sent — awaiting admin approval.",
+    hours: "hours",
+    noPlans: "No plans available right now.",
+    was: "was",
+  },
+};
+
+export function useChildrenText() {
+  const { lng } = useTranslation();
+  return childrenText[lng === "en" ? "en" : "ar"];
+}

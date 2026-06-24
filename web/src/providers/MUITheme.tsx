@@ -18,7 +18,7 @@ declare module '@mui/material/Button' {
   }
 }
 
-function buildTheme({
+export function buildTheme({
   direction = 'ltr',
   mode = 'light',
 }: {
@@ -39,6 +39,13 @@ function buildTheme({
 
   const textPrimary = base.text;
   const textSecondary = base.mutedText;
+
+  // Soft, layered shadows — warmer/cleaner than MUI defaults. In dark mode the
+  // surfaces are deep navy, so we lean on darker, slightly tinted shadows.
+  const shadowColor = mode === 'light' ? '20, 35, 60' : '0, 0, 0';
+  const softShadow1 = `0 1px 2px rgba(${shadowColor}, ${
+    mode === 'light' ? 0.06 : 0.4
+  }), 0 4px 12px rgba(${shadowColor}, ${mode === 'light' ? 0.05 : 0.35})`;
 
   return createTheme({
     direction,
@@ -87,7 +94,7 @@ function buildTheme({
       },
     },
     shape: {
-      borderRadius: 12,
+      borderRadius: 14,
     },
     spacing: 8,
     colorSchemes: {},
@@ -146,12 +153,16 @@ function buildTheme({
           ':root': {
             colorScheme: mode,
           },
+          // NOTE: do NOT set `direction` on html/body here. The RTL emotion cache
+          // (stylis-plugin-rtl) rewrites a `direction: rtl` declaration into
+          // `direction: ltr`, which would force the whole document back to LTR and
+          // break every flex/grid layout in Arabic. Direction is governed by the
+          // server-rendered `<html dir="rtl">` (set in app/[lng]/layout.jsx).
           body: {
             margin: 0,
             padding: 0,
             backgroundColor: backgroundDefault,
             color: textPrimary,
-            direction,
           },
           '::selection': {
             backgroundColor: base.accent,
@@ -179,6 +190,31 @@ function buildTheme({
           root: {
             backgroundImage: 'none',
             backgroundColor: backgroundPaper,
+          },
+        },
+      },
+      MuiCard: {
+        defaultProps: {
+          elevation: 0,
+        },
+        styleOverrides: {
+          root: {
+            borderRadius: 18,
+            border: `1px solid ${
+              mode === 'light' ? base.border : alpha('#FFFFFF', 0.06)
+            }`,
+            boxShadow: softShadow1,
+            backgroundImage: 'none',
+            transition:
+              'box-shadow .25s ease, transform .25s ease, border-color .25s ease',
+          },
+        },
+      },
+      MuiCardContent: {
+        styleOverrides: {
+          root: {
+            padding: 20,
+            '&:last-child': { paddingBottom: 20 },
           },
         },
       },
@@ -269,11 +305,36 @@ function buildTheme({
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
+            borderRadius: 999,
+            fontWeight: 700,
+            letterSpacing: '0.01em',
           },
           colorPrimary: {
             backgroundColor: alpha(primaryMain, 0.15),
-            color: primaryMain,
+            color: mode === 'light' ? primaryDark : primaryLight,
+          },
+          colorSecondary: {
+            backgroundColor: alpha(secondaryMain, 0.2),
+            color: mode === 'light' ? darken(secondaryMain, 0.35) : secondaryMain,
+          },
+          colorSuccess: {
+            backgroundColor: alpha(base.support, 0.18),
+            color: mode === 'light' ? base.support : lighten(base.support, 0.35),
+          },
+        },
+      },
+      MuiDivider: {
+        styleOverrides: {
+          root: {
+            borderColor:
+              mode === 'light' ? base.border : alpha('#FFFFFF', 0.08),
+          },
+        },
+      },
+      MuiAvatar: {
+        styleOverrides: {
+          root: {
+            fontWeight: 800,
           },
         },
       },
@@ -291,6 +352,12 @@ function buildTheme({
         styleOverrides: {
           switchBase: {
             '&.Mui-checked': {
+              // Honor direction: the thumb must travel toward the inline-end,
+              // which is negative-X in RTL.
+              transform:
+                direction === 'rtl'
+                  ? 'translateX(-20px)'
+                  : 'translateX(20px)',
               color: primaryMain,
               '+ .MuiSwitch-track': {
                 backgroundColor: alpha(primaryMain, 0.5),

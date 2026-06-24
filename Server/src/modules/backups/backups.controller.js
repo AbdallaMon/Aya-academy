@@ -1,0 +1,112 @@
+// backups.controller — thin: reads validated input, calls the usecase, responds
+// via helpers. No business logic.
+
+import { ok, created } from "../../shared/http/response.js";
+import { backupMessagesCodes, generalMessagesCodes, messagesNames } from "@aya/shared";
+import { ENV } from "../../config/env.js";
+import { backupsUsecase } from "./backups.usecase.js";
+
+const TK = messagesNames.backupMessages;
+
+class BackupsController {
+  list = async (req, res) => {
+    const data = await backupsUsecase.list({ query: req.query });
+    return ok(res, data, generalMessagesCodes.OK, TK);
+  };
+
+  runNow = async (req, res) => {
+    const data = await backupsUsecase.runNow({ input: req.body, authUser: req.auth });
+    return created(res, data, backupMessagesCodes.CREATED, TK);
+  };
+
+  restore = async (req, res) => {
+    const data = await backupsUsecase.restore({ input: req.body, authUser: req.auth });
+    return ok(res, data, backupMessagesCodes.RESTORE_DONE, TK);
+  };
+
+  status = async (req, res) => {
+    const data = await backupsUsecase.status();
+    return ok(res, data, generalMessagesCodes.OK, TK);
+  };
+
+  remove = async (req, res) => {
+    const data = await backupsUsecase.remove({ id: req.params.id, authUser: req.auth });
+    return ok(res, data, backupMessagesCodes.DELETED, TK);
+  };
+
+  // ----- OAuth ------------------------------------------------------------
+
+  driveConnect = async (req, res) => {
+    const reconnectId = req.query.reconnectId ? Number(req.query.reconnectId) : undefined;
+    const data = await backupsUsecase.getDriveAuthUrl({
+      reconnectId,
+      type: req.query.type,
+      userId: req.auth?.id,
+    });
+    return ok(res, data, generalMessagesCodes.OK, TK);
+  };
+
+  /**
+   * Browser landing from Google — we respond with a 302 redirect to the frontend
+   * page (ENV.appUrl). We catch the error here specifically because the redirect is
+   * the response contract for the browser (the code stays language-neutral in the
+   * URL).
+   */
+  driveCallback = async (req, res) => {
+    // The backups page path on the frontend (Next.js): /dashboard/backups — the
+    // accounts tab reads ?drive=connected|error and shows a toast, then cleans the URL.
+    const base = `${ENV.appUrl}/dashboard/backups`;
+    try {
+      await backupsUsecase.handleDriveCallback({ input: req.query });
+      return res.redirect(302, `${base}?drive=connected`);
+    } catch (err) {
+      const reason = encodeURIComponent(err?.code || backupMessagesCodes.DRIVE_AUTH_FAILED);
+      return res.redirect(302, `${base}?drive=error&reason=${reason}`);
+    }
+  };
+
+  // ----- Drive accounts ---------------------------------------------------
+
+  driveAccounts = async (req, res) => {
+    const data = await backupsUsecase.driveAccounts({ query: req.query });
+    return ok(res, data, generalMessagesCodes.OK, TK);
+  };
+
+  setActiveAccount = async (req, res) => {
+    const data = await backupsUsecase.setActiveAccount({ id: req.params.id, authUser: req.auth });
+    return ok(res, data, backupMessagesCodes.DRIVE_ACCOUNT_ACTIVATED, TK);
+  };
+
+  checkAccount = async (req, res) => {
+    const data = await backupsUsecase.checkAccount({ id: req.params.id });
+    return ok(res, data, backupMessagesCodes.DRIVE_ACCOUNT_CHECKED, TK);
+  };
+
+  disconnectAccount = async (req, res) => {
+    const data = await backupsUsecase.disconnectAccount({ id: req.params.id, authUser: req.auth });
+    return ok(res, data, backupMessagesCodes.DRIVE_ACCOUNT_DISCONNECTED, TK);
+  };
+
+  removeAccount = async (req, res) => {
+    const data = await backupsUsecase.removeAccount({ id: req.params.id, authUser: req.auth });
+    return ok(res, data, backupMessagesCodes.DRIVE_ACCOUNT_REMOVED, TK);
+  };
+
+  // ----- External restore -------------------------------------------------
+
+  restoreExternalCheck = async (req, res) => {
+    const data = await backupsUsecase.restoreExternalCheck({
+      file: req.file,
+      input: req.body,
+      authUser: req.auth,
+    });
+    return ok(res, data, backupMessagesCodes.RESTORE_EXTERNAL_CHECKED, TK);
+  };
+
+  restoreExternalCommit = async (req, res) => {
+    const data = await backupsUsecase.restoreExternalCommit({ input: req.body, authUser: req.auth });
+    return ok(res, data, backupMessagesCodes.RESTORE_DONE, TK);
+  };
+}
+
+export const backupsController = new BackupsController();

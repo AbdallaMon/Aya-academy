@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>صاروخ الحسنات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="kit.css" />
+  <style>
+    /* ===== game area ===== */
+    .arena {
+      position: relative;
+      flex: 1;
+      margin-top: 8px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        radial-gradient(120px 120px at 20% 18%, rgba(255,255,255,.6), transparent 70%),
+        linear-gradient(180deg, #cfe3ff 0%, #b9d4ff 40%, #a7c7ff 100%);
+      box-shadow: inset 0 0 0 2px #e6efff;
+      touch-action: manipulation;
+    }
+    /* drifting clouds for life */
+    .cloud {
+      position: absolute; font-size: 30px; opacity: .85;
+      animation: drift 14s linear infinite;
+      pointer-events: none;
+    }
+    .cloud.c2 { font-size: 22px; animation-duration: 19s; animation-delay: -6s; top: 30%; }
+    .cloud.c3 { font-size: 26px; animation-duration: 23s; animation-delay: -12s; top: 55%; }
+    @keyframes drift {
+      from { transform: translateX(120%); }
+      to   { transform: translateX(-140%); }
+    }
+
+    /* floating deed bubble */
+    .bub {
+      position: absolute;
+      bottom: -90px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 92px; height: 92px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 8px 18px rgba(60,50,120,.22), inset 0 0 0 3px #fff;
+      cursor: pointer;
+      user-select: none;
+      will-change: transform;
+      animation: rise linear forwards;
+    }
+    .bub .be { font-size: 34px; line-height: 1; pointer-events: none; }
+    .bub .bl { font-size: 10.5px; font-weight: 800; color: var(--ink); margin-top: 3px; text-align: center; line-height: 1.15; padding: 0 4px; pointer-events: none; }
+    .bub.bad-bub { background: rgba(255,238,242,.96); box-shadow: 0 8px 18px rgba(255,95,130,.28), inset 0 0 0 3px #ffe1e8; }
+    .bub.collected { animation: collected .35s ease-in forwards; }
+    @keyframes rise {
+      0%   { transform: translateY(0) translateX(0) scale(.6); opacity: 0; }
+      12%  { opacity: 1; transform: translateY(-14vh) translateX(var(--sway1, 0px)) scale(1); }
+      55%  { transform: translateY(-46vh) translateX(var(--sway2, 0px)) scale(1); }
+      100% { transform: translateY(-92vh) translateX(var(--sway1, 0px)) scale(1); opacity: 1; }
+    }
+    @keyframes collected {
+      to { transform: scale(.2) translateY(40px); opacity: 0; }
+    }
+
+    /* rocket meter */
+    .rocketbar {
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 12px;
+      background: #f4f1ff;
+      border: 2px solid #e3dbff;
+      border-radius: 18px;
+      padding: 10px 12px;
+    }
+    .rocket { font-size: 36px; flex: none; transition: transform .25s; }
+    .rocket.boost { animation: wiggle .5s ease-in-out infinite; }
+    .meterwrap { flex: 1; }
+    .meterwrap .lbl { font-size: 12px; font-weight: 900; color: var(--primary-d); margin-bottom: 5px; }
+    .meterwrap .lbl b { color: var(--green-d); }
+    .track {
+      height: 16px; border-radius: 999px; background: #e6dffb; overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.08);
+    }
+    .fill {
+      height: 100%; width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #20cf99, #18c08f);
+      transition: width .35s cubic-bezier(.34,1.4,.5,1);
+    }
+
+    /* launch overlay rocket */
+    .launch {
+      position: absolute; left: 50%; bottom: 8%;
+      transform: translateX(-50%);
+      font-size: 70px; z-index: 4; pointer-events: none;
+      animation: launchUp 1.6s ease-in forwards;
+    }
+    @keyframes launchUp {
+      0%   { transform: translateX(-50%) translateY(0) scale(1); }
+      18%  { transform: translateX(-50%) translateY(10px) scale(1.1); }
+      100% { transform: translateX(-50%) translateY(-130vh) scale(.7); }
+    }
+    .flame { position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%); font-size: 40px; z-index: 3; pointer-events: none; animation: flameFlick .25s ease-in-out infinite, launchUp 1.6s ease-in forwards; }
+    @keyframes flameFlick { 0%,100%{ opacity:.7; } 50%{ opacity:1; transform: translateX(-50%) scale(1.2);} }
+
+    .restart { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="brand">Aya Academy ✦</div>
+  <a class="home-link" href="index.html">كل الألعاب ←</a>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="hdr">
+        <div class="title">
+          <b>صاروخ الحسنات 🚀</b>
+          <span>اجمع الأعمال الطيبة</span>
+        </div>
+        <div class="ava">🚀</div>
+      </div>
+
+      <div class="hbar">
+        <button class="sound" id="sound" aria-label="الصوت">🔊</button>
+        <div class="stars" id="stars">☆☆☆☆</div>
+        <div class="badge" id="score">0 / 8 ⭐</div>
+      </div>
+
+      <div class="guide" id="guide">
+        <div class="gava" id="gava">🐥</div>
+        <div class="txt" id="guideTxt">المس الأعمال الطيبة الطائرة لتجمعها في الصاروخ! 💛</div>
+      </div>
+
+      <div class="body">
+        <div class="arena" id="arena">
+          <div class="cloud" style="top:14%">☁️</div>
+          <div class="cloud c2">☁️</div>
+          <div class="cloud c3">☁️</div>
+        </div>
+
+        <div class="rocketbar">
+          <div class="rocket" id="rocket">🚀</div>
+          <div class="meterwrap">
+            <div class="lbl">جمعت <b id="count">0</b> / 8 حسنة</div>
+            <div class="track"><div class="fill" id="fill"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">Aya Academy — تعلّم وألعب ✦</div>
+    </div>
+  </div>
+
+  <script src="kit.js"></script>
+  <script>
+    (function () {
+      var GOOD = [
+        { e: "🤲", l: "الصلاة" },
+        { e: "📖", l: "قراءة القرآن" },
+        { e: "🤝", l: "مساعدة الناس" },
+        { e: "😊", l: "ابتسامة لأخيك" },
+        { e: "🫶", l: "برّ الوالدين" },
+        { e: "🧹", l: "إماطة الأذى" },
+        { e: "💧", l: "سقيا الماء" },
+        { e: "🥗", l: "إطعام مسكين" },
+        { e: "🐈", l: "الرفق بالحيوان" },
+        { e: "🌳", l: "غرس شجرة" }
+      ];
+      var BAD = [
+        { e: "😠", l: "الغضب" },
+        { e: "🗣️", l: "الكذب" },
+        { e: "🙉", l: "عصيان الوالدين" }
+      ];
+
+      var GOAL = 8;
+      var MILESTONES = [2, 4, 6, 8]; // star at each
+
+      var arena = document.getElementById("arena");
+      var guide = document.getElementById("guide");
+      var guideTxt = document.getElementById("guideTxt");
+      var gava = document.getElementById("gava");
+      var starsEl = document.getElementById("stars");
+      var scoreEl = document.getElementById("score");
+      var countEl = document.getElementById("count");
+      var fillEl = document.getElementById("fill");
+      var rocketEl = document.getElementById("rocket");
+
+      var collected = 0;
+      var starsWon = 0;
+      var spawnTimer = null;
+      var finished = false;
+
+      AyaKit.wireMute(document.getElementById("sound"));
+
+      var PRAISE = ["أحسنت! 🌟", "رائع! 💫", "ما شاء الله! ✨", "بطل الحسنات! 🏆", "أنت طيب! 💛", "جميل جداً! 🎉"];
+
+      function setGuide(cls, msg, face) {
+        guide.classList.remove("good", "bad");
+        if (cls) guide.classList.add(cls);
+        guideTxt.textContent = msg;
+        gava.textContent = face || "🐥";
+      }
+
+      function updateMeter() {
+        countEl.textContent = collected;
+        scoreEl.textContent = collected + " / " + GOAL + " ⭐";
+        fillEl.style.width = (collected / GOAL * 100) + "%";
+        rocketEl.classList.add("boost");
+        setTimeout(function () { rocketEl.classList.remove("boost"); }, 600);
+      }
+
+      function awardStarsIfMilestone() {
+        // stars correspond to milestones reached
+        var earned = 0;
+        for (var i = 0; i < MILESTONES.length; i++) {
+          if (collected >= MILESTONES[i]) earned++;
+        }
+        if (earned > starsWon) {
+          starsWon = earned;
+          AyaKit.sound.star();
+          AyaKit.renderStars(starsEl, starsWon, 4);
+        }
+      }
+
+      function spawnBubble() {
+        if (finished) return;
+        // keep 3-5 on screen
+        var live = arena.querySelectorAll(".bub").length;
+        if (live >= 5) return;
+
+        var isBad = Math.random() < 0.28; // mostly good
+        var data = isBad ? BAD[(Math.random() * BAD.length) | 0] : GOOD[(Math.random() * GOOD.length) | 0];
+
+        var b = document.createElement("div");
+        b.className = "bub" + (isBad ? " bad-bub" : "");
+        b.dataset.bad = isBad ? "1" : "0";
+        b.dataset.emoji = data.e;
+
+        var emoji = document.createElement("div");
+        emoji.className = "be";
+        emoji.textContent = data.e;
+        var label = document.createElement("div");
+        label.className = "bl";
+        label.textContent = data.l;
+        b.appendChild(emoji);
+        b.appendChild(label);
+
+        // horizontal position within arena
+        var aw = arena.clientWidth;
+        var left = 8 + Math.random() * (aw - 100 - 16);
+        b.style.left = left + "px";
+        // sway amount
+        var sway = (Math.random() * 60 - 30);
+        b.style.setProperty("--sway1", sway + "px");
+        b.style.setProperty("--sway2", (-sway * 0.8) + "px");
+        var dur = 4.6 + Math.random() * 1.6;
+        b.style.animationDuration = dur + "s";
+
+        b.addEventListener("pointerdown", function (ev) {
+          onTap(ev, b);
+        });
+
+        // remove when it finished rising
+        b.addEventListener("animationend", function (e) {
+          if (e.animationName === "rise") b.remove();
+        });
+
+        arena.appendChild(b);
+      }
+
+      function onTap(ev, b) {
+        if (finished) return;
+        if (b.dataset.collected === "1") return;
+
+        var isBad = b.dataset.bad === "1";
+        var x = ev.clientX || (window.innerWidth / 2);
+        var y = ev.clientY || (window.innerHeight / 2);
+
+        if (isBad) {
+          // gentle nudge — never collect, never penalize
+          AyaKit.sound.wrong();
+          AyaKit.shake(b);
+          setGuide("bad", "هذا ليس عملاً طيباً. ابحث عن الأعمال الطيبة! 💛", "😢");
+          return;
+        }
+
+        // collect a good deed
+        b.dataset.collected = "1";
+        collected++;
+        AyaKit.sound.star();
+        AyaKit.burst(b.dataset.emoji, x, y);
+        AyaKit.burst("✨", x, y);
+        b.classList.add("collected");
+        setTimeout(function () { b.remove(); }, 360);
+
+        updateMeter();
+        awardStarsIfMilestone();
+        setGuide("good", PRAISE[(Math.random() * PRAISE.length) | 0], "😄");
+
+        if (collected >= GOAL) {
+          win();
+        }
+      }
+
+      function win() {
+        finished = true;
+        if (spawnTimer) { clearInterval(spawnTimer); spawnTimer = null; }
+        // clear remaining bubbles
+        var rest = arena.querySelectorAll(".bub");
+        for (var i = 0; i < rest.length; i++) rest[i].remove();
+
+        setGuide("good", "ملأت الصاروخ بالحسنات! انطلق! 🚀", "🥳");
+
+        // launch animation
+        var flame = document.createElement("div");
+        flame.className = "flame";
+        flame.textContent = "🔥";
+        var rk = document.createElement("div");
+        rk.className = "launch";
+        rk.textContent = "🚀";
+        arena.appendChild(flame);
+        arena.appendChild(rk);
+
+        AyaKit.sound.win();
+        AyaKit.confetti(34);
+        setTimeout(function () { AyaKit.confetti(20); }, 700);
+
+        setTimeout(function () {
+          flame.remove();
+          rk.remove();
+          showCert();
+        }, 1600);
+      }
+
+      function showCert() {
+        var ov = document.createElement("div");
+        ov.className = "overlay";
+        ov.innerHTML =
+          '<div class="cert">' +
+            '<div class="crown">👑</div>' +
+            '<h3>مبروك! 🎉</h3>' +
+            '<p>جمعت كل الحسنات وأطلقت صاروخك إلى السماء!<br>الأعمال الطيبة تجعل قلبك سعيداً 💛</p>' +
+            '<div class="who"><small>هذه الشهادة لـ</small>بطل جامع الحسنات 🚀</div>' +
+            '<button class="btn green" id="certClose">شكراً! 🎉</button>' +
+            '<button class="btn ghost restart" id="certRestart">إعادة اللعب 🔄</button>' +
+          '</div>';
+        document.querySelector(".screen").appendChild(ov);
+        AyaKit.confetti(30);
+        document.getElementById("certClose").addEventListener("click", function () {
+          ov.remove();
+        });
+        document.getElementById("certRestart").addEventListener("click", function () {
+          ov.remove();
+          restart();
+        });
+      }
+
+      function restart() {
+        finished = false;
+        collected = 0;
+        starsWon = 0;
+        AyaKit.renderStars(starsEl, 0, 4);
+        updateMeter();
+        var rest = arena.querySelectorAll(".bub, .launch, .flame");
+        for (var i = 0; i < rest.length; i++) rest[i].remove();
+        setGuide(null, "المس الأعمال الطيبة الطائرة لتجمعها في الصاروخ! 💛", "🐥");
+        startSpawning();
+      }
+
+      function startSpawning() {
+        if (spawnTimer) clearInterval(spawnTimer);
+        // a couple to begin
+        spawnBubble();
+        setTimeout(spawnBubble, 500);
+        spawnTimer = setInterval(spawnBubble, 1100);
+      }
+
+      // init
+      AyaKit.renderStars(starsEl, 0, 4);
+      updateMeter();
+      startSpawning();
+    })();
+  </script>
+</body>
+</html>

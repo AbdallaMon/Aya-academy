@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { corsOptions } from "./config/cors.js";
 import routes from "./routes.js";
-import { UPLOAD_DIR } from "./modules/attachments/storage.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -22,7 +21,8 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use("/uploads", express.static(UPLOAD_DIR));
+// NOTE: uploads are NOT served statically/publicly. They are streamed only to
+// authenticated users via GET /api/v1/attachments/:id/raw (see attachments module).
 app.use("/api/v1", routes);
 
 app.use(notFoundHandler);

@@ -98,6 +98,23 @@ class UserRepo {
     return prisma.user.findUnique({ where: { id }, select: { role: true } });
   }
 
+  // ── avatar ─────────────────────────────────────────────────
+  setAvatar(id, attachmentId) {
+    return prisma.user.update({
+      where: { id },
+      data: { avatarId: attachmentId },
+      select: publicUserSelect,
+    });
+  }
+
+  clearAvatar(id) {
+    return prisma.user.update({
+      where: { id },
+      data: { avatarId: null },
+      select: publicUserSelect,
+    });
+  }
+
   // ── level & ban ────────────────────────────────────────────
   setStudentLevel(id, studentLevel) {
     return prisma.user.update({

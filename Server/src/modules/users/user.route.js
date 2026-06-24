@@ -70,6 +70,16 @@ userRoutes.post(
   asyncHandler(userController.unban),
 );
 
+// Avatar: auth-only; object scope (admin / self / parent-of-student) is enforced
+// in the usecase. The upload that produced the attachment was permission-gated.
+userRoutes.patch(
+  "/:id/avatar",
+  validate(UserValidation.setAvatarSchema),
+  asyncHandler(userController.setAvatar),
+);
+
+userRoutes.delete("/:id/avatar", asyncHandler(userController.removeAvatar));
+
 userRoutes.put(
   "/:id",
   authMiddleware.requirePermissions([USER_PERMISSIONS.EDIT]),

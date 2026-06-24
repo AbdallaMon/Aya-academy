@@ -3,10 +3,12 @@ import {
   PARENT_RELATIONS,
   STUDENT_LEVELS,
   USER_ROLES,
+  attachmentMessagesCodes,
   messagesNames,
   userMessagesCodes,
 } from "@aya/shared";
 import { AppError, badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
+import { attachmentRepo } from "../attachments/attachment.repo.js";
 import { hashPassword } from "../../infra/security/hash.js";
 import { buildSearchQuery, parseBooleanFilter } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
@@ -383,6 +385,45 @@ class UserUsecase {
     const target = await userRepo.getRoleById(id);
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
     return userRepo.unbanUser(id);
+  }
+
+  /**
+   * Throws unless `authUser` may change the avatar of the target user.
+   * Scope: ADMIN → any; the user themselves → own; a PARENT → their student.
+   */
+  async assertCanSetAvatar(authUser, targetId) {
+    if (authUser.role === USER_ROLES.ADMIN) return;
+    if (authUser.id === targetId) return;
+    if (authUser.role === USER_ROLES.PARENT) {
+      const linked = await userRepo.isStudentOfParent(authUser.id, targetId);
+      if (linked) return;
+    }
+    throw forbidden(attachmentMessagesCodes.CANNOT_SET_AVATAR);
+  }
+
+  /** Set a user's avatar to an existing uploaded attachment (scoped). */
+  async setAvatar(authUser, id, attachmentId) {
+    await this.assertCanSetAvatar(authUser, id);
+
+    const target = await userRepo.getRoleById(id);
+    if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
+
+    const attachment = await attachmentRepo.getById(attachmentId);
+    if (!attachment) {
+      throw notFound(attachmentMessagesCodes.ATTACHMENT_NOT_FOUND);
+    }
+
+    return userRepo.setAvatar(id, attachmentId);
+  }
+
+  /** Clear a user's avatar (scoped). */
+  async removeAvatar(authUser, id) {
+    await this.assertCanSetAvatar(authUser, id);
+
+    const target = await userRepo.getRoleById(id);
+    if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
+
+    return userRepo.clearAvatar(id);
   }
 }
 

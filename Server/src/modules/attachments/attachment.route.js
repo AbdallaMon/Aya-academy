@@ -21,4 +21,8 @@ attachmentRoutes.post(
   asyncHandler(attachmentController.upload),
 );
 
+// Serve a stored file to any authenticated user (router-level requireAuth above).
+// Replaces public static serving so uploads aren't reachable without login.
+attachmentRoutes.get("/:id/raw", asyncHandler(attachmentController.raw));
+
 export default attachmentRoutes;

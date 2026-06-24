@@ -1,0 +1,83 @@
+"use client";
+
+import { useTranslation } from "../../../i18n/client.js";
+
+export const paymentTemplateText = {
+  ar: {
+    pageTitle: "إعدادات قالب الفاتورة",
+    pageDescription:
+      "القالب الأساسي لكل الفواتير. كل فاتورة ترث نسخة من هذه الإعدادات ويمكن تعديلها لاحقًا، واستخدم زر إعادة التوليد على الاشتراك لسحب آخر تعديلات هنا.",
+    save: "حفظ الإعدادات",
+    sectionCompany: "بيانات الجهة",
+    sectionTheme: "الألوان",
+    sectionFees: "الرسوم والاستحقاق",
+    sectionNotes: "ملاحظات للعميل",
+    sectionFooter: "تذييل الفاتورة",
+    sectionToggles: "الحقول الظاهرة",
+    companyNameAr: "اسم الجهة (عربي)",
+    companyNameEn: "اسم الجهة (إنجليزي)",
+    addressAr: "العنوان (عربي)",
+    addressEn: "العنوان (إنجليزي)",
+    phone: "الهاتف",
+    email: "البريد الإلكتروني",
+    logoUrl: "رابط الشعار",
+    headerColor: "لون الترويسة",
+    accentColor: "اللون المميّز",
+    textColor: "لون النص",
+    transferFeePercent: "رسوم التحويل (%)",
+    transferFeeFixed: "رسوم تحويل ثابتة",
+    dueDays: "مدة الاستحقاق (أيام)",
+    footerAr: "تذييل (عربي)",
+    footerEn: "تذييل (إنجليزي)",
+    notesArLabel: "ملاحظات (عربي) — كل سطر ملاحظة",
+    notesEnLabel: "ملاحظات (إنجليزي) — كل سطر ملاحظة",
+    showFreeHours: "إظهار الساعات المجانية",
+    showPreviousCredit: "إظهار الرصيد السابق",
+    showPreviousDebt: "إظهار المديونية السابقة",
+    previewTitle: "معاينة مباشرة",
+    sampleStudent: "طالب تجريبي",
+    sampleGuardian: "ولي أمر تجريبي",
+    samplePlan: "باقة شهرية",
+  },
+  en: {
+    pageTitle: "Invoice Template Settings",
+    pageDescription:
+      "The base template for every invoice. Each invoice inherits a copy of these settings and can be edited later — use the Regenerate button on a subscription to re-pull the latest changes here.",
+    save: "Save settings",
+    sectionCompany: "Company details",
+    sectionTheme: "Colors",
+    sectionFees: "Fees & due date",
+    sectionNotes: "Customer notes",
+    sectionFooter: "Invoice footer",
+    sectionToggles: "Visible fields",
+    companyNameAr: "Company name (Arabic)",
+    companyNameEn: "Company name (English)",
+    addressAr: "Address (Arabic)",
+    addressEn: "Address (English)",
+    phone: "Phone",
+    email: "Email",
+    logoUrl: "Logo URL",
+    headerColor: "Header color",
+    accentColor: "Accent color",
+    textColor: "Text color",
+    transferFeePercent: "Transfer fee (%)",
+    transferFeeFixed: "Fixed transfer fee",
+    dueDays: "Due in (days)",
+    footerAr: "Footer (Arabic)",
+    footerEn: "Footer (English)",
+    notesArLabel: "Notes (Arabic) — one per line",
+    notesEnLabel: "Notes (English) — one per line",
+    showFreeHours: "Show free hours",
+    showPreviousCredit: "Show previous credit",
+    showPreviousDebt: "Show previous debt",
+    previewTitle: "Live preview",
+    sampleStudent: "Sample student",
+    sampleGuardian: "Sample guardian",
+    samplePlan: "Monthly plan",
+  },
+};
+
+export function usePaymentTemplateText() {
+  const { lng } = useTranslation();
+  return paymentTemplateText[lng === "en" ? "en" : "ar"];
+}

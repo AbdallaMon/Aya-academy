@@ -1,0 +1,29 @@
+{
+  "name": "aya-academy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aya Academy — Quran learning platform for kids (monorepo)",
+  "workspaces": [
+    "packages/*",
+    "web",
+    "server"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w web",
+    "dev:server": "npm run dev -w server",
+    "build:web": "npm run build -w web",
+    "start:server": "npm run start -w server",
+    "db:generate": "npm run generate -w @aya/db",
+    "db:migrate": "npm run migrate:dev -w @aya/db",
+    "db:migrate:deploy": "npm run migrate:deploy -w @aya/db",
+    "db:migrate:reset": "npm run migrate:reset -w @aya/db",
+    "db:studio": "npm run studio -w @aya/db",
+    "db:seed": "npm run seed -w @aya/db"
+  },
+  "overrides": {
+    "stylis": "4.2.0"
+  },
+  "dependencies": {
+    "@mui/stylis-plugin-rtl": "^9.1.1"
+  }
+}

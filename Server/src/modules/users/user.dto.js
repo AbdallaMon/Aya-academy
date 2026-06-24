@@ -9,6 +9,7 @@ export const publicUserSelect = {
   phone: true,
   isActive: true,
   avatarId: true,
+  avatar: { select: { id: true, url: true } },
   points: true,
   level: true,
   nickname: true,
@@ -85,6 +86,7 @@ export const overviewUserSelect = {
   studentLevel: true,
   points: true,
   level: true,
+  avatar: { select: { id: true, url: true } },
   createdAt: true,
 };
 

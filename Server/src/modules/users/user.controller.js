@@ -1,4 +1,9 @@
-import { generalMessagesCodes, messagesNames, userMessagesCodes } from "@aya/shared";
+import {
+  attachmentMessagesCodes,
+  generalMessagesCodes,
+  messagesNames,
+  userMessagesCodes,
+} from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
 import { badRequest } from "../../shared/errors/AppError.js";
 import { userUsecase } from "./user.usecase.js";
@@ -134,6 +139,33 @@ class UserController {
       user,
       userMessagesCodes.USER_UNBANNED,
       messagesNames.userMessages,
+    );
+  };
+
+  setAvatar = async (req, res) => {
+    const user = await userUsecase.setAvatar(
+      authUser(req),
+      idParam(req.params.id),
+      req.body.attachmentId,
+    );
+    return ok(
+      res,
+      user,
+      attachmentMessagesCodes.AVATAR_UPDATED,
+      messagesNames.attachmentMessages,
+    );
+  };
+
+  removeAvatar = async (req, res) => {
+    const user = await userUsecase.removeAvatar(
+      authUser(req),
+      idParam(req.params.id),
+    );
+    return ok(
+      res,
+      user,
+      attachmentMessagesCodes.AVATAR_UPDATED,
+      messagesNames.attachmentMessages,
     );
   };
 }

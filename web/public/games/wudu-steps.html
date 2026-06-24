@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>بطل الوضوء ✦ Aya Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="kit.css" />
+  <style>
+    /* water themed backdrop inside the body */
+    .pool {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* progress line */
+    .nextbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(90deg, #d8ecff, #eaf6ff);
+      border: 2px solid #bfe0ff;
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-weight: 900;
+      color: #1b6fb8;
+      font-size: 15px;
+      box-shadow: inset 0 2px 8px rgba(59,130,246,0.08);
+    }
+    .nextbar .num {
+      display: inline-grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #4aa8ff, #2f7fe0);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(47,127,224,0.4);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    /* done list */
+    .done-wrap { margin-top: 12px; }
+    .done-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--green-d);
+      margin: 0 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .done-list { display: flex; flex-direction: column; gap: 8px; min-height: 4px; }
+    .done-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--good-bg);
+      border: 2px solid #b5f0db;
+      border-radius: 14px;
+      padding: 9px 12px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #0d7a5a;
+      animation: pop 0.4s;
+    }
+    .done-item .ord {
+      display: inline-grid;
+      place-items: center;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #20cf99, var(--green-d));
+      color: #fff; font-size: 13px; font-weight: 900;
+      flex: none;
+    }
+    .done-item .em { font-size: 20px; }
+    .done-item .ok { margin-inline-start: auto; font-size: 16px; }
+
+    /* shuffled cards */
+    .cards-title {
+      font-size: 12px; font-weight: 900; color: var(--primary-d);
+      margin: 14px 0 6px; display: flex; align-items: center; gap: 6px;
+    }
+    .cards { display: flex; flex-direction: column; gap: 10px; }
+    .wcard {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border: 2px solid #dbeafe;
+      border-radius: 16px;
+      padding: 13px 14px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--ink);
+      text-align: start;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      box-shadow: 0 6px 14px rgba(59,130,246,0.08);
+      animation: pop 0.4s backwards;
+    }
+    .wcard:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59,130,246,0.16); }
+    .wcard:active { transform: scale(0.98); }
+    .wcard .em {
+      font-size: 30px; flex: none;
+      width: 50px; height: 50px;
+      border-radius: 14px;
+      display: grid; place-items: center;
+      background: linear-gradient(160deg, #eaf6ff, #d8ecff);
+      animation: bob 3s ease-in-out infinite;
+    }
+    .wcard .lbl { flex: 1; line-height: 1.4; }
+    .wcard .lbl small { display: block; color: var(--muted); font-weight: 700; font-size: 11px; margin-top: 2px; }
+    .wcard.lit { border-color: var(--green); box-shadow: 0 0 0 4px #c8f6e6; }
+
+    .drop {
+      font-size: 64px; text-align: center; line-height: 1;
+      margin: 4px 0 2px; animation: floatY 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand">Aya Academy ✦</div>
+  <a class="home-link" href="index.html">كل الألعاب ←</a>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="hdr">
+        <div class="title">
+          <b>بطل الوضوء 💧</b>
+          <span>رتّب خطوات الوضوء بالترتيب الصحيح</span>
+        </div>
+        <div class="ava">🧒</div>
+      </div>
+
+      <div class="hbar">
+        <button class="sound" id="sound" aria-label="الصوت">🔊</button>
+        <div class="stars" id="stars">☆☆☆☆</div>
+        <div class="badge" id="score">0 / 7 ⭐</div>
+      </div>
+
+      <div class="guide" id="guide">
+        <div class="gava" id="gava">💦</div>
+        <div class="txt" id="guideTxt">مرحباً يا بطل! اضغط على الخطوة الأولى من الوضوء. 🤗</div>
+      </div>
+
+      <div class="body">
+        <div class="pool">
+          <div class="drop">💧</div>
+
+          <div class="nextbar">
+            الخطوة التالية رقم <span class="num" id="nextNum">1</span>
+          </div>
+
+          <div class="done-wrap">
+            <p class="done-title">✅ خطوات أتممتها</p>
+            <div class="done-list" id="doneList"></div>
+          </div>
+
+          <p class="cards-title">👉 اختر الخطوة التالية</p>
+          <div class="cards" id="cards"></div>
+        </div>
+      </div>
+
+      <div class="foot">تعلّم الوضوء باللعب 💙</div>
+    </div>
+  </div>
+
+  <script src="kit.js"></script>
+  <script>
+    (function () {
+      var STEPS = [
+        { id: 1, em: "🤲", lbl: "النِّيّة", sub: "في القلب" },
+        { id: 2, em: "🗣️", lbl: "التسمية", sub: "«بسم الله»" },
+        { id: 3, em: "👐", lbl: "غسل الكفّين", sub: "" },
+        { id: 4, em: "💦", lbl: "المضمضة", sub: "الماء في الفم" },
+        { id: 5, em: "🧒", lbl: "غسل الوجه", sub: "" },
+        { id: 6, em: "💪", lbl: "غسل اليدين إلى المرفقين", sub: "" },
+        { id: 7, em: "🦶", lbl: "مسح الرأس ثم غسل الرجلين", sub: "" }
+      ];
+      var TOTAL = STEPS.length;
+      var STAR_TOTAL = 4; // a star roughly every 2 steps
+
+      var els = {
+        sound: document.getElementById("sound"),
+        stars: document.getElementById("stars"),
+        score: document.getElementById("score"),
+        guide: document.getElementById("guide"),
+        gava: document.getElementById("gava"),
+        guideTxt: document.getElementById("guideTxt"),
+        nextNum: document.getElementById("nextNum"),
+        doneList: document.getElementById("doneList"),
+        cards: document.getElementById("cards")
+      };
+
+      AyaKit.wireMute(els.sound);
+
+      var current = 0;     // index of next expected step (0-based)
+      var starsGiven = 0;
+
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+
+      function setGuide(cls, txt, face) {
+        els.guide.className = "guide" + (cls ? " " + cls : "");
+        els.guideTxt.textContent = txt;
+        if (face) els.gava.textContent = face;
+      }
+
+      function updateScore() {
+        els.score.textContent = current + " / " + TOTAL + " ⭐";
+        els.nextNum.textContent = current < TOTAL ? (current + 1) : "✓";
+      }
+
+      var HAPPY = [
+        "أحسنت يا بطل! 🌟",
+        "رائع جداً! 💦",
+        "ممتاز! خطوة صحيحة ✨",
+        "بطل نظيف! 👏",
+        "ما شاء الله! 💙",
+        "خطوة موفقة! 🎉",
+        "أنت ماهر! ⭐"
+      ];
+
+      function renderCards() {
+        els.cards.innerHTML = "";
+        var remaining = STEPS.slice(current);
+        var order = shuffle(remaining);
+        order.forEach(function (step, i) {
+          var card = document.createElement("button");
+          card.className = "wcard";
+          card.style.animationDelay = (i * 0.05) + "s";
+          card.dataset.id = step.id;
+          card.innerHTML =
+            '<span class="em">' + step.em + '</span>' +
+            '<span class="lbl">' + step.lbl +
+            (step.sub ? '<small>' + step.sub + '</small>' : '') +
+            '</span>';
+          card.addEventListener("click", function (e) {
+            onPick(step, card, e);
+          });
+          els.cards.appendChild(card);
+        });
+      }
+
+      function addDone(step) {
+        var item = document.createElement("div");
+        item.className = "done-item";
+        item.innerHTML =
+          '<span class="ord">' + step.id + '</span>' +
+          '<span class="em">' + step.em + '</span>' +
+          '<span>' + step.lbl + '</span>' +
+          '<span class="ok">✅</span>';
+        els.doneList.appendChild(item);
+      }
+
+      function onPick(step, card, e) {
+        var expected = STEPS[current];
+        if (!expected) return;
+
+        if (step.id === expected.id) {
+          // correct
+          card.classList.add("lit");
+          AyaKit.pop(card);
+          var rect = card.getBoundingClientRect();
+          AyaKit.burst("💧", rect.left + rect.width / 2, rect.top + rect.height / 2);
+          AyaKit.burst("💦", rect.left + rect.width * 0.3, rect.top + rect.height / 2);
+
+          current++;
+          addDone(step);
+          updateScore();
+
+          // award a star roughly every 2 steps
+          var due = Math.min(STAR_TOTAL, Math.ceil(current / 2));
+          if (current === TOTAL) due = STAR_TOTAL;
+          if (due > starsGiven) {
+            starsGiven = due;
+            AyaKit.sound.star();
+            AyaKit.renderStars(els.stars, starsGiven, STAR_TOTAL);
+            AyaKit.confetti(14);
+          } else {
+            AyaKit.sound.correct();
+          }
+
+          setGuide("good", HAPPY[Math.floor(Math.random() * HAPPY.length)], "😄");
+
+          // brief delay so the splash is felt, then re-render
+          setTimeout(function () {
+            if (current >= TOTAL) {
+              finish();
+            } else {
+              renderCards();
+            }
+          }, 480);
+        } else {
+          // gentle wrong — try again, no penalty
+          AyaKit.sound.wrong();
+          AyaKit.shake(card);
+          setGuide("bad", "ليست هذه الخطوة التالية، فكّر في الترتيب! 💪", "😢");
+        }
+      }
+
+      function finish() {
+        AyaKit.sound.win();
+        AyaKit.confetti(34);
+        setGuide("good", "أتممت كل خطوات الوضوء! أنت بطل نظيف 🥳", "🤩");
+        showCert();
+      }
+
+      function showCert() {
+        var ov = document.createElement("div");
+        ov.className = "overlay";
+        ov.innerHTML =
+          '<div class="cert">' +
+            '<div class="crown">👑</div>' +
+            '<h3>بطل الوضوء النظيف</h3>' +
+            '<p>ما شاء الله! رتّبتَ خطوات الوضوء كلّها بالترتيب الصحيح.</p>' +
+            '<div class="who"><small>هذه الشهادة لـ</small>بطل / بطلة الوضوء 💧</div>' +
+            '<button class="btn green" id="certClose">شكراً! 🎉</button>' +
+            '<button class="btn ghost" id="certReplay">إعادة اللعب 🔄</button>' +
+          '</div>';
+        document.querySelector(".screen").appendChild(ov);
+        AyaKit.confetti(20);
+        ov.querySelector("#certClose").addEventListener("click", function () {
+          ov.remove();
+        });
+        ov.querySelector("#certReplay").addEventListener("click", function () {
+          ov.remove();
+          restart();
+        });
+      }
+
+      function restart() {
+        current = 0;
+        starsGiven = 0;
+        els.doneList.innerHTML = "";
+        AyaKit.renderStars(els.stars, 0, STAR_TOTAL);
+        updateScore();
+        setGuide("", "هيّا من جديد يا بطل! اضغط على الخطوة الأولى. 🤗", "💦");
+        renderCards();
+      }
+
+      // init
+      AyaKit.renderStars(els.stars, 0, STAR_TOTAL);
+      updateScore();
+      renderCards();
+    })();
+  </script>
+</body>
+</html>

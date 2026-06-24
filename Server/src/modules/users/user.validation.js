@@ -63,4 +63,8 @@ export class UserValidation {
   static banSchema = z.object({
     reason: z.string().trim().optional(),
   });
+
+  static setAvatarSchema = z.object({
+    attachmentId: z.number().int().positive(),
+  });
 }

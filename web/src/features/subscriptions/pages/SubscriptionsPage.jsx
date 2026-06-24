@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
-import { MdAdd, MdCheck, MdClose, MdCancel } from "react-icons/md";
+import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -25,6 +25,8 @@ import {
 } from "../config/constant.js";
 import { useSubscriptionsText } from "../config/subscriptionsText.js";
 import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
+import InvoiceDialog from "../../invoices/components/InvoiceDialog.jsx";
+import { useInvoicesText } from "../../invoices/config/invoicesText.js";
 
 export default function SubscriptionsPage() {
   const txt = useSubscriptionsText();
@@ -37,7 +39,11 @@ export default function SubscriptionsPage() {
   const canApprove = hasPermission(PERMISSIONS.SUBSCRIPTION.APPROVE) || isAdmin;
   const canCreate = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE) || isAdmin;
   const canCancel = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL) || isAdmin;
-  const hasRowActions = canApprove || canCancel;
+  const canViewInvoice = hasPermission(PERMISSIONS.INVOICE.VIEW) || isAdmin;
+  const canGenerateInvoice = hasPermission(PERMISSIONS.INVOICE.GENERATE) || isAdmin;
+  const canEditInvoice = hasPermission(PERMISSIONS.INVOICE.EDIT) || isAdmin;
+  const hasRowActions = canApprove || canCancel || canViewInvoice;
+  const invoiceTxt = useInvoicesText();
 
   const {
     data,
@@ -64,8 +70,15 @@ export default function SubscriptionsPage() {
 
   const createDialog = useOpen();
   const rejectDialog = useOpen();
+  const invoiceDialog = useOpen();
+  const [invoiceTarget, setInvoiceTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
+
+  function openInvoice(row) {
+    setInvoiceTarget(row);
+    invoiceDialog.open();
+  }
 
   async function approve(row) {
     const ok = await confirm({ title: txt.confirmApprove, intent: "info" });
@@ -235,9 +248,19 @@ export default function SubscriptionsPage() {
                 const showApprove = canApprove && row.status === "PENDING";
                 const showCancel =
                   canCancel && CANCELLABLE.includes(row.status);
-                if (!showApprove && !showCancel) return "—";
+                if (!showApprove && !showCancel && !canViewInvoice) return "—";
                 return (
                   <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                    {canViewInvoice && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<MdReceiptLong />}
+                        onClick={() => openInvoice(row)}
+                      >
+                        {invoiceTxt.invoice}
+                      </Button>
+                    )}
                     {showApprove && (
                       <Button
                         size="small"
@@ -278,7 +301,7 @@ export default function SubscriptionsPage() {
           ]
         : []),
     ],
-    [txt, lng, canApprove, canCancel, hasRowActions],
+    [txt, lng, canApprove, canCancel, hasRowActions, canViewInvoice, invoiceTxt],
   );
 
   const filterConfig = useMemo(
@@ -373,6 +396,17 @@ export default function SubscriptionsPage() {
           sx={{ mt: 1 }}
         />
       </FormDialog>
+
+      {canViewInvoice && (
+        <InvoiceDialog
+          open={invoiceDialog.isOpen}
+          onClose={invoiceDialog.close}
+          subscriptionId={invoiceTarget?.id}
+          canGenerate={canGenerateInvoice}
+          canEdit={canEditInvoice}
+          onChanged={triggerRefetch}
+        />
+      )}
     </Box>
   );
 }
