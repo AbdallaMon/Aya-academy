@@ -23,3 +23,12 @@ export const juzWithSegmentsSelect = {
   nameEn: true,
   segments: { select: segmentSelect, orderBy: { order: "asc" } },
 };
+
+export const progressSelect = {
+  id: true,
+  segmentId: true,
+  status: true,
+  currentAyah: true,
+  completedAt: true,
+  updatedAt: true,
+};
