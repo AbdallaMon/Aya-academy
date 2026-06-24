@@ -20,13 +20,21 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { localePath } from "../../../i18n/routing.js";
 import { PhotoUpload } from "../../../shared/components/index.js";
 import { USERS_URL, LEVELS, levelLabel } from "../config/constant.js";
+import { usePermission } from "../../../hooks/usePermission.js";
+import { QURAN_PERMISSIONS } from "@aya/shared";
+import QuranProgressView from "../../quran/components/QuranProgressView.jsx";
 
 /**
- * Student overview: level selector (gated USER.SET_LEVEL), points total and the
- * linked parents list.
+ * Student overview: level selector (gated USER.SET_LEVEL), points total,
+ * linked parents list, and a read-only Quran progress summary.
+ *
+ * Props:
+ *   studentId  — the userId being viewed (passed from UserDetailPage)
  */
-export default function StudentOverviewTab({ overview, txt, canSetLevel, onRefetch }) {
+export default function StudentOverviewTab({ overview, txt, canSetLevel, onRefetch, studentId }) {
   const { lng } = useTranslation();
+  const { hasPermission } = usePermission();
+  const canViewProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_VIEW);
   const user = overview?.user || {};
   const parents = overview?.parents || [];
 
@@ -192,6 +200,19 @@ export default function StudentOverviewTab({ overview, txt, canSetLevel, onRefet
           </CardContent>
         </Card>
       </Grid>
+
+      {canViewProgress && studentId && (
+        <Grid size={{ xs: 12 }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 2 }}>
+                {txt.tabQuranProgress}
+              </Typography>
+              <QuranProgressView studentId={studentId} />
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
     </Grid>
   );
 }

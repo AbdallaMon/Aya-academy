@@ -154,6 +154,7 @@ export default function UserDetailPage({ userId }) {
               txt={txt}
               canSetLevel={canSetLevel}
               onRefetch={triggerRefetch}
+              studentId={userId}
             />
           );
         }

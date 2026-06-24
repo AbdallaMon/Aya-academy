@@ -23,12 +23,19 @@ import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { useDashboardText } from "../config/dashboardText.js";
 import { localizedField } from "../../notifications/config/notificationsText.js";
+import { useAuth } from "../../../hooks/useAuth.js";
+import { usePermission } from "../../../hooks/usePermission.js";
+import { QURAN_PERMISSIONS } from "@aya/shared";
 import SectionCard from "./SectionCard.jsx";
 import LeaderboardWidget from "./LeaderboardWidget.jsx";
+import QuranProgressView from "../../quran/components/QuranProgressView.jsx";
 
 export default function StudentOverview() {
   const txt = useDashboardText();
   const { lng } = useTranslation();
+  const { user } = useAuth();
+  const { hasPermission } = usePermission();
+  const canViewProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_VIEW);
 
   const { data } = useRequest({
     url: "dashboard/student",
@@ -228,6 +235,14 @@ export default function StudentOverview() {
             </List>
           </SectionCard>
         </Grid>
+
+        {canViewProgress && user?.id && (
+          <Grid size={{ xs: 12 }}>
+            <SectionCard title={txt.quranProgress} emptyLabel={txt.noData}>
+              <QuranProgressView studentId={user.id} />
+            </SectionCard>
+          </Grid>
+        )}
 
         <Grid size={{ xs: 12, md: 6 }}>
           <LeaderboardWidget />

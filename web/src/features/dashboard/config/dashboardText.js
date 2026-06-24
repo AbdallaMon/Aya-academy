@@ -64,6 +64,7 @@ export const dashboardText = {
     joinLesson: "انضمام",
     noData: "لا توجد بيانات بعد",
     points2: "النقاط",
+    quranProgress: "تقدم القرآن",
   },
   en: {
     appName: "Aya Academy",
@@ -119,6 +120,7 @@ export const dashboardText = {
     joinLesson: "Join",
     noData: "No data yet",
     points2: "Points",
+    quranProgress: "Quran Progress",
   },
 };
 

@@ -18,12 +18,17 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { useDashboardText } from "../config/dashboardText.js";
 import { localizedField } from "../../notifications/config/notificationsText.js";
+import { usePermission } from "../../../hooks/usePermission.js";
+import { QURAN_PERMISSIONS } from "@aya/shared";
 import SectionCard from "./SectionCard.jsx";
 import LeaderboardWidget from "./LeaderboardWidget.jsx";
+import QuranProgressView from "../../quran/components/QuranProgressView.jsx";
 
 export default function ParentOverview() {
   const txt = useDashboardText();
   const { lng } = useTranslation();
+  const { hasPermission } = usePermission();
+  const canViewProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_VIEW);
 
   const { data } = useRequest({
     url: "dashboard/parent",
@@ -99,6 +104,11 @@ export default function ParentOverview() {
                     </Box>
                   )}
                 </Stack>
+                {canViewProgress && (
+                  <Box sx={{ mt: 2 }}>
+                    <QuranProgressView studentId={child.id} compact />
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Grid>
