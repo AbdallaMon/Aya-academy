@@ -130,6 +130,15 @@ function AssignmentRow({ control, watch, setValue, prefix, index, onRemove, sura
               required: txt.ayahRequired,
               min: { value: 1, message: txt.ayahMin },
               max: ayahCount ? { value: ayahCount, message: `${txt.ayahMax} ${ayahCount}` } : undefined,
+              validate: (value) => {
+                // Cross-field guard: toAyah must be >= fromAyah for this same row.
+                // Only meaningful while the range is active (not whole-surah) and
+                // both values are present.
+                const from = watch(`${prefix}.${index}.fromAyah`);
+                if (value === "" || value == null) return true;
+                if (from === "" || from == null) return true;
+                return Number(value) >= Number(from) || txt.fromExceedsTo;
+              },
             }}
             render={({ field, fieldState }) => (
               <TextField
