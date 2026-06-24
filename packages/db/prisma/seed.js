@@ -1,6 +1,7 @@
 // @ts-check
 import { prisma } from "../prisma.client.js";
 import bcrypt from "bcrypt";
+import { SURAHS, JUZ, SEGMENTS } from "./data/quran.data.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // helpers
@@ -3188,6 +3189,59 @@ async function ensureFreeGame() {
   console.log(`[seed] auto-selected free game: ${pick.slug}`);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// QURAN REFERENCE (surahs, juz, segments) — idempotent
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedQuran() {
+  for (const s of SURAHS) {
+    await prisma.quranSurah.upsert({
+      where: { number: s.number },
+      update: {
+        nameAr: s.nameAr,
+        nameEn: s.nameEn,
+        ayahCount: s.ayahCount,
+        revelationPlace: s.revelationPlace,
+      },
+      create: s,
+    });
+  }
+  for (const j of JUZ) {
+    await prisma.quranJuz.upsert({
+      where: { number: j.number },
+      update: { nameAr: j.nameAr, nameEn: j.nameEn },
+      create: j,
+    });
+  }
+
+  const surahByNumber = new Map(
+    (await prisma.quranSurah.findMany({ select: { id: true, number: true } })).map(
+      (s) => [s.number, s.id],
+    ),
+  );
+  const juzByNumber = new Map(
+    (await prisma.quranJuz.findMany({ select: { id: true, number: true } })).map(
+      (j) => [j.number, j.id],
+    ),
+  );
+
+  // order = appearance index within each juz'
+  const orderByJuz = new Map();
+  for (const seg of SEGMENTS) {
+    const juzId = juzByNumber.get(seg.juz);
+    const surahId = surahByNumber.get(seg.surah);
+    const order = orderByJuz.get(seg.juz) ?? 0;
+    orderByJuz.set(seg.juz, order + 1);
+    await prisma.quranJuzSegment.upsert({
+      where: { juzId_surahId: { juzId, surahId } },
+      update: { fromAyah: seg.fromAyah, toAyah: seg.toAyah, order },
+      create: { juzId, surahId, fromAyah: seg.fromAyah, toAyah: seg.toAyah, order },
+    });
+  }
+  console.log(
+    `[seed] quran — ${SURAHS.length} surahs, ${JUZ.length} juz, ${SEGMENTS.length} segments`,
+  );
+}
+
 async function main() {
   console.log("[seed] starting...");
 
@@ -3217,6 +3271,8 @@ async function main() {
   // nothing is flagged isFree (older DB, or the chosen game was deactivated),
   // promote one automatically.
   await ensureFreeGame();
+
+  await seedQuran();
 
   console.log(`\n[seed] done.`);
   console.log(`  admin      : ${admin.email}`);
