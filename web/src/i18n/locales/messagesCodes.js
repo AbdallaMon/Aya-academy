@@ -16,6 +16,7 @@ import {
   couponMessagesCodes,
   subscriptionMessagesCodes,
   sessionMessagesCodes,
+  quranMessagesCodes,
   gameMessagesCodes,
   reportMessagesCodes,
   quizMessagesCodes,
@@ -26,6 +27,8 @@ import {
   badgeMessagesCodes,
   pointMessagesCodes,
   attachmentMessagesCodes,
+  invoiceMessagesCodes,
+  paymentTemplateMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 
@@ -138,6 +141,17 @@ const ar = {
     [sessionMessagesCodes.STUDENT_REQUIRED]: "الطالب مطلوب",
     [sessionMessagesCodes.INVALID_TIME_RANGE]: "نطاق الوقت غير صالح",
     [sessionMessagesCodes.CANNOT_ACCESS_SESSION]: "لا يمكنك الوصول لهذه الجلسة",
+    [sessionMessagesCodes.PLAN_REQUIRED]: "يجب تحديد واجب أو تكليف واحد على الأقل",
+    [sessionMessagesCodes.SURAH_NOT_FOUND]: "السورة غير موجودة",
+    [sessionMessagesCodes.INVALID_AYAH_RANGE]: "نطاق الآيات غير صالح",
+  },
+  // ── quran-messages ────────────────────────────────────────────────────────
+  [messagesNames.quranMessages]: {
+    [quranMessagesCodes.STUDENT_NOT_FOUND]: "الطالب غير موجود",
+    [quranMessagesCodes.JUZ_NOT_FOUND]: "الجزء غير موجود",
+    [quranMessagesCodes.SEGMENT_NOT_IN_JUZ]: "السورة لا تنتمي لهذا الجزء",
+    [quranMessagesCodes.INVALID_AYAH_RANGE]: "نطاق الآيات غير صالح",
+    [quranMessagesCodes.CANNOT_ACCESS_PROGRESS]: "لا يمكنك الوصول لهذا التقدم",
   },
   // ── game-messages ─────────────────────────────────────────────────────────
   [messagesNames.gameMessages]: {
@@ -253,6 +267,18 @@ const ar = {
     [attachmentMessagesCodes.CANNOT_SET_AVATAR]: "لا يمكنك تعيين هذه الصورة",
     [attachmentMessagesCodes.AVATAR_UPDATED]: "تم تحديث الصورة",
   },
+  [messagesNames.invoiceMessages]: {
+    [invoiceMessagesCodes.INVOICE_NOT_FOUND]: "الفاتورة غير موجودة",
+    [invoiceMessagesCodes.CANNOT_ACCESS_INVOICE]: "لا يمكنك الوصول لهذه الفاتورة",
+    [invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND]: "الاشتراك غير موجود",
+    [invoiceMessagesCodes.SUBSCRIPTION_NOT_PRICED]: "الاشتراك لا يحتوي على مبلغ محدد",
+    [invoiceMessagesCodes.INVOICE_GENERATED]: "تم إنشاء الفاتورة",
+    [invoiceMessagesCodes.INVOICE_REGENERATED]: "تم إعادة توليد الفاتورة",
+    [invoiceMessagesCodes.INVOICE_UPDATED]: "تم تحديث الفاتورة",
+  },
+  [messagesNames.paymentTemplateMessages]: {
+    [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "تم حفظ إعدادات قالب الفاتورة",
+  },
 };
 
 const en = {
@@ -357,6 +383,16 @@ const en = {
     [sessionMessagesCodes.STUDENT_REQUIRED]: "Student is required",
     [sessionMessagesCodes.INVALID_TIME_RANGE]: "Invalid time range",
     [sessionMessagesCodes.CANNOT_ACCESS_SESSION]: "You cannot access this session",
+    [sessionMessagesCodes.PLAN_REQUIRED]: "At least one assignment or homework note is required",
+    [sessionMessagesCodes.SURAH_NOT_FOUND]: "Surah not found",
+    [sessionMessagesCodes.INVALID_AYAH_RANGE]: "Invalid ayah range",
+  },
+  [messagesNames.quranMessages]: {
+    [quranMessagesCodes.STUDENT_NOT_FOUND]: "Student not found",
+    [quranMessagesCodes.JUZ_NOT_FOUND]: "Juz not found",
+    [quranMessagesCodes.SEGMENT_NOT_IN_JUZ]: "This surah is not part of this juz",
+    [quranMessagesCodes.INVALID_AYAH_RANGE]: "Invalid ayah range",
+    [quranMessagesCodes.CANNOT_ACCESS_PROGRESS]: "You cannot access this progress",
   },
   [messagesNames.gameMessages]: {
     [gameMessagesCodes.GAME_NOT_FOUND]: "Game not found",
@@ -451,6 +487,18 @@ const en = {
     [pointMessagesCodes.INVALID_AMOUNT]: "Invalid points amount",
     [pointMessagesCodes.CANNOT_ACCESS_POINTS]: "You cannot access this student's points",
     [pointMessagesCodes.POINTS_GRANTED]: "Points granted",
+  },
+  [messagesNames.invoiceMessages]: {
+    [invoiceMessagesCodes.INVOICE_NOT_FOUND]: "Invoice not found",
+    [invoiceMessagesCodes.CANNOT_ACCESS_INVOICE]: "You cannot access this invoice",
+    [invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND]: "Subscription not found",
+    [invoiceMessagesCodes.SUBSCRIPTION_NOT_PRICED]: "The subscription has no price set",
+    [invoiceMessagesCodes.INVOICE_GENERATED]: "Invoice generated",
+    [invoiceMessagesCodes.INVOICE_REGENERATED]: "Invoice regenerated",
+    [invoiceMessagesCodes.INVOICE_UPDATED]: "Invoice updated",
+  },
+  [messagesNames.paymentTemplateMessages]: {
+    [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "Invoice template settings saved",
   },
 };
 
