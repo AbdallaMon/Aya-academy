@@ -1,5 +1,9 @@
 export const QUIZZES_URL = "quizzes";
 
+// Parent's own children — used for the "أطفالي" per-child list filter (same
+// endpoint QuizBuildPage uses). Returns [{ id, name, nickname }].
+export const MY_STUDENTS_URL = "users/my-students";
+
 /** Render a date for display. */
 export function formatDate(value, lng) {
   if (!value) return "—";

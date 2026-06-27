@@ -39,8 +39,8 @@ class DashboardUsecase {
         id: c.id,
         type: c.type,
         studentName: c.studentName,
-        titleAr: c.titleAr,
-        titleEn: c.titleEn,
+        titleAr: c.titleAr ?? c.reasonAr,
+        titleEn: c.titleEn ?? c.reasonEn,
         issuedAt: c.issuedAt,
       })),
     };
@@ -79,29 +79,33 @@ class DashboardUsecase {
     if (studentIds.length === 0) {
       return {
         children: [],
-        upcomingLessons: [],
         recentCertificates: [],
         recentReports: [],
       };
     }
 
-    const [children, upcomingLessons, recentCertificates, recentReports] =
-      await Promise.all([
-        dashboardRepo.parentChildren(studentIds),
-        dashboardRepo.upcomingLessons(studentIds, RECENT_LIMIT),
-        dashboardRepo.recentCertificatesForStudents(studentIds, RECENT_LIMIT),
-        dashboardRepo.recentReports(studentIds, RECENT_LIMIT),
-      ]);
+    const [children, recentCertificates, recentReports] = await Promise.all([
+      dashboardRepo.parentChildren(studentIds),
+      dashboardRepo.recentCertificatesForStudents(studentIds, RECENT_LIMIT),
+      dashboardRepo.recentReports(studentIds, RECENT_LIMIT),
+    ]);
 
     const childrenWithSubscription = await Promise.all(
       children.map(async (child) => {
-        const sub = await dashboardRepo.activeSubscriptionForStudent(child.id);
+        // Per-child subscription + leaderboard rank so the parent sees the full
+        // picture for each of their kids at a glance.
+        const [sub, rank] = await Promise.all([
+          dashboardRepo.activeSubscriptionForStudent(child.id),
+          dashboardRepo.studentRank(child.points ?? 0),
+        ]);
         return {
           id: child.id,
           name: child.name,
           nickname: child.nickname,
           points: child.points,
           level: child.level,
+          rank,
+          badgeCount: child._count?.studentBadges ?? 0,
           activeSubscription: sub
             ? {
                 id: sub.id,
@@ -116,19 +120,12 @@ class DashboardUsecase {
 
     return {
       children: childrenWithSubscription,
-      upcomingLessons: upcomingLessons.map((l) => ({
-        id: l.id,
-        studentId: l.studentId,
-        title: l.title,
-        startsAt: l.startsAt,
-        meetingLink: l.meetingLink,
-      })),
       recentCertificates: recentCertificates.map((c) => ({
         id: c.id,
         type: c.type,
         studentName: c.studentName,
-        titleAr: c.titleAr,
-        titleEn: c.titleEn,
+        titleAr: c.titleAr ?? c.reasonAr,
+        titleEn: c.titleEn ?? c.reasonEn,
         issuedAt: c.issuedAt,
       })),
       recentReports: recentReports.map((r) => ({
@@ -148,11 +145,10 @@ class DashboardUsecase {
     const studentId = authUser.id;
     const profile = await dashboardRepo.studentProfile(studentId);
 
-    const [rank, activeSubscription, upcomingLessons, badges, certificates, assignedGames] =
+    const [rank, activeSubscription, badges, certificates, assignedGames] =
       await Promise.all([
         dashboardRepo.studentRank(profile?.points ?? 0),
         dashboardRepo.activeSubscriptionForStudent(studentId),
-        dashboardRepo.upcomingLessons([studentId], RECENT_LIMIT),
         dashboardRepo.studentBadges(studentId),
         dashboardRepo.studentCertificates(studentId, RECENT_LIMIT),
         dashboardRepo.studentAssignedGames(studentId),
@@ -177,13 +173,6 @@ class DashboardUsecase {
             remainingHours: activeSubscription.remainingHours,
           }
         : null,
-      upcomingLessons: upcomingLessons.map((l) => ({
-        id: l.id,
-        studentId: l.studentId,
-        title: l.title,
-        startsAt: l.startsAt,
-        meetingLink: l.meetingLink,
-      })),
       badges: badges.map((b) => ({
         id: b.badge.id,
         code: b.badge.code,
@@ -196,8 +185,8 @@ class DashboardUsecase {
         id: c.id,
         type: c.type,
         studentName: c.studentName,
-        titleAr: c.titleAr,
-        titleEn: c.titleEn,
+        titleAr: c.titleAr ?? c.reasonAr,
+        titleEn: c.titleEn ?? c.reasonEn,
         issuedAt: c.issuedAt,
       })),
       assignedGames: assignedGames.map((a) => ({

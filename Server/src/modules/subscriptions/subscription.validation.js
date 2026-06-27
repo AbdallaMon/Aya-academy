@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SUBSCRIPTION_STATUSES } from "@aya/shared";
+import { BILLING_PERIODS, SUBSCRIPTION_STATUSES } from "@aya/shared";
 import { subscriptionMessagesCodes } from "./subscription.messages.js";
 
 const statuses = [
@@ -10,6 +10,8 @@ const statuses = [
   SUBSCRIPTION_STATUSES.CANCELLED,
 ];
 
+const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];
+
 export class SubscriptionValidation {
   static createSubscriptionSchema = z.object({
     studentId: z
@@ -17,6 +19,7 @@ export class SubscriptionValidation {
       .int()
       .positive(subscriptionMessagesCodes.STUDENT_REQUIRED),
     planId: z.number().int().positive().optional(),
+    billingPeriod: z.enum(billingPeriods).optional(),
     status: z.enum(statuses).optional(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
@@ -24,12 +27,14 @@ export class SubscriptionValidation {
     remainingHours: z.number().int().optional(),
     priceCharged: z.number().optional(),
     couponId: z.number().int().positive().optional(),
+    couponCode: z.string().trim().min(1).optional(),
     notes: z.string().optional(),
   });
 
   static updateSubscriptionSchema = z.object({
     studentId: z.number().int().positive().optional(),
     planId: z.number().int().positive().optional(),
+    billingPeriod: z.enum(billingPeriods).optional(),
     status: z.enum(statuses).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
@@ -48,6 +53,7 @@ export class SubscriptionValidation {
       .int()
       .positive(subscriptionMessagesCodes.STUDENT_REQUIRED),
     planId: z.number().int().positive(subscriptionMessagesCodes.PLAN_REQUIRED),
+    billingPeriod: z.enum(billingPeriods).optional(),
     startDate: z.coerce.date().optional(),
     couponCode: z.string().trim().min(1).optional(),
     notes: z.string().optional(),

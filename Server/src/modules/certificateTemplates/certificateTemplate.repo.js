@@ -1,3 +1,4 @@
+import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { certificateTemplateSelect } from "./certificateTemplate.dto.js";
 
@@ -19,6 +20,15 @@ class CertificateTemplateRepo {
   getById(id) {
     return prisma.certificateTemplate.findUnique({
       where: { id },
+      select: certificateTemplateSelect,
+    });
+  }
+
+  /** The single active GAME template auto-applied to game certificates (if any). */
+  getActiveGameTemplate(tx) {
+    return (tx ?? prisma).certificateTemplate.findFirst({
+      where: { type: CERTIFICATE_TEMPLATE_TYPES.GAME, isActive: true },
+      orderBy: { updatedAt: "desc" },
       select: certificateTemplateSelect,
     });
   }
@@ -52,6 +62,19 @@ class CertificateTemplateRepo {
     return (tx ?? prisma).certificateTemplate.updateMany({
       where,
       data: { isDefault: false },
+    });
+  }
+
+  /**
+   * Demote every other GAME template back to GENERAL — only one GAME template
+   * may exist at a time (used when promoting a new game template).
+   */
+  demoteOtherGameTemplates(exceptId, tx) {
+    const where = { type: CERTIFICATE_TEMPLATE_TYPES.GAME };
+    if (exceptId) where.id = { not: exceptId };
+    return (tx ?? prisma).certificateTemplate.updateMany({
+      where,
+      data: { type: CERTIFICATE_TEMPLATE_TYPES.GENERAL },
     });
   }
 }

@@ -289,18 +289,44 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // QUIZ READ
   // ════════════════════════════════════════════════════════
-  async listQuizzes(where, skip, take) {
+  async listQuizzes(where, skip, take, { select, orderBy } = {}) {
     const [items, total] = await Promise.all([
       prisma.quiz.findMany({
         where,
         skip,
         take,
-        orderBy: { createdAt: "desc" },
-        select: quizListSelect,
+        orderBy: orderBy ?? { createdAt: "desc" },
+        select: select ?? quizListSelect(),
       }),
       prisma.quiz.count({ where }),
     ]);
     return { items, total };
+  }
+
+  /**
+   * Quiz ids (optionally scoped to one parent) where EVERY assigned participant
+   * has at least one attempt — i.e. the quiz is fully completed. Used for the
+   * admin/parent "done" filter, which a plain Prisma `where` can't express
+   * (it needs a per-row participants-vs-attempts count comparison).
+   */
+  async getFullyCompletedQuizIds(parentId) {
+    const rows = parentId
+      ? await prisma.$queryRaw`
+          SELECT q.id AS id
+          FROM \`Quiz\` q
+          JOIN \`QuizParticipant\` p ON p.quizId = q.id
+          LEFT JOIN \`QuizAttempt\` a ON a.quizId = q.id AND a.studentId = p.studentId
+          WHERE q.createdByParentId = ${parentId}
+          GROUP BY q.id
+          HAVING COUNT(DISTINCT p.studentId) = COUNT(DISTINCT a.studentId)`
+      : await prisma.$queryRaw`
+          SELECT q.id AS id
+          FROM \`Quiz\` q
+          JOIN \`QuizParticipant\` p ON p.quizId = q.id
+          LEFT JOIN \`QuizAttempt\` a ON a.quizId = q.id AND a.studentId = p.studentId
+          GROUP BY q.id
+          HAVING COUNT(DISTINCT p.studentId) = COUNT(DISTINCT a.studentId)`;
+    return rows.map((r) => Number(r.id));
   }
 
   getQuizById(id) {

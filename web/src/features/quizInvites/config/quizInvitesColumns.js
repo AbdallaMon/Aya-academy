@@ -1,5 +1,6 @@
-import { Button, Chip, Stack, Typography } from "@mui/material";
+import { Chip, Stack, Typography } from "@mui/material";
 import { MdContentCopy, MdBuild } from "react-icons/md";
+import { RowActionsMenu } from "../../../shared/components/index.js";
 import { INVITE_STATUS_COLOR, formatDate } from "./constant.js";
 
 /**
@@ -62,29 +63,25 @@ export function buildInvitesColumns({ txt, lng, onCopyLink, onBuild }) {
       field: "actions",
       type: "actions",
       headerName: txt.actions,
-      width: 220,
+      width: 80,
       renderCell: ({ row }) => {
         const canBuild = onBuild && row.status !== "BUILT" && row.status !== "EXPIRED";
         return (
-          <Stack direction="row" spacing={0.5}>
-            <Button
-              size="small"
-              startIcon={<MdContentCopy />}
-              onClick={() => onCopyLink(row)}
-            >
-              {txt.copyLink}
-            </Button>
-            {canBuild && (
-              <Button
-                size="small"
-                variant="contained"
-                startIcon={<MdBuild />}
-                onClick={() => onBuild(row)}
-              >
-                {txt.buildQuiz}
-              </Button>
-            )}
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.copyLink,
+                icon: <MdContentCopy />,
+                onClick: () => onCopyLink(row),
+              },
+              {
+                label: txt.buildQuiz,
+                icon: <MdBuild />,
+                onClick: () => onBuild(row),
+                hidden: !canBuild,
+              },
+            ]}
+          />
         );
       },
     },

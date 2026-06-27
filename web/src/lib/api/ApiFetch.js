@@ -116,6 +116,10 @@ class ApiFetch {
       // must NOT raise the global error toast (e.g. the bogus "session expired"
       // toast that used to appear on /free-game when its public endpoint 401s).
       _public = false,
+      // The caller already shows its own error toast (e.g. an auto-toasting
+      // mutation whose loading toast transforms in place). Skip the global
+      // onError so we don't get a second, duplicate error toast.
+      suppressGlobalError = false,
     } = opts;
 
     const windowExists = typeof window !== "undefined";
@@ -167,7 +171,7 @@ class ApiFetch {
       error.status = status;
       error.data = result;
       error.translationKey = result.translationKey;
-      if (this.onError && !_public) this.onError(error);
+      if (this.onError && !_public && !suppressGlobalError) this.onError(error);
       throw error;
     }
 
@@ -230,7 +234,7 @@ class ApiFetch {
     return this._request(this._buildPaginatedPath(url, params), { method: "GET" });
   }
 
-  async submit(method, path, body, isFileUpload = false, customHeader, isMultipart = false) {
+  async submit(method, path, body, isFileUpload = false, customHeader, isMultipart = false, opts = {}) {
     const upper = method.toUpperCase();
     const options = {
       method: upper,
@@ -240,24 +244,25 @@ class ApiFetch {
       isFileUpload,
       customHeader,
       isMultipart,
+      suppressGlobalError: opts.suppressGlobalError,
     };
     return this._request(path, options);
   }
 
-  async post(path, body, isFileUpload = false, customHeader, isMultipart = false) {
-    return this.submit("POST", path, body, isFileUpload, customHeader, isMultipart);
+  async post(path, body, isFileUpload = false, customHeader, isMultipart = false, opts = {}) {
+    return this.submit("POST", path, body, isFileUpload, customHeader, isMultipart, opts);
   }
 
-  async put(path, body, isFileUpload = false, customHeader) {
-    return this.submit("PUT", path, body, isFileUpload, customHeader);
+  async put(path, body, isFileUpload = false, customHeader, opts = {}) {
+    return this.submit("PUT", path, body, isFileUpload, customHeader, false, opts);
   }
 
-  async patch(path, body, isFileUpload = false, customHeader) {
-    return this.submit("PATCH", path, body, isFileUpload, customHeader);
+  async patch(path, body, isFileUpload = false, customHeader, opts = {}) {
+    return this.submit("PATCH", path, body, isFileUpload, customHeader, false, opts);
   }
 
-  async delete(path) {
-    return this._request(path, { method: "DELETE" });
+  async delete(path, opts = {}) {
+    return this._request(path, { method: "DELETE", suppressGlobalError: opts.suppressGlobalError });
   }
 
   async blob(path) {

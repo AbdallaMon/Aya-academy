@@ -1,26 +1,8 @@
 import { generalMessagesCodes } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
+import { idParam, optionalIntQuery, authUser } from "../../shared/http/params.js";
 import { badRequest } from "../../shared/errors/AppError.js";
 import { quizUsecase } from "./quiz.usecase.js";
-
-function authUser(req) {
-  return req.auth;
-}
-
-function idParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
-
-function optionalIntQuery(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === undefined || raw === null || raw === "") return undefined;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
 
 function tokenParam(value) {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -124,6 +106,9 @@ class QuizController {
     const result = await quizUsecase.listQuizzes(authUser(req), {
       page: req.query.page,
       limit: req.query.limit,
+      search: req.query.search,
+      status: req.query.status,
+      studentId: optionalIntQuery(req.query.studentId),
     });
     return ok(res, result);
   };

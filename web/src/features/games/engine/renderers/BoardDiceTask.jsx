@@ -6,6 +6,16 @@
 // squares are a tiny SLIDE back (never harsh, always with a kind nudge). Reach
 // the final square = win → the task passes (onCorrect → one star). No game-over.
 //
+// Interactive & forgiving (per the owner's golden rule — NO failure ever):
+//   • Rolling the die plays a soft tumble ("roll") while the faces shuffle, then
+//     a "pop" when it settles — every step has its own distinct sound.
+//   • Landing on a LADDER: a bright climb sound + the token HOPS upward (a happy
+//     up-animation) + a green "yay, a kind deed lifted you" toast.
+//   • Landing on a SLIDE: a gentle "slip" sound (never the harsh wrong chime) +
+//     the token slides DOWN softly + a warm "no worries, next time's better"
+//     toast — a nudge, never a punishment.
+//   • Reaching the end: a full "win" fanfare + a confetti burst.
+//
 // mediaJson: {
 //   size: number of squares (default 16),
 //   squares: { "<index>": { type: "ladder"|"slide", to: <index>,
@@ -20,9 +30,31 @@ import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "../../../../i18n/client.js";
 import { pickText } from "../helpers.js";
-import { jelly, SparkleTrail } from "../../animations/index.js";
+import { jelly, SparkleTrail, Confetti } from "../../animations/index.js";
 
 const DIE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+
+// Per-move token animation: a happy upward hop for a ladder, a soft droop for a
+// slide, and a gentle bob otherwise. Distinct so the child *sees* the outcome.
+function tokenMotion(move) {
+  if (move === "ladder") {
+    return {
+      y: [0, -16, -6, -14, 0],
+      scale: [1, 1.18, 1.04, 1.12, 1],
+      rotate: [0, -6, 6, -3, 0],
+      transition: { duration: 0.7, ease: "easeOut" },
+    };
+  }
+  if (move === "slide") {
+    return {
+      y: [0, 4, 10, 5, 0],
+      scale: [1, 0.92, 0.96, 0.94, 1],
+      rotate: [0, 4, -3, 2, 0],
+      transition: { duration: 0.7, ease: "easeInOut" },
+    };
+  }
+  return jelly(true);
+}
 
 export default function BoardDiceTask({ question, onCorrect, sounds }) {
   const { t, lng } = useTranslation();
@@ -37,6 +69,7 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
   const [rolling, setRolling] = useState(false);
   const [won, setWon] = useState(false);
   const [toast, setToast] = useState(null); // landed-square message
+  const [move, setMove] = useState(null); // "ladder" | "slide" | null → token anim
   const doneRef = useRef(false);
   const busyRef = useRef(false);
 
@@ -69,19 +102,23 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
       busyRef.current = false;
       return;
     }
-    const msg = pickText(rule, "msg", lng);
-    if (rule.type === "ladder") {
-      sounds?.play("star");
+    const isLadder = rule.type === "ladder";
+    // Fall back to a kind default message so the toast is never empty.
+    const msg = pickText(rule, "msg", lng) || (isLadder ? gd.boardLadder : gd.boardSlide);
+    if (isLadder) {
+      sounds?.play("climb"); // bright rising glissando — a happy lift up
     } else {
-      sounds?.play("wrong"); // gentle, friendly chime — never harsh
+      sounds?.play("slip"); // soft downward glide — gentle, never harsh
     }
     setTimeout(() => {
       const dest = Math.max(0, Math.min(last, rule.to ?? landed));
+      setMove(isLadder ? "ladder" : "slide"); // drive the token hop/slide anim
       setPos(dest);
       // surface the square's kind message as a local toast under the board.
       setToast({ msg, type: rule.type, emoji: rule.emoji });
       setTimeout(() => {
         setToast(null);
+        setMove(null);
         finishAt(dest);
         busyRef.current = false;
       }, 1100);
@@ -92,7 +129,8 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
     if (rolling || won || doneRef.current || busyRef.current) return;
     busyRef.current = true;
     setRolling(true);
-    sounds?.play("tap");
+    setMove(null);
+    sounds?.play("roll"); // a little tumble of soft clicks while it spins
     // quick face shuffle for feel
     let ticks = 0;
     const spin = setInterval(() => {
@@ -102,7 +140,7 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
         const value = 1 + ((Math.random() * 6) | 0);
         setDie(value);
         setRolling(false);
-        sounds?.play("pop");
+        sounds?.play("pop"); // it settles with a happy pop
         setPos((cur) => {
           const landed = Math.min(last, cur + value);
           setTimeout(() => applySquare(landed), 350);
@@ -167,12 +205,14 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
                   {here ? (
                     <motion.span
                       layoutId="board-token"
-                      animate={jelly(true)}
-                      style={{ position: "absolute", bottom: 2, fontSize: 22 }}
+                      animate={tokenMotion(move)}
+                      style={{ position: "absolute", bottom: 2, fontSize: 22, zIndex: 2 }}
                     >
                       🧒
                     </motion.span>
                   ) : null}
+                  {/* a little sparkle ring on the square we just hopped UP to */}
+                  {here && move === "ladder" ? <SparkleTrail count={5} size={16} /> : null}
                 </Box>
               );
             })}
@@ -180,30 +220,36 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
         ))}
       </Box>
 
-      {/* toast for the landed-square message */}
+      {/* toast for the landed-square message (color-matched to ladder/slide) */}
       {toast ? (
-        <Box
-          sx={{
-            borderRadius: "14px",
-            px: 1.5,
-            py: 1,
-            fontWeight: 800,
-            fontSize: 13,
-            textAlign: "center",
-            color: toast.type === "ladder" ? "#0fa377" : "#b9760a",
-            background: toast.type === "ladder" ? "#e7fbf3" : "#fff6e2",
-            border: `2px solid ${toast.type === "ladder" ? "#b5f0db" : "#ffe2a6"}`,
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 8, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 420, damping: 22 }}
         >
-          {toast.emoji ? `${toast.emoji} ` : ""}
-          {toast.msg}
-        </Box>
+          <Box
+            sx={{
+              borderRadius: "14px",
+              px: 1.5,
+              py: 1,
+              fontWeight: 800,
+              fontSize: 13,
+              textAlign: "center",
+              color: toast.type === "ladder" ? "#0fa377" : "#b9760a",
+              background: toast.type === "ladder" ? "#e7fbf3" : "#fff6e2",
+              border: `2px solid ${toast.type === "ladder" ? "#b5f0db" : "#ffe2a6"}`,
+            }}
+          >
+            {toast.emoji ? `${toast.emoji} ` : ""}
+            {toast.msg}
+          </Box>
+        </motion.div>
       ) : null}
 
       {/* die + roll */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, justifyContent: "center" }}>
         <motion.div
-          animate={rolling ? { rotate: [0, -12, 12, -8, 0] } : { rotate: 0 }}
+          animate={rolling ? { rotate: [0, -14, 14, -10, 10, -6, 0], scale: [1, 1.08, 0.96, 1.06, 1] } : { rotate: 0, scale: 1 }}
           transition={{ duration: 0.45 }}
           style={{
             width: 64,
@@ -223,6 +269,8 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
+          animate={!rolling && !won ? { scale: [1, 1.03, 1] } : { scale: 1 }}
+          transition={!rolling && !won ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
           onClick={roll}
           disabled={rolling || won}
           style={{
@@ -242,11 +290,17 @@ export default function BoardDiceTask({ question, onCorrect, sounds }) {
         </motion.button>
       </Box>
 
-      <Typography sx={{ textAlign: "center", color: "#6b6790", fontSize: 12 }}>
+      <Typography sx={{ textAlign: "center", color: "#6b6790", fontSize: 12, fontWeight: 700 }}>
         {gd.boardHint}
       </Typography>
 
-      {won ? <SparkleTrail count={10} size={26} /> : null}
+      {/* big celebration on reaching the top */}
+      {won ? (
+        <>
+          <SparkleTrail count={10} size={26} />
+          <Confetti count={28} />
+        </>
+      ) : null}
     </Box>
   );
 }

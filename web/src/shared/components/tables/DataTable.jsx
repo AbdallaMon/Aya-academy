@@ -35,6 +35,7 @@ import { PAGE_SIZE_OPTIONS } from "../../../utils/constant.js";
 import LoadingOverlay from "../feedback/LoadingOverlay.jsx";
 import EmptyState from "../display/EmptyState.jsx";
 import FilterBar from "./FilterBar.jsx";
+import IdCell from "./IdCell.jsx";
 
 function resolveHeader(col, translator) {
   return translator[col.headerName] || col.headerName || col.field;
@@ -61,6 +62,11 @@ export function DataTable({
   createLabel,
   noContainer = false,
   stickyHeader = true,
+  // Mandatory leading ID column. On site-wide by default; pass showId={false}
+  // for the rare table whose rows have no meaningful id. idField overrides the
+  // row property used as the id (e.g. "uuid").
+  showId = true,
+  idField = "id",
 }) {
   const { t } = useTranslation();
   const translator = t(translateKey, { returnObjects: true }) || {};
@@ -76,13 +82,32 @@ export function DataTable({
     return Object.keys(filters).length > 0;
   }, [filters]);
 
-  // Append an implicit "view" action column when renderViewLink is provided and
-  // the config doesn't already declare an actions column.
+  // Build the effective column set:
+  //   1. Prepend the mandatory leading ID column (unless showId is false or the
+  //      config already declares an "id" column itself).
+  //   2. Append an implicit "view" action column when renderViewLink is provided
+  //      and the config doesn't already declare an actions column.
   const effectiveColumns = useMemo(() => {
-    const hasActions = columns.some((c) => c.type === "actions");
+    let cols = columns;
+
+    const alreadyHasId = columns.some(
+      (c) => c.field === "id" || c.field === idField,
+    );
+    if (showId && !alreadyHasId) {
+      const idCol = {
+        field: idField,
+        headerName: td.id || "ID",
+        width: 96,
+        align: "inherit",
+        renderCell: ({ row }) => <IdCell value={row?.[idField]} />,
+      };
+      cols = [idCol, ...cols];
+    }
+
+    const hasActions = cols.some((c) => c.type === "actions");
     if (renderViewLink && !hasActions) {
       return [
-        ...columns,
+        ...cols,
         {
           field: "__view",
           type: "actions",
@@ -101,8 +126,8 @@ export function DataTable({
         },
       ];
     }
-    return columns;
-  }, [columns, renderViewLink, td.actions, td.view]);
+    return cols;
+  }, [columns, renderViewLink, td.actions, td.view, td.id, showId, idField]);
 
   function clearFilters() {
     if (setFilters) setFilters(defaultFilters ? { ...defaultFilters } : {});

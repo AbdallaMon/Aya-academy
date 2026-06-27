@@ -1,3 +1,4 @@
+import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { pointSelect } from "./point.dto.js";
 
@@ -35,7 +36,7 @@ class PointRepo {
   /** Top students by all-time cached points (User.points). */
   topStudentsByPoints(take) {
     return prisma.user.findMany({
-      where: { role: "STUDENT", isActive: true },
+      where: { role: USER_ROLES.STUDENT, isActive: true },
       orderBy: { points: "desc" },
       take,
       select: { id: true, name: true, nickname: true, points: true },

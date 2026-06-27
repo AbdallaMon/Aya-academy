@@ -1,15 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
-import { Box, Chip, Stack, Typography } from "@mui/material";
-import { MdCardGiftcard } from "react-icons/md";
+import { Box, Stack, Typography } from "@mui/material";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
+import { localePath } from "../../../i18n/routing.js";
 import { DataTable } from "../../../shared/components/index.js";
-import { QUIZZES_URL, formatDate } from "../config/constant.js";
+import { QUIZZES_URL, MY_STUDENTS_URL } from "../config/constant.js";
+import { buildQuizzesColumns } from "../config/quizzesColumns.js";
+import { buildQuizzesFilters } from "../config/quizzesFilters.js";
 import { useQuizzesText } from "../config/quizzesText.js";
 
 export default function QuizzesPage() {
@@ -27,6 +29,7 @@ export default function QuizzesPage() {
   const role = user?.role;
   const isStudent = role === USER_ROLES.STUDENT;
   const isAdmin = role === USER_ROLES.ADMIN;
+  const isParent = role === USER_ROLES.PARENT;
 
   const description = useMemo(() => {
     if (isAdmin) return txt.descAdmin;
@@ -52,66 +55,32 @@ export default function QuizzesPage() {
     autoFetch: canSee,
   });
 
-  const columns = useMemo(() => {
-    const cols = [
-      {
-        field: "title",
-        headerName: txt.title,
-        width: 280,
-        renderCell: ({ row }) => (
-          <Typography fontWeight={700}>{row.title || txt.noTitle}</Typography>
-        ),
-      },
-      {
-        field: "questions",
-        headerName: txt.questions,
-        width: 110,
-        renderCell: ({ row }) => (
-          <Chip size="small" label={row._count?.items ?? 0} />
-        ),
-      },
-      {
-        field: "passThreshold",
-        headerName: txt.passThreshold,
-        width: 120,
-        renderCell: ({ row }) => row.passThreshold ?? "—",
-      },
-      {
-        field: "gift",
-        headerName: txt.gift,
-        width: 180,
-        renderCell: ({ row }) =>
-          row.giftName ? (
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <MdCardGiftcard />
-              <Typography variant="body2">{row.giftName}</Typography>
-            </Stack>
-          ) : (
-            txt.noGift
-          ),
-      },
-      {
-        field: "createdAt",
-        headerName: txt.createdAt,
-        width: 150,
-        renderCell: ({ row }) => formatDate(row.createdAt, lng),
-      },
-    ];
+  // Parent-only "أطفالي" child filter source. Admin is skipped (a dropdown over
+  // ALL students is impractical); students don't need it. If the endpoint returns
+  // nothing, the filter simply isn't rendered.
+  const { data: childrenData } = useRequest({
+    url: MY_STUDENTS_URL,
+    method: "get",
+    autoFetch: isParent && canSee,
+    syncToUrl: false,
+  });
+  const children = useMemo(
+    () => (isParent && Array.isArray(childrenData) ? childrenData : []),
+    [isParent, childrenData],
+  );
 
-    // Participant count is meaningful for admin/parent (who own/oversee quizzes),
-    // but redundant for a student looking at their own quizzes.
-    if (!isStudent) {
-      cols.splice(2, 0, {
-        field: "participants",
-        headerName: txt.participants,
-        width: 120,
-        renderCell: ({ row }) => (
-          <Chip size="small" variant="outlined" label={row._count?.participants ?? 0} />
-        ),
-      });
-    }
-    return cols;
-  }, [txt, lng, isStudent]);
+  // Base path for the take-quiz / details route, locale-prefixed.
+  const backLinkBase = localePath(lng, "/dashboard/quizzes");
+
+  const columns = useMemo(
+    () => buildQuizzesColumns({ txt, lng, isStudent, backLinkBase }),
+    [txt, lng, isStudent, backLinkBase],
+  );
+
+  const filterConfig = useMemo(
+    () => buildQuizzesFilters(txt, children),
+    [txt, children],
+  );
 
   if (!canSee) return null;
 
@@ -137,6 +106,7 @@ export default function QuizzesPage() {
         loading={isLoading}
         filters={filters}
         setFilters={setFilters}
+        filterConfig={filterConfig}
         noContainer
       />
     </Box>

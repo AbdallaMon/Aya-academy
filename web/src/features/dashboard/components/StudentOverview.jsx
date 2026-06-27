@@ -1,5 +1,13 @@
 "use client";
 
+// Student (child) dashboard. Mobile-first, playful, low cognitive load:
+//   1. Hero  — avatar + greeting + points / level / rank
+//   2. "What do I do now?" — the single most prominent next-activity CTA
+//   3. My games — big, tappable game tiles
+//   4. Competition — elevated leaderboard podium (highlights the child)
+//   5. My achievements — badges + certificates grouped together
+// All strings come from the dashboard i18n config (ar/en); RTL-safe.
+
 import Link from "next/link";
 import {
   Avatar,
@@ -9,33 +17,77 @@ import {
   CardContent,
   Chip,
   Grid,
-  List,
-  ListItem,
-  ListItemText,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { MdStar, MdEmojiEvents, MdMilitaryTech } from "react-icons/md";
+import {
+  MdStar,
+  MdEmojiEvents,
+  MdMilitaryTech,
+  MdPlayArrow,
+  MdArrowForward,
+  MdWorkspacePremium,
+} from "react-icons/md";
 import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useAuth } from "../../../hooks/useAuth.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { useDashboardText } from "../config/dashboardText.js";
 import { localizedField } from "../../notifications/config/notificationsText.js";
-import { useAuth } from "../../../hooks/useAuth.js";
-import { usePermission } from "../../../hooks/usePermission.js";
-import { QURAN_PERMISSIONS } from "@aya/shared";
-import SectionCard from "./SectionCard.jsx";
 import LeaderboardWidget from "./LeaderboardWidget.jsx";
-import QuranProgressView from "../../quran/components/QuranProgressView.jsx";
+
+function HeroStat({ value, label }) {
+  return (
+    <Box
+      sx={{
+        textAlign: "center",
+        minWidth: 72,
+        px: 1.5,
+        py: 1,
+        borderRadius: 3,
+        bgcolor: "rgba(255,255,255,0.16)",
+      }}
+    >
+      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1 }}>
+        {value}
+      </Typography>
+      <Typography variant="caption" sx={{ fontWeight: 700 }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+// Section heading: a colored pill + emoji + title. Bigger & friendlier than the
+// admin SectionCard header so it reads well for a child.
+function SectionTitle({ emoji, title, action }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      gap={1}
+      sx={{ mb: 1.5, mt: 1 }}
+    >
+      <Stack direction="row" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
+        <Box sx={{ fontSize: 24 }}>{emoji}</Box>
+        <Typography variant="h6" fontWeight={900} noWrap sx={{ color: "text.primary" }}>
+          {title}
+        </Typography>
+      </Stack>
+      {action}
+    </Stack>
+  );
+}
+
+const GAME_TONES = ["primary", "secondary", "success", "info"];
 
 export default function StudentOverview() {
   const txt = useDashboardText();
   const { lng } = useTranslation();
   const { user } = useAuth();
-  const { hasPermission } = usePermission();
-  const canViewProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_VIEW);
 
   const { data } = useRequest({
     url: "dashboard/student",
@@ -48,21 +100,23 @@ export default function StudentOverview() {
   const badges = data?.badges || [];
   const certificates = data?.certificates || [];
   const games = data?.assignedGames || [];
-  const upcoming = data?.upcomingLessons || [];
+  // The "what do I do now?" target: first playable game that isn't completed.
+  const nextGame =
+    games.find((g) => g.game?.slug && g.status !== "COMPLETED") ||
+    games.find((g) => g.game?.slug);
 
   return (
     <Box>
-      {/* Hero profile card */}
+      {/* ── 1. Playful hero ─────────────────────────────────────── */}
       <Card
         sx={{
-          borderRadius: 4,
-          mb: 3,
+          borderRadius: 5,
+          mb: 2,
           border: "none",
           color: "#fff",
           background: (theme) =>
             `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.main} 100%)`,
-          boxShadow: (theme) =>
-            `0 12px 32px ${alpha(theme.palette.primary.main, 0.4)}`,
+          boxShadow: (theme) => `0 14px 36px ${alpha(theme.palette.primary.main, 0.4)}`,
           position: "relative",
           overflow: "hidden",
           "&::after": {
@@ -70,182 +124,400 @@ export default function StudentOverview() {
             position: "absolute",
             top: -60,
             insetInlineEnd: -40,
-            width: 200,
-            height: 200,
+            width: 220,
+            height: 220,
             borderRadius: "50%",
             background: "rgba(255,255,255,0.12)",
           },
+          "&::before": {
+            content: '"🌙"',
+            position: "absolute",
+            fontSize: 28,
+            opacity: 0.5,
+            top: 18,
+            insetInlineEnd: 28,
+          },
         }}
       >
-        <CardContent>
+        <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
           <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" gap={2}>
-            <Avatar sx={{ width: 72, height: 72, bgcolor: "secondary.main", fontSize: 32 }}>
-              {String(profile?.nickname || profile?.name || "?").charAt(0).toUpperCase()}
+            <Avatar
+              sx={{
+                width: 84,
+                height: 84,
+                bgcolor: "rgba(255,255,255,0.18)",
+                fontSize: 44,
+                border: "3px solid rgba(255,255,255,0.5)",
+              }}
+            >
+              🦉
             </Avatar>
             <Box sx={{ flex: 1, textAlign: { xs: "center", sm: "start" } }}>
-              <Typography variant="h4" fontWeight={800}>
-                {txt.welcome}, {profile?.nickname || profile?.name} 🌟
+              <Typography variant="h4" fontWeight={900}>
+                {txt.welcome}، {profile?.nickname || profile?.name} 🌟
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {txt.welcomeStudent}
+              <Typography variant="body1" sx={{ opacity: 0.92, color: "#fff" }}>
+                {txt.welcomeStudentSub}
               </Typography>
+              {data?.activeSubscription && (
+                <Chip
+                  icon={<MdStar />}
+                  label={
+                    data.activeSubscription.remainingHours != null
+                      ? `${data.activeSubscription.remainingHours} ${txt.remainingHours}`
+                      : txt.activeSubscription
+                  }
+                  sx={{
+                    mt: 1,
+                    fontWeight: 800,
+                    bgcolor: "rgba(255,255,255,0.22)",
+                    color: "#fff",
+                    "& .MuiChip-icon": { color: "#fff" },
+                  }}
+                />
+              )}
             </Box>
-            <Stack direction="row" gap={3}>
-              <Box sx={{ textAlign: "center" }}>
-                <Typography variant="h4" fontWeight={800}>
-                  {profile?.points ?? 0}
-                </Typography>
-                <Typography variant="caption">{txt.points2}</Typography>
-              </Box>
-              <Box sx={{ textAlign: "center" }}>
-                <Typography variant="h4" fontWeight={800}>
-                  {profile?.level ?? 1}
-                </Typography>
-                <Typography variant="caption">{txt.level}</Typography>
-              </Box>
-              <Box sx={{ textAlign: "center" }}>
-                <Typography variant="h4" fontWeight={800}>
-                  #{data?.rank ?? "-"}
-                </Typography>
-                <Typography variant="caption">{txt.rank}</Typography>
-              </Box>
+            <Stack
+              direction="row"
+              gap={1.25}
+              sx={{ flexWrap: "wrap", justifyContent: "center" }}
+            >
+              <HeroStat value={profile?.points ?? 0} label={txt.points2} />
+              <HeroStat value={profile?.level ?? 1} label={txt.level} />
+              <HeroStat value={`#${data?.rank ?? "-"}`} label={txt.rank} />
             </Stack>
           </Stack>
         </CardContent>
       </Card>
 
-      {data?.activeSubscription && (
-        <Chip
-          color="success"
-          icon={<MdStar />}
-          label={`${txt.activeSubscription}${
-            data.activeSubscription.remainingHours != null
-              ? ` • ${data.activeSubscription.remainingHours} ${txt.remainingHours}`
-              : ""
-          }`}
-          sx={{ mb: 3 }}
-        />
+      {/* ── 2. What do I do now? (the single clear next step) ────── */}
+      {nextGame ? (
+        <Card
+          sx={{
+            mb: 2.5,
+            border: "none",
+            overflow: "hidden",
+            position: "relative",
+            background: (t) =>
+              `linear-gradient(120deg, ${t.palette.secondary.main} 0%, ${t.palette.secondary.light} 100%)`,
+            boxShadow: (t) => `0 12px 30px ${alpha(t.palette.secondary.main, 0.4)}`,
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              alignItems="center"
+              gap={2}
+              sx={{ color: "#25313F" }}
+            >
+              <Box
+                sx={{
+                  fontSize: 40,
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(255,255,255,0.55)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                🎮
+              </Box>
+              <Box sx={{ flex: 1, textAlign: { xs: "center", sm: "start" }, minWidth: 0 }}>
+                <Typography variant="h6" fontWeight={900}>
+                  {txt.nextActivity}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#3a2d00", fontWeight: 700 }} noWrap>
+                  {localizedField(nextGame.game, "title", lng)}
+                </Typography>
+              </Box>
+              <Button
+                component={Link}
+                href={localePath(lng, `/dashboard/games/${nextGame.game.slug}`)}
+                variant="contained"
+                size="large"
+                startIcon={<MdPlayArrow size={24} />}
+                sx={{
+                  fontWeight: 900,
+                  fontSize: 18,
+                  px: 3,
+                  py: 1.25,
+                  bgcolor: "#25313F",
+                  color: "#fff",
+                  "&:hover": { bgcolor: "#0f1722" },
+                  flexShrink: 0,
+                }}
+              >
+                {txt.playNow}
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card
+          sx={{
+            mb: 2.5,
+            border: "none",
+            background: (t) =>
+              `linear-gradient(120deg, ${alpha(t.palette.success.main, 0.18)}, ${alpha(
+                t.palette.primary.main,
+                0.12,
+              )})`,
+          }}
+        >
+          <CardContent sx={{ textAlign: "center", py: 3 }}>
+            <Typography variant="h6" fontWeight={900} sx={{ mb: 0.5 }}>
+              {txt.allDoneTitle}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              {txt.allDoneSub}
+            </Typography>
+            <Button
+              component={Link}
+              href={localePath(lng, "/dashboard/games")}
+              variant="contained"
+              startIcon={<MdPlayArrow />}
+              sx={{ fontWeight: 800 }}
+            >
+              {txt.browseGames}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <SectionCard
-            title={txt.assignedGames}
-            empty={games.length === 0}
-            emptyLabel={txt.noData}
-            action={
-              <Button size="small" component={Link} href={localePath(lng, "/dashboard/games")}>
-                {txt.myGames}
-              </Button>
+      {/* ── 3. My games — big tap targets ───────────────────────── */}
+      <SectionTitle
+        emoji="🕹️"
+        title={txt.myGames}
+        action={
+          <Button
+            size="small"
+            component={Link}
+            href={localePath(lng, "/dashboard/games")}
+            endIcon={
+              <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                <MdArrowForward />
+              </Box>
             }
+            sx={{ fontWeight: 800 }}
           >
-            <List dense disablePadding>
-              {games.map((g) => (
-                <ListItem
-                  key={g.id}
-                  disableGutters
-                  secondaryAction={
-                    g.game?.slug ? (
-                      <Button size="small" variant="contained" component={Link} href={localePath(lng, `/dashboard/games/${g.game.slug}`)}>
-                        ▶
-                      </Button>
-                    ) : null
-                  }
-                >
-                  <ListItemText
-                    primary={localizedField(g.game, "title", lng)}
-                    secondary={g.status}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </SectionCard>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <SectionCard title={txt.upcomingLessons} empty={upcoming.length === 0} emptyLabel={txt.noData}>
-            <List dense disablePadding>
-              {upcoming.map((l) => (
-                <ListItem
-                  key={l.id}
-                  disableGutters
-                  secondaryAction={
-                    l.meetingLink ? (
-                      <Button size="small" component={Link} href={l.meetingLink} target="_blank">
-                        {txt.joinLesson}
-                      </Button>
-                    ) : null
-                  }
-                >
-                  <ListItemText primary={l.title} secondary={new Date(l.startsAt).toLocaleString()} />
-                </ListItem>
-              ))}
-            </List>
-          </SectionCard>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <SectionCard
-            title={txt.myBadges}
-            empty={badges.length === 0}
-            emptyLabel={txt.noData}
-          >
-            <Stack direction="row" flexWrap="wrap" gap={1.5}>
-              {badges.map((b) => (
-                <Tooltip key={b.id} title={localizedField(b, "name", lng)}>
-                  <Stack alignItems="center" sx={{ width: 72 }}>
-                    <Avatar sx={{ bgcolor: "secondary.main", width: 48, height: 48 }}>
-                      <MdMilitaryTech size={26} />
+            {txt.games}
+          </Button>
+        }
+      />
+      {games.length === 0 ? (
+        <Card sx={{ mb: 2 }}>
+          <CardContent sx={{ textAlign: "center", py: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              {txt.noGamesYet}
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+          {games.slice(0, 6).map((g, i) => {
+            const tone = GAME_TONES[i % GAME_TONES.length];
+            const done = g.status === "COMPLETED";
+            const playable = !!g.game?.slug;
+            const content = (
+              <Card
+                sx={{
+                  height: "100%",
+                  cursor: playable ? "pointer" : "default",
+                  border: "none",
+                  background: (t) =>
+                    `linear-gradient(150deg, ${alpha(t.palette[tone].main, 0.18)}, ${alpha(
+                      t.palette[tone].main,
+                      0.06,
+                    )})`,
+                  transition: "transform .2s ease, box-shadow .2s ease",
+                  "&:hover": playable
+                    ? { transform: "translateY(-4px)", boxShadow: 6 }
+                    : undefined,
+                }}
+              >
+                <CardContent sx={{ p: 2 }}>
+                  <Stack direction="row" alignItems="center" gap={1.5}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        fontSize: 24,
+                        bgcolor: (t) => alpha(t.palette[tone].main, 0.25),
+                        color: `${tone}.main`,
+                      }}
+                    >
+                      {done ? "✅" : "🎯"}
                     </Avatar>
-                    <Typography variant="caption" align="center" noWrap sx={{ width: "100%" }}>
-                      {localizedField(b, "name", lng)}
-                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ color: "text.primary" }}>
+                        {localizedField(g.game, "title", lng)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                        {done ? "🎉" : "▶"} {g.status}
+                      </Typography>
+                    </Box>
+                    {playable && (
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          bgcolor: `${tone}.main`,
+                          color: "#fff",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <MdPlayArrow size={20} />
+                      </Box>
+                    )}
                   </Stack>
-                </Tooltip>
-              ))}
-            </Stack>
-          </SectionCard>
+                </CardContent>
+              </Card>
+            );
+            return (
+              <Grid key={g.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                {playable ? (
+                  <Box
+                    component={Link}
+                    href={localePath(lng, `/dashboard/games/${g.game.slug}`)}
+                    sx={{ textDecoration: "none", display: "block", height: "100%" }}
+                  >
+                    {content}
+                  </Box>
+                ) : (
+                  content
+                )}
+              </Grid>
+            );
+          })}
+        </Grid>
+      )}
+
+      {/* ── 4. Competition — elevated leaderboard ───────────────── */}
+      <SectionTitle emoji="🏆" title={txt.competition} />
+      <Box sx={{ mb: 1.5 }}>
+        <LeaderboardWidget highlightId={user?.id} title={txt.weeklyChampions} />
+      </Box>
+
+      {/* ── 5. My achievements — badges + certificates together ─── */}
+      <SectionTitle emoji="🌟" title={txt.myAchievements} />
+      <Grid container spacing={1.5}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ height: "100%" }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
+                <MdMilitaryTech color="#F6C453" size={22} />
+                <Typography variant="subtitle1" fontWeight={800}>
+                  {txt.myBadges}
+                </Typography>
+              </Stack>
+              {badges.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                  {txt.noBadgesYet}
+                </Typography>
+              ) : (
+                <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                  {badges.map((b, i) => {
+                    const tone = ["secondary", "primary", "warning", "success"][i % 4];
+                    return (
+                      <Tooltip key={b.id} title={localizedField(b, "name", lng)}>
+                        <Stack alignItems="center" sx={{ width: 76 }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: (t) => alpha(t.palette[tone].main, 0.18),
+                              color: `${tone}.main`,
+                              width: 56,
+                              height: 56,
+                              fontSize: 28,
+                            }}
+                          >
+                            {b.icon || <MdMilitaryTech size={28} />}
+                          </Avatar>
+                          <Typography
+                            variant="caption"
+                            align="center"
+                            noWrap
+                            sx={{ width: "100%", mt: 0.5, fontWeight: 700 }}
+                          >
+                            {localizedField(b, "name", lng)}
+                          </Typography>
+                        </Stack>
+                      </Tooltip>
+                    );
+                  })}
+                </Stack>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <SectionCard
-            title={txt.certificates}
-            empty={certificates.length === 0}
-            emptyLabel={txt.noData}
-            action={
-              <Button size="small" component={Link} href={localePath(lng, "/dashboard/certificates")}>
-                {txt.certificates}
-              </Button>
-            }
-          >
-            <List dense disablePadding>
-              {certificates.map((c) => (
-                <ListItem key={c.id} disableGutters>
-                  <ListItemText
-                    primary={
-                      <Stack direction="row" gap={1} alignItems="center">
-                        <MdEmojiEvents color="#F6C453" />
-                        {localizedField(c, "title", lng)}
-                      </Stack>
-                    }
-                    secondary={new Date(c.issuedAt).toLocaleDateString()}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </SectionCard>
-        </Grid>
-
-        {canViewProgress && user?.id && (
-          <Grid size={{ xs: 12 }}>
-            <SectionCard title={txt.quranProgress} emptyLabel={txt.noData}>
-              <QuranProgressView studentId={user.id} />
-            </SectionCard>
-          </Grid>
-        )}
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <LeaderboardWidget />
+          <Card sx={{ height: "100%" }}>
+            <CardContent>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: 1.5 }}
+              >
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <MdWorkspacePremium color="#F6C453" size={22} />
+                  <Typography variant="subtitle1" fontWeight={800}>
+                    {txt.certificates}
+                  </Typography>
+                </Stack>
+                <Button
+                  size="small"
+                  component={Link}
+                  href={localePath(lng, "/dashboard/certificates")}
+                  endIcon={
+                    <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                      <MdArrowForward />
+                    </Box>
+                  }
+                >
+                  {txt.viewDetails}
+                </Button>
+              </Stack>
+              {certificates.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                  {txt.noCertsYet}
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {certificates.map((c) => (
+                    <Stack
+                      key={c.id}
+                      direction="row"
+                      alignItems="center"
+                      gap={1.25}
+                      sx={{
+                        p: 1,
+                        borderRadius: 2,
+                        bgcolor: (t) => alpha(t.palette.warning.main, 0.08),
+                      }}
+                    >
+                      <MdEmojiEvents color="#F6C453" size={22} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={800} noWrap sx={{ color: "text.primary" }}>
+                          {localizedField(c, "title", lng)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(c.issuedAt).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  ))}
+                </Stack>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

@@ -42,6 +42,11 @@ export const childrenText = {
     hours: "ساعة",
     noPlans: "لا توجد خطط متاحة حاليًا.",
     was: "بدلاً من",
+    monthly: "شهري",
+    yearly: "سنوي",
+    haveCoupon: "لديك كوبون؟",
+    couponLabel: "كود الكوبون",
+    discountChip: "خصم",
   },
   en: {
     pageTitle: "My children",
@@ -80,6 +85,11 @@ export const childrenText = {
     hours: "hours",
     noPlans: "No plans available right now.",
     was: "was",
+    monthly: "Monthly",
+    yearly: "Yearly",
+    haveCoupon: "Have a coupon?",
+    couponLabel: "Coupon code",
+    discountChip: "off",
   },
 };
 

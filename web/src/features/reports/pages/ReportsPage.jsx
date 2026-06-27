@@ -13,6 +13,7 @@ import {
   AppForm,
   DataTable,
   FormDialog,
+  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
 import {
@@ -220,23 +221,25 @@ export default function ReportsPage() {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
-        width: 150,
+        width: 80,
         renderCell: ({ row }) => (
-          <Stack direction="row" spacing={0.5}>
-            {canEdit && (
-              <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-                {txt.edit}
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                size="small"
-                color="error"
-                startIcon={<MdDelete />}
-                onClick={() => onDelete(row)}
-              />
-            )}
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.edit,
+                icon: <MdEdit />,
+                onClick: () => onEdit(row),
+                hidden: !canEdit,
+              },
+              {
+                label: txt.delete,
+                icon: <MdDelete />,
+                color: "error",
+                onClick: () => onDelete(row),
+                hidden: !canDelete,
+              },
+            ]}
+          />
         ),
       },
     ],

@@ -13,6 +13,7 @@
 // `lng` and `mode` are passed from the server layout (cookie-derived) so the
 // first paint matches the user's saved preference and avoids a flash.
 
+import { MotionConfig } from "framer-motion";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import I18nProvider from "./I18nProvider.jsx";
@@ -25,14 +26,18 @@ export default function AppProviders({ children, lng, mode }) {
   return (
     <I18nProvider lng={lng}>
       <ThemeRegistry mode={mode}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <AuthProvider>
-            <ConfirmProvider>
-              {children}
-              <AppToastContainer />
-            </ConfirmProvider>
-          </AuthProvider>
-        </LocalizationProvider>
+        {/* Honor the OS "reduce motion" setting everywhere: framer-motion
+            auto-neutralizes the hero's infinite loops + every whileInView/hover. */}
+        <MotionConfig reducedMotion="user">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <AuthProvider>
+              <ConfirmProvider>
+                {children}
+                <AppToastContainer />
+              </ConfirmProvider>
+            </AuthProvider>
+          </LocalizationProvider>
+        </MotionConfig>
       </ThemeRegistry>
     </I18nProvider>
   );

@@ -8,12 +8,14 @@ const CONTENT = {
   ar: {
     title: 'يثق أولياء الأمور حول العالم بأكاديمية آية لبدء رحلة أبنائهم مع القرآن.',
     countries: ['🇬🇧 بريطانيا', '🇺🇸 أمريكا', '🇨🇦 كندا', '🇦🇪 الإمارات', '🇦🇺 أستراليا'],
-    reviews: 'من ١٥٠٠ تقييم',
+    reviews: 'تقييمات أولياء الأمور',
+    ratingLabel: 'تقييم ٤٫٩ من ٥ من أولياء الأمور',
   },
   en: {
     title: "Parents around the world trust Aya Academy to start their kids' Quran journey.",
     countries: ['🇬🇧 UK', '🇺🇸 US', '🇨🇦 Canada', '🇦🇪 UAE', '🇦🇺 Australia'],
-    reviews: 'from 1,500 reviews',
+    reviews: 'Parent reviews',
+    ratingLabel: '4.9 out of 5 from parents',
   },
 };
 
@@ -25,7 +27,7 @@ export default function HeroReviews() {
     <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
       <Container maxWidth="lg">
         <Box sx={{ py: { xs: 3, md: 4 }, textAlign: 'center' }}>
-          <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 600, maxWidth: 760, mx: 'auto' }}>
+          <Typography variant="h6" component="p" sx={{ color: 'text.secondary', fontWeight: 600, maxWidth: 760, mx: 'auto' }}>
             {c.title}
           </Typography>
           <Stack
@@ -47,9 +49,11 @@ export default function HeroReviews() {
               direction="row"
               alignItems="center"
               spacing={1}
+              role="img"
+              aria-label={c.ratingLabel}
               sx={{ bgcolor: 'background.default', px: 2, py: 1, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
             >
-              <FaStar color="#FFC107" size={18} />
+              <FaStar color="#FFC107" size={18} aria-hidden />
               <Typography variant="h5" component="span" fontWeight={800}>
                 4.9
               </Typography>

@@ -1,53 +1,58 @@
 "use client";
 
-// MyGamesPage — the student's "ألعابي" section inside the dashboard. Lists the
-// games available to the signed-in student (GET /games, auth) and plays them
-// INSIDE the dashboard shell (cards link to /dashboard/games/:slug). Falls back
-// to the dev list when the API is unreachable so it's demoable without a DB.
+// MyGamesPage — the student's "ألعابي". Shows the games their teacher ASSIGNED
+// to them (GET /games/my/assignments) PLUS the single public free game (GET
+// /games/my/free) so it sits naturally alongside the rest. Never the whole
+// catalog. Inactive games are hidden so a child never taps a dead card.
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useTranslation } from "../../../i18n/client.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { DEV_GAMES_LIST } from "../devData.js";
 import GameCard from "../components/GameCard.jsx";
 
 export default function MyGamesPage() {
   const { t } = useTranslation();
   const gd = t("gamesData", { returnObjects: true }) || {};
-  const [fallback, setFallback] = useState(null);
 
   const { data, isLoading } = useRequest({
-    url: "games",
-    method: "get",
-    // Paginated so the limit is actually sent as a query param (the plain `get`
-    // helper ignores params). Kids see ALL their active games on one playful grid.
-    isPaginated: true,
-    initialParams: { limit: 100 },
-    autoFetch: true,
-    syncToUrl: false,
-    onError: () => setFallback(DEV_GAMES_LIST),
-  });
-
-  // The student's own assignments — best-effort, so a failure never breaks the
-  // list. Used to badge games a teacher has assigned to this student.
-  const { data: assignData } = useRequest({
     url: "games/my/assignments",
     method: "get",
     autoFetch: true,
     syncToUrl: false,
-    onError: () => {},
   });
-  const assignmentBySlug = useMemo(() => {
-    const list = Array.isArray(assignData) ? assignData : [];
-    const map = {};
-    for (const a of list) if (a.game?.slug) map[a.game.slug] = a;
-    return map;
-  }, [assignData]);
 
-  // API may return an array or { items: [...] }. API always wins over fallback.
-  const apiGames = Array.isArray(data) ? data : data?.items;
-  const games = apiGames ?? fallback ?? [];
+  // The single free game is always available to the student — best-effort.
+  const { data: freeGame } = useRequest({
+    url: "games/my/free",
+    method: "get",
+    autoFetch: true,
+    syncToUrl: false,
+  });
+
+  const assignments = useMemo(
+    () => (Array.isArray(data) ? data : []).filter((a) => a.game && a.game.isActive),
+    [data],
+  );
+
+  // Cards = the free game (first, "free" badge) + assigned games (assignment
+  // badge). Deduped if the free game happens to also be assigned.
+  const cards = useMemo(() => {
+    const list = assignments.map((a) => ({
+      key: `a-${a.id}`,
+      game: a.game,
+      assignment: a,
+    }));
+    if (freeGame && freeGame.isActive) {
+      const alreadyAssigned = assignments.some((a) => a.gameId === freeGame.id);
+      if (!alreadyAssigned) {
+        list.unshift({ key: `free-${freeGame.id}`, game: freeGame, assignment: null });
+      }
+    }
+    return list;
+  }, [assignments, freeGame]);
+
+  const loading = isLoading && cards.length === 0;
 
   return (
     <Box>
@@ -60,14 +65,17 @@ export default function MyGamesPage() {
         </Typography>
       </Box>
 
-      {isLoading && games.length === 0 ? (
+      {loading ? (
         <Box sx={{ display: "grid", placeItems: "center", py: 8, gap: 2 }}>
           <CircularProgress />
           <Typography color="text.secondary">{gd.loading}</Typography>
         </Box>
-      ) : games.length === 0 ? (
-        <Typography color="text.secondary" sx={{ textAlign: "center", py: 8, fontSize: 18 }}>
-          {gd.noGames}
+      ) : cards.length === 0 ? (
+        <Typography
+          color="text.secondary"
+          sx={{ textAlign: "center", py: 8, fontSize: 18 }}
+        >
+          {gd.noAssignedGames}
         </Typography>
       ) : (
         <Box
@@ -77,12 +85,12 @@ export default function MyGamesPage() {
             gap: 3,
           }}
         >
-          {games.map((game) => (
+          {cards.map((c) => (
             <GameCard
-              key={game.slug ?? game.id}
-              game={game}
+              key={c.key}
+              game={c.game}
               basePath="/dashboard/games"
-              assignment={assignmentBySlug[game.slug]}
+              assignment={c.assignment}
             />
           ))}
         </Box>

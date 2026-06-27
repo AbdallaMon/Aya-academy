@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -14,21 +15,68 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import {
+  MdChildCare,
+  MdStar,
+  MdMilitaryTech,
+  MdSubscriptions,
+  MdArrowForward,
+  MdWorkspacePremium,
+} from "react-icons/md";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
+import { localePath } from "../../../i18n/routing.js";
 import { useDashboardText } from "../config/dashboardText.js";
 import { localizedField } from "../../notifications/config/notificationsText.js";
-import { usePermission } from "../../../hooks/usePermission.js";
-import { QURAN_PERMISSIONS } from "@aya/shared";
 import SectionCard from "./SectionCard.jsx";
 import LeaderboardWidget from "./LeaderboardWidget.jsx";
-import QuranProgressView from "../../quran/components/QuranProgressView.jsx";
+
+// Small headline stat used in the parent summary strip.
+function SummaryStat({ icon, value, label, color = "primary.main" }) {
+  return (
+    <Card sx={{ height: "100%" }}>
+      <CardContent sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 2 }}>
+        <Avatar
+          variant="rounded"
+          sx={{
+            bgcolor: (t) => alpha(t.palette[color.split(".")[0]]?.main || t.palette.primary.main, 0.14),
+            color,
+            width: 44,
+            height: 44,
+          }}
+        >
+          {icon}
+        </Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1 }}>
+            {value}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {label}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChildMetric({ value, label, color }) {
+  return (
+    <Box sx={{ textAlign: "center", flex: 1 }}>
+      <Typography variant="h6" fontWeight={900} color={color} sx={{ lineHeight: 1.1 }}>
+        {value}
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+    </Box>
+  );
+}
 
 export default function ParentOverview() {
   const txt = useDashboardText();
   const { lng } = useTranslation();
-  const { hasPermission } = usePermission();
-  const canViewProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_VIEW);
 
   const { data } = useRequest({
     url: "dashboard/parent",
@@ -38,148 +86,171 @@ export default function ParentOverview() {
   });
 
   const children = data?.children || [];
-  const upcoming = data?.upcomingLessons || [];
   const recentCerts = data?.recentCertificates || [];
   const recentReports = data?.recentReports || [];
 
+  const totalPoints = children.reduce((sum, c) => sum + (c.points || 0), 0);
+  const totalBadges = children.reduce((sum, c) => sum + (c.badgeCount || 0), 0);
+  const activeSubs = children.filter((c) => c.activeSubscription).length;
+
   return (
     <Box>
+      {/* greeting */}
       <Typography variant="h4" fontWeight={800} sx={{ mb: 0.5 }}>
         {txt.welcomeParent}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {txt.welcome} 👋
+        {txt.welcomeParentSub} 👋
       </Typography>
 
+      {/* summary strip — everything across all children at a glance */}
+      {children.length > 0 && (
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <SummaryStat icon={<MdChildCare size={22} />} value={children.length} label={txt.childrenCount} />
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <SummaryStat icon={<MdStar size={22} />} value={totalPoints} label={txt.totalPoints} color="secondary.main" />
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <SummaryStat icon={<MdMilitaryTech size={22} />} value={totalBadges} label={txt.totalBadges} color="warning.main" />
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <SummaryStat icon={<MdSubscriptions size={22} />} value={activeSubs} label={txt.activeSubsCount} color="success.main" />
+          </Grid>
+        </Grid>
+      )}
+
+      {/* per-child cards */}
+      <Typography variant="h6" fontWeight={800} sx={{ mb: 1.5 }}>
+        {txt.myChildren}
+      </Typography>
       <Grid container spacing={2} sx={{ mb: 1 }}>
         {children.map((child) => (
           <Grid key={child.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card
               sx={{
                 height: "100%",
+                position: "relative",
+                overflow: "hidden",
                 transition: "box-shadow .25s ease, transform .25s ease",
                 "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  insetInlineStart: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 5,
+                  background: (t) =>
+                    `linear-gradient(180deg, ${t.palette.primary.main}, ${t.palette.success.main})`,
+                },
               }}
             >
               <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="h6" fontWeight={700}>
-                    {child.nickname || child.name}
+                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5 }}>
+                  <Avatar sx={{ bgcolor: "primary.main", width: 46, height: 46, fontWeight: 800 }}>
+                    {String(child.nickname || child.name || "?").charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle1" fontWeight={800} noWrap>
+                      {child.nickname || child.name}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      color={child.activeSubscription ? "success" : "default"}
+                      label={child.activeSubscription ? txt.activeSubscription : txt.noActiveSubscription}
+                      sx={{ height: 22, fontSize: 11, fontWeight: 700 }}
+                    />
+                  </Box>
+                </Stack>
+
+                <Stack
+                  direction="row"
+                  divider={<Box sx={{ width: "1px", bgcolor: "divider" }} />}
+                  sx={{ py: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.primary.main, 0.05) }}
+                >
+                  <ChildMetric value={child.points ?? 0} label={txt.points2} color="primary.main" />
+                  <ChildMetric value={child.level ?? 1} label={txt.level} color="secondary.main" />
+                  <ChildMetric value={`#${child.rank ?? "-"}`} label={txt.rank} color="text.primary" />
+                  <ChildMetric value={child.badgeCount ?? 0} label={txt.badgesLabel} color="warning.main" />
+                </Stack>
+
+                {child.activeSubscription?.remainingHours != null && (
+                  <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: "block", mt: 1.5 }}>
+                    ⏳ {child.activeSubscription.remainingHours} {txt.remainingHours}
                   </Typography>
-                  <Chip
-                    size="small"
-                    color={child.activeSubscription ? "success" : "default"}
-                    label={
-                      child.activeSubscription
-                        ? txt.activeSubscription
-                        : txt.noActiveSubscription
-                    }
-                  />
-                </Stack>
-                <Stack direction="row" gap={3} sx={{ mt: 1.5 }}>
-                  <Box>
-                    <Typography variant="h5" fontWeight={800} color="primary.main">
-                      {child.points ?? 0}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {txt.points2}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="h5" fontWeight={800} color="secondary.main">
-                      {child.level ?? 1}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {txt.level}
-                    </Typography>
-                  </Box>
-                  {child.activeSubscription?.remainingHours != null && (
-                    <Box>
-                      <Typography variant="h5" fontWeight={800} color="success.main">
-                        {child.activeSubscription.remainingHours}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {txt.remainingHours}
-                      </Typography>
-                    </Box>
-                  )}
-                </Stack>
-                {canViewProgress && (
-                  <Box sx={{ mt: 2 }}>
-                    <QuranProgressView studentId={child.id} compact />
-                  </Box>
                 )}
+
+                <Button
+                  fullWidth
+                  size="small"
+                  component={Link}
+                  href={localePath(lng, "/dashboard/children")}
+                  endIcon={
+                    <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                      <MdArrowForward />
+                    </Box>
+                  }
+                  sx={{ mt: 1.5, fontWeight: 700 }}
+                >
+                  {txt.viewDetails}
+                </Button>
               </CardContent>
             </Card>
           </Grid>
         ))}
         {children.length === 0 && (
           <Grid size={{ xs: 12 }}>
-            <Typography variant="body2" color="text.secondary">
-              {txt.noData}
-            </Typography>
+            <SectionCard title={txt.myChildren} empty emptyLabel={txt.noChildrenSub} />
           </Grid>
         )}
       </Grid>
 
+      {/* competition — leaderboard elevated alongside recent activity */}
       <Grid container spacing={2} sx={{ mt: 1 }}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <SectionCard title={txt.upcomingLessons} empty={upcoming.length === 0} emptyLabel={txt.noData}>
-            <List dense disablePadding>
-              {upcoming.map((l) => (
-                <ListItem
-                  key={l.id}
-                  disableGutters
-                  secondaryAction={
-                    l.meetingLink ? (
-                      <Button size="small" component={Link} href={l.meetingLink} target="_blank">
-                        {txt.joinLesson}
-                      </Button>
-                    ) : null
-                  }
-                >
-                  <ListItemText
-                    primary={l.title}
-                    secondary={new Date(l.startsAt).toLocaleString()}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </SectionCard>
+        {/* Leaderboard takes the prominent half on desktop, full width first on mobile */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <LeaderboardWidget title={txt.leaderboardNav} />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <SectionCard title={txt.recentCertificates} empty={recentCerts.length === 0} emptyLabel={txt.noData}>
-            <List dense disablePadding>
-              {recentCerts.map((c) => (
-                <ListItem key={c.id} disableGutters>
-                  <ListItemText
-                    primary={localizedField(c, "title", lng)}
-                    secondary={`${c.studentName} • ${new Date(c.issuedAt).toLocaleDateString()}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </SectionCard>
-        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <SectionCard title={txt.recentCertificates} empty={recentCerts.length === 0} emptyLabel={txt.noData}>
+                <List dense disablePadding>
+                  {recentCerts.map((c) => (
+                    <ListItem key={c.id} disableGutters>
+                      <ListItemText
+                        primary={
+                          <Stack direction="row" gap={1} alignItems="center">
+                            <MdWorkspacePremium color="#F6C453" />
+                            {localizedField(c, "title", lng)}
+                          </Stack>
+                        }
+                        secondary={`${c.studentName} • ${new Date(c.issuedAt).toLocaleDateString()}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </SectionCard>
+            </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <SectionCard title={txt.recentReports} empty={recentReports.length === 0} emptyLabel={txt.noData}>
-            <List dense disablePadding>
-              {recentReports.map((r) => (
-                <ListItem key={r.id} disableGutters>
-                  <ListItemText
-                    primary={r.title}
-                    secondary={r.reportDate ? new Date(r.reportDate).toLocaleDateString() : ""}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </SectionCard>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 4 }}>
-          <LeaderboardWidget />
+            <Grid size={{ xs: 12 }}>
+              <SectionCard title={txt.recentReports} empty={recentReports.length === 0} emptyLabel={txt.noData}>
+                <List dense disablePadding>
+                  {recentReports.map((r) => (
+                    <ListItem key={r.id} disableGutters>
+                      <ListItemText
+                        primary={r.title}
+                        secondary={r.reportDate ? new Date(r.reportDate).toLocaleDateString() : ""}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </SectionCard>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </Box>

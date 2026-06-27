@@ -74,17 +74,43 @@ export const exposedQuestionSelect = {
 };
 
 // ── quizzes ───────────────────────────────────────────────
-export const quizListSelect = {
+// Thin attempt summary embedded in a quiz list row so the client can render
+// per-quiz status (done / passed) + a "download certificate" affordance.
+export const quizListAttemptSelect = {
   id: true,
-  inviteId: true,
-  title: true,
-  createdByParentId: true,
-  passThreshold: true,
-  giftName: true,
-  createdAt: true,
-  updatedAt: true,
-  _count: { select: { items: true, participants: true } },
+  studentId: true,
+  score: true,
+  correctCount: true,
+  totalQuestions: true,
+  passed: true,
+  completedAt: true,
+  student: { select: { id: true, name: true, nickname: true } },
+  certificate: { select: { id: true } },
 };
+
+/**
+ * List projection for a quiz row. The embedded `attempts` are SCOPED to the
+ * viewer: a STUDENT sees only their own attempt(s) (pass `studentId`); an
+ * ADMIN/PARENT sees every participant's attempt (omit `studentId`).
+ */
+export function quizListSelect({ studentId } = {}) {
+  return {
+    id: true,
+    inviteId: true,
+    title: true,
+    createdByParentId: true,
+    passThreshold: true,
+    giftName: true,
+    createdAt: true,
+    updatedAt: true,
+    _count: { select: { items: true, participants: true } },
+    attempts: {
+      where: studentId ? { studentId } : undefined,
+      orderBy: { createdAt: "desc" },
+      select: quizListAttemptSelect,
+    },
+  };
+}
 
 export const quizItemOptionSelect = {
   id: true,

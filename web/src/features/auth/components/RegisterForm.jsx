@@ -4,9 +4,9 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { RHFTextField } from "../../../shared/components/index.js";
+import { matchIsValidTel } from "mui-tel-input";
+import { RHFTextField, RHFPhoneField } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { useToast } from "../../../providers/ToastProvider.jsx";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import AuthShell from "./AuthShell.jsx";
@@ -15,7 +15,6 @@ import { useAuthText } from "../config/authText.js";
 export default function RegisterForm() {
   const txt = useAuthText();
   const router = useRouter();
-  const { showToast } = useToast();
   const { lng } = useTranslation();
   const { control, handleSubmit } = useForm({
     defaultValues: { name: "", email: "", password: "", phone: "" },
@@ -23,25 +22,26 @@ export default function RegisterForm() {
 
   // Registration creates a PARENT account but does NOT set session cookies
   // (only login does). On success we route to /login so the user signs in.
+  // `shouldAutoToast` already shows the localized REGISTERED_SUCCESS toast from
+  // the API response — don't fire a second one here.
   const { fetchData, isLoading } = useRequest({
     url: "auth/register",
     method: "post",
     isPublic: true,
     shouldAutoToast: true,
     onSuccess: () => {
-      showToast({ message: txt.registerSuccess, severity: "success" });
       router.replace(localePath(lng, "/login"));
     },
   });
 
   const onSubmit = (values) => {
     const payload = {
-      name: values.name,
-      email: values.email,
+      name: values.name.trim(),
+      email: values.email.trim(),
       password: values.password,
+      phone: (values.phone || "").trim(),
       locale: lng === "en" ? "en" : "ar",
     };
-    if (values.phone?.trim()) payload.phone = values.phone.trim();
     return fetchData(null, payload);
   };
 
@@ -91,7 +91,15 @@ export default function RegisterForm() {
               minLength: { value: 6, message: txt.passwordShort },
             }}
           />
-          <RHFTextField name="phone" control={control} label={txt.phone} />
+          <RHFPhoneField
+            name="phone"
+            control={control}
+            label={txt.phone}
+            rules={{
+              required: txt.required,
+              validate: (value) => matchIsValidTel(value || "") || txt.invalidPhone,
+            }}
+          />
           <Button
             type="submit"
             variant="contained"

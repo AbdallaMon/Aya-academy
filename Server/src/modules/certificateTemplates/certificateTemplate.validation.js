@@ -1,20 +1,38 @@
 import { z } from "zod";
+import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
 import { certificateMessagesCodes } from "./certificateTemplate.messages.js";
 
 const optionalText = z.string().trim().optional();
 
+// GENERAL (admin-picked) | GAME (single auto-applied game template).
+const templateType = z
+  .enum([CERTIFICATE_TEMPLATE_TYPES.GENERAL, CERTIFICATE_TEMPLATE_TYPES.GAME])
+  .optional();
+
 // Opaque style JSON (orientation, colors, decoration, showPhoto, …). Extra keys
-// pass through unchanged.
+// pass through unchanged; the renderer (CertificateCard) reads them all.
 const themeJson = z
   .object({
     orientation: z.string().optional(),
     decoration: z.string().optional(),
+    fontStyle: z.string().optional(),
     accent: z.string().optional(),
     secondary: z.string().optional(),
     background: z.string().optional(),
+    nameColor: z.string().optional(),
     borderStyle: z.string().optional(),
+    logoSize: z.string().optional(),
+    sealText: z.string().optional(),
+    nameScale: z.number().optional(),
+    headingScale: z.number().optional(),
+    contentSpacing: z.number().optional(),
+    watermarkOpacity: z.number().optional(),
     showPhoto: z.boolean().optional(),
     showBismillah: z.boolean().optional(),
+    showSeal: z.boolean().optional(),
+    showWatermark: z.boolean().optional(),
+    showTagline: z.boolean().optional(),
+    showDate: z.boolean().optional(),
   })
   .passthrough()
   .optional();
@@ -33,6 +51,7 @@ export class CertificateTemplateValidation {
       .string({ message: certificateMessagesCodes.TEMPLATE_NAME_REQUIRED })
       .trim()
       .min(1, certificateMessagesCodes.TEMPLATE_NAME_REQUIRED),
+    type: templateType,
     headingAr: optionalText,
     headingEn: optionalText,
     introAr: optionalText,
@@ -67,6 +86,7 @@ export class CertificateTemplateValidation {
       .trim()
       .min(1, certificateMessagesCodes.TEMPLATE_NAME_REQUIRED)
       .optional(),
+    type: templateType,
     headingAr: optionalText,
     headingEn: optionalText,
     introAr: optionalText,

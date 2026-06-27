@@ -1,8 +1,9 @@
 'use client';
 
 // FreeSessionPromo — a bold promo banner that drives registration BEFORE any
-// paid subscription: "Sign up now and get a free trial session". Sits right
-// above the pricing section in the homepage funnel. Edit the text in PROMO.
+// paid subscription: "Sign up now and get a free trial session". Sits at the END
+// of the homepage funnel as the closing CTA, right after the FAQ. Edit the text
+// in PROMO.
 
 import Link from 'next/link';
 import { Box, Button, Container, Stack, Typography, useTheme } from '@mui/material';
@@ -111,7 +112,6 @@ export default function FreeSessionPromo() {
               variant="outlinedYellow"
               size="large"
               startIcon={<MdSportsEsports />}
-              sx={{ backgroundColor: 'background.paper' }}
             >
               {t.secondary}
             </Button>

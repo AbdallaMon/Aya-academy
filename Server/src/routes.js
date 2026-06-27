@@ -3,7 +3,6 @@ import { ok } from "./shared/http/response.js";
 import authRoutes from "./modules/auth/auth.route.js";
 import userRoutes from "./modules/users/user.route.js";
 import planRoutes from "./modules/plans/plan.route.js";
-import sessionRoutes from "./modules/sessions/session.route.js";
 import notificationRoutes from "./modules/notifications/notification.route.js";
 import couponRoutes from "./modules/coupons/coupon.route.js";
 import subscriptionRoutes from "./modules/subscriptions/subscription.route.js";
@@ -22,7 +21,7 @@ import backupPublicRoutes from "./modules/backups/backups.public.routes.js";
 import encryptionKeyRoutes from "./modules/encryptionKeys/encryptionKeys.route.js";
 import attachmentRoutes from "./modules/attachments/attachment.route.js";
 import certificateTemplateRoutes from "./modules/certificateTemplates/certificateTemplate.route.js";
-import quranRoutes from "./modules/quran/quran.route.js";
+import settingsRoutes from "./modules/settings/settings.route.js";
 
 const routes = Router();
 
@@ -33,12 +32,12 @@ routes.get("/health", (_req, res) => {
 routes.use("/auth", authRoutes);
 routes.use("/users", userRoutes);
 routes.use("/plans", planRoutes);
-routes.use("/sessions", sessionRoutes);
 routes.use("/notifications", notificationRoutes);
 routes.use("/coupons", couponRoutes);
 routes.use("/subscriptions", subscriptionRoutes);
 routes.use("/invoices", invoiceRoutes);
 routes.use("/payment-templates", paymentTemplateRoutes);
+routes.use("/settings", settingsRoutes);
 routes.use("/reports", reportRoutes);
 routes.use("/certificates", certificateRoutes);
 routes.use("/rewards", rewardRoutes);
@@ -56,6 +55,5 @@ routes.use("/backups", backupRoutes);
 routes.use("/encryption-keys", encryptionKeyRoutes);
 routes.use("/attachments", attachmentRoutes);
 routes.use("/certificate-templates", certificateTemplateRoutes);
-routes.use("/quran", quranRoutes);
 
 export default routes;

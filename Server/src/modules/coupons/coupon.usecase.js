@@ -1,14 +1,16 @@
+import { randomBytes } from "node:crypto";
 import { conflict, notFound } from "../../shared/errors/AppError.js";
 import {
   buildSearchQuery,
   parseBooleanFilter,
 } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
+import { couponAppliesToPeriod } from "../../shared/utility/pricing.js";
 import { couponRepo } from "./coupon.repo.js";
 import { couponMessagesCodes } from "./coupon.messages.js";
 
 class CouponUsecase {
-  buildListWhere({ search, isActive, source }) {
+  buildListWhere({ search, isActive, source, planId }) {
     const where = {};
     const or = buildSearchQuery({
       search: typeof search === "string" ? search : undefined,
@@ -20,6 +22,9 @@ class CouponUsecase {
     if (active !== undefined) where.isActive = active;
 
     if (source && source !== "ALL") where.source = source;
+
+    // Scope to a single plan's discounts (the per-plan discounts dialog).
+    if (planId) where.plans = { some: { planId: Number(planId) } };
 
     return where;
   }
@@ -40,15 +45,31 @@ class CouponUsecase {
     return coupon;
   }
 
+  /** Generate a unique, human-friendly coupon code (e.g. AYA-3F9A2C). */
+  async generateUniqueCode(prefix = "AYA") {
+    for (let i = 0; i < 8; i += 1) {
+      const token = randomBytes(3).toString("hex").toUpperCase();
+      const code = `${prefix}-${token}`;
+      const existing = await couponRepo.getByCode(code);
+      if (!existing) return code;
+    }
+    throw conflict(couponMessagesCodes.COUPON_CODE_TAKEN);
+  }
+
   async create(input) {
-    const existing = await couponRepo.getByCode(input.code);
+    const code = input.code?.trim()
+      ? input.code.trim()
+      : await this.generateUniqueCode();
+
+    const existing = await couponRepo.getByCode(code);
     if (existing) throw conflict(couponMessagesCodes.COUPON_CODE_TAKEN);
 
     const data = {
-      code: input.code,
+      code,
       type: input.type,
       value: input.value,
       source: input.source,
+      billingPeriod: input.billingPeriod ?? null,
       maxRedemptions: input.maxRedemptions,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
@@ -72,6 +93,7 @@ class CouponUsecase {
       type: input.type,
       value: input.value,
       source: input.source,
+      billingPeriod: input.billingPeriod === undefined ? undefined : (input.billingPeriod ?? null),
       maxRedemptions: input.maxRedemptions,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
@@ -86,7 +108,7 @@ class CouponUsecase {
   }
 
   // ── validation (any authenticated user) ─────────────────────
-  async validateCoupon({ code, planId }) {
+  async validateCoupon({ code, planId, billingPeriod }) {
     const coupon = await couponRepo.getByCode(code);
     if (!coupon) {
       return { valid: false, reason: couponMessagesCodes.COUPON_NOT_FOUND };
@@ -119,10 +141,19 @@ class CouponUsecase {
       }
     }
 
+    // Cycle scope: a coupon tied to MONTHLY/YEARLY only applies to that cycle.
+    if (billingPeriod && !couponAppliesToPeriod(coupon, billingPeriod)) {
+      return { valid: false, reason: couponMessagesCodes.COUPON_NOT_APPLICABLE };
+    }
+
     return {
       valid: true,
       reason: null,
-      discount: { type: coupon.type, value: Number(coupon.value) },
+      discount: {
+        type: coupon.type,
+        value: Number(coupon.value),
+        billingPeriod: coupon.billingPeriod ?? null,
+      },
     };
   }
 }

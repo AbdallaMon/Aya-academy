@@ -88,7 +88,7 @@ export default function GameCard({ game, basePath = "/dashboard/games", assignme
           <Typography sx={{ color: theme.primary, fontWeight: 900, fontSize: 18, mt: 0.5 }}>
             {pickText(game, "title", lng)}
           </Typography>
-          <Typography sx={{ color: "#6b6790", fontSize: 13, lineHeight: 1.6, flex: 1 }}>
+          <Typography sx={{ color: "#564d7a", fontWeight: 500, fontSize: 13, lineHeight: 1.6, flex: 1 }}>
             {pickText(game, "description", lng)}
           </Typography>
 

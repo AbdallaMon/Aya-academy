@@ -1,14 +1,7 @@
 import { generalMessagesCodes } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
-import { badRequest } from "../../shared/errors/AppError.js";
+import { idParam } from "../../shared/http/params.js";
 import { couponUsecase } from "./coupon.usecase.js";
-
-function idParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
 
 class CouponController {
   list = async (req, res) => {
@@ -18,6 +11,7 @@ class CouponController {
       search: req.query.search,
       isActive: req.query.isActive,
       source: req.query.source,
+      planId: req.query.planId,
     });
     return ok(res, result);
   };

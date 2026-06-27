@@ -64,9 +64,13 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
     <Box
       sx={{
         minHeight: isDashboard ? "auto" : "calc(100vh - 76px)",
-        py: 4,
-        px: 1.5,
-        borderRadius: isDashboard ? 4 : 0,
+        // In the dashboard, cancel the shell's content padding so the game
+        // container itself has no outer padding around the card. (The card is
+        // unchanged — only the surrounding container loses its margin/padding.)
+        mx: isDashboard ? { xs: -2, sm: -2.5, md: -3.5 } : 0,
+        py: { xs: 1.5, md: isDashboard ? 2 : 4 },
+        px: { xs: isDashboard ? 0.5 : 0, sm: 1.5 },
+        borderRadius: 0,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -77,7 +81,15 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
           `linear-gradient(160deg, ${theme.bg || "#fde9f3"}, #eaf2ff)`,
       }}
     >
-      <Box sx={{ width: 460, maxWidth: "100%", display: "flex", justifyContent: "flex-start" }}>
+      <Box
+        sx={{
+          width: 460,
+          maxWidth: "100%",
+          display: "flex",
+          justifyContent: "flex-start",
+          px: { xs: 2, sm: 0 },
+        }}
+      >
         <Link href={localePath(lng, backHref)} style={{ textDecoration: "none" }}>
           <Typography sx={{ color: "#7c4dff", fontWeight: 800, fontSize: 14 }}>
             {backLabel}
@@ -89,11 +101,11 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
         <Stack spacing={1} sx={{ textAlign: "center", maxWidth: 720, px: 2, mb: 1 }}>
           <Typography
             component="h1"
-            sx={{ color: "#4b2e83", fontWeight: 900, fontSize: { xs: 22, md: 28 }, lineHeight: 1.3 }}
+            sx={{ color: "#3a1d6e", fontWeight: 900, fontSize: { xs: 22, md: 28 }, lineHeight: 1.3 }}
           >
             {mk.title}
           </Typography>
-          <Typography sx={{ color: "#5a5577", fontWeight: 600, fontSize: { xs: 14, md: 16 } }}>
+          <Typography sx={{ color: "#473f6b", fontWeight: 700, fontSize: { xs: 14, md: 16 } }}>
             {mk.subtitle}
           </Typography>
         </Stack>
@@ -115,10 +127,10 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
           }}
         >
           <Box sx={{ fontSize: 64, lineHeight: 1 }}>⏳</Box>
-          <Typography sx={{ color: "#4b2e83", fontWeight: 900, fontSize: { xs: 20, md: 24 } }}>
+          <Typography sx={{ color: "#3a1d6e", fontWeight: 900, fontSize: { xs: 20, md: 24 } }}>
             {mk.rateTitle}
           </Typography>
-          <Typography sx={{ color: "#5a5577", fontWeight: 600, fontSize: { xs: 15, md: 17 } }}>
+          <Typography sx={{ color: "#473f6b", fontWeight: 700, fontSize: { xs: 15, md: 17 } }}>
             {mk.rateBody.replace("{min}", String(waitMinutes))}
           </Typography>
           <Button

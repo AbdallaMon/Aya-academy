@@ -7,6 +7,7 @@ import {
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { userRepo } from "../users/user.repo.js";
+import { certificateTemplateUsecase } from "../certificateTemplates/certificateTemplate.usecase.js";
 import { certificateRepo } from "./certificate.repo.js";
 import { certificateMessagesCodes } from "./certificate.messages.js";
 
@@ -91,10 +92,15 @@ class CertificateUsecase {
   // ── reusable services (importable by games / quizzes) ──────────
   /**
    * Issue a GAME certificate for a completed game attempt.
-   * `templateKey` identifies the per-game certificate look (callers pass the
-   * game's slug); `themeJson` carries that game's decorative certificate config.
+   *
+   * Preferred path: every game certificate is generated from the single shared,
+   * admin-editable GAME template. The game's title becomes the dynamic {reason}
+   * and the template supplies all fixed copy + style.
+   *
+   * Legacy fallback (when no GAME template is configured): render the per-game
+   * embedded look keyed off the game `slug` (`templateKey` + `themeJson`).
    */
-  issueForGameAttempt(
+  async issueForGameAttempt(
     {
       studentId,
       studentName,
@@ -108,6 +114,23 @@ class CertificateUsecase {
     },
     tx,
   ) {
+    const gameTemplate = await certificateTemplateUsecase.getActiveGameTemplate(tx);
+    if (gameTemplate) {
+      return certificateRepo.create(
+        {
+          type: CERTIFICATE_TYPES.GAME,
+          studentId,
+          studentName,
+          gameAttemptId,
+          templateId: gameTemplate.id,
+          // The game's title is the dynamic purpose ({reason}) on the template.
+          reasonAr: titleAr ?? undefined,
+          reasonEn: titleEn ?? undefined,
+        },
+        tx,
+      );
+    }
+
     return certificateRepo.create(
       {
         type: CERTIFICATE_TYPES.GAME,

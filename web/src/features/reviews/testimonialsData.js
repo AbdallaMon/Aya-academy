@@ -33,7 +33,7 @@ export const testimonials = [
     country: '🇬🇧',
     rating: 5,
     quote: {
-      ar: 'ابني بقى يستنى حصة القرآن بفارغ الصبر! الألعاب خلّته يحب التلاوة ويحفظ بسهولة، والمعلمة صبورة جدًا.',
+      ar: 'صار ابني ينتظر حصة القرآن بفارغ الصبر! الألعاب جعلته يحب التلاوة ويحفظ بسهولة، والمعلّمة صبورة جدًا.',
       en: 'My son now waits for his Quran lesson with excitement! The games made him love recitation, and his teacher is so patient.',
     },
   },
@@ -44,7 +44,7 @@ export const testimonials = [
     country: '🇺🇸',
     rating: 5,
     quote: {
-      ar: 'الشرح بالعربي والإنجليزي ساعد بنتي تفهم المعاني مش بس تحفظ. متابعة ولي الأمر ممتازة وبتطمّني.',
+      ar: 'الشرح بالعربية والإنجليزية ساعد ابنتي على فهم المعاني لا الحفظ فقط. متابعة ولي الأمر ممتازة وتمنحني الطمأنينة.',
       en: 'Explaining in both Arabic and English helped my daughter understand the meanings, not just memorize. The parent tracking is excellent.',
     },
   },
@@ -55,7 +55,7 @@ export const testimonials = [
     country: '🇨🇦',
     rating: 5,
     quote: {
-      ar: 'جرّبنا الحصة المجانية وقررنا نكمل في نفس اليوم. منصة آمنة وممتعة، والأطفال بيجمعوا النجوم والأوسمة بحماس.',
+      ar: 'جرّبنا الحصة المجانية وقرّرنا الاشتراك في اليوم نفسه. منصة آمنة وممتعة، والأطفال يجمعون النجوم والأوسمة بحماس.',
       en: 'We tried the free session and signed up the same day. A safe, fun platform — the kids collect stars and badges with real enthusiasm.',
     },
   },
@@ -66,7 +66,7 @@ export const testimonials = [
     country: '🇦🇪',
     rating: 5,
     quote: {
-      ar: 'المستويات مناسبة لعمر ابني تمامًا، بيتعلّم خطوة بخطوة من غير ضغط. لاحظت تحسّن في أخلاقه فعلاً.',
+      ar: 'المستويات مناسبة تمامًا لعمر ابني، يتعلّم خطوة بخطوة دون ضغط، ولاحظت تحسّنًا حقيقيًا في أخلاقه.',
       en: 'The levels fit my son’s age perfectly — he learns step by step without pressure. I’ve genuinely seen his manners improve.',
     },
   },
@@ -77,8 +77,8 @@ export const testimonials = [
     country: '🇦🇺',
     rating: 5,
     quote: {
-      ar: 'أفضل قرار اشتركنا فيه. الحصص مرنة في المواعيد والمعلمون محترفون مع الأطفال.',
-      en: 'Best decision we made. Flexible lesson times and teachers who are wonderful with kids.',
+      ar: 'أفضل قرار اتخذناه. مواعيد الحصص مرنة ومعلّم طفلنا محترف ولطيف معه.',
+      en: 'Best decision we made. Flexible lesson times, and our child’s teacher is professional and wonderful with him.',
     },
   },
   {
@@ -88,7 +88,7 @@ export const testimonials = [
     country: '🇬🇧',
     rating: 5,
     quote: {
-      ar: 'بنتي كانت خجولة، دلوقتي بتقرأ بثقة وبتفتخر بأوسمتها. شكرًا أكاديمية آية ❤️',
+      ar: 'كانت ابنتي خجولة، والآن تقرأ بثقة وتفخر بأوسمتها. شكرًا أكاديمية آية ❤️',
       en: 'My daughter was shy; now she reads with confidence and is proud of her badges. Thank you, Aya Academy ❤️',
     },
   },

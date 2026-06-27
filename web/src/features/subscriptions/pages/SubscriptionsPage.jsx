@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
-import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong } from "react-icons/md";
+import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -15,18 +15,21 @@ import { localePath } from "../../../i18n/routing.js";
 import {
   DataTable,
   FormDialog,
+  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
 import {
   SUBSCRIPTIONS_URL,
   SUBSCRIPTION_STATUSES,
   STATUS_COLOR,
-  formatGBP,
 } from "../config/constant.js";
+import { formatMoney } from "../../../shared/lib/money.js";
 import { useSubscriptionsText } from "../config/subscriptionsText.js";
 import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
+import EditHoursDialog from "../components/EditHoursDialog.jsx";
 import InvoiceDialog from "../../invoices/components/InvoiceDialog.jsx";
 import { useInvoicesText } from "../../invoices/config/invoicesText.js";
+import { INVOICE_STATUS_COLOR } from "../../invoices/config/constant.js";
 
 export default function SubscriptionsPage() {
   const txt = useSubscriptionsText();
@@ -39,10 +42,11 @@ export default function SubscriptionsPage() {
   const canApprove = hasPermission(PERMISSIONS.SUBSCRIPTION.APPROVE) || isAdmin;
   const canCreate = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE) || isAdmin;
   const canCancel = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL) || isAdmin;
+  const canEdit = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT) || isAdmin;
   const canViewInvoice = hasPermission(PERMISSIONS.INVOICE.VIEW) || isAdmin;
   const canGenerateInvoice = hasPermission(PERMISSIONS.INVOICE.GENERATE) || isAdmin;
   const canEditInvoice = hasPermission(PERMISSIONS.INVOICE.EDIT) || isAdmin;
-  const hasRowActions = canApprove || canCancel || canViewInvoice;
+  const hasRowActions = canApprove || canCancel || canViewInvoice || canEdit;
   const invoiceTxt = useInvoicesText();
 
   const {
@@ -71,9 +75,11 @@ export default function SubscriptionsPage() {
   const createDialog = useOpen();
   const rejectDialog = useOpen();
   const invoiceDialog = useOpen();
+  const editHoursDialog = useOpen();
   const [invoiceTarget, setInvoiceTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [hoursTarget, setHoursTarget] = useState(null);
 
   function openInvoice(row) {
     setInvoiceTarget(row);
@@ -105,6 +111,15 @@ export default function SubscriptionsPage() {
   async function create(payload) {
     await mut.postRequest(null, payload);
     createDialog.close();
+  }
+  function openEditHours(row) {
+    setHoursTarget(row);
+    editHoursDialog.open();
+  }
+  async function saveHours(payload) {
+    if (!hoursTarget) return;
+    await mut.putRequest(`${hoursTarget.id}`, payload);
+    editHoursDialog.close();
   }
 
   const CANCELLABLE = ["PENDING", "UPCOMING", "ACTIVE"];
@@ -213,6 +228,20 @@ export default function SubscriptionsPage() {
           row.plan ? (lng === "en" ? row.plan.titleEn : row.plan.titleAr) : "—",
       },
       {
+        field: "totalHours",
+        headerName: txt.totalHours,
+        width: 110,
+        sortable: false,
+        renderCell: ({ row }) => row.totalHours ?? "—",
+      },
+      {
+        field: "remainingHours",
+        headerName: txt.remainingHours,
+        width: 120,
+        sortable: false,
+        renderCell: ({ row }) => row.remainingHours ?? "—",
+      },
+      {
         field: "status",
         headerName: txt.status,
         width: 150,
@@ -225,10 +254,26 @@ export default function SubscriptionsPage() {
         ),
       },
       {
+        field: "invoicePaid",
+        headerName: invoiceTxt.paymentStatus,
+        width: 140,
+        sortable: false,
+        renderCell: ({ row }) =>
+          row.invoice ? (
+            <Chip
+              size="small"
+              color={INVOICE_STATUS_COLOR[row.invoice.status] || "default"}
+              label={invoiceTxt[row.invoice.status] || row.invoice.status}
+            />
+          ) : (
+            "—"
+          ),
+      },
+      {
         field: "price",
         headerName: txt.price,
         width: 100,
-        renderCell: ({ row }) => formatGBP(row.priceCharged),
+        renderCell: ({ row }) => formatMoney(row.priceCharged, row.currency),
       },
       {
         field: "end",
@@ -243,65 +288,56 @@ export default function SubscriptionsPage() {
               field: "actions",
               type: "actions",
               headerName: txt.actions,
-              width: 300,
+              width: 80,
               renderCell: ({ row }) => {
                 const showApprove = canApprove && row.status === "PENDING";
                 const showCancel =
                   canCancel && CANCELLABLE.includes(row.status);
-                if (!showApprove && !showCancel && !canViewInvoice) return "—";
                 return (
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                    {canViewInvoice && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<MdReceiptLong />}
-                        onClick={() => openInvoice(row)}
-                      >
-                        {invoiceTxt.invoice}
-                      </Button>
-                    )}
-                    {showApprove && (
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="success"
-                        startIcon={<MdCheck />}
-                        onClick={() => approve(row)}
-                      >
-                        {txt.approve}
-                      </Button>
-                    )}
-                    {showApprove && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        startIcon={<MdClose />}
-                        onClick={() => openReject(row)}
-                      >
-                        {txt.reject}
-                      </Button>
-                    )}
-                    {showCancel && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="warning"
-                        startIcon={<MdCancel />}
-                        onClick={() => cancel(row)}
-                      >
-                        {txt.cancelSubscription}
-                      </Button>
-                    )}
-                  </Stack>
+                  <RowActionsMenu
+                    actions={[
+                      {
+                        label: invoiceTxt.invoice,
+                        icon: <MdReceiptLong />,
+                        onClick: () => openInvoice(row),
+                        hidden: !canViewInvoice,
+                      },
+                      {
+                        label: txt.editHours,
+                        icon: <MdEdit />,
+                        onClick: () => openEditHours(row),
+                        hidden: !canEdit,
+                      },
+                      {
+                        label: txt.approve,
+                        icon: <MdCheck />,
+                        color: "success",
+                        onClick: () => approve(row),
+                        hidden: !showApprove,
+                      },
+                      {
+                        label: txt.reject,
+                        icon: <MdClose />,
+                        color: "error",
+                        onClick: () => openReject(row),
+                        hidden: !showApprove,
+                      },
+                      {
+                        label: txt.cancelSubscription,
+                        icon: <MdCancel />,
+                        color: "warning",
+                        onClick: () => cancel(row),
+                        hidden: !showCancel,
+                      },
+                    ]}
+                  />
                 );
               },
             },
           ]
         : []),
     ],
-    [txt, lng, canApprove, canCancel, hasRowActions, canViewInvoice, invoiceTxt],
+    [txt, lng, canApprove, canCancel, canEdit, hasRowActions, canViewInvoice, invoiceTxt],
   );
 
   const filterConfig = useMemo(
@@ -396,6 +432,17 @@ export default function SubscriptionsPage() {
           sx={{ mt: 1 }}
         />
       </FormDialog>
+
+      {canEdit && (
+        <EditHoursDialog
+          open={editHoursDialog.isOpen}
+          onClose={editHoursDialog.close}
+          txt={txt}
+          initial={hoursTarget}
+          loading={mut.isPutRequestLoading}
+          onSubmit={saveHours}
+        />
+      )}
 
       {canViewInvoice && (
         <InvoiceDialog

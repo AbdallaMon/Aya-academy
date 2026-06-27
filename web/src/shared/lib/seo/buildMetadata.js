@@ -1,0 +1,109 @@
+// buildMetadata — the single source for Next.js Metadata across the app.
+//
+// Given the active locale, a logical page key and the locale-agnostic path, it
+// produces a fully-formed Metadata object: title (+ brand template), canonical,
+// hreflang alternates (ar / en / x-default), OpenGraph, Twitter card and robots.
+//
+// Usage in a page/layout:
+//   export async function generateMetadata({ params }) {
+//     const { lng } = await params;
+//     return buildMetadata({ lng, page: 'login', path: '/login' });
+//   }
+
+import { localePath } from "@/i18n/routing.js";
+import { languages, fallbackLng } from "@/i18n/settings.js";
+import {
+  SITE_URL,
+  ogImages,
+  brand,
+  ogLocale,
+} from "./config.js";
+import { getSeo } from "./content.js";
+
+// Build the { ar, en, x-default } hreflang map for a locale-agnostic path.
+function buildLanguageAlternates(path) {
+  const map = {};
+  for (const lng of languages) {
+    map[lng] = localePath(lng, path);
+  }
+  // x-default points search engines at the default (Arabic) variant.
+  map["x-default"] = localePath(fallbackLng, path);
+  return map;
+}
+
+export function buildMetadata({
+  lng = fallbackLng,
+  page = "site",
+  path = "/",
+  index = true,
+  image,
+  // Per-item overrides — used by dynamic pages (e.g. a blog article) where the
+  // title/description/keywords come from the content itself, not seoContent.
+  title: titleOverride,
+  description: descriptionOverride,
+  keywords: keywordsOverride,
+} = {}) {
+  const base = getSeo(page, lng);
+  const seo = {
+    ...base,
+    ...(titleOverride != null ? { title: titleOverride } : {}),
+    ...(descriptionOverride != null ? { description: descriptionOverride } : {}),
+    ...(keywordsOverride != null ? { keywords: keywordsOverride } : {}),
+  };
+  const brandName = brand(lng);
+  const canonical = localePath(lng, path);
+
+  // Per-item override (e.g. a blog article cover) → that one image; otherwise the
+  // brand card for THIS locale (Arabic vs English), in both PNG (crisp) and JPEG
+  // (small fallback) variants.
+  const ogImageList = (image
+    ? [{ url: image, type: undefined }]
+    : ogImages(lng)
+  ).map(({ url, type }) => ({
+    url,
+    ...(type ? { type } : {}),
+    width: 1200,
+    height: 630,
+    // Describe what the share card shows, not just the brand name.
+    alt: seo.description || brandName,
+  }));
+
+  // The homepage title already carries the brand; everything else gets the
+  // "<page> | <brand>" suffix via the template defined in the root layout. When
+  // titleAbsolute is set we bypass the template with { absolute }.
+  const title = seo.titleAbsolute ? { absolute: seo.title } : seo.title;
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title,
+    description: seo.description,
+    ...(seo.keywords ? { keywords: seo.keywords } : {}),
+    alternates: {
+      canonical,
+      languages: buildLanguageAlternates(path),
+    },
+    openGraph: {
+      type: "website",
+      siteName: brandName,
+      title: seo.title,
+      description: seo.description,
+      url: canonical,
+      locale: ogLocale(lng),
+      alternateLocale: languages.filter((l) => l !== lng).map(ogLocale),
+      images: ogImageList,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.title,
+      description: seo.description,
+      images: ogImageList.map((i) => i.url),
+    },
+    robots: index
+      ? {
+          index: true,
+          follow: true,
+          googleBot: { index: true, follow: true, "max-image-preview": "large" },
+        }
+      : { index: false, follow: false },
+  };
+}

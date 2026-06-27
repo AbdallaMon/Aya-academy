@@ -111,7 +111,12 @@ quizRoutes.post(
 // ════════════════════════════════════════════════════════════
 quizRoutes.get(
   "/",
-  authMiddleware.requirePermissions([PERMISSIONS.QUIZ.LIST]),
+  // Admin/parent reach the list via QUIZ.LIST; a student reaches *their own*
+  // assigned quizzes via QUIZ.VIEW (row-scoping is enforced in the usecase).
+  authMiddleware.requireAnyPermission([
+    PERMISSIONS.QUIZ.LIST,
+    PERMISSIONS.QUIZ.VIEW,
+  ]),
   asyncHandler(quizController.listQuizzes),
 );
 

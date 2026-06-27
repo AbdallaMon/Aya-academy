@@ -24,6 +24,7 @@ export const paymentTemplateConfigSchema = z
     theme: z
       .object({
         headerColor: z.string().optional(),
+        headerTextColor: z.string().optional(),
         accentColor: z.string().optional(),
         textColor: z.string().optional(),
       })
@@ -42,7 +43,6 @@ export const paymentTemplateConfigSchema = z
     paymentInstructionsAr: z.string().optional(),
     paymentInstructionsEn: z.string().optional(),
     dueDays: z.coerce.number().int().min(0).optional(),
-    showFreeHours: z.boolean().optional(),
     showPreviousCredit: z.boolean().optional(),
     showPreviousDebt: z.boolean().optional(),
   })

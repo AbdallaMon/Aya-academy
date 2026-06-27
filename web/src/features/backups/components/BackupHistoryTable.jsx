@@ -83,23 +83,20 @@ export default function BackupHistoryTable({
       : trMsg(row.restoreUnavailableReasonCode) || tr.restoreUnavailable;
     return [
       {
-        key: "restore",
-        // Primary action (direct icon + Tooltip) — shows the blocked-reason when disabled.
-        primary: true,
+        // Shows the blocked-reason as its label when disabled.
         label: restoreLabel,
-        icon: FiRotateCcw,
+        icon: <FiRotateCcw />,
         color: "error",
         hidden: !canRestore,
         disabled: !restorable,
-        onClick: (r) => setToRestore(r),
+        onClick: () => setToRestore(row),
       },
       {
-        key: "delete",
         label: tr.deleteBackup,
-        icon: FiTrash2,
+        icon: <FiTrash2 />,
         color: "error",
         hidden: !canRestore, // same management gate (backup.manage)
-        onClick: (r) => setToDelete(r),
+        onClick: () => setToDelete(row),
       },
     ];
   }

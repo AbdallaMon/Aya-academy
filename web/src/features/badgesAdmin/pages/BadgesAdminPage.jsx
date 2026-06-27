@@ -9,7 +9,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { DataTable, useConfirm } from "../../../shared/components/index.js";
+import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
 import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 import { BADGES_URL } from "../config/constant.js";
 import { useBadgesAdminText } from "../config/badgesAdminText.js";
@@ -117,23 +117,25 @@ export default function BadgesAdminPage() {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
-        width: 160,
+        width: 80,
         renderCell: ({ row }) => (
-          <Stack direction="row" spacing={0.5}>
-            {canEdit && (
-              <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-                {txt.edit}
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                size="small"
-                color="error"
-                startIcon={<MdDelete />}
-                onClick={() => onDelete(row)}
-              />
-            )}
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.edit,
+                icon: <MdEdit />,
+                onClick: () => onEdit(row),
+                hidden: !canEdit,
+              },
+              {
+                label: txt.delete,
+                icon: <MdDelete />,
+                color: "error",
+                onClick: () => onDelete(row),
+                hidden: !canDelete,
+              },
+            ]}
+          />
         ),
       },
     ],

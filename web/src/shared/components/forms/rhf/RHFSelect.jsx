@@ -14,8 +14,11 @@ import { useTranslation } from "../../../../i18n/client.js";
  * RHF-bound MUI Select.
  *
  * Props:
- *   options       array of strings, or an object whose VALUES are the options
- *                 (e.g. an enum constant like SUBSCRIPTION_STATUSES).
+ *   options       array of string values (e.g. ["MONTHLY", "YEARLY"]), or an
+ *                 object MAP of value → label (e.g. { MONTHLY: "شهري" }). For an
+ *                 enum-constant object (keys === values) both forms behave the
+ *                 same. The submitted field value is always the value (the
+ *                 object KEY), never the display label.
  *   translatePath optional i18n section to localize each option's display text.
  */
 export default function RHFSelect({
@@ -30,7 +33,15 @@ export default function RHFSelect({
   const { t } = useTranslation();
   const optionTranslator = translatePath ? t(translatePath, { returnObjects: true }) || {} : {};
 
-  const items = Array.isArray(options) ? options : Object.values(options);
+  // Normalise to [value, label] pairs. Array → value is also the fallback label;
+  // object → key is the value and the object's value is the label. An explicit
+  // translator (when provided) always wins for the label.
+  const entries = Array.isArray(options)
+    ? options.map((value) => [value, optionTranslator[value] || value])
+    : Object.entries(options).map(([value, label]) => [
+        value,
+        optionTranslator[value] || label,
+      ]);
 
   return (
     <Controller
@@ -41,9 +52,9 @@ export default function RHFSelect({
         <FormControl fullWidth required={!!rules?.required} error={!!fieldState.error}>
           {label && <InputLabel>{label}</InputLabel>}
           <Select {...field} value={field.value ?? ""} label={label} {...props}>
-            {items.map((item) => (
-              <MenuItem key={item} value={item}>
-                {optionTranslator[item] || item}
+            {entries.map(([value, optLabel]) => (
+              <MenuItem key={value} value={value}>
+                {optLabel}
               </MenuItem>
             ))}
           </Select>

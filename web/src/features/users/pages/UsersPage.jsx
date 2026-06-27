@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Chip, Link as MuiLink, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Avatar, Box, Button, Chip, Link as MuiLink, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import {
   MdAdd,
@@ -9,6 +9,7 @@ import {
   MdDelete,
   MdLink,
   MdPeople,
+  MdPerson,
   MdVisibility,
   MdWorkspacePremium,
 } from "react-icons/md";
@@ -24,8 +25,11 @@ import {
   AppForm,
   DataTable,
   FormDialog,
+  PhotoUpload,
+  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 import { USERS_URL, ROLE_COLOR } from "../config/constant.js";
 import { useUsersText } from "../config/usersText.js";
 import LinkParentDialog from "../components/LinkParentDialog.jsx";
@@ -55,6 +59,17 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
   const canDelete = hasPermission(PERMISSIONS.USER.DELETE) && isAdmin;
   const canViewChildren = hasPermission(PERMISSIONS.USER.VIEW) && isAdmin;
 
+  // When the list is locked to a role, the role is a PROPERTY OF THE PAGE, not a
+  // user-toggleable filter. Send it as a fixed request param (initialParams) that
+  // is merged into EVERY request — including the very first auto-fetch — instead
+  // of injecting it into the mutable `filters` after mount. The old approach let
+  // the first fetch go out with no role (returning everyone) and, via syncToUrl,
+  // leaked the role into the URL across client-side navigations.
+  const lockedParams = useMemo(
+    () => (lockedRole ? { role: lockedRole } : undefined),
+    [lockedRole],
+  );
+
   const {
     data,
     total,
@@ -71,22 +86,28 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     method: "get",
     isPaginated: true,
     autoFetch: canList,
+    initialParams: lockedParams,
   });
 
-  // When locked to a role, always force that role into the filters so the API
-  // only ever returns that role. Hide the role filter from the UI below.
+  // Default the Status filter to "Active only" on first load — but never clobber
+  // a deep-linked value (e.g. ?isActive=false). Runs once before the first fetch
+  // settles so the very first request already carries isActive=true.
+  const seededStatus = useRef(false);
   useEffect(() => {
-    if (!lockedRole) return;
-    setFilters((prev) =>
-      prev?.role === lockedRole ? prev : { ...prev, role: lockedRole },
-    );
+    if (seededStatus.current) return;
+    seededStatus.current = true;
+    if (filters.isActive === undefined) {
+      setFilters((prev) => ({ ...prev, isActive: "true" }));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lockedRole]);
+  }, []);
 
   const form = useOpen();
   const linkDialog = useOpen();
   const childrenDialog = useOpen();
   const [selected, setSelected] = useState(null);
+  // The picked avatar attachment ({ id, url }) for the create/edit form.
+  const [avatarAttachment, setAvatarAttachment] = useState(null);
 
   const mut = useMultiRequest({
     url: USERS_URL,
@@ -97,10 +118,12 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
 
   function onCreate() {
     setSelected(null);
+    setAvatarAttachment(null);
     form.open();
   }
   function onEdit(row) {
     setSelected(row);
+    setAvatarAttachment(row?.avatar ?? null);
     form.open();
   }
   function onLinkParent(row) {
@@ -118,6 +141,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
   }
 
   async function submit(values) {
+    const avatarId = avatarAttachment?.id ? Number(avatarAttachment.id) : null;
     if (isEditing) {
       // updateUserSchema: name, phone, locale, nickname, isActive, password
       const payload = {
@@ -129,8 +153,12 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
       };
       if (values.password) payload.password = values.password;
       await mut.putRequest(String(selected.id), payload);
+      // Avatar lives on its own scoped endpoint — only patch when it changed.
+      if (avatarId && avatarId !== selected.avatarId) {
+        await mut.patchRequest(`${selected.id}/avatar`, { attachmentId: avatarId });
+      }
     } else {
-      // createUserSchema: name, email, password, role, phone, locale, nickname
+      // createUserSchema: name, email, password, role, phone, locale, nickname, avatarId
       const payload = {
         name: values.name,
         email: values.email,
@@ -139,6 +167,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
         phone: values.phone || undefined,
         nickname: values.nickname || undefined,
         locale: values.locale || undefined,
+        avatarId: avatarId || undefined,
       };
       await mut.postRequest(null, payload);
     }
@@ -211,13 +240,26 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     };
   }, [selected]);
 
-  const columns = useMemo(
-    () => [
-      {
-        field: "name",
-        headerName: txt.name,
-        width: 220,
-        renderCell: ({ row }) => (
+  const columns = useMemo(() => {
+    const relationLabels = {
+      FATHER: txt.father,
+      MOTHER: txt.mother,
+      GUARDIAN: txt.guardian,
+      OTHER: txt.other,
+    };
+
+    const nameCol = {
+      field: "name",
+      headerName: txt.name,
+      width: 240,
+      renderCell: ({ row }) => (
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar
+            src={buildFileUrl(row.avatar) || undefined}
+            sx={{ width: 36, height: 36, bgcolor: "action.hover" }}
+          >
+            {!row.avatar && <MdPerson size={20} />}
+          </Avatar>
           <Stack>
             {canView ? (
               <MuiLink
@@ -237,171 +279,196 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
               </Typography>
             )}
           </Stack>
-        ),
-      },
-      {
-        field: "email",
-        headerName: txt.email,
-        width: 230,
-        renderCell: ({ row }) => row.email || "—",
-      },
-      {
-        field: "role",
-        headerName: txt.role,
-        width: 120,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={ROLE_COLOR[row.role] || "default"}
-            label={
-              row.role === "ADMIN"
-                ? txt.admin
-                : row.role === "PARENT"
-                  ? txt.parent
-                  : txt.student
-            }
-          />
-        ),
-      },
-      {
-        field: "parents",
-        headerName: txt.parents,
-        width: 240,
-        sortable: false,
-        renderCell: ({ row }) => {
-          if (row.role !== "STUDENT") return "—";
-          const parents = row.parents || [];
-          if (parents.length === 0) return txt.noParentsLinked;
-          const relationLabels = {
-            FATHER: txt.father,
-            MOTHER: txt.mother,
-            GUARDIAN: txt.guardian,
-            OTHER: txt.other,
-          };
-          return (
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-              {parents.map((p) => (
-                <Chip
-                  key={p.id}
-                  size="small"
-                  variant="outlined"
-                  color="info"
-                  label={`${p.name} — ${relationLabels[p.relation] || p.relation}`}
-                />
-              ))}
-            </Stack>
-          );
-        },
-      },
-      {
-        field: "isSubscribed",
-        headerName: txt.subscription,
-        width: 140,
-        sortable: false,
-        renderCell: ({ row }) => {
-          if (row.role !== "STUDENT") return "—";
-          return (
-            <Chip
-              size="small"
-              color={row.isSubscribed ? "success" : "default"}
-              variant={row.isSubscribed ? "filled" : "outlined"}
-              label={row.isSubscribed ? txt.subscribed : txt.notSubscribed}
-            />
-          );
-        },
-      },
-      {
-        field: "isActive",
-        headerName: txt.active,
-        width: 110,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={row.isActive ? "success" : "default"}
-            label={row.isActive ? txt.activeYes : txt.activeNo}
-          />
-        ),
-      },
-      {
-        field: "createdAt",
-        headerName: txt.createdAt,
-        width: 130,
-        renderCell: ({ row }) =>
-          row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—",
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: txt.actions,
-        width: 320,
-        renderCell: ({ row }) => (
+        </Stack>
+      ),
+    };
+
+    const emailCol = {
+      field: "email",
+      headerName: txt.email,
+      width: 230,
+      renderCell: ({ row }) => row.email || "—",
+    };
+
+    const phoneCol = {
+      field: "phone",
+      headerName: txt.phone,
+      width: 150,
+      renderCell: ({ row }) => row.phone || txt.noPhone,
+    };
+
+    const roleCol = {
+      field: "role",
+      headerName: txt.role,
+      width: 120,
+      renderCell: ({ row }) => (
+        <Chip
+          size="small"
+          color={ROLE_COLOR[row.role] || "default"}
+          label={
+            row.role === "ADMIN"
+              ? txt.admin
+              : row.role === "PARENT"
+                ? txt.parent
+                : txt.student
+          }
+        />
+      ),
+    };
+
+    // Students: their linked parents, each chip a direct link to the parent.
+    const parentsCol = {
+      field: "parents",
+      headerName: txt.parents,
+      width: 260,
+      sortable: false,
+      renderCell: ({ row }) => {
+        const parents = row.parents || [];
+        if (parents.length === 0) return txt.noParentsLinked;
+        return (
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-            {canView && (
-              <Button
+            {parents.map((p) => (
+              <Chip
+                key={p.id}
                 size="small"
-                color="info"
-                startIcon={<MdVisibility />}
+                clickable
                 component={Link}
-                href={localePath(lng, `/dashboard/users/${row.id}`)}
-              >
-                {txt.viewDetails}
-              </Button>
-            )}
-            {canEdit && (
-              <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-                {txt.edit}
-              </Button>
-            )}
-            {canEdit && row.role === "STUDENT" && (
-              <Button
-                size="small"
-                color="secondary"
-                startIcon={<MdLink />}
-                onClick={() => onLinkParent(row)}
-              >
-                {txt.linkParent}
-              </Button>
-            )}
-            {canViewChildren && row.role === "STUDENT" && (
-              <Button
-                size="small"
-                color="secondary"
-                startIcon={<MdWorkspacePremium />}
-                component={Link}
-                href={localePath(
-                  lng,
-                  `/dashboard/certificates?studentId=${row.id}`,
-                )}
-              >
-                {txt.certificates}
-              </Button>
-            )}
-            {canViewChildren && row.role === "PARENT" && (
-              <Button
-                size="small"
+                href={localePath(lng, `/dashboard/users/${p.id}`)}
+                variant="outlined"
                 color="info"
-                startIcon={<MdPeople />}
-                onClick={() => onViewChildren(row)}
-              >
-                {row.childrenCount != null
-                  ? `${txt.viewChildren} (${row.childrenCount})`
-                  : txt.viewChildren}
-              </Button>
-            )}
-            {canDelete && row.isActive && (
-              <Button
-                size="small"
-                color="error"
-                startIcon={<MdDelete />}
-                onClick={() => onDelete(row)}
+                label={`${p.name} — ${relationLabels[p.relation] || p.relation}`}
               />
-            )}
+            ))}
           </Stack>
-        ),
+        );
       },
-    ],
-    [txt, lng, canView, canEdit, canDelete, canViewChildren],
-  );
+    };
+
+    // Parents: how many children are linked.
+    const childrenCol = {
+      field: "childrenCount",
+      headerName: txt.children,
+      width: 130,
+      sortable: false,
+      renderCell: ({ row }) => (
+        <Chip
+          size="small"
+          color={row.childrenCount ? "info" : "default"}
+          variant={row.childrenCount ? "filled" : "outlined"}
+          icon={<MdPeople />}
+          label={row.childrenCount ?? 0}
+        />
+      ),
+    };
+
+    const subscriptionCol = {
+      field: "isSubscribed",
+      headerName: txt.subscription,
+      width: 140,
+      sortable: false,
+      renderCell: ({ row }) => (
+        <Chip
+          size="small"
+          color={row.isSubscribed ? "success" : "default"}
+          variant={row.isSubscribed ? "filled" : "outlined"}
+          label={row.isSubscribed ? txt.subscribed : txt.notSubscribed}
+        />
+      ),
+    };
+
+    const activeCol = {
+      field: "isActive",
+      headerName: txt.active,
+      width: 110,
+      renderCell: ({ row }) => (
+        <Chip
+          size="small"
+          color={row.isActive ? "success" : "default"}
+          label={row.isActive ? txt.activeYes : txt.activeNo}
+        />
+      ),
+    };
+
+    const createdCol = {
+      field: "createdAt",
+      headerName: txt.createdAt,
+      width: 130,
+      renderCell: ({ row }) =>
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—",
+    };
+
+    const actionsCol = {
+      field: "actions",
+      type: "actions",
+      headerName: txt.actions,
+      width: 80,
+      renderCell: ({ row }) => (
+        <RowActionsMenu
+          actions={[
+            {
+              label: txt.viewDetails,
+              icon: <MdVisibility />,
+              href: localePath(lng, `/dashboard/users/${row.id}`),
+              hidden: !canView,
+            },
+            {
+              label: txt.edit,
+              icon: <MdEdit />,
+              onClick: () => onEdit(row),
+              hidden: !canEdit,
+            },
+            {
+              label: txt.linkParent,
+              icon: <MdLink />,
+              onClick: () => onLinkParent(row),
+              hidden: !(canEdit && row.role === "STUDENT"),
+            },
+            {
+              label: txt.certificates,
+              icon: <MdWorkspacePremium />,
+              href: localePath(lng, `/dashboard/certificates?studentId=${row.id}`),
+              hidden: !(canViewChildren && row.role === "STUDENT"),
+            },
+            {
+              label:
+                row.childrenCount != null
+                  ? `${txt.viewChildren} (${row.childrenCount})`
+                  : txt.viewChildren,
+              icon: <MdPeople />,
+              onClick: () => onViewChildren(row),
+              hidden: !(canViewChildren && row.role === "PARENT"),
+            },
+            {
+              label: txt.delete,
+              icon: <MdDelete />,
+              color: "error",
+              onClick: () => onDelete(row),
+              hidden: !(canDelete && row.isActive),
+            },
+          ]}
+        />
+      ),
+    };
+
+    // Parents and students are genuinely different surfaces, so each gets its
+    // own column set rather than one shared table with half-empty cells.
+    if (lockedRole === "PARENT") {
+      return [nameCol, emailCol, phoneCol, childrenCol, activeCol, createdCol, actionsCol];
+    }
+    if (lockedRole === "STUDENT") {
+      return [nameCol, emailCol, parentsCol, subscriptionCol, activeCol, createdCol, actionsCol];
+    }
+    return [
+      nameCol,
+      emailCol,
+      roleCol,
+      parentsCol,
+      subscriptionCol,
+      activeCol,
+      createdCol,
+      actionsCol,
+    ];
+  }, [txt, lng, lockedRole, canView, canEdit, canDelete, canViewChildren]);
 
   const filterConfig = useMemo(
     () => [
@@ -421,6 +488,13 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
               },
             },
           ]),
+      {
+        type: "enum",
+        key: "isActive",
+        label: txt.statusLabel,
+        // Active is the default (seeded above); "All" clears the filter.
+        options: { true: txt.activeYes, false: txt.activeNo, ALL: txt.all },
+      },
     ],
     [txt, lockedRole],
   );
@@ -477,6 +551,18 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
         cancelText={txt.cancel}
         onSubmit={() => document.getElementById("user-form")?.requestSubmit()}
       >
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            {txt.photoLabel}
+          </Typography>
+          <PhotoUpload
+            value={avatarAttachment}
+            onUploaded={(att) => setAvatarAttachment(att)}
+            buttonLabel={txt.choosePhoto}
+            uploadingLabel={txt.uploadingPhoto}
+            hintLabel={txt.photoHint}
+          />
+        </Box>
         <AppForm
           id="user-form"
           fields={fields}

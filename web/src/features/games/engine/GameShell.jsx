@@ -8,7 +8,7 @@
 
 import { Box, IconButton, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
-import { jelly } from "../animations/index.js";
+import { jelly, Confetti } from "../animations/index.js";
 
 const GRADIENT = "linear-gradient(90deg, #7c4dff, #ff4f9a)";
 const GOOD = "linear-gradient(90deg, #16b083, #20cf99)";
@@ -47,6 +47,7 @@ export default function GameShell({
   guideText,
   subtitle,
   starLabel = "⭐",
+  burst = 0, // bump this to fire a confetti celebration
   children,
 }) {
   const headerBg = mood === "good" ? GOOD : mood === "bad" ? BAD : GRADIENT;
@@ -93,12 +94,14 @@ export default function GameShell({
             transition: "background .3s",
           }}
         >
-          <Box sx={{ textAlign: "start", lineHeight: 1.3 }}>
+          {/* soft shadow keeps the white title/subtitle readable on EVERY part
+              of the colored header (purple→pink, green or pink moods). */}
+          <Box sx={{ textAlign: "start", lineHeight: 1.3, textShadow: "0 1px 4px rgba(0,0,0,0.28)" }}>
             <Typography component="b" sx={{ fontSize: 17, fontWeight: 900, display: "block" }}>
               {heroName}
             </Typography>
             {subtitle ? (
-              <Typography component="span" sx={{ fontSize: 12, opacity: 0.92 }}>
+              <Typography component="span" sx={{ fontSize: 12, fontWeight: 600, opacity: 1 }}>
                 {subtitle}
               </Typography>
             ) : null}
@@ -187,6 +190,10 @@ export default function GameShell({
         <Box sx={{ p: 2, flex: 1, display: "flex", flexDirection: "column" }}>
           {children}
         </Box>
+
+        {/* celebration confetti overlay — re-keyed on each star/win so it
+            replays from the start; the pieces fade themselves out. */}
+        {burst > 0 ? <Confetti key={burst} count={30} /> : null}
       </Box>
     </Box>
   );

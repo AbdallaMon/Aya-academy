@@ -24,7 +24,7 @@ import { certificateUsecase } from "../certificates/certificate.usecase.js";
 import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { quizRepo } from "./quiz.repo.js";
 import { quizMessagesCodes } from "./quiz.messages.js";
-import { stripAnswers } from "./quiz.dto.js";
+import { quizListSelect, stripAnswers } from "./quiz.dto.js";
 
 // Points awarded per attempt: 5 per correct answer, +30 bonus on pass.
 const POINTS_PER_CORRECT = 5;
@@ -377,7 +377,8 @@ class QuizUsecase {
   // ════════════════════════════════════════════════════════
   // QUIZ READ
   // ════════════════════════════════════════════════════════
-  async buildQuizListWhere(authUser) {
+  /** Role scope for the quiz list (which quizzes the viewer may see at all). */
+  buildQuizScopeWhere(authUser) {
     if (authUser.role === USER_ROLES.ADMIN) return {};
     if (authUser.role === USER_ROLES.PARENT) {
       return { createdByParentId: authUser.id };
@@ -386,14 +387,135 @@ class QuizUsecase {
     return { participants: { some: { studentId: authUser.id } } };
   }
 
+  /** The child an admin/parent is focusing the list on (the "أطفالي" filter). */
+  resolveFocusStudentId(authUser, studentId) {
+    if (authUser.role === USER_ROLES.STUDENT) return undefined;
+    const id = Number(studentId);
+    return Number.isInteger(id) && id > 0 ? id : undefined;
+  }
+
+  /**
+   * Compose the full list `where`: role scope + title search + an optional
+   * per-child ("أطفالي") narrowing + done/pending status filter. `status`
+   * semantics depend on whose lens we're using:
+   *  - STUDENT, or ADMIN/PARENT focused on ONE child: done = that child has an
+   *    attempt; pending = they don't.
+   *  - ADMIN/PARENT (no child focus): done = EVERY assigned child completed.
+   */
+  async buildQuizListWhere(authUser, { search, status, studentId } = {}) {
+    const where = this.buildQuizScopeWhere(authUser);
+    const ands = [];
+
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["title"],
+    });
+    if (or) ands.push({ OR: or });
+
+    // "أطفالي" filter — narrow to quizzes that include the chosen child.
+    const focusStudentId = this.resolveFocusStudentId(authUser, studentId);
+    if (focusStudentId) {
+      ands.push({ participants: { some: { studentId: focusStudentId } } });
+    }
+
+    const normalized =
+      typeof status === "string" ? status.toLowerCase() : undefined;
+    if (normalized === "done" || normalized === "pending") {
+      // A single-child lens (the student themself, or a focused child) checks
+      // that one child's attempt; the manager overview checks full completion.
+      const lensStudentId =
+        authUser.role === USER_ROLES.STUDENT ? authUser.id : focusStudentId;
+      if (lensStudentId) {
+        ands.push(
+          normalized === "done"
+            ? { attempts: { some: { studentId: lensStudentId } } }
+            : { attempts: { none: { studentId: lensStudentId } } },
+        );
+      } else {
+        const parentId =
+          authUser.role === USER_ROLES.PARENT ? authUser.id : null;
+        const doneIds = await quizRepo.getFullyCompletedQuizIds(parentId);
+        ands.push(
+          normalized === "done"
+            ? { id: { in: doneIds } }
+            : { id: { notIn: doneIds } },
+        );
+      }
+    }
+
+    if (ands.length) where.AND = ands;
+    return where;
+  }
+
+  /**
+   * Single-child status shape (used for a STUDENT viewing their own quizzes, or
+   * an ADMIN/PARENT focused on one child). `attempts` here are already scoped to
+   * that one child. → PASSED | ATTEMPTED | PENDING + a downloadable certificate.
+   */
+  shapeSingleChildRow(row) {
+    const attempts = row.attempts ?? [];
+    const passedAttempt = attempts.find((a) => a.passed);
+    const status = passedAttempt
+      ? "PASSED"
+      : attempts.length
+        ? "ATTEMPTED"
+        : "PENDING";
+    const certificateId =
+      (passedAttempt ?? attempts.find((a) => a.certificate))?.certificate?.id ??
+      null;
+    return {
+      ...row,
+      myAttempt: attempts[0] ?? null,
+      passed: Boolean(passedAttempt),
+      certificateId,
+      status,
+    };
+  }
+
+  /** Attach per-viewer status fields to each quiz list row. */
+  shapeQuizListRow(row, authUser, focusStudentId) {
+    // STUDENT, or a manager focused on a single child → per-child status.
+    if (authUser.role === USER_ROLES.STUDENT || focusStudentId) {
+      return {
+        ...this.shapeSingleChildRow(row),
+        participantsCount: row._count?.participants ?? 0,
+        focusStudentId: focusStudentId ?? undefined,
+      };
+    }
+
+    // ADMIN / PARENT overview: completion across all assigned children.
+    const attempts = row.attempts ?? [];
+    const participantsCount = row._count?.participants ?? 0;
+    const completedCount = new Set(attempts.map((a) => a.studentId)).size;
+    const status =
+      participantsCount > 0 && completedCount >= participantsCount
+        ? "DONE"
+        : completedCount > 0
+          ? "PARTIAL"
+          : "PENDING";
+    return { ...row, participantsCount, completedCount, status };
+  }
+
   async listQuizzes(authUser, params) {
     const { skip, take, page, limit } = paginate({
       page: params.page,
       limit: params.limit,
     });
-    const where = await this.buildQuizListWhere(authUser);
-    const { items, total } = await quizRepo.listQuizzes(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+    const where = await this.buildQuizListWhere(authUser, params);
+    const focusStudentId = this.resolveFocusStudentId(authUser, params.studentId);
+    // Scope the embedded attempts to whichever child we're rendering for.
+    const attemptStudentId =
+      authUser.role === USER_ROLES.STUDENT ? authUser.id : focusStudentId;
+    const select = attemptStudentId
+      ? quizListSelect({ studentId: attemptStudentId })
+      : quizListSelect();
+    const { items, total } = await quizRepo.listQuizzes(where, skip, take, {
+      select,
+    });
+    const shaped = items.map((row) =>
+      this.shapeQuizListRow(row, authUser, focusStudentId),
+    );
+    return paginatedResult(shaped, total, page, limit);
   }
 
   /** Scope: ADMIN, owning parent, or a participant student. */
@@ -451,7 +573,11 @@ class QuizUsecase {
     }
 
     const { correctCount, totalQuestions } = this.grade(quiz.items, input.answers);
-    const passed = correctCount >= quiz.passThreshold;
+    // `passThreshold` is a PERCENTAGE (0–100), matching the build UI. Pass when
+    // the child's correct-answer percentage meets it.
+    const scorePercent =
+      totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+    const passed = scorePercent >= quiz.passThreshold;
     const points = correctCount * POINTS_PER_CORRECT + (passed ? PASS_BONUS_POINTS : 0);
 
     // Atomic: record the attempt + bump the student's points.

@@ -43,20 +43,6 @@ export const SUBSCRIPTION_PERMISSIONS = {
   CANCEL: "subscription.cancel",
 };
 
-export const SESSION_PERMISSIONS = {
-  CREATE: "session.create",
-  LIST: "session.list",
-  VIEW: "session.view",
-  EDIT: "session.edit",
-  DELETE: "session.delete",
-};
-
-export const QURAN_PERMISSIONS = {
-  READ: "quran.read", // reference data (surahs/juz/segments)
-  PROGRESS_VIEW: "quran.progress_view", // read a student's progress (scoped)
-  PROGRESS_MANAGE: "quran.progress_manage", // admin marks segments
-};
-
 export const GAME_PERMISSIONS = {
   LIST: "game.list",
   VIEW: "game.view",
@@ -151,6 +137,12 @@ export const PAYMENT_TEMPLATE_PERMISSIONS = {
   MANAGE: "payment_template.manage",
 };
 
+// Global app settings (hourly rate + currency) — admin-only management.
+export const SETTINGS_PERMISSIONS = {
+  VIEW: "settings.view",
+  MANAGE: "settings.manage",
+};
+
 export const DASHBOARD_PERMISSIONS = {
   VIEW_ADMIN: "dashboard.view_admin",
   VIEW_PARENT: "dashboard.view_parent",
@@ -162,8 +154,6 @@ export const PERMISSIONS = {
   PLAN: PLAN_PERMISSIONS,
   COUPON: COUPON_PERMISSIONS,
   SUBSCRIPTION: SUBSCRIPTION_PERMISSIONS,
-  SESSION: SESSION_PERMISSIONS,
-  QURAN: QURAN_PERMISSIONS,
   GAME: GAME_PERMISSIONS,
   REPORT: REPORT_PERMISSIONS,
   QUIZ: QUIZ_PERMISSIONS,
@@ -177,6 +167,7 @@ export const PERMISSIONS = {
   ATTACHMENT: ATTACHMENT_PERMISSIONS,
   INVOICE: INVOICE_PERMISSIONS,
   PAYMENT_TEMPLATE: PAYMENT_TEMPLATE_PERMISSIONS,
+  SETTINGS: SETTINGS_PERMISSIONS,
 };
 
 /** Every permission code defined above, flattened. */
@@ -197,10 +188,6 @@ export const ROLE_PERMISSIONS = {
     SUBSCRIPTION_PERMISSIONS.REQUEST,
     INVOICE_PERMISSIONS.VIEW,
     INVOICE_PERMISSIONS.LIST,
-    SESSION_PERMISSIONS.VIEW,
-    SESSION_PERMISSIONS.LIST,
-    QURAN_PERMISSIONS.READ,
-    QURAN_PERMISSIONS.PROGRESS_VIEW,
     GAME_PERMISSIONS.VIEW,
     GAME_PERMISSIONS.LIST,
     REPORT_PERMISSIONS.VIEW,
@@ -219,8 +206,6 @@ export const ROLE_PERMISSIONS = {
     DASHBOARD_PERMISSIONS.VIEW_PARENT,
   ],
   [USER_ROLES.STUDENT]: [
-    QURAN_PERMISSIONS.READ,
-    QURAN_PERMISSIONS.PROGRESS_VIEW,
     GAME_PERMISSIONS.LIST,
     GAME_PERMISSIONS.VIEW,
     GAME_PERMISSIONS.ATTEMPT,

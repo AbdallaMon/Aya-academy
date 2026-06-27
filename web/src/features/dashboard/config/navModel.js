@@ -2,14 +2,20 @@
 
 // Builds the dashboard navigation model, gated by role + permission code.
 //
-// Each item: { key, labelKey, href, icon, permission? , anyPermission? }
-//   - `permission`     single PERMISSIONS code required to show the item
-//   - `anyPermission`  array — show if the user holds ANY of them
-//   - items with neither are always shown (e.g. Overview)
+// The model is GROUPED: each role returns an array of sections, and each
+// section has a heading (labelKey) plus its items. A section with
+// `labelKey: null` renders without a header (used for the lone Overview link at
+// the top).
 //
-// The actual rendering (in DashboardSidebar) filters with usePermission, so this
-// stays declarative. Role decides WHICH set of links; permission decides whether
-// each gated link is visible at all.
+//   group: { key, labelKey, items: [...] }
+//   item:  { key, labelKey, href, icon, permission? , anyPermission? }
+//     - `permission`     single PERMISSIONS code required to show the item
+//     - `anyPermission`  array — show if the user holds ANY of them
+//     - items with neither are always shown (e.g. Overview)
+//
+// The actual rendering (DashboardNav) filters items with usePermission and hides
+// any section left empty, so this stays declarative. Role decides WHICH sections
+// exist; permission decides whether each gated link is visible at all.
 
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import {
@@ -28,10 +34,10 @@ import {
   MdGroup,
   MdFamilyRestroom,
   MdSchool,
-  MdEventNote,
   MdLocalOffer,
   MdLeaderboard,
   MdReceiptLong,
+  MdSettings,
 } from "react-icons/md";
 
 const ICONS = {
@@ -41,7 +47,6 @@ const ICONS = {
   students: MdSchool,
   plans: MdWorkspacePremium,
   subscriptions: MdSubscriptions,
-  sessions: MdEventNote,
   coupons: MdLocalOffer,
   games: MdSportsEsports,
   quizzes: MdQuiz,
@@ -56,69 +61,152 @@ const ICONS = {
   badges: MdMilitaryTech,
   leaderboard: MdLeaderboard,
   paymentTemplate: MdReceiptLong,
+  settings: MdSettings,
 };
 
-function adminNav() {
-  return [
+// The lone Overview link, shared by every role as the first (header-less) group.
+const OVERVIEW_GROUP = {
+  key: "general",
+  labelKey: null,
+  items: [
     { key: "overview", labelKey: "overview", href: "/dashboard", icon: ICONS.overview },
-    { key: "users", labelKey: "users", href: "/dashboard/users", icon: ICONS.users, permission: PERMISSIONS.USER.LIST },
-    { key: "parents", labelKey: "parents", href: "/dashboard/parents", icon: ICONS.parents, permission: PERMISSIONS.USER.LIST },
-    { key: "students", labelKey: "students", href: "/dashboard/students", icon: ICONS.students, permission: PERMISSIONS.USER.LIST },
-    { key: "plans", labelKey: "plans", href: "/dashboard/plans", icon: ICONS.plans, permission: PERMISSIONS.PLAN.LIST },
-    { key: "subscriptions", labelKey: "subscriptions", href: "/dashboard/subscriptions", icon: ICONS.subscriptions, permission: PERMISSIONS.SUBSCRIPTION.LIST },
-    { key: "paymentTemplate", labelKey: "paymentTemplate", href: "/dashboard/payment-template-settings", icon: ICONS.paymentTemplate, permission: PERMISSIONS.PAYMENT_TEMPLATE.VIEW },
-    { key: "sessions", labelKey: "sessions", href: "/dashboard/sessions", icon: ICONS.sessions, permission: PERMISSIONS.SESSION.LIST },
-    { key: "coupons", labelKey: "coupons", href: "/dashboard/coupons", icon: ICONS.coupons, permission: PERMISSIONS.COUPON.LIST },
-    { key: "games", labelKey: "games", href: "/dashboard/games", icon: ICONS.games, permission: PERMISSIONS.GAME.LIST },
-    { key: "quizzes", labelKey: "quizzes", href: "/dashboard/quizzes", icon: ICONS.quizzes, permission: PERMISSIONS.QUIZ.LIST },
-    { key: "quizBank", labelKey: "quizBank", href: "/dashboard/quiz-bank", icon: ICONS.quizBank, permission: PERMISSIONS.QUIZ.LIST_BANK },
-    { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.CREATE_INVITE },
-    { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
-    { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
-    { key: "certificateTemplates", labelKey: "certificateTemplates", href: "/dashboard/certificate-templates", icon: ICONS.certificateTemplates, permission: PERMISSIONS.CERTIFICATE.MANAGE_TEMPLATES },
-    { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.BADGE.LIST },
-    { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
-    { key: "backups", labelKey: "backups", href: "/dashboard/backups", icon: ICONS.backups, permission: PERMISSIONS.BACKUP.MANAGE },
-    { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
+  ],
+};
+
+function adminGroups() {
+  return [
+    OVERVIEW_GROUP,
+    {
+      key: "people",
+      labelKey: "navGroupPeople",
+      items: [
+        { key: "users", labelKey: "users", href: "/dashboard/users", icon: ICONS.users, permission: PERMISSIONS.USER.LIST },
+        { key: "parents", labelKey: "parents", href: "/dashboard/parents", icon: ICONS.parents, permission: PERMISSIONS.USER.LIST },
+        { key: "students", labelKey: "students", href: "/dashboard/students", icon: ICONS.students, permission: PERMISSIONS.USER.LIST },
+      ],
+    },
+    {
+      key: "billing",
+      labelKey: "navGroupBilling",
+      items: [
+        { key: "plans", labelKey: "plans", href: "/dashboard/plans", icon: ICONS.plans, permission: PERMISSIONS.PLAN.LIST },
+        { key: "subscriptions", labelKey: "subscriptions", href: "/dashboard/subscriptions", icon: ICONS.subscriptions, permission: PERMISSIONS.SUBSCRIPTION.LIST },
+        { key: "coupons", labelKey: "coupons", href: "/dashboard/coupons", icon: ICONS.coupons, permission: PERMISSIONS.COUPON.LIST },
+        { key: "paymentTemplate", labelKey: "paymentTemplate", href: "/dashboard/payment-template-settings", icon: ICONS.paymentTemplate, permission: PERMISSIONS.PAYMENT_TEMPLATE.VIEW },
+      ],
+    },
+    {
+      key: "activities",
+      labelKey: "navGroupActivities",
+      items: [
+        { key: "games", labelKey: "games", href: "/dashboard/games", icon: ICONS.games, permission: PERMISSIONS.GAME.LIST },
+        { key: "quizzes", labelKey: "quizzes", href: "/dashboard/quizzes", icon: ICONS.quizzes, permission: PERMISSIONS.QUIZ.LIST },
+        { key: "quizBank", labelKey: "quizBank", href: "/dashboard/quiz-bank", icon: ICONS.quizBank, permission: PERMISSIONS.QUIZ.LIST_BANK },
+        { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.CREATE_INVITE },
+      ],
+    },
+    {
+      key: "progress",
+      labelKey: "navGroupProgress",
+      items: [
+        { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
+        { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
+        { key: "certificateTemplates", labelKey: "certificateTemplates", href: "/dashboard/certificate-templates", icon: ICONS.certificateTemplates, permission: PERMISSIONS.CERTIFICATE.MANAGE_TEMPLATES },
+        { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.BADGE.LIST },
+        { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
+      ],
+    },
+    {
+      key: "system",
+      labelKey: "navGroupSystem",
+      items: [
+        { key: "settings", labelKey: "settings", href: "/dashboard/settings", icon: ICONS.settings, permission: PERMISSIONS.SETTINGS.VIEW },
+        { key: "backups", labelKey: "backups", href: "/dashboard/backups", icon: ICONS.backups, permission: PERMISSIONS.BACKUP.MANAGE },
+        { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
+      ],
+    },
   ];
 }
 
-function parentNav() {
+function parentGroups() {
   return [
-    { key: "overview", labelKey: "overview", href: "/dashboard", icon: ICONS.overview },
-    { key: "children", labelKey: "children", href: "/dashboard/children", icon: ICONS.children, permission: PERMISSIONS.USER.LIST },
-    { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.LIST },
-    { key: "subscriptions", labelKey: "subscriptions", href: "/dashboard/subscriptions", icon: ICONS.subscriptions, permission: PERMISSIONS.SUBSCRIPTION.LIST },
-    { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
-    { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
-    { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
-    { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
+    OVERVIEW_GROUP,
+    {
+      key: "children",
+      labelKey: "navGroupChildren",
+      items: [
+        { key: "children", labelKey: "children", href: "/dashboard/children", icon: ICONS.children, permission: PERMISSIONS.USER.LIST },
+        { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.LIST },
+      ],
+    },
+    {
+      key: "progress",
+      labelKey: "navGroupProgress",
+      items: [
+        { key: "reports", labelKey: "reports", href: "/dashboard/reports", icon: ICONS.reports, permission: PERMISSIONS.REPORT.LIST },
+        { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
+        { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
+      ],
+    },
+    {
+      key: "account",
+      labelKey: "navGroupAccount",
+      items: [
+        { key: "subscriptions", labelKey: "subscriptions", href: "/dashboard/subscriptions", icon: ICONS.subscriptions, permission: PERMISSIONS.SUBSCRIPTION.LIST },
+        { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
+      ],
+    },
   ];
 }
 
-function studentNav() {
+function studentGroups() {
   return [
-    { key: "overview", labelKey: "overview", href: "/dashboard", icon: ICONS.overview },
-    { key: "games", labelKey: "myGames", href: "/dashboard/games", icon: ICONS.games, permission: PERMISSIONS.GAME.LIST },
-    { key: "quizzes", labelKey: "quizzes", href: "/dashboard/quizzes", icon: ICONS.quizzes, anyPermission: [PERMISSIONS.QUIZ.VIEW, PERMISSIONS.QUIZ.ATTEMPT] },
-    { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
-    { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.REWARD.LIST },
-    { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
-    { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
+    OVERVIEW_GROUP,
+    {
+      key: "learn",
+      labelKey: "navGroupLearn",
+      items: [
+        { key: "games", labelKey: "myGames", href: "/dashboard/games", icon: ICONS.games, permission: PERMISSIONS.GAME.LIST },
+        { key: "quizzes", labelKey: "quizzes", href: "/dashboard/quizzes", icon: ICONS.quizzes, anyPermission: [PERMISSIONS.QUIZ.VIEW, PERMISSIONS.QUIZ.ATTEMPT] },
+      ],
+    },
+    {
+      key: "achievements",
+      labelKey: "navGroupAchievements",
+      items: [
+        { key: "certificates", labelKey: "certificates", href: "/dashboard/certificates", icon: ICONS.certificates, permission: PERMISSIONS.CERTIFICATE.LIST },
+        { key: "badges", labelKey: "badges", href: "/dashboard/badges", icon: ICONS.badges, permission: PERMISSIONS.REWARD.LIST },
+        { key: "leaderboard", labelKey: "leaderboardNav", href: "/dashboard/leaderboard", icon: ICONS.leaderboard, permission: PERMISSIONS.POINT.VIEW_LEADERBOARD },
+      ],
+    },
+    {
+      key: "account",
+      labelKey: "navGroupAccount",
+      items: [
+        { key: "notifications", labelKey: "notifications", href: "/dashboard/notifications", icon: ICONS.notifications, permission: PERMISSIONS.NOTIFICATION.LIST },
+      ],
+    },
   ];
 }
 
-export function getNavModelForRole(role) {
+// Grouped nav (sections with headings) — the source of truth for rendering.
+export function getNavGroupsForRole(role) {
   switch (role) {
     case USER_ROLES.ADMIN:
-      return adminNav();
+      return adminGroups();
     case USER_ROLES.PARENT:
-      return parentNav();
+      return parentGroups();
     case USER_ROLES.STUDENT:
-      return studentNav();
+      return studentGroups();
     default:
-      return [{ key: "overview", labelKey: "overview", href: "/dashboard", icon: ICONS.overview }];
+      return [OVERVIEW_GROUP];
   }
+}
+
+// Flat list of all nav items for a role (groups flattened). Used for path
+// matching where grouping is irrelevant.
+export function getNavModelForRole(role) {
+  return getNavGroupsForRole(role).flatMap((group) => group.items);
 }
 
 // Find the nav item whose href best matches the given bare (locale-stripped)

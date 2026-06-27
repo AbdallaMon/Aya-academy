@@ -1,11 +1,8 @@
 import { ok } from "../../shared/http/response.js";
+import { authUser } from "../../shared/http/params.js";
 import { messagesNames } from "@aya/shared";
 import { paymentTemplateUsecase } from "./paymentTemplate.usecase.js";
 import { paymentTemplateMessagesCodes } from "./paymentTemplate.messages.js";
-
-function authUser(req) {
-  return req.auth;
-}
 
 class PaymentTemplateController {
   get = async (req, res) => {

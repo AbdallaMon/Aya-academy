@@ -86,10 +86,12 @@ export class QuizValidation {
   // ── quiz build ──────────────────────────────────────────
   static buildQuizSchema = z.object({
     title: z.string().min(1, quizMessagesCodes.QUIZ_TITLE_REQUIRED),
+    // Percentage (1–100) of correct answers required to pass.
     passThreshold: z
       .number()
       .int()
-      .positive(quizMessagesCodes.QUIZ_PASS_THRESHOLD_INVALID),
+      .min(1, quizMessagesCodes.QUIZ_PASS_THRESHOLD_INVALID)
+      .max(100, quizMessagesCodes.QUIZ_PASS_THRESHOLD_INVALID),
     giftName: z.string().trim().optional(),
     giftThemeJson: z.any().optional(),
     items: z

@@ -1,5 +1,6 @@
-import { Button, Chip, Stack, Typography } from "@mui/material";
+import { Chip, Typography } from "@mui/material";
 import { MdEdit, MdDelete } from "react-icons/md";
+import { RowActionsMenu } from "../../../shared/components/index.js";
 import { formatDate } from "./constant.js";
 
 /**
@@ -74,23 +75,25 @@ export function buildQuizBankColumns({
       field: "actions",
       type: "actions",
       headerName: txt.actions,
-      width: 170,
+      width: 80,
       renderCell: ({ row }) => (
-        <Stack direction="row" spacing={0.5}>
-          {canEdit && (
-            <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-              {txt.edit}
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              size="small"
-              color="error"
-              startIcon={<MdDelete />}
-              onClick={() => onDelete(row)}
-            />
-          )}
-        </Stack>
+        <RowActionsMenu
+          actions={[
+            {
+              label: txt.edit,
+              icon: <MdEdit />,
+              onClick: () => onEdit(row),
+              hidden: !canEdit,
+            },
+            {
+              label: txt.delete,
+              icon: <MdDelete />,
+              color: "error",
+              onClick: () => onDelete(row),
+              hidden: !canDelete,
+            },
+          ]}
+        />
       ),
     });
   }

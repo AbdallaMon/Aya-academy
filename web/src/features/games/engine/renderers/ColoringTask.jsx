@@ -15,9 +15,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "../../../../i18n/client.js";
-import { SparkleTrail } from "../../animations/index.js";
+import { Confetti, SparkleTrail } from "../../animations/index.js";
 
 const DEFAULT_PALETTE = ["#ffd166", "#06d6a0", "#ef476f", "#118ab2", "#8a5bff", "#ffffff"];
 const ALL_REGIONS = ["sky", "dome", "body", "door", "minaret", "crescent"];
@@ -36,16 +36,22 @@ export default function ColoringTask({ question, onCorrect, sounds }) {
   const [color, setColor] = useState(palette[0]);
   const [fills, setFills] = useState({}); // regionId -> color
   const [pulse, setPulse] = useState(null);
+  const [splash, setSplash] = useState(null); // { key, color } — a paint "splash" burst
   const [celebrate, setCelebrate] = useState(false);
   const doneRef = useRef(false);
+  const splashKey = useRef(0);
 
   const coloredCount = Object.keys(fills).length;
 
   function fillRegion(id) {
     if (!regionIds.includes(id) || doneRef.current) return;
-    sounds?.play("pop");
+    sounds?.play("paint"); // airy brush swish for each stroke
     setPulse(id);
     setTimeout(() => setPulse(null), 350);
+    // a little color-tinted "splash" of sparkles for every brush stroke
+    splashKey.current += 1;
+    setSplash({ key: splashKey.current, color });
+    setTimeout(() => setSplash(null), 850);
     setFills((prev) => {
       const next = { ...prev, [id]: color };
       const allColored = regionIds.every((r) => next[r]);
@@ -153,7 +159,58 @@ export default function ColoringTask({ question, onCorrect, sounds }) {
           {/* ground line (decoration, not colorable) */}
           <rect x="6" y="176" width="228" height="10" rx="5" fill="#cdbcff" opacity="0.5" />
         </svg>
-        {celebrate ? <SparkleTrail count={10} size={26} /> : null}
+
+        {/* per-stroke color "splash": a tiny burst of dots tinted to the chosen
+            color, so every paint feels juicy. */}
+        <AnimatePresence>
+          {splash ? (
+            <Box
+              key={splash.key}
+              sx={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                display: "grid",
+                placeItems: "center",
+                zIndex: 4,
+              }}
+            >
+              {Array.from({ length: 8 }).map((_, i) => {
+                const angle = (i / 8) * Math.PI * 2;
+                return (
+                  <motion.span
+                    key={i}
+                    initial={{ x: 0, y: 0, scale: 0.5, opacity: 0 }}
+                    animate={{
+                      x: Math.cos(angle) * (26 + i * 2),
+                      y: Math.sin(angle) * (26 + i * 2),
+                      scale: [0.5, 1.1, 0.4],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    style={{
+                      position: "absolute",
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      background: splash.color,
+                      border: "2px solid #ffffff",
+                      boxShadow: `0 0 8px ${splash.color}`,
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          ) : null}
+        </AnimatePresence>
+
+        {/* finishing the whole mosque: confetti + a big sparkle shower */}
+        {celebrate ? (
+          <>
+            <Confetti count={26} />
+            <SparkleTrail count={12} size={26} />
+          </>
+        ) : null}
       </Box>
 
       {/* palette */}

@@ -21,6 +21,21 @@ export function tonePalette(tone) {
   return TONE_PALETTE[tone] || TONE_PALETTE.neutral;
 }
 
+// Strong, short-lived flash colours for a tap-to-select effect (see
+// useSelectFlash). Deliberately punchier than the resting tone palette so a
+// correct/wrong tap reads instantly, then reverts. flashPalette(true) → green,
+// flashPalette(false) → red, flashPalette(null) → null (no override).
+export const FLASH_PALETTE = {
+  correct: { bg: "#bff3e2", border: "#18c08f" },
+  wrong: { bg: "#ffd0db", border: "#ff5fa2" },
+};
+
+export function flashPalette(correct) {
+  if (correct === true) return FLASH_PALETTE.correct;
+  if (correct === false) return FLASH_PALETTE.wrong;
+  return null;
+}
+
 // Derive a per-question correctness check WITHOUT relying on stripped isCorrect.
 // 1) explicit option.isCorrect (admin preview payload) wins if present
 // 2) else mediaJson.correctIndices (derived server-side from the answer key — the

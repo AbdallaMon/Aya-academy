@@ -6,6 +6,7 @@
 // theme (so light/dark toggling is instant) — never from a static pageTheme prop.
 
 import { Box, Container, Typography } from '@mui/material';
+import { brandTextColor } from '@/shared/ui/brandText.js';
 
 export function SectionHeading({ eyebrow, title, subtitle, align = 'center', sx }) {
   return (
@@ -21,7 +22,7 @@ export function SectionHeading({ eyebrow, title, subtitle, align = 'center', sx 
       {eyebrow && (
         <Typography
           sx={{
-            color: 'primary.main',
+            color: brandTextColor,
             fontWeight: 800,
             letterSpacing: 1.2,
             textTransform: 'uppercase',
@@ -64,6 +65,14 @@ export default function Section({
       sx={{
         py: { xs: 7, md: 11 },
         bgcolor: alt ? 'background.paper' : 'background.default',
+        // The two surface tokens differ by only ~1.05:1, so `alt` alone is nearly
+        // invisible. A hairline top+bottom seam makes alternating sections read as
+        // distinct bands without darkening the shared card surface.
+        ...(alt && {
+          borderTop: '1px solid',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }),
         scrollMarginTop: 90, // so anchored sections clear the sticky navbar
         ...sx,
       }}

@@ -8,7 +8,14 @@
 //
 // `message` is a language-neutral CODE; we resolve it to a localized string via
 // the i18n `messagesCodes` table using the fallback chain:
-//   table[translationKey][code] -> table[code] -> table.generalMessages[code] -> raw code
+//   table[translationKey][code] -> table.generalMessages[code]
+//     -> ANY namespace that defines [code] -> raw code
+//
+// The global (any-namespace) step matters because many codes are thrown with a
+// missing or different `translationKey` than the namespace they live under — e.g.
+// every Zod validation error goes through `validate()` with translationKey=null,
+// and cross-namespace schemas (a user schema using AUTH_INVALID_EMAIL) are common.
+// Code VALUES are globally unique across namespaces, so this lookup is unambiguous.
 //
 // Mount <AppToastContainer /> once near the app root (done in AppProviders).
 
@@ -33,13 +40,25 @@ export function useToast() {
     (message, translationKey) => {
       if (!message) return "";
       const table = t("messagesCodes", { returnObjects: true }) || {};
-      const general = table[messagesNames.generalMessages];
-      return (
-        table?.[translationKey]?.[message] ??
-        table?.[message] ??
-        general?.[message] ??
-        message
-      );
+      if (!table || typeof table !== "object") return message;
+
+      // 1) exact namespace stamped on the response
+      const scoped = table[translationKey]?.[message];
+      if (scoped != null) return scoped;
+
+      // 2) general namespace
+      const general = table[messagesNames.generalMessages]?.[message];
+      if (general != null) return general;
+
+      // 3) global fallback: any namespace that defines this code (values are
+      //    globally unique, so this resolves codes thrown with a null/wrong key)
+      for (const ns of Object.keys(table)) {
+        const hit = table[ns]?.[message];
+        if (hit != null) return hit;
+      }
+
+      // 4) not a known code — return as-is (already-localized text or unknown)
+      return message;
     },
     [t],
   );

@@ -1,61 +1,94 @@
 'use client';
 
-import { Box, Chip, LinearProgress, Stack, Typography, useTheme } from '@mui/material';
+// ChildDashboardHome — the ONE honest preview of the real product dashboard a
+// parent gets after signing up. It mirrors ONLY features that actually exist in
+// the dashboard: a gradient hero (points / level / rank), an active-subscription
+// chip with remaining hours, earned badges, and the top-students leaderboard.
+// It deliberately does NOT show per-Juz / per-ayah progress, "level progress %",
+// or streaks — those are not real features. Colours come from the live MUI theme.
+
+import Link from 'next/link';
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Stack,
+  Typography,
+  useTheme,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { motion } from 'framer-motion';
-import { MdStar, MdCheckCircle } from 'react-icons/md';
+import {
+  MdStar,
+  MdEmojiEvents,
+  MdArrowForward,
+  MdAccessTimeFilled,
+} from 'react-icons/md';
 import { GrAchievement } from 'react-icons/gr';
-import { AiOutlineFire } from 'react-icons/ai';
 import Section from '@/shared/ui/sections/Section.jsx';
+import { brandTextColor } from '@/shared/ui/brandText.js';
 import { useTranslation } from '@/i18n/client.js';
+import { localePath } from '@/i18n/routing.js';
 
 const CONTENT = {
   ar: {
     eyebrow: 'لوحة الطفل',
     title: 'تابع كل خطوة في رحلتهم',
-    features: [
-      'تقدّم واضح لكل جزء ومستوى',
-      'أوسمة محفّزة مثل «نجمة الجزء الأول»',
-      'لوحة سهلة لولي الأمر بلغتين',
-      'تذكيرات لطيفة بلا ضغط',
-    ],
+    intro: 'بعد التسجيل، هذه هي اللوحة التي تراها أنت وطفلك — النقاط، المستوى، الترتيب، الأوسمة ولوحة الصدارة في مكان واحد.',
+    cta: 'ابدأ مجاناً وشاهد لوحتك',
+    badgeOnCard: 'لوحة حيّة',
     card: {
-      title: 'لوحة طفلك',
-      sample: 'مثال',
-      overall: 'التقدّم العام',
-      keep: 'واصل التميّز! 🌟',
-      completed: 'الأجزاء المكتملة',
-      juz: ['الجزء ١', 'الجزء ٢'],
-      badges: ['نجمة الجزء ١', 'بطل المواظبة'],
-      streak: 'أيام متتالية',
-      streakDesc: 'مواظبة رائعة! استمر 🔥',
+      hi: 'مرحباً',
+      name: 'آدم',
+      myBoard: 'لوحتي',
+      points: 'النقاط',
+      level: 'المستوى',
+      rank: 'الترتيب',
+      subscription: '١٢ ساعة متبقية',
+      badges: 'الأوسمة',
+      badgeNames: ['نجمة الجزء ١', 'بطل المواظبة'],
+      leaderboard: 'لوحة الصدارة',
+      lbNames: ['آدم', 'سارة', 'يوسف'],
     },
   },
   en: {
     eyebrow: "Child's dashboard",
     title: 'See every step of their journey',
-    features: [
-      "Clear progress for each Juz' and level",
-      "Motivating badges like 'Juz 1 Star'",
-      'A parent-friendly dashboard in both languages',
-      'Gentle reminders, no pressure',
-    ],
+    intro: 'After signing up, this is the dashboard you and your child see — points, level, rank, badges and the leaderboard, all in one place.',
+    cta: 'Start free & see your dashboard',
+    badgeOnCard: 'Live dashboard',
     card: {
-      title: "Your child's dashboard",
-      sample: 'Sample',
-      overall: 'Overall progress',
-      keep: 'Keep up the great work! 🌟',
-      completed: 'Completed parts',
-      juz: ['Juz 1', 'Juz 2'],
-      badges: ['Juz 1 Star', 'Consistency Champ'],
-      streak: 'days streak',
-      streakDesc: 'Amazing consistency! Keep it up 🔥',
+      hi: 'Hi',
+      name: 'Adam',
+      myBoard: 'My dashboard',
+      points: 'Points',
+      level: 'Level',
+      rank: 'Rank',
+      subscription: '12 hours remaining',
+      badges: 'Badges',
+      badgeNames: ['Juz 1 Star', 'Consistency Champ'],
+      leaderboard: 'Leaderboard',
+      lbNames: ['Adam', 'Sara', 'Yusuf'],
     },
   },
 };
 
 const MotionBox = motion.create(Box);
-const completed = [100, 60];
+const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
+
+function StatPill({ value, label }) {
+  return (
+    <Box sx={{ textAlign: 'center', minWidth: 56 }}>
+      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1 }}>
+        {value}
+      </Typography>
+      <Typography variant="caption" sx={{ opacity: 0.92 }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
 
 export function ChildDashboardHome() {
   const theme = useTheme();
@@ -68,12 +101,12 @@ export function ChildDashboardHome() {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+          gridTemplateColumns: { xs: '1fr', md: '1.05fr 0.95fr' },
           gap: { xs: 4, md: 6 },
           alignItems: 'center',
         }}
       >
-        {/* Preview card */}
+        {/* ── Live-looking, honest dashboard preview ───────────────── */}
         <MotionBox
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -81,111 +114,170 @@ export function ChildDashboardHome() {
           transition={{ duration: 0.5 }}
           sx={{
             order: { xs: 2, md: 1 },
-            p: { xs: 2.5, md: 3 },
-            borderRadius: 5,
-            bgcolor: 'background.default',
+            position: 'relative',
+            p: { xs: 1.25, md: 1.5 },
+            borderRadius: 6,
+            bgcolor: 'background.paper',
             border: '1px solid',
             borderColor: 'divider',
-            boxShadow: `0 24px 50px ${alpha(theme.palette.primary.main, 0.14)}`,
+            boxShadow: `0 26px 60px ${alpha(theme.palette.primary.main, 0.18)}`,
           }}
         >
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography fontWeight={800}>{card.title}</Typography>
-              <Chip
-                label={card.sample}
-                size="small"
-                variant="outlined"
-                sx={{ height: 20, fontSize: 11, fontWeight: 700, color: 'text.secondary' }}
-              />
-            </Stack>
-            <Box sx={{ fontSize: 28 }}>🧒</Box>
+          {/* faux app window bar */}
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ px: 1.25, py: 1 }}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: alpha(theme.palette.error.main, 0.7) }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: alpha(theme.palette.warning.main, 0.8) }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: alpha(theme.palette.success.main, 0.8) }} />
+            <Chip
+              label={c.badgeOnCard}
+              size="small"
+              sx={{ ml: 'auto', height: 22, fontSize: 11, fontWeight: 800, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' }}
+            />
           </Stack>
 
-          {/* overall progress */}
-          <Box sx={{ p: 2, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.08), mb: 2 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-              <Typography variant="body2" fontWeight={700}>
-                {card.overall}
-              </Typography>
-              <Typography variant="h6" fontWeight={900} color="primary.main">
-                35%
-              </Typography>
-            </Stack>
-            <LinearProgress variant="determinate" value={35} sx={{ mt: 1, height: 10, borderRadius: 5 }} />
-            <Typography variant="caption" color="text.secondary">
-              {card.keep}
-            </Typography>
-          </Box>
-
-          {/* completed parts */}
-          <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
-            {card.completed}
-          </Typography>
-          <Stack spacing={1.25} sx={{ mb: 2 }}>
-            {card.juz.map((name, i) => (
-              <Box key={name}>
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="caption" fontWeight={700}>
-                    {name}
+          <Box sx={{ p: { xs: 1.25, md: 1.75 } }}>
+            {/* gradient hero — mirrors the real StudentOverview hero */}
+            <Box
+              sx={{
+                borderRadius: 4,
+                p: { xs: 2, md: 2.5 },
+                color: '#fff',
+                position: 'relative',
+                overflow: 'hidden',
+                background: `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.main} 100%)`,
+                boxShadow: `0 12px 28px ${alpha(theme.palette.primary.main, 0.4)}`,
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -50,
+                  insetInlineEnd: -30,
+                  width: 150,
+                  height: 150,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.12)',
+                },
+              }}
+            >
+              <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
+                <Avatar sx={{ width: 52, height: 52, bgcolor: 'secondary.main', fontSize: 26 }}>🦉</Avatar>
+                <Box sx={{ flex: 1, minWidth: 120 }}>
+                  <Typography fontWeight={900} noWrap>
+                    {card.hi}، {card.name} 🌟
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {completed[i]}%
+                  <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                    {card.myBoard}
+                  </Typography>
+                </Box>
+                {/* stats wrap onto their own full-width row on phones */}
+                <Stack
+                  direction="row"
+                  gap={1.5}
+                  sx={{
+                    width: { xs: '100%', sm: 'auto' },
+                    justifyContent: { xs: 'space-around', sm: 'flex-start' },
+                  }}
+                >
+                  <StatPill value="640" label={card.points} />
+                  <StatPill value="3" label={card.level} />
+                  <StatPill value="#2" label={card.rank} />
+                </Stack>
+              </Stack>
+            </Box>
+
+            {/* active subscription chip (real feature) */}
+            <Chip
+              icon={<MdAccessTimeFilled />}
+              color="success"
+              variant="outlined"
+              label={card.subscription}
+              sx={{ mt: 2, fontWeight: 700 }}
+            />
+
+            {/* badges + mini leaderboard side by side */}
+            <Box
+              sx={{
+                mt: 2,
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="caption" fontWeight={800} color="text.secondary">
+                  {card.badges}
+                </Typography>
+                <Stack direction="row" gap={1} sx={{ mt: 1 }}>
+                  <Stack alignItems="center" spacing={0.5} sx={{ flex: 1 }}>
+                    <Avatar sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.18), color: 'secondary.main', width: 38, height: 38 }}>
+                      <MdStar size={20} />
+                    </Avatar>
+                    <Typography variant="caption" align="center" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
+                      {card.badgeNames[0]}
+                    </Typography>
+                  </Stack>
+                  <Stack alignItems="center" spacing={0.5} sx={{ flex: 1 }}>
+                    <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.15), color: 'primary.main', width: 38, height: 38 }}>
+                      <GrAchievement size={18} />
+                    </Avatar>
+                    <Typography variant="caption" align="center" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
+                      {card.badgeNames[1]}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+
+              <Box sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Stack direction="row" alignItems="center" spacing={0.75}>
+                  <MdEmojiEvents color="#F6C453" size={16} />
+                  <Typography variant="caption" fontWeight={800} color="text.secondary">
+                    {card.leaderboard}
                   </Typography>
                 </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={completed[i]}
-                  color={completed[i] === 100 ? 'success' : 'primary'}
-                  sx={{ height: 8, borderRadius: 5 }}
-                />
+                <Stack spacing={0.75} sx={{ mt: 1 }}>
+                  {card.lbNames.map((n, i) => (
+                    <Stack key={n} direction="row" alignItems="center" spacing={1}>
+                      <Avatar sx={{ width: 20, height: 20, fontSize: 11, fontWeight: 800, bgcolor: RANK_COLORS[i], color: '#3a2d00' }}>
+                        {i + 1}
+                      </Avatar>
+                      <Typography variant="caption" fontWeight={i === 0 ? 900 : 600} noWrap sx={{ flex: 1 }}>
+                        {n}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {[640, 610, 580][i]}
+                      </Typography>
+                    </Stack>
+                  ))}
+                </Stack>
               </Box>
-            ))}
-          </Stack>
-
-          {/* badges + streak */}
-          <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
-            <Chip icon={<MdStar />} label={card.badges[0]} color="secondary" sx={{ fontWeight: 700 }} />
-            <Chip icon={<GrAchievement />} label={card.badges[1]} color="primary" sx={{ fontWeight: 700 }} />
-          </Stack>
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1.5}
-            sx={{ p: 1.5, borderRadius: 3, bgcolor: alpha(theme.palette.warning.main, 0.12) }}
-          >
-            <Box sx={{ color: 'warning.main' }}>
-              <AiOutlineFire size={30} />
             </Box>
-            <Box>
-              <Typography fontWeight={900}>5 {card.streak}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {card.streakDesc}
-              </Typography>
-            </Box>
-          </Stack>
+          </Box>
         </MotionBox>
 
-        {/* Copy + features */}
+        {/* ── Copy + CTA (no feature list — that lives in WhyAya) ───── */}
         <Box sx={{ order: { xs: 1, md: 2 } }}>
-          <Typography sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', fontSize: 13, mb: 1.5 }}>
+          <Typography sx={{ color: brandTextColor, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', fontSize: 13, mb: 1.5 }}>
             {c.eyebrow}
           </Typography>
-          <Typography variant="h2" sx={{ mb: 3 }}>
+          <Typography variant="h2" sx={{ mb: 2 }}>
             {c.title}
           </Typography>
-          <Stack spacing={1.75}>
-            {c.features.map((f) => (
-              <Stack key={f} direction="row" spacing={1.25} alignItems="center">
-                <Box sx={{ color: 'success.main', flexShrink: 0 }}>
-                  <MdCheckCircle size={24} />
-                </Box>
-                <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                  {f}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
+          <Typography variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', mb: 4, lineHeight: 1.7 }}>
+            {c.intro}
+          </Typography>
+          <Button
+            component={Link}
+            href={localePath(lng, '/register')}
+            variant="contained"
+            size="large"
+            endIcon={
+              <Box sx={{ display: 'flex', transform: lng === 'en' ? 'none' : 'scaleX(-1)' }}>
+                <MdArrowForward />
+              </Box>
+            }
+            sx={{ fontWeight: 800 }}
+          >
+            {c.cta}
+          </Button>
         </Box>
       </Box>
     </Section>

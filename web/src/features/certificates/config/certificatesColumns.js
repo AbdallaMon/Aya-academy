@@ -3,7 +3,9 @@
 // Declarative DataTable columns for certificates. Built via a factory so the
 // columns can use the active language + open the preview modal.
 
-import { Button, Chip } from "@mui/material";
+import { Chip } from "@mui/material";
+import { MdVisibility } from "react-icons/md";
+import { RowActionsMenu } from "../../../shared/components/index.js";
 
 export function buildCertificateColumns({ txt, lng, onView }) {
   return [
@@ -43,12 +45,18 @@ export function buildCertificateColumns({ txt, lng, onView }) {
     {
       field: "actions",
       type: "actions",
-      headerName: txt.view,
-      width: 110,
+      headerName: txt.actions || txt.view,
+      width: 80,
       renderCell: ({ row }) => (
-        <Button size="small" variant="outlined" onClick={() => onView(row)}>
-          {txt.view}
-        </Button>
+        <RowActionsMenu
+          actions={[
+            {
+              label: txt.view,
+              icon: <MdVisibility />,
+              onClick: () => onView(row),
+            },
+          ]}
+        />
       ),
     },
   ];

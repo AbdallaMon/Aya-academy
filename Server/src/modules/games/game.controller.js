@@ -1,16 +1,9 @@
 import { gameMessagesCodes, messagesNames } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
-import { badRequest } from "../../shared/errors/AppError.js";
+import { idParam } from "../../shared/http/params.js";
 import { gameUsecase } from "./game.usecase.js";
 
 const TK = messagesNames.gameMessages;
-
-function idParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
 
 class GameController {
   // ── public (no auth) ────────────────────────────────────
@@ -68,6 +61,19 @@ class GameController {
 
   myAssignments = async (req, res) => {
     const result = await gameUsecase.myAssignments(req.auth);
+    return ok(res, result);
+  };
+
+  studentAssignments = async (req, res) => {
+    const result = await gameUsecase.studentAssignments(
+      req.auth,
+      idParam(req.params.studentId),
+    );
+    return ok(res, result);
+  };
+
+  myFreeGame = async (_req, res) => {
+    const result = await gameUsecase.getMyFreeGame();
     return ok(res, result);
   };
 

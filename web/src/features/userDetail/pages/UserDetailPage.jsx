@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { Box, CircularProgress, Stack } from "@mui/material";
 import { usePathname, useSearchParams } from "next/navigation";
-import { PERMISSIONS, QURAN_PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
@@ -16,6 +16,7 @@ import UserDetailTabs from "../components/UserDetailTabs.jsx";
 import StudentOverviewTab from "../components/StudentOverviewTab.jsx";
 import BadgesTab from "../components/BadgesTab.jsx";
 import CertificatesTab from "../components/CertificatesTab.jsx";
+import GamesTab from "../components/GamesTab.jsx";
 import EvaluationsTab from "../components/EvaluationsTab.jsx";
 import SubscriptionsTab from "../components/SubscriptionsTab.jsx";
 import ParentChildrenTab from "../components/ParentChildrenTab.jsx";
@@ -26,7 +27,6 @@ import SendReportDialog from "../components/SendReportDialog.jsx";
 import SendInviteDialog from "../components/SendInviteDialog.jsx";
 import AddSubscriptionDialog from "../components/AddSubscriptionDialog.jsx";
 import BanDialog from "../components/BanDialog.jsx";
-import QuranProgressTab from "../components/QuranProgressTab.jsx";
 
 export default function UserDetailPage({ userId }) {
   const txt = useUserDetailText();
@@ -43,7 +43,9 @@ export default function UserDetailPage({ userId }) {
   const canSendInvite = hasPermission(PERMISSIONS.QUIZ.CREATE_INVITE);
   const canAddSub = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE);
   const canCancelSub = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL);
-  const canManageQuranProgress = hasPermission(QURAN_PERMISSIONS.PROGRESS_MANAGE);
+  const canEditSub = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
+  const canAssignGame = hasPermission(PERMISSIONS.GAME.ASSIGN);
+  const canCreateCert = hasPermission(PERMISSIONS.CERTIFICATE.CREATE);
 
   const {
     data: overview,
@@ -85,27 +87,22 @@ export default function UserDetailPage({ userId }) {
   // ── Tabs (role-adaptive) ──────────────────────────────────────────────────
   const validTabs = useMemo(() => {
     if (isStudent) {
-      const tabs = ["overview", "badges", "certificates", "evaluations", "subscriptions"];
-      if (canManageQuranProgress) tabs.push("quranProgress");
-      return tabs;
+      return ["overview", "badges", "certificates", "games", "evaluations", "subscriptions"];
     }
     if (isParent) return ["overview", "children"];
     return ["overview"];
-  }, [isStudent, isParent, canManageQuranProgress]);
+  }, [isStudent, isParent]);
 
   const sections = useMemo(() => {
     if (isStudent) {
-      const s = [
+      return [
         { key: "overview", label: txt.tabOverview },
         { key: "badges", label: txt.tabBadges, count: overview?.badges?.length ?? 0 },
         { key: "certificates", label: txt.tabCertificates },
+        { key: "games", label: txt.tabGames },
         { key: "evaluations", label: txt.tabEvaluations },
         { key: "subscriptions", label: txt.tabSubscriptions },
       ];
-      if (canManageQuranProgress) {
-        s.push({ key: "quranProgress", label: txt.tabQuranProgress });
-      }
-      return s;
     }
     if (isParent) {
       return [
@@ -114,7 +111,7 @@ export default function UserDetailPage({ userId }) {
       ];
     }
     return [{ key: "overview", label: txt.tabOverview }];
-  }, [isStudent, isParent, overview, txt, canManageQuranProgress]);
+  }, [isStudent, isParent, overview, txt]);
 
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -154,7 +151,6 @@ export default function UserDetailPage({ userId }) {
               txt={txt}
               canSetLevel={canSetLevel}
               onRefetch={triggerRefetch}
-              studentId={userId}
             />
           );
         }
@@ -174,7 +170,23 @@ export default function UserDetailPage({ userId }) {
           />
         );
       case "certificates":
-        return <CertificatesTab overview={overview} studentId={userId} txt={txt} />;
+        return (
+          <CertificatesTab
+            studentId={userId}
+            studentName={user.name}
+            txt={txt}
+            canCreate={canCreateCert}
+          />
+        );
+      case "games":
+        return (
+          <GamesTab
+            studentId={userId}
+            studentName={user.name}
+            txt={txt}
+            canAssign={canAssignGame}
+          />
+        );
       case "evaluations":
         return <EvaluationsTab overview={overview} txt={txt} />;
       case "subscriptions":
@@ -184,20 +196,13 @@ export default function UserDetailPage({ userId }) {
             txt={txt}
             canAdd={canAddSub}
             canCancel={canCancelSub}
+            canEdit={canEditSub}
             onAdd={subscriptionDialog.open}
             onRefetch={triggerRefetch}
           />
         );
       case "children":
         return <ParentChildrenTab overview={overview} txt={txt} canView={canView} />;
-      case "quranProgress":
-        return (
-          <QuranProgressTab
-            studentId={userId}
-            txt={txt}
-            canManage={canManageQuranProgress}
-          />
-        );
       default:
         return null;
     }

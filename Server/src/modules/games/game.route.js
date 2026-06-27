@@ -43,6 +43,22 @@ gameRoutes.get(
   asyncHandler(gameController.myAssignments),
 );
 
+// Admin: a specific student's assignments (student-detail games tab) — BEFORE "/:id".
+gameRoutes.get(
+  "/student/:studentId/assignments",
+  authMiddleware.requireAuth,
+  authMiddleware.requirePermissions([PERMISSIONS.GAME.ASSIGN]),
+  asyncHandler(gameController.studentAssignments),
+);
+
+// The single free game (card data) for the student's dashboard — BEFORE "/:id".
+gameRoutes.get(
+  "/my/free",
+  authMiddleware.requireAuth,
+  authMiddleware.requirePermissions([PERMISSIONS.GAME.LIST]),
+  asyncHandler(gameController.myFreeGame),
+);
+
 gameRoutes.get(
   "/:id",
   authMiddleware.requireAuth,

@@ -1,3 +1,4 @@
+import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import {
   childUserSelect,
@@ -243,7 +244,7 @@ class UserRepo {
   /** Active ADMIN user ids — used for fan-out notifications (e.g. pending requests). */
   async findAdminIds() {
     const admins = await prisma.user.findMany({
-      where: { role: "ADMIN", isActive: true },
+      where: { role: USER_ROLES.ADMIN, isActive: true },
       select: { id: true },
     });
     return admins.map((a) => a.id);

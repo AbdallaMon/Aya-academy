@@ -1,40 +1,51 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import Hero from '@/features/hero';
-import HowItWorks from '@/features/howItWorks';
-import { Levels } from '@/features/Levels';
-import { WhyAyah } from '@/features/whyAyah/WhyAyah';
-import { ChildDashboardHome } from '@/features/childDashboard';
 import HeroReviews from '@/features/reviews/HeroReviews';
+import { WhyAya } from '@/features/whyAya';
+import { ChildDashboardHome } from '@/features/childDashboard';
+import PricingSection from '@/features/pricing/PricingSection.jsx';
 import Testimonials from '@/features/reviews/Testimonials.jsx';
-import Teachers from '@/features/teachers/Teachers.jsx';
+import SafetyStrip from '@/features/trust/SafetyStrip.jsx';
 import FAQ from '@/features/faq/FAQ.jsx';
 import FreeSessionPromo from '@/features/promo/FreeSessionPromo.jsx';
-import { About } from '@/features/about';
-import PricingSection from '@/features/pricing/PricingSection.jsx';
+import JsonLd from '@/shared/components/seo/JsonLd.jsx';
+import { buildMetadata, faqSchema } from '@/shared/lib/seo';
+import { getFaq } from '@/features/faq/faqData.js';
 
-// Homepage funnel ordered for the PARENT (the decision-maker):
-// hook → instant trust → who we are → how/levels/why → parent value →
-// teachers & social proof → objections (FAQ) → price → closing free-trial CTA.
-export default async function Home() {
+export async function generateMetadata({ params }) {
+  const { lng } = await params;
+  return buildMetadata({ lng, page: 'home', path: '/' });
+}
+
+// Lean funnel ordered for the PARENT (the decision-maker):
+// hook (hero) → instant trust → who we are / how / levels (one merged section) →
+// honest product preview → social proof (real student video + reviews) →
+// safety reassurance (who teaches / is it safe) → plans → objections (FAQ) →
+// closing free-trial CTA.
+// Proof sits BEFORE pricing on purpose (the real student video is the emotional
+// peak), and the safety strip lands right before the price to clear the parent's
+// biggest objection at the moment of decision.
+export default async function Home({ params }) {
+  const { lng } = await params;
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get('theme');
   const pageTheme = themeCookie?.value === 'dark' ? 'dark' : 'light';
+  // FAQPage structured data — mirrors the visible FAQ accordion (same source).
+  const faq = getFaq(lng);
   return (
     <>
+      <JsonLd data={faqSchema(faq.items)} />
       <Hero pageTheme={pageTheme} />
       <HeroReviews pageTheme={pageTheme} />
-      <About pageTheme={pageTheme} />
-      <HowItWorks pageTheme={pageTheme} />
-      <Levels pageTheme={pageTheme} />
-      <WhyAyah pageTheme={pageTheme} />
-      <ChildDashboardHome pageTheme={pageTheme} />
-      <Teachers pageTheme={pageTheme} />
+      <WhyAya />
+      <ChildDashboardHome />
       <Testimonials />
-      <FAQ pageTheme={pageTheme} />
+      <SafetyStrip />
       <Suspense>
         <PricingSection />
       </Suspense>
+      <FAQ pageTheme={pageTheme} />
       <FreeSessionPromo />
     </>
   );

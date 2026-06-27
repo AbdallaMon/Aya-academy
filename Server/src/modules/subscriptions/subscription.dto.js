@@ -19,6 +19,15 @@ export const subscriptionPlanSelect = {
   id: true,
   titleAr: true,
   titleEn: true,
+};
+
+// Coupon (discount) projection embedded in a subscription payload — lets the
+// frontend and invoice surface the applied discount.
+export const subscriptionCouponSelect = {
+  id: true,
+  code: true,
+  type: true,
+  value: true,
   billingPeriod: true,
 };
 
@@ -27,6 +36,7 @@ export const subscriptionSelect = {
   id: true,
   studentId: true,
   planId: true,
+  billingPeriod: true,
   status: true,
   startDate: true,
   endDate: true,
@@ -41,6 +51,10 @@ export const subscriptionSelect = {
   updatedAt: true,
   student: { select: subscriptionStudentSelect },
   plan: { select: subscriptionPlanSelect },
+  coupon: { select: subscriptionCouponSelect },
+  // 1:1 demand invoice — surfaced so the subscriptions list can show whether
+  // it's paid. Null until the invoice is generated.
+  invoice: { select: { id: true, status: true, dueDate: true } },
 };
 
 /**

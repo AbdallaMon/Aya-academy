@@ -1,26 +1,7 @@
 import { generalMessagesCodes } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
-import { badRequest } from "../../shared/errors/AppError.js";
+import { idParam, optionalIntQuery, authUser } from "../../shared/http/params.js";
 import { subscriptionUsecase } from "./subscription.usecase.js";
-
-function authUser(req) {
-  return req.auth;
-}
-
-function idParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
-
-function optionalIntQuery(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === undefined || raw === null || raw === "") return undefined;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
 
 class SubscriptionController {
   list = async (req, res) => {

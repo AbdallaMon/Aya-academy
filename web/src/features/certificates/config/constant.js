@@ -18,6 +18,12 @@ export const DECORATION_KEYS = [
   "crescent",
   "balloons",
   "badges",
+  "confetti",
+  "hearts",
+  "lanterns",
+  "florals",
+  "sparkles",
+  "none",
 ];
 
 // Selectable in the admin create dialog (the named decorations + EXAM + the
@@ -28,14 +34,26 @@ export const TEMPLATE_KEYS = [...DECORATION_KEYS, "EXAM"];
 export const EXAM_TEMPLATE_KEY = "EXAM";
 
 // Heading / name font styles the card supports (stored as themeJson.fontStyle).
-export const FONT_STYLES = ["elegant", "classic", "modern"];
+export const FONT_STYLES = [
+  "elegant",
+  "classic",
+  "modern",
+  "kufi",
+  "ruqaa",
+  "naskh",
+];
 export const DEFAULT_FONT_STYLE = "elegant";
 
-// CSS font stacks per fontStyle. Arabic-safe (no latin-only script fonts).
+// CSS font stacks per fontStyle. Each loads a DISTINCT Arabic web font (see the
+// @import in globals.css) so the style genuinely changes for Arabic text, with a
+// matching Latin fallback. Every text node on the card uses one of these.
 export const FONT_STACKS = {
-  elegant: `"Georgia", "Amiri", "Scheherazade New", "Times New Roman", serif`,
-  classic: `"Times New Roman", "Amiri", serif`,
-  modern: `inherit`,
+  elegant: `"Amiri", "Georgia", "Times New Roman", serif`,
+  classic: `"Scheherazade New", "Amiri", "Georgia", serif`,
+  modern: `"Cairo", "Helvetica Neue", Arial, sans-serif`,
+  kufi: `"Reem Kufi", "Cairo", "Trebuchet MS", sans-serif`,
+  ruqaa: `"Aref Ruqaa", "Amiri", "Georgia", serif`,
+  naskh: `"Noto Naskh Arabic", "Amiri", "Times New Roman", serif`,
 };
 
 // Academy brand shown on EVERY certificate (logo + name).
@@ -71,7 +89,18 @@ export const DEFAULT_ORIENTATION = "landscape";
 //   double → two equal-weight rules
 //   simple → a single clean rule
 //   none   → no frame (background/decoration only)
-export const BORDER_STYLES = ["foil", "ornate", "double", "simple", "none"];
+export const BORDER_STYLES = [
+  "foil",
+  "ornate",
+  "double",
+  "simple",
+  "rounded",
+  "dashed",
+  "inset",
+  "groove",
+  "ribbon",
+  "none",
+];
 export const DEFAULT_BORDER_STYLE = "foil";
 
 // The Bismillah line optionally rendered at the very top of a certificate
@@ -100,3 +129,19 @@ export const WATERMARK_OPACITY_MAX = 0.15;
 export const DEFAULT_NAME_SCALE = 1;
 export const NAME_SCALE_MIN = 0.85;
 export const NAME_SCALE_MAX = 1.3;
+
+// Heading ("شهادة تقدير") size multiplier.
+export const DEFAULT_HEADING_SCALE = 1;
+export const HEADING_SCALE_MIN = 0.8;
+export const HEADING_SCALE_MAX = 1.4;
+
+// Student-name color (defaults to a deep ink when not set in the theme).
+export const DEFAULT_NAME_COLOR = "#1f2a44";
+
+// Content spacing multiplier — loosens/tightens the vertical gaps between the
+// certificate's content rows (heading · name · body · congrats · thanks). 1 is
+// the tuned default; higher = airier. The landscape auto-fitter then scales the
+// whole block to fit, so this stays a RELATIVE breathing-room control.
+export const DEFAULT_CONTENT_SPACING = 1;
+export const CONTENT_SPACING_MIN = 0.5;
+export const CONTENT_SPACING_MAX = 1.8;

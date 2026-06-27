@@ -1,7 +1,6 @@
 // @ts-check
 import { prisma } from "../prisma.client.js";
 import bcrypt from "bcrypt";
-import { SURAHS, JUZ, SEGMENTS } from "./data/quran.data.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // helpers
@@ -10,6 +9,24 @@ import { SURAHS, JUZ, SEGMENTS } from "./data/quran.data.js";
 /** Delete all GameQuestion rows for a game (cascades to GameOption). */
 async function clearGameQuestions(gameId) {
   await prisma.gameQuestion.deleteMany({ where: { gameId } });
+}
+
+// Remove a retired game from an already-seeded DB. Prefer a full delete (so it
+// vanishes from the games list); if it has graded attempts (whose certificates
+// restrict deletion), fall back to deactivating it so it simply stops showing.
+async function removeRetiredGame(slug) {
+  const game = await prisma.game.findUnique({ where: { slug } });
+  if (!game) return;
+  try {
+    await prisma.game.delete({ where: { id: game.id } });
+    console.log(`[seed] retired game ${slug} — deleted`);
+  } catch {
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { isActive: false, isPublic: false, isFree: false },
+    });
+    console.log(`[seed] retired game ${slug} — deactivated (had history)`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -119,11 +136,17 @@ async function seedBadges() {
 // 2b. CERTIFICATE TEMPLATES (reusable certificate copy + style)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Idempotent: upsert the default "achievement" certificate template by key. */
+/**
+ * Idempotent: upsert the seeded certificate templates by key. Three visually
+ * distinct GENERAL templates (admin-pickable for manual certificates) plus the
+ * single GAME template that is auto-applied to every game certificate.
+ */
 async function seedCertificateTemplates() {
   const templates = [
+    // ── 1. GENERAL · ornate green/gold portrait (the default) ──────────────
     {
       key: "achievement",
+      type: "GENERAL",
       nameAr: "شهادة تقدير",
       nameEn: "Certificate of Achievement",
       isDefault: true,
@@ -148,12 +171,146 @@ async function seedCertificateTemplates() {
       themeJson: {
         orientation: "portrait",
         decoration: "elegant",
+        fontStyle: "elegant",
         accent: "#1E6F5C",
         secondary: "#C9A227",
         background: "#FBF7EC",
-        showPhoto: true,
         borderStyle: "ornate",
+        showPhoto: true,
         showBismillah: true,
+        showSeal: true,
+        showWatermark: true,
+        showTagline: true,
+        showDate: true,
+        logoSize: "md",
+        nameScale: 1,
+      },
+    },
+
+    // ── 2. GENERAL · regal navy/gold landscape (formal excellence) ─────────
+    {
+      key: "excellence-royal",
+      type: "GENERAL",
+      nameAr: "شهادة تميّز",
+      nameEn: "Certificate of Excellence",
+      isDefault: false,
+      isActive: true,
+      headingAr: "شهادة تميّز",
+      headingEn: "Certificate of Excellence",
+      introAr: "تشهد أكاديمية آية لتعليم القرآن والعربية بأن الطالب:",
+      introEn:
+        "Ayah Academy for Qur'an and Arabic hereby certifies that the student:",
+      bodyAr:
+        "قد حقّق تميّزًا واضحًا في {reason}، فاستحقّ هذه الشهادة تقديرًا لتفوّقه وحرصه على التعلّم.",
+      bodyEn:
+        "has demonstrated clear excellence in {reason}, earning this certificate in recognition of outstanding achievement and dedication to learning.",
+      congratsAr: "نبارك لك هذا التفوّق المستحق!",
+      congratsEn: "Congratulations on this well-deserved distinction!",
+      thanksAr: "زادك الله علمًا وتوفيقًا",
+      thanksEn: "May Allah increase you in knowledge",
+      signatureName: "Aya",
+      signatureTitleAr: "إدارة الأكاديمية",
+      signatureTitleEn: "Academy Management",
+      themeJson: {
+        orientation: "landscape",
+        decoration: "geometric",
+        fontStyle: "classic",
+        accent: "#1B3A6B",
+        secondary: "#C9A227",
+        background: "#FAF7EF",
+        borderStyle: "foil",
+        showPhoto: false,
+        showBismillah: true,
+        showSeal: true,
+        showWatermark: true,
+        showTagline: true,
+        showDate: true,
+        logoSize: "lg",
+        nameScale: 1.05,
+      },
+    },
+
+    // ── 3. GENERAL · playful teal/coral portrait (kid-friendly star) ───────
+    {
+      key: "little-star",
+      type: "GENERAL",
+      nameAr: "شهادة نجمة",
+      nameEn: "Little Star Certificate",
+      isDefault: false,
+      isActive: true,
+      headingAr: "نجمة آية",
+      headingEn: "Ayah Star",
+      introAr: "نفخر بنجمتنا الصغيرة:",
+      introEn: "We are so proud of our little star:",
+      bodyAr: "على تميّزك الرائع في {reason}. واصل التألّق يا نجم! 🌟",
+      bodyEn:
+        "for shining so brightly in {reason}. Keep it up, little star! 🌟",
+      congratsAr: "أحسنت صنعًا!",
+      congratsEn: "Wonderful work!",
+      thanksAr: "بارك الله فيك",
+      thanksEn: "May Allah bless you",
+      signatureName: "Aya",
+      signatureTitleAr: "المعلمة",
+      signatureTitleEn: "Teacher",
+      themeJson: {
+        orientation: "portrait",
+        decoration: "stars",
+        fontStyle: "modern",
+        accent: "#0E9594",
+        secondary: "#FF7A59",
+        background: "#FFF8F0",
+        borderStyle: "double",
+        showPhoto: true,
+        showBismillah: false,
+        showSeal: true,
+        showWatermark: true,
+        showTagline: true,
+        showDate: true,
+        logoSize: "md",
+        nameScale: 1,
+      },
+    },
+
+    // ── 4. GAME · the single template auto-applied to game certificates ────
+    {
+      key: "game-champion",
+      type: "GAME",
+      nameAr: "شهادة الألعاب",
+      nameEn: "Game Certificate",
+      isDefault: false,
+      isActive: true,
+      headingAr: "بطل الألعاب",
+      headingEn: "Game Champion",
+      introAr: "تهانينا للبطل الصغير:",
+      introEn: "Congratulations to our little champion:",
+      bodyAr:
+        "لقد أتممت لعبة {reason} بنجاح وأظهرت تركيزًا ومثابرة رائعة. أحسنت!",
+      bodyEn:
+        "You completed the {reason} game successfully and showed wonderful focus and perseverance. Well done!",
+      congratsAr: "أحسنت! استمر في التألّق 🌟",
+      congratsEn: "Great job — keep shining! 🌟",
+      thanksAr: "بارك الله فيك",
+      thanksEn: "May Allah bless you",
+      signatureName: "Aya",
+      signatureTitleAr: "المعلمة",
+      signatureTitleEn: "Teacher",
+      themeJson: {
+        orientation: "landscape",
+        decoration: "stars",
+        fontStyle: "modern",
+        accent: "#7C4DFF",
+        secondary: "#FFC93C",
+        background: "#F5F0FF",
+        borderStyle: "foil",
+        emoji: "🏆",
+        showPhoto: false,
+        showBismillah: false,
+        showSeal: true,
+        showWatermark: true,
+        showTagline: true,
+        showDate: true,
+        logoSize: "md",
+        nameScale: 1.05,
       },
     },
   ];
@@ -1253,7 +1410,7 @@ async function seedGoodDeedsCatch() {
         "المس الأعمال الطيبة الطائرة لتجمعها في الصاروخ! 💛 تجنّب الأعمال السيئة.",
       promptEn:
         "Tap the flying good deeds to collect them in your rocket! 💛 Avoid the bad deeds.",
-      mediaJson: { mode: "catch", rounds: 8 },
+      mediaJson: { mode: "catch", rounds: 12 },
     },
   });
 
@@ -1342,10 +1499,71 @@ async function seedGoodDeedsCatch() {
         feedbackAr: "جميل! الرفق بالحيوانات يحبه الله 🐾",
         feedbackEn: "Beautiful! Allah loves kindness to animals 🐾",
       },
-      // BAD deeds (isCorrect = false → should NOT be tapped)
       {
         questionId: q1.id,
         order: 8,
+        labelAr: "الصدقة",
+        labelEn: "Giving charity",
+        emoji: "💝",
+        isCorrect: true,
+        feedbackAr: "أحسنت! الصدقة تطفئ الخطيئة 💝",
+        feedbackEn: "Well done! Charity wipes away mistakes 💝",
+      },
+      {
+        questionId: q1.id,
+        order: 9,
+        labelAr: "قول الصدق",
+        labelEn: "Telling the truth",
+        emoji: "✅",
+        isCorrect: true,
+        feedbackAr: "رائع! الصدق يهدي إلى الجنة ✅",
+        feedbackEn: "Wonderful! Truthfulness leads to Paradise ✅",
+      },
+      {
+        questionId: q1.id,
+        order: 10,
+        labelAr: "سقي الماء",
+        labelEn: "Giving water to drink",
+        emoji: "💧",
+        isCorrect: true,
+        feedbackAr: "جميل! سقي الماء صدقة عظيمة 💧",
+        feedbackEn: "Beautiful! Giving water to drink is a great charity 💧",
+      },
+      {
+        questionId: q1.id,
+        order: 11,
+        labelAr: "صلة الرحم",
+        labelEn: "Keeping family ties",
+        emoji: "👵",
+        isCorrect: true,
+        feedbackAr: "ممتاز! صلة الرحم تزيد المحبة والبركة 👵",
+        feedbackEn:
+          "Excellent! Keeping family ties brings love and blessing 👵",
+      },
+      {
+        questionId: q1.id,
+        order: 12,
+        labelAr: "إفشاء السلام",
+        labelEn: "Spreading the greeting",
+        emoji: "👋",
+        isCorrect: true,
+        feedbackAr: "أحسنت! إفشاء السلام ينشر المحبة بيننا 👋",
+        feedbackEn: "Well done! Spreading salam spreads love between us 👋",
+      },
+      {
+        questionId: q1.id,
+        order: 13,
+        labelAr: "ذكر الله",
+        labelEn: "Remembering Allah",
+        emoji: "📿",
+        isCorrect: true,
+        feedbackAr: "رائع! بذكر الله تطمئن القلوب 📿",
+        feedbackEn: "Wonderful! Remembering Allah brings peace to hearts 📿",
+      },
+      // BAD deeds (isCorrect = false → should NOT be tapped)
+      {
+        questionId: q1.id,
+        order: 14,
         labelAr: "الكذب",
         labelEn: "Lying",
         emoji: "🗣️",
@@ -1355,7 +1573,7 @@ async function seedGoodDeedsCatch() {
       },
       {
         questionId: q1.id,
-        order: 9,
+        order: 15,
         labelAr: "الغضب",
         labelEn: "Anger",
         emoji: "😠",
@@ -1366,7 +1584,7 @@ async function seedGoodDeedsCatch() {
       },
       {
         questionId: q1.id,
-        order: 10,
+        order: 16,
         labelAr: "عصيان الوالدين",
         labelEn: "Disobeying parents",
         emoji: "🙉",
@@ -1375,10 +1593,473 @@ async function seedGoodDeedsCatch() {
         feedbackEn:
           "That is not a good deed! Collect good deeds and avoid this 💛",
       },
+      {
+        questionId: q1.id,
+        order: 17,
+        labelAr: "الغش",
+        labelEn: "Cheating",
+        emoji: "🃏",
+        isCorrect: false,
+        feedbackAr: "هذا ليس عملاً طيباً! من غشّ فليس منّا 💛",
+        feedbackEn: "That is not a good deed! Cheating is not from us 💛",
+      },
+      {
+        questionId: q1.id,
+        order: 18,
+        labelAr: "إيذاء الجار",
+        labelEn: "Hurting a neighbor",
+        emoji: "💢",
+        isCorrect: false,
+        feedbackAr: "لا! أحسِن إلى جارك ولا تؤذِه 💛",
+        feedbackEn: "No! Be kind to your neighbor, don't hurt them 💛",
+      },
+      {
+        questionId: q1.id,
+        order: 19,
+        labelAr: "السبّ والشتم",
+        labelEn: "Insulting others",
+        emoji: "🤬",
+        isCorrect: false,
+        feedbackAr: "هذا ليس من الأعمال الطيبة! تكلّم بالكلام الطيب 💛",
+        feedbackEn: "That is not a good deed! Speak only kind words 💛",
+      },
     ],
   });
 
-  console.log(`[seed] game good-deeds-catch — 1 question (11 options in pool)`);
+  console.log(`[seed] game good-deeds-catch — 1 question (20 options in pool)`);
+  return game;
+}
+
+// ── 4c-2. dhikr-treasure (TAP_CHOICE — falling from the sky) ────────────────
+// Same "tap-the-good" idea as good-deeds-catch, but a DIFFERENT topic (adhkar),
+// a DIFFERENT style (items drop from the sky into a treasure pouch) and a small
+// twist: you fill a treasure of remembrance instead of a rocket.
+
+async function seedDhikrTreasure() {
+  const game = await prisma.game.upsert({
+    where: { slug: "dhikr-treasure" },
+    update: {
+      titleAr: "كنز الأذكار",
+      titleEn: "Dhikr Treasure",
+      descriptionAr:
+        "الأذكار تتساقط من السماء! المس الذكر الطيب لتجمعه في كنزك، وتجنّب الكلام السيّئ.",
+      descriptionEn:
+        "Words of remembrance fall from the sky! Tap the good dhikr to collect it in your treasure, and avoid bad words.",
+      passThreshold: 1,
+    },
+    create: {
+      slug: "dhikr-treasure",
+      titleAr: "كنز الأذكار",
+      titleEn: "Dhikr Treasure",
+      descriptionAr:
+        "الأذكار تتساقط من السماء! المس الذكر الطيب لتجمعه في كنزك، وتجنّب الكلام السيّئ.",
+      descriptionEn:
+        "Words of remembrance fall from the sky! Tap the good dhikr to collect it in your treasure, and avoid bad words.",
+      type: "INTERACTIVE",
+      isPublic: false,
+      isActive: true,
+      passThreshold: 1,
+      configJson: {
+        theme: {
+          primary: "#0EA5E9",
+          accent: "#F59E0B",
+          warn: "#FB7185",
+          bg: "#f0f9ff",
+        },
+        hero: {
+          emoji: "💎",
+          nameAr: "صائد الأذكار",
+          nameEn: "Dhikr Hunter",
+        },
+        stars: 4,
+        certificate: {
+          titleAr: "شهادة كنز الأذكار",
+          titleEn: "Dhikr Treasure Certificate",
+          emoji: "💎",
+          accent: "#F59E0B",
+          background: "linear-gradient(135deg, #f0f9ff 0%, #fef3c7 100%)",
+          decoration: "stars",
+        },
+        reward: {
+          giftNameAr: "جوهرة الأذكار",
+          giftNameEn: "Dhikr Gem",
+          emoji: "💎",
+        },
+      },
+    },
+  });
+
+  await clearGameQuestions(game.id);
+
+  const q1 = await prisma.gameQuestion.create({
+    data: {
+      gameId: game.id,
+      order: 0,
+      kind: "TAP_CHOICE",
+      promptAr:
+        "الأذكار تتساقط من السماء! المس الذكر الطيب لتجمعه في كنزك 💎 وتجنّب الكلام السيّئ.",
+      promptEn:
+        "The adhkar fall from the sky! Tap the good dhikr to collect it in your treasure 💎 and avoid bad words.",
+      mediaJson: {
+        mode: "catch",
+        rounds: 8,
+        direction: "fall",
+        speed: "normal",
+        goalEmoji: "💎",
+        catcherEmoji: "💰",
+        hintAr:
+          "الأذكار تتساقط من السماء — المسها لتجمعها في كنزك! 💎 تجنّب الكلام السيّئ.",
+        hintEn:
+          "The adhkar fall from the sky — tap them to fill your treasure! 💎 Avoid bad words.",
+        doneAr: "ملأت كنزك بأجمل الأذكار! ما شاء الله 💎✨",
+        doneEn:
+          "You filled your treasure with the most beautiful dhikr! MashaAllah 💎✨",
+        arena: {
+          from: "#dbeafe",
+          to: "#eff6ff",
+          glow: "#fde68a",
+          border: "#bfdbfe",
+        },
+      },
+    },
+  });
+
+  await prisma.gameOption.createMany({
+    data: [
+      // GOOD dhikr (isCorrect = true → collect)
+      {
+        questionId: q1.id,
+        order: 0,
+        labelAr: "سبحان الله",
+        labelEn: "SubhanAllah",
+        emoji: "📿",
+        isCorrect: true,
+        feedbackAr: "أحسنت! سبحان الله تملأ الميزان 🌟",
+        feedbackEn: "Well done! SubhanAllah fills the scale 🌟",
+      },
+      {
+        questionId: q1.id,
+        order: 1,
+        labelAr: "الحمد لله",
+        labelEn: "Alhamdulillah",
+        emoji: "🤍",
+        isCorrect: true,
+        feedbackAr: "ممتاز! الحمد لله تملأ الميزان ✨",
+        feedbackEn: "Excellent! Alhamdulillah fills the scale ✨",
+      },
+      {
+        questionId: q1.id,
+        order: 2,
+        labelAr: "الله أكبر",
+        labelEn: "Allahu Akbar",
+        emoji: "☝️",
+        isCorrect: true,
+        feedbackAr: "رائع! الله أكبر ذكر عظيم 💛",
+        feedbackEn: "Wonderful! Allahu Akbar is a great dhikr 💛",
+      },
+      {
+        questionId: q1.id,
+        order: 3,
+        labelAr: "لا إله إلا الله",
+        labelEn: "La ilaha illa Allah",
+        emoji: "🌟",
+        isCorrect: true,
+        feedbackAr: "أحسنت! لا إله إلا الله أفضل الذكر 💖",
+        feedbackEn: "Well done! La ilaha illa Allah is the best dhikr 💖",
+      },
+      {
+        questionId: q1.id,
+        order: 4,
+        labelAr: "أستغفر الله",
+        labelEn: "Astaghfirullah",
+        emoji: "🤲",
+        isCorrect: true,
+        feedbackAr: "جميل! الاستغفار يمحو الذنوب 🌱",
+        feedbackEn: "Beautiful! Seeking forgiveness wipes away sins 🌱",
+      },
+      {
+        questionId: q1.id,
+        order: 5,
+        labelAr: "بسم الله",
+        labelEn: "Bismillah",
+        emoji: "✨",
+        isCorrect: true,
+        feedbackAr: "ممتاز! نبدأ كل شيء ببسم الله 💫",
+        feedbackEn: "Excellent! We begin everything with Bismillah 💫",
+      },
+      {
+        questionId: q1.id,
+        order: 6,
+        labelAr: "لا حول ولا قوة إلا بالله",
+        labelEn: "La hawla wala quwwata illa billah",
+        emoji: "💪",
+        isCorrect: true,
+        feedbackAr: "رائع! كنز من كنوز الجنة 💎",
+        feedbackEn: "Wonderful! A treasure from the treasures of Paradise 💎",
+      },
+      {
+        questionId: q1.id,
+        order: 7,
+        labelAr: "اللهم صلِّ على النبي",
+        labelEn: "Send blessings on the Prophet",
+        emoji: "🕌",
+        isCorrect: true,
+        feedbackAr: "جميل! الصلاة على النبي ﷺ نور 🌙",
+        feedbackEn: "Beautiful! Sending blessings on the Prophet ﷺ is light 🌙",
+      },
+      // NOT dhikr (isCorrect = false → leave it)
+      {
+        questionId: q1.id,
+        order: 8,
+        labelAr: "كلام نابٍ",
+        labelEn: "Rude words",
+        emoji: "😣",
+        isCorrect: false,
+        feedbackAr: "هذا ليس ذكراً طيباً! اجمع الأذكار 💎",
+        feedbackEn: "That is not a good word! Collect the dhikr 💎",
+      },
+      {
+        questionId: q1.id,
+        order: 9,
+        labelAr: "الكذب",
+        labelEn: "Lying",
+        emoji: "🤥",
+        isCorrect: false,
+        feedbackAr: "لا بأس! هذا ليس مما نجمعه. ابحث عن الأذكار 💎",
+        feedbackEn:
+          "No worries! This is not what we collect. Look for the dhikr 💎",
+      },
+      {
+        questionId: q1.id,
+        order: 10,
+        labelAr: "النميمة",
+        labelEn: "Gossip",
+        emoji: "🗣️",
+        isCorrect: false,
+        feedbackAr: "هذا ليس ذكراً طيباً! اجمع الأذكار وتجنّب هذا 💎",
+        feedbackEn:
+          "That is not a good word! Collect the dhikr and avoid this 💎",
+      },
+    ],
+  });
+
+  console.log(`[seed] game dhikr-treasure — 1 question (11 options in pool)`);
+  return game;
+}
+
+// ── 4c-3. prayer-stars (TAP_CHOICE — falling at night) ─────────────────────
+// Same catch idea, DIFFERENT topic (what makes prayer beautiful), a night-sky
+// style and a slightly different feel: items fall faster and you gather glowing
+// stars into the moon. Bad items are prayer distractions.
+
+async function seedPrayerStars() {
+  const game = await prisma.game.upsert({
+    where: { slug: "prayer-stars" },
+    update: {
+      titleAr: "نجوم الصلاة",
+      titleEn: "Prayer Stars",
+      descriptionAr:
+        "نجوم الصلاة الجميلة تتساقط في الليل! المس ما يُحسِّن صلاتك واجمعه، وتجنّب ما يُلهيك عنها.",
+      descriptionEn:
+        "The stars of a beautiful prayer fall in the night! Tap what makes your prayer better, and avoid what distracts you.",
+      passThreshold: 1,
+    },
+    create: {
+      slug: "prayer-stars",
+      titleAr: "نجوم الصلاة",
+      titleEn: "Prayer Stars",
+      descriptionAr:
+        "نجوم الصلاة الجميلة تتساقط في الليل! المس ما يُحسِّن صلاتك واجمعه، وتجنّب ما يُلهيك عنها.",
+      descriptionEn:
+        "The stars of a beautiful prayer fall in the night! Tap what makes your prayer better, and avoid what distracts you.",
+      type: "INTERACTIVE",
+      isPublic: false,
+      isActive: true,
+      passThreshold: 1,
+      configJson: {
+        theme: {
+          primary: "#6366F1",
+          accent: "#FBBF24",
+          warn: "#FB7185",
+          bg: "#eef2ff",
+        },
+        hero: {
+          emoji: "🌙",
+          nameAr: "جامع النجوم",
+          nameEn: "Star Gatherer",
+        },
+        stars: 4,
+        certificate: {
+          titleAr: "شهادة نجوم الصلاة",
+          titleEn: "Prayer Stars Certificate",
+          emoji: "🌙",
+          accent: "#6366F1",
+          background: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
+          decoration: "stars",
+        },
+        reward: {
+          giftNameAr: "نجمة الصلاة",
+          giftNameEn: "Prayer Star",
+          emoji: "⭐",
+        },
+      },
+    },
+  });
+
+  await clearGameQuestions(game.id);
+
+  const q1 = await prisma.gameQuestion.create({
+    data: {
+      gameId: game.id,
+      order: 0,
+      kind: "TAP_CHOICE",
+      promptAr:
+        "النجوم تتساقط في الليل! المس ما يجعل صلاتك جميلة لتجمعه في القمر 🌙 وتجنّب ما يُلهيك.",
+      promptEn:
+        "Stars fall in the night! Tap what makes your prayer beautiful to gather it in the moon 🌙 and avoid distractions.",
+      mediaJson: {
+        mode: "catch",
+        rounds: 8,
+        direction: "fall",
+        speed: "fast",
+        goalEmoji: "⭐",
+        catcherEmoji: "🌙",
+        hintAr:
+          "النجوم تتساقط بسرعة — المس ما يُحسِّن صلاتك! ⭐ تجنّب ما يُلهيك.",
+        hintEn:
+          "Stars fall fast — tap what makes your prayer better! ⭐ Avoid distractions.",
+        doneAr: "جمعت نجوم صلاتك الجميلة! ما شاء الله 🌙⭐",
+        doneEn:
+          "You gathered the stars of your beautiful prayer! MashaAllah 🌙⭐",
+        arena: {
+          from: "#312e81",
+          to: "#1e1b4b",
+          glow: "#fde68a",
+          border: "#4338ca",
+        },
+      },
+    },
+  });
+
+  await prisma.gameOption.createMany({
+    data: [
+      // GOOD — what beautifies prayer (isCorrect = true → collect)
+      {
+        questionId: q1.id,
+        order: 0,
+        labelAr: "الوضوء",
+        labelEn: "Wudu",
+        emoji: "💧",
+        isCorrect: true,
+        feedbackAr: "أحسنت! الوضوء مفتاح الصلاة 🌟",
+        feedbackEn: "Well done! Wudu is the key to prayer 🌟",
+      },
+      {
+        questionId: q1.id,
+        order: 1,
+        labelAr: "استقبال القبلة",
+        labelEn: "Facing the Qibla",
+        emoji: "🧭",
+        isCorrect: true,
+        feedbackAr: "ممتاز! نتوجه إلى القبلة في صلاتنا 🕋",
+        feedbackEn: "Excellent! We face the Qibla in our prayer 🕋",
+      },
+      {
+        questionId: q1.id,
+        order: 2,
+        labelAr: "الخشوع",
+        labelEn: "Focus & humility",
+        emoji: "😌",
+        isCorrect: true,
+        feedbackAr: "رائع! الخشوع روح الصلاة 💛",
+        feedbackEn: "Wonderful! Humility is the soul of prayer 💛",
+      },
+      {
+        questionId: q1.id,
+        order: 3,
+        labelAr: "السجود",
+        labelEn: "Prostration",
+        emoji: "🤲",
+        isCorrect: true,
+        feedbackAr: "أحسنت! أقرب ما نكون من الله في السجود 💖",
+        feedbackEn: "Well done! We are closest to Allah in prostration 💖",
+      },
+      {
+        questionId: q1.id,
+        order: 4,
+        labelAr: "الطمأنينة",
+        labelEn: "Calmness",
+        emoji: "🕊️",
+        isCorrect: true,
+        feedbackAr: "جميل! نصلّي بهدوء وطمأنينة 🌱",
+        feedbackEn: "Beautiful! We pray calmly and with stillness 🌱",
+      },
+      {
+        questionId: q1.id,
+        order: 5,
+        labelAr: "الصلاة في وقتها",
+        labelEn: "Praying on time",
+        emoji: "⏰",
+        isCorrect: true,
+        feedbackAr: "ممتاز! الصلاة في وقتها من أحبّ الأعمال 💫",
+        feedbackEn:
+          "Excellent! Praying on time is among the most beloved deeds 💫",
+      },
+      {
+        questionId: q1.id,
+        order: 6,
+        labelAr: "قول الله أكبر",
+        labelEn: "Saying Allahu Akbar",
+        emoji: "☝️",
+        isCorrect: true,
+        feedbackAr: "رائع! نكبّر بقلب حاضر 🌟",
+        feedbackEn: "Wonderful! We say takbeer with a present heart 🌟",
+      },
+      {
+        questionId: q1.id,
+        order: 7,
+        labelAr: "الصف المستقيم",
+        labelEn: "A straight row",
+        emoji: "🧍",
+        isCorrect: true,
+        feedbackAr: "جميل! نعتدل في صفّنا 🕌",
+        feedbackEn: "Beautiful! We stand straight in our row 🕌",
+      },
+      // BAD — prayer distractions (isCorrect = false → leave it)
+      {
+        questionId: q1.id,
+        order: 8,
+        labelAr: "الاستعجال في الصلاة",
+        labelEn: "Rushing the prayer",
+        emoji: "🏃",
+        isCorrect: false,
+        feedbackAr: "لا بأس! نصلّي بهدوء، لا نستعجل 🌙",
+        feedbackEn: "No worries! We pray calmly, not in a rush 🌙",
+      },
+      {
+        questionId: q1.id,
+        order: 9,
+        labelAr: "اللعب أثناء الصلاة",
+        labelEn: "Playing during prayer",
+        emoji: "🤸",
+        isCorrect: false,
+        feedbackAr: "هذا يُلهي عن الصلاة! اجمع نجوم الخشوع ⭐",
+        feedbackEn: "That distracts from prayer! Gather the stars of focus ⭐",
+      },
+      {
+        questionId: q1.id,
+        order: 10,
+        labelAr: "كثرة الالتفات",
+        labelEn: "Looking around a lot",
+        emoji: "🔄",
+        isCorrect: false,
+        feedbackAr: "لا بأس! ننظر إلى موضع سجودنا 🌙",
+        feedbackEn: "No worries! We look at the place of our prostration 🌙",
+      },
+    ],
+  });
+
+  console.log(`[seed] game prayer-stars — 1 question (11 options in pool)`);
   return game;
 }
 
@@ -2578,124 +3259,6 @@ async function seedDecorateMosque() {
   return game;
 }
 
-// ── 4k. akhlaq-ladder (BOARD_DICE) ────────────────────────────────────────
-
-async function seedAkhlaqLadder() {
-  const game = await prisma.game.upsert({
-    where: { slug: "akhlaq-ladder" },
-    update: {
-      titleAr: "سُلّم الأخلاق",
-      titleEn: "Ladder of Manners",
-      descriptionAr:
-        "ارمِ النرد وتحرّك على اللوحة! الأخلاق الجميلة ترفعك، والغفلة تنزلك قليلاً.",
-      descriptionEn:
-        "Roll the die and move on the board! Good manners lift you up, carelessness slides you down a little.",
-      passThreshold: 1,
-    },
-    create: {
-      slug: "akhlaq-ladder",
-      titleAr: "سُلّم الأخلاق",
-      titleEn: "Ladder of Manners",
-      descriptionAr:
-        "ارمِ النرد وتحرّك على اللوحة! الأخلاق الجميلة ترفعك، والغفلة تنزلك قليلاً.",
-      descriptionEn:
-        "Roll the die and move on the board! Good manners lift you up, carelessness slides you down a little.",
-      type: "INTERACTIVE",
-      isPublic: false,
-      isActive: true,
-      passThreshold: 1,
-      configJson: {
-        theme: {
-          primary: "#6536e0",
-          accent: "#23c483",
-          warn: "#ff7aa8",
-          bg: "#f7f3ff",
-        },
-        hero: {
-          emoji: "🎲",
-          nameAr: "بطل الأخلاق",
-          nameEn: "Manners Champion",
-        },
-        stars: 1,
-        certificate: {
-          titleAr: "وسام بطل الأخلاق",
-          titleEn: "Manners Champion Medal",
-          emoji: "🏆",
-          accent: "#6536e0",
-          background: "linear-gradient(135deg, #f7f3ff 0%, #dff5ec 100%)",
-          decoration: "badges",
-        },
-        reward: {
-          giftNameAr: "كأس الأخلاق",
-          giftNameEn: "Manners Trophy",
-          emoji: "🏆",
-        },
-      },
-    },
-  });
-
-  await clearGameQuestions(game.id);
-
-  // One BOARD_DICE screen. The whole board (size + special squares) lives in
-  // mediaJson. Ladder squares climb up (good manners); slide squares dip down.
-  await prisma.gameQuestion.create({
-    data: {
-      gameId: game.id,
-      order: 0,
-      kind: "BOARD_DICE",
-      promptAr: "ارمِ النرد وتسلّق سُلّم الأخلاق حتى الكأس! 🎲🏆",
-      promptEn:
-        "Roll the die and climb the ladder of manners to the trophy! 🎲🏆",
-      mediaJson: {
-        size: 16,
-        winAr: "وصلت إلى القمة بأخلاقك الجميلة! 🏆✨",
-        winEn: "You reached the top with your beautiful manners! 🏆✨",
-        squares: {
-          2: {
-            type: "ladder",
-            to: 6,
-            emoji: "🤝",
-            msgAr: "ساعدت صديقك — اصعد للأعلى! 🪜",
-            msgEn: "You helped your friend — climb up! 🪜",
-          },
-          4: {
-            type: "ladder",
-            to: 9,
-            emoji: "🙂",
-            msgAr: "ابتسمت في وجه أخيك (صدقة) — اصعد! 🪜",
-            msgEn: "You smiled at your brother (charity) — climb! 🪜",
-          },
-          7: {
-            type: "slide",
-            to: 3,
-            emoji: "😠",
-            msgAr: "غضبت قليلاً — لا بأس، انزل خطوة وحاول الهدوء 🛝",
-            msgEn:
-              "You got a little angry — that's okay, slide down and stay calm 🛝",
-          },
-          11: {
-            type: "ladder",
-            to: 14,
-            emoji: "🤲",
-            msgAr: "قلت بسم الله وشكرت — اصعد للأعلى! 🪜",
-            msgEn: "You said Bismillah and gave thanks — climb up! 🪜",
-          },
-          13: {
-            type: "slide",
-            to: 10,
-            emoji: "🗣️",
-            msgAr: "قاطعت الحديث — لا بأس، ننتظر دورنا 🛝",
-            msgEn: "You interrupted — no worries, we wait our turn 🛝",
-          },
-        },
-      },
-    },
-  });
-
-  console.log(`[seed] game akhlaq-ladder — 1 question (BOARD_DICE)`);
-  return game;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2705,15 +3268,15 @@ async function seedAkhlaqLadder() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function seedPlans() {
+  // A plan stores ONLY its hours. The price is derived from the single global
+  // hourly rate (AppSetting.hourlyRate): monthly = hours × rate, yearly = ×12.
   const planDefs = [
     {
       titleAr: "الباقة التمهيدية",
       titleEn: "Starter",
       descriptionAr: "٤ ساعات شهريًا — مثالية للبداية واكتشاف المنصّة.",
       descriptionEn: "4 hours per month — perfect to start and explore.",
-      billingPeriod: "MONTHLY",
       hours: 4,
-      hourlyRate: 8.0,
       isFeatured: false,
       sortOrder: 1,
     },
@@ -2722,9 +3285,7 @@ async function seedPlans() {
       titleEn: "Standard",
       descriptionAr: "٨ ساعات شهريًا — الأكثر اختيارًا للأسر.",
       descriptionEn: "8 hours per month — the most popular for families.",
-      billingPeriod: "MONTHLY",
       hours: 8,
-      hourlyRate: 7.5,
       isFeatured: true,
       sortOrder: 2,
     },
@@ -2733,22 +3294,9 @@ async function seedPlans() {
       titleEn: "Premium",
       descriptionAr: "١٢ ساعة شهريًا — تقدّم أسرع ومتابعة أقرب.",
       descriptionEn: "12 hours per month — faster progress, closer follow-up.",
-      billingPeriod: "MONTHLY",
       hours: 12,
-      hourlyRate: 7.0,
       isFeatured: false,
       sortOrder: 3,
-    },
-    {
-      titleAr: "الباقة السنوية",
-      titleEn: "Annual",
-      descriptionAr: "٩٦ ساعة على مدار العام بأفضل سعر للساعة.",
-      descriptionEn: "96 hours across the year at the best hourly rate.",
-      billingPeriod: "YEARLY",
-      hours: 96,
-      hourlyRate: 6.5,
-      isFeatured: false,
-      sortOrder: 4,
     },
   ];
 
@@ -2757,145 +3305,53 @@ async function seedPlans() {
     let plan = await prisma.plan.findFirst({ where: { titleEn: def.titleEn } });
     if (!plan) {
       plan = await prisma.plan.create({
-        data: { ...def, currency: "GBP", isActive: true },
+        data: { ...def, isActive: true },
       });
     }
     plans[def.titleEn] = plan;
   }
 
-  // Example active discount on the featured plan (15% off) — idempotent-ish.
+  // Example plan discount, now modelled as a plan-linked coupon (15% off the
+  // monthly price of the featured plan) — idempotent-ish.
   const featured = plans.Standard;
   if (featured) {
-    const hasDiscount = await prisma.planDiscount.findFirst({
-      where: { planId: featured.id },
-    });
-    if (!hasDiscount) {
-      await prisma.planDiscount.create({
+    const code = "AYA-WELCOME15";
+    const hasCoupon = await prisma.coupon.findUnique({ where: { code } });
+    if (!hasCoupon) {
+      await prisma.coupon.create({
         data: {
-          planId: featured.id,
+          code,
           type: "PERCENT",
           value: 15,
-          constraint: "DURATION",
+          source: "MANUAL",
+          billingPeriod: "MONTHLY",
           isActive: true,
+          plans: { create: [{ planId: featured.id }] },
         },
       });
     }
   }
 
-  console.log(`[seed] plans — ${planDefs.length} upserted (GBP)`);
+  console.log(`[seed] plans — ${planDefs.length} upserted (hours only)`);
   return plans;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 6. SAMPLE FAMILY (parent + 2 children + links + subscriptions)
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function seedFamily(plans) {
-  const password = bcrypt.hashSync("Aya@12345", 10);
-
-  const parent = await prisma.user.upsert({
-    where: { email: "parent@aya.academy" },
-    update: {},
-    create: {
-      email: "parent@aya.academy",
-      name: "أبو سارة",
-      passwordHash: password,
-      role: "PARENT",
-      locale: "ar",
-      phone: "+201000000000",
-      isActive: true,
-    },
-  });
-
-  const childDefs = [
-    { email: "sara@aya.academy", name: "سارة", nickname: "سوسو" },
-    { email: "yusuf@aya.academy", name: "يوسف", nickname: "يويو" },
-  ];
-
-  const children = [];
-  for (const def of childDefs) {
-    const child = await prisma.user.upsert({
-      where: { email: def.email },
-      update: {},
-      create: {
-        email: def.email,
-        name: def.name,
-        nickname: def.nickname,
-        passwordHash: password,
-        role: "STUDENT",
-        locale: "ar",
-        isActive: true,
-        createdById: parent.id,
-      },
+// Seed the singleton global settings (hourly rate + currency) if absent.
+async function seedAppSettings() {
+  const existing = await prisma.appSetting.findFirst();
+  if (!existing) {
+    await prisma.appSetting.create({
+      data: { hourlyRate: 8.0, currency: "USD" },
     });
-    await prisma.parentStudent.upsert({
-      where: {
-        parentId_studentId: { parentId: parent.id, studentId: child.id },
-      },
-      update: {},
-      create: { parentId: parent.id, studentId: child.id, relation: "FATHER" },
-    });
-    children.push(child);
+    console.log("[seed] app settings — created (8.00 USD)");
   }
-
-  // A PENDING request for the first child (so admin has something to approve),
-  // and an ACTIVE subscription for the second (variety in the list).
-  const now = new Date();
-  const monthLater = new Date(now);
-  monthLater.setMonth(monthLater.getMonth() + 1);
-
-  const standard = plans.Standard;
-  const starter = plans.Starter;
-
-  if (standard) {
-    const existingPending = await prisma.subscription.findFirst({
-      where: { studentId: children[0].id, status: "PENDING" },
-    });
-    if (!existingPending) {
-      await prisma.subscription.create({
-        data: {
-          studentId: children[0].id,
-          planId: standard.id,
-          status: "PENDING",
-          startDate: now,
-          endDate: monthLater,
-          totalHours: standard.hours,
-          remainingHours: standard.hours,
-          priceCharged: Number(standard.hourlyRate) * standard.hours,
-          currency: "GBP",
-          createdById: parent.id,
-        },
-      });
-    }
-  }
-
-  if (starter && children[1]) {
-    const existingActive = await prisma.subscription.findFirst({
-      where: { studentId: children[1].id, status: "ACTIVE" },
-    });
-    if (!existingActive) {
-      await prisma.subscription.create({
-        data: {
-          studentId: children[1].id,
-          planId: starter.id,
-          status: "ACTIVE",
-          startDate: now,
-          endDate: monthLater,
-          totalHours: starter.hours,
-          remainingHours: starter.hours,
-          priceCharged: Number(starter.hourlyRate) * starter.hours,
-          currency: "GBP",
-          createdById: parent.id,
-        },
-      });
-    }
-  }
-
-  console.log(
-    `[seed] family — parent(${parent.email}) + ${children.length} children + subs`,
-  );
-  return { parent, children };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. SAMPLE FAMILY — removed. Students, parents, and everything linked to them
+// (parent↔student links, subscriptions, certificates, etc.) are no longer
+// seeded. Plans, templates, games, badges, and the quiz bank are kept.
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ── 4l. kind-words (الكلمات الطيبة) — MULTIPLE_CHOICE + EMOJI_CHOICE ─────────
 async function seedKindWords() {
@@ -2982,8 +3438,10 @@ async function seedKindWords() {
           labelEn: "«I have no time for you»",
           emoji: "🙄",
           isCorrect: false,
-          feedbackAr: "لا بأس يا بطل! نعطي أصدقاءنا وقتاً وحُباً. جرّب مرة أخرى 😊",
-          feedbackEn: "No worries, champ! We give friends time and love. Try again 😊",
+          feedbackAr:
+            "لا بأس يا بطل! نعطي أصدقاءنا وقتاً وحُباً. جرّب مرة أخرى 😊",
+          feedbackEn:
+            "No worries, champ! We give friends time and love. Try again 😊",
         },
       ],
     },
@@ -3010,7 +3468,8 @@ async function seedKindWords() {
           emoji: "😠",
           isCorrect: false,
           feedbackAr: "لا بأس! نشكر الناس بوجه لطيف. جرّب مرة أخرى 😊",
-          feedbackEn: "It's okay! We thank people with a kind face. Try again 😊",
+          feedbackEn:
+            "It's okay! We thank people with a kind face. Try again 😊",
         },
         {
           order: 2,
@@ -3019,7 +3478,8 @@ async function seedKindWords() {
           emoji: "😒",
           isCorrect: false,
           feedbackAr: "لا بأس! الشكر يكون بلطف وابتسامة. جرّب مرة أخرى 😊",
-          feedbackEn: "No worries! Thanks come with a gentle smile. Try again 😊",
+          feedbackEn:
+            "No worries! Thanks come with a gentle smile. Try again 😊",
         },
         {
           order: 3,
@@ -3046,7 +3506,8 @@ async function seedKindWords() {
           emoji: "🤝",
           isCorrect: true,
           feedbackAr: "رائع! الاعتذار شجاعة، والكلمة الطيبة تُصلح القلوب 💗",
-          feedbackEn: "Wonderful! Apologising is brave, and kind words mend hearts 💗",
+          feedbackEn:
+            "Wonderful! Apologising is brave, and kind words mend hearts 💗",
         },
         {
           order: 1,
@@ -3055,7 +3516,8 @@ async function seedKindWords() {
           emoji: "😤",
           isCorrect: false,
           feedbackAr: "لا بأس! نعترف بخطئنا ونعتذر بلطف. جرّب مرة أخرى 😊",
-          feedbackEn: "It's okay! We admit our mistake and apologise. Try again 😊",
+          feedbackEn:
+            "It's okay! We admit our mistake and apologise. Try again 😊",
         },
         {
           order: 2,
@@ -3064,7 +3526,8 @@ async function seedKindWords() {
           emoji: "🙅",
           isCorrect: false,
           feedbackAr: "لا بأس يا بطل! الاعتذار يعيد المحبة. جرّب مرة أخرى 😊",
-          feedbackEn: "No worries, champ! An apology restores love. Try again 😊",
+          feedbackEn:
+            "No worries, champ! An apology restores love. Try again 😊",
         },
       ],
     },
@@ -3099,8 +3562,10 @@ async function seedKindWords() {
           labelEn: "«I'm better than you»",
           emoji: "😎",
           isCorrect: false,
-          feedbackAr: "لا بأس يا بطل! التشجيع أجمل من المقارنة. جرّب مرة أخرى 😊",
-          feedbackEn: "No worries, champ! Encouraging beats comparing. Try again 😊",
+          feedbackAr:
+            "لا بأس يا بطل! التشجيع أجمل من المقارنة. جرّب مرة أخرى 😊",
+          feedbackEn:
+            "No worries, champ! Encouraging beats comparing. Try again 😊",
         },
       ],
     },
@@ -3118,7 +3583,8 @@ async function seedKindWords() {
           emoji: "🤲",
           isCorrect: true,
           feedbackAr: "ممتاز! «من فضلك» و«شكراً» مفتاح الكلام الطيب 🌷",
-          feedbackEn: "Excellent! 'Please' and 'thank you' are the keys to kind speech 🌷",
+          feedbackEn:
+            "Excellent! 'Please' and 'thank you' are the keys to kind speech 🌷",
         },
         {
           order: 1,
@@ -3135,8 +3601,10 @@ async function seedKindWords() {
           labelEn: "Take the water without saying anything",
           emoji: "🤐",
           isCorrect: false,
-          feedbackAr: "لا بأس يا بطل! الكلمة الطيبة تُسعد من حولنا. جرّب مرة أخرى 😊",
-          feedbackEn: "No worries, champ! Kind words make others happy. Try again 😊",
+          feedbackAr:
+            "لا بأس يا بطل! الكلمة الطيبة تُسعد من حولنا. جرّب مرة أخرى 😊",
+          feedbackEn:
+            "No worries, champ! Kind words make others happy. Try again 😊",
         },
       ],
     },
@@ -3189,59 +3657,6 @@ async function ensureFreeGame() {
   console.log(`[seed] auto-selected free game: ${pick.slug}`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// QURAN REFERENCE (surahs, juz, segments) — idempotent
-// ─────────────────────────────────────────────────────────────────────────────
-async function seedQuran() {
-  for (const s of SURAHS) {
-    await prisma.quranSurah.upsert({
-      where: { number: s.number },
-      update: {
-        nameAr: s.nameAr,
-        nameEn: s.nameEn,
-        ayahCount: s.ayahCount,
-        revelationPlace: s.revelationPlace,
-      },
-      create: s,
-    });
-  }
-  for (const j of JUZ) {
-    await prisma.quranJuz.upsert({
-      where: { number: j.number },
-      update: { nameAr: j.nameAr, nameEn: j.nameEn },
-      create: j,
-    });
-  }
-
-  const surahByNumber = new Map(
-    (await prisma.quranSurah.findMany({ select: { id: true, number: true } })).map(
-      (s) => [s.number, s.id],
-    ),
-  );
-  const juzByNumber = new Map(
-    (await prisma.quranJuz.findMany({ select: { id: true, number: true } })).map(
-      (j) => [j.number, j.id],
-    ),
-  );
-
-  // order = appearance index within each juz'
-  const orderByJuz = new Map();
-  for (const seg of SEGMENTS) {
-    const juzId = juzByNumber.get(seg.juz);
-    const surahId = surahByNumber.get(seg.surah);
-    const order = orderByJuz.get(seg.juz) ?? 0;
-    orderByJuz.set(seg.juz, order + 1);
-    await prisma.quranJuzSegment.upsert({
-      where: { juzId_surahId: { juzId, surahId } },
-      update: { fromAyah: seg.fromAyah, toAyah: seg.toAyah, order },
-      create: { juzId, surahId, fromAyah: seg.fromAyah, toAyah: seg.toAyah, order },
-    });
-  }
-  console.log(
-    `[seed] quran — ${SURAHS.length} surahs, ${JUZ.length} juz, ${SEGMENTS.length} segments`,
-  );
-}
-
 async function main() {
   console.log("[seed] starting...");
 
@@ -3249,30 +3664,35 @@ async function main() {
   const badgeCodes = await seedBadges();
   await seedCertificateTemplates();
   await seedQuizBank(admin.id);
-  const plans = await seedPlans();
-  await seedFamily(plans);
+  await seedAppSettings();
+  await seedPlans();
 
   await seedPhoneManners();
   await seedIslamicManners();
   await seedGoodDeedsCatch();
+  // Two falling-from-the-sky catch games, right after "Catch the Good Deeds".
+  await seedDhikrTreasure();
+  await seedPrayerStars();
   await seedWuduSteps();
   await seedAzkarMatch();
   await seedPillarsBuild();
 
-  // ── Phase D: 5 new animation games ──
+  // ── Phase D animation games ──
   await seedLettersMatch();
   await seedQiblaCompass();
   await seedRamadanHero();
   await seedDecorateMosque();
-  await seedAkhlaqLadder();
   await seedKindWords();
+
+  // Retired game: "سُلّم الأخلاق" (akhlaq-ladder) was removed. Clean it out of
+  // any already-seeded DB. Delete if it has no graded history; otherwise just
+  // deactivate so it disappears from the games list without breaking FKs.
+  await removeRetiredGame("akhlaq-ladder");
 
   // Safety net: the public /free-game page must always have a game to show. If
   // nothing is flagged isFree (older DB, or the chosen game was deactivated),
   // promote one automatically.
   await ensureFreeGame();
-
-  await seedQuran();
 
   console.log(`\n[seed] done.`);
   console.log(`  admin      : ${admin.email}`);
@@ -3280,10 +3700,10 @@ async function main() {
   console.log(`  categories : عقيدة, آداب وأخلاق, قرآن وسور (3)`);
   console.log(`  bank qs    : up to 8 defined (skips existing)`);
   console.log(
-    `  games      : phone-manners(6q) | islamic-manners(6q) | good-deeds-catch(1q/11opts) | wudu-steps(4q) | azkar-match(4q) | pillars-build(4q)`,
+    `  games      : phone-manners(6q) | islamic-manners(6q) | good-deeds-catch(1q/20opts) | dhikr-treasure(1q/11opts) | prayer-stars(1q/11opts) | wudu-steps(4q) | azkar-match(4q) | pillars-build(4q)`,
   );
   console.log(
-    `  games (D)  : letters-match(2q/MATCHING) | qibla-compass(3q/COMPASS) | ramadan-hero(2q/CALENDAR_DROP) | decorate-mosque(1q/COLORING) | akhlaq-ladder(1q/BOARD_DICE)`,
+    `  games (D)  : letters-match(2q/MATCHING) | qibla-compass(3q/COMPASS) | ramadan-hero(2q/CALENDAR_DROP) | decorate-mosque(1q/COLORING) | kind-words`,
   );
 }
 

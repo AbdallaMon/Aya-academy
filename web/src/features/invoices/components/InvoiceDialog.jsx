@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { MdAutorenew, MdEdit, MdPrint, MdReceiptLong, MdPaid } from "react-icons/md";
+import { MdAutorenew, MdEdit, MdFileDownload, MdReceiptLong, MdPaid } from "react-icons/md";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
@@ -15,26 +15,7 @@ import {
 } from "../config/constant.js";
 import InvoiceDocument from "./InvoiceDocument.jsx";
 import InvoiceEditForm from "./InvoiceEditForm.jsx";
-
-// Print only the invoice (id="invoice-print") on a clean A4 page.
-const PRINT_CSS = `
-@media print {
-  body * { visibility: hidden !important; }
-  #invoice-print, #invoice-print * { visibility: visible !important; }
-  #invoice-print {
-    position: absolute !important;
-    inset: 0 !important;
-    margin: 0 auto !important;
-    width: 100% !important;
-    max-width: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  @page { size: A4 portrait; margin: 12mm; }
-}
-`;
+import { downloadInvoicePdf } from "../lib/exportInvoice.js";
 
 /**
  * View + manage the demand invoice for one subscription.
@@ -51,6 +32,7 @@ export default function InvoiceDialog({
   const txt = useInvoicesText();
   const confirm = useConfirm();
   const editDialog = useOpen();
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const inv = useRequest({
     url: INVOICES_URL,
@@ -97,6 +79,17 @@ export default function InvoiceDialog({
       activateSubscription: Boolean(activate),
     });
     refresh();
+  }
+
+  async function downloadPdf() {
+    const node = document.getElementById("invoice-print");
+    if (!node) return;
+    setPdfBusy(true);
+    try {
+      await downloadInvoicePdf(node, `${invoice?.invoiceNumber || "invoice"}.pdf`);
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   const busy =
@@ -149,11 +142,11 @@ export default function InvoiceDialog({
           )}
           <Button
             variant="contained"
-            startIcon={<MdPrint />}
-            onClick={() => window.print()}
-            disabled={busy}
+            startIcon={pdfBusy ? <CircularProgress size={16} color="inherit" /> : <MdFileDownload />}
+            onClick={downloadPdf}
+            disabled={busy || pdfBusy}
           >
-            {txt.print}
+            {txt.downloadPdf}
           </Button>
         </>
       )}
@@ -162,8 +155,6 @@ export default function InvoiceDialog({
 
   return (
     <>
-      <style>{PRINT_CSS}</style>
-
       <FormDialog
         open={open}
         onClose={onClose}

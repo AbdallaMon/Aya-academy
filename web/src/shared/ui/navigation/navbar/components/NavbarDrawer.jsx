@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import {
   Box,
-  Button,
   Divider,
   Drawer,
   IconButton,
@@ -13,26 +12,40 @@ import {
   Stack,
 } from '@mui/material';
 import { IoMdClose, IoMdMenu } from 'react-icons/io';
-import { navSections, pickNav } from '@/shared/data/navigation/navbar';
+import { navSections, navHref, pickNav } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
-import { useAuth } from '@/hooks/useAuth.js';
 import { localePath } from '@/i18n/routing.js';
 import { ThemeSwitch } from '@/shared/ui/buttons/ThemeSwitch';
 import { LanguageSwitch } from '@/shared/ui/buttons/LanguageSwitch.jsx';
+import NavbarBrand from './NavbarBrand';
+import NavbarCtaButton from './NavbarCtaButton';
 
+// Mobile navigation: a hamburger that opens a side Drawer (anchored to the
+// inline-start edge per language). Visible only below `md`.
 export default function NavbarDrawer() {
   const [open, setOpen] = useState(false);
   const { lng } = useTranslation();
-  const { isLoggedIn } = useAuth();
   const txt = pickNav(lng);
   const close = () => setOpen(false);
 
   return (
-    <Box sx={{ display: { xs: 'flex', md: 'none' }, marginInlineStart: 'auto', alignItems: 'center', gap: 0.5 }}>
+    <Box
+      sx={{
+        display: { xs: 'flex', md: 'none' },
+        marginInlineStart: 'auto',
+        alignItems: 'center',
+        gap: 0.5,
+      }}
+    >
+      {/* Persistent conversion CTA — stays visible as the parent scrolls the long
+          funnel, instead of being buried inside the drawer. Compact padding so the
+          brand + CTA + toggle + hamburger all fit a 360–390px bar. */}
+      <NavbarCtaButton size="small" sx={{ px: 1.5, fontSize: 13 }} />
       <ThemeSwitch />
       <IconButton onClick={() => setOpen(true)} size="medium" aria-label={txt.menu} color="inherit">
         <IoMdMenu />
       </IconButton>
+
       <Drawer
         open={open}
         onClose={close}
@@ -40,19 +53,21 @@ export default function NavbarDrawer() {
         PaperProps={{ sx: { width: 300 } }}
       >
         <Box sx={{ p: 2 }}>
+          {/* Header: brand + close */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box component="img" src="/logos/logo.png" alt={txt.brand} sx={{ height: 52 }} />
+            <NavbarBrand height={52} onClick={close} />
             <IconButton onClick={close} color="primary" size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
               <IoMdClose size={18} />
             </IconButton>
           </Box>
 
+          {/* Section links */}
           <List>
             {navSections.map((s) => (
               <ListItemButton
                 key={s.id}
                 component={Link}
-                href={localePath(lng, `/#${s.id}`)}
+                href={navHref(localePath, lng, s)}
                 onClick={close}
                 sx={{ borderRadius: 2, fontWeight: 700 }}
               >
@@ -63,16 +78,9 @@ export default function NavbarDrawer() {
 
           <Divider sx={{ my: 2 }} />
 
+          {/* CTA + language */}
           <Stack spacing={1.5}>
-            {isLoggedIn ? (
-              <Button variant="contained" component={Link} href={localePath(lng, '/dashboard')} onClick={close}>
-                {txt.dashboard}
-              </Button>
-            ) : (
-              <Button variant="contained" component={Link} href={localePath(lng, '/register')} onClick={close}>
-                {txt.signup}
-              </Button>
-            )}
+            <NavbarCtaButton onClick={close} />
             <Box sx={{ pt: 1 }}>
               <LanguageSwitch size="sm" />
             </Box>

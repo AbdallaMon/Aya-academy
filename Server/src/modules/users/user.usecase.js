@@ -135,7 +135,7 @@ class UserUsecase {
     }
 
     const existing = await userRepo.findByEmail(input.email);
-    if (existing) throw conflict(userMessagesCodes.USER_NOT_FOUND);
+    if (existing) throw conflict(userMessagesCodes.EMAIL_ALREADY_EXISTS);
 
     const passwordHash = await hashPassword(input.password);
 
@@ -150,6 +150,7 @@ class UserUsecase {
           locale: input.locale ?? "ar",
           nickname: input.nickname,
           birthDate: input.birthDate,
+          avatarId: input.avatarId,
           createdById: authUser.id,
         },
         tx,
@@ -170,7 +171,7 @@ class UserUsecase {
 
   async createStudent(authUser, input) {
     const existing = await userRepo.findByEmail(input.email);
-    if (existing) throw conflict(userMessagesCodes.USER_NOT_FOUND);
+    if (existing) throw conflict(userMessagesCodes.EMAIL_ALREADY_EXISTS);
     const passwordHash = await hashPassword(input.password);
     const relation = input.relation ?? PARENT_RELATIONS.GUARDIAN;
 
@@ -183,6 +184,7 @@ class UserUsecase {
           role: USER_ROLES.STUDENT,
           nickname: input.nickname,
           birthDate: input.birthDate,
+          avatarId: input.avatarId,
           createdById: authUser.id,
         },
         tx,

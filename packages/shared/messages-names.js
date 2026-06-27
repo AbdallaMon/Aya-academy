@@ -7,8 +7,6 @@ export const messagesNames = {
   planMessages: "plan-messages",
   couponMessages: "coupon-messages",
   subscriptionMessages: "subscription-messages",
-  sessionMessages: "session-messages",
-  quranMessages: "quran-messages",
   gameMessages: "game-messages",
   reportMessages: "report-messages",
   quizMessages: "quiz-messages",
@@ -22,4 +20,5 @@ export const messagesNames = {
   attachmentMessages: "attachment-messages",
   invoiceMessages: "invoice-messages",
   paymentTemplateMessages: "payment-template-messages",
+  settingsMessages: "settings-messages",
 };

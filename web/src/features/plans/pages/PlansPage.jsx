@@ -13,11 +13,15 @@ import {
   AppForm,
   DataTable,
   FormDialog,
+  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
-import { PLANS_URL, BILLING_PERIODS, formatGBP } from "../config/constant.js";
+import { PLANS_URL } from "../config/constant.js";
+import { formatMoney } from "../../../shared/lib/money.js";
+import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
 import { usePlansText } from "../config/plansText.js";
-import PlanDiscountsDialog from "../components/PlanDiscountsDialog.jsx";
+import PlanCouponsDialog from "../components/PlanCouponsDialog.jsx";
+import PlanPriceFields from "../components/PlanPriceFields.jsx";
 
 export default function PlansPage() {
   const txt = usePlansText();
@@ -28,6 +32,9 @@ export default function PlansPage() {
   const canCreate = hasPermission(PERMISSIONS.PLAN.CREATE);
   const canEdit = hasPermission(PERMISSIONS.PLAN.EDIT);
   const canDelete = hasPermission(PERMISSIONS.PLAN.DELETE);
+
+  // Price is derived from the single global hourly rate + currency.
+  const { hourlyRate, currency } = useAppSettings({ enabled: canList });
 
   const {
     data,
@@ -80,9 +87,7 @@ export default function PlansPage() {
       titleEn: values.titleEn,
       descriptionAr: values.descriptionAr || undefined,
       descriptionEn: values.descriptionEn || undefined,
-      billingPeriod: values.billingPeriod,
       hours: Number(values.hours),
-      hourlyRate: Number(values.hourlyRate),
       sortOrder: Number(values.sortOrder || 0),
       isFeatured: Boolean(values.isFeatured),
       isActive: values.isActive === undefined ? true : Boolean(values.isActive),
@@ -97,21 +102,29 @@ export default function PlansPage() {
       { name: "titleAr", label: txt.titleAr, type: "text", rules: { required: txt.required } },
       { name: "titleEn", label: txt.titleEn, type: "text", rules: { required: txt.required } },
       {
-        name: "billingPeriod",
-        label: txt.billingPeriod,
-        type: "select",
-        options: { MONTHLY: txt.monthly, YEARLY: txt.yearly },
-        rules: { required: txt.required },
+        name: "pricing",
+        type: "custom",
+        gridSize: { xs: 12 },
+        txt,
+        hourlyRate,
+        currency,
+        component: ({ control, watch, txt: fieldTxt, hourlyRate: hr, currency: cur }) => (
+          <PlanPriceFields
+            control={control}
+            watch={watch}
+            txt={fieldTxt}
+            hourlyRate={hr}
+            currency={cur}
+          />
+        ),
       },
-      { name: "hours", label: txt.hours, type: "number", rules: { required: txt.required } },
-      { name: "hourlyRate", label: txt.hourlyRate, type: "number", rules: { required: txt.required } },
       { name: "sortOrder", label: txt.sortOrder, type: "number" },
       { name: "descriptionAr", label: txt.descriptionAr, type: "textarea", gridSize: { xs: 12 } },
       { name: "descriptionEn", label: txt.descriptionEn, type: "textarea", gridSize: { xs: 12 } },
       { name: "isFeatured", label: txt.isFeatured, type: "switch" },
       { name: "isActive", label: txt.isActive, type: "switch" },
     ],
-    [txt],
+    [txt, hourlyRate, currency],
   );
 
   const defaultValues = useMemo(() => {
@@ -121,15 +134,18 @@ export default function PlansPage() {
         titleEn: selected.titleEn ?? "",
         descriptionAr: selected.descriptionAr ?? "",
         descriptionEn: selected.descriptionEn ?? "",
-        billingPeriod: selected.billingPeriod ?? "MONTHLY",
         hours: selected.hours ?? "",
-        hourlyRate: selected.hourlyRate ?? "",
         sortOrder: selected.sortOrder ?? 0,
         isFeatured: Boolean(selected.isFeatured),
         isActive: selected.isActive ?? true,
       };
     }
-    return { billingPeriod: "MONTHLY", isActive: true, isFeatured: false, sortOrder: 0 };
+    return {
+      isActive: true,
+      isFeatured: false,
+      sortOrder: 0,
+      hours: "",
+    };
   }, [selected]);
 
   const columns = useMemo(
@@ -149,27 +165,20 @@ export default function PlansPage() {
           </Stack>
         ),
       },
-      {
-        field: "billingPeriod",
-        headerName: txt.period,
-        width: 110,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            label={row.billingPeriod === "YEARLY" ? txt.yearly : txt.monthly}
-          />
-        ),
-      },
       { field: "hours", headerName: txt.hours, width: 90 },
       {
         field: "price",
         headerName: txt.price,
-        width: 120,
-        renderCell: ({ row }) => (
-          <Typography fontWeight={700}>
-            {formatGBP(Number(row.hourlyRate) * row.hours)}
-          </Typography>
-        ),
+        width: 220,
+        renderCell: ({ row }) => {
+          const monthly = Number(row.hours) * Number(hourlyRate || 0);
+          const yearly = monthly * 12;
+          return (
+            <Typography fontWeight={700} variant="body2">
+              {`${formatMoney(monthly, currency)} ${txt.perMonth} · ${formatMoney(yearly, currency)} ${txt.perYear}`}
+            </Typography>
+          );
+        },
       },
       {
         field: "isFeatured",
@@ -194,49 +203,42 @@ export default function PlansPage() {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
-        width: 170,
+        width: 80,
         renderCell: ({ row }) => (
-          <Stack direction="row" spacing={0.5}>
-            {canEdit && (
-              <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-                {txt.edit}
-              </Button>
-            )}
-            {canEdit && (
-              <Button
-                size="small"
-                color="secondary"
-                startIcon={<MdLocalOffer />}
-                onClick={() => onDiscounts(row)}
-              >
-                {(row.discounts?.length ?? 0) || ""}
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                size="small"
-                color="error"
-                startIcon={<MdDelete />}
-                onClick={() => onDelete(row)}
-              />
-            )}
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.edit,
+                icon: <MdEdit />,
+                onClick: () => onEdit(row),
+                hidden: !canEdit,
+              },
+              {
+                label: (row._count?.coupons ?? 0)
+                  ? `${txt.discounts} (${row._count.coupons})`
+                  : txt.discounts,
+                icon: <MdLocalOffer />,
+                color: "secondary",
+                onClick: () => onDiscounts(row),
+                hidden: !canEdit,
+              },
+              {
+                label: txt.delete,
+                icon: <MdDelete />,
+                color: "error",
+                onClick: () => onDelete(row),
+                hidden: !canDelete,
+              },
+            ]}
+          />
         ),
       },
     ],
-    [txt, lng, canEdit, canDelete],
+    [txt, lng, canEdit, canDelete, hourlyRate, currency],
   );
 
   const filterConfig = useMemo(
-    () => [
-      { type: "search", key: "search", label: txt.title },
-      {
-        type: "enum",
-        key: "billingPeriod",
-        label: txt.period,
-        options: { MONTHLY: txt.monthly, YEARLY: txt.yearly },
-      },
-    ],
+    () => [{ type: "search", key: "search", label: txt.title }],
     [txt],
   );
 
@@ -302,7 +304,7 @@ export default function PlansPage() {
         />
       </FormDialog>
 
-      <PlanDiscountsDialog
+      <PlanCouponsDialog
         open={discountsDialog.isOpen}
         onClose={() => {
           discountsDialog.close();

@@ -8,17 +8,31 @@ import {
   FormControlLabel,
   Grid,
   MenuItem,
+  Slider,
   Stack,
   Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { MdInfoOutline } from "react-icons/md";
+import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
 import { FormDialog } from "../../../shared/components/index.js";
 import CertificateCard from "../../certificates/components/CertificateCard.jsx";
 import {
+  TEMPLATE_TYPES,
   TEMPLATE_ORIENTATIONS,
   TEMPLATE_BORDER_STYLES,
+  TEMPLATE_DECORATIONS,
+  TEMPLATE_FONT_STYLES,
+  TEMPLATE_LOGO_SIZES,
+  NAME_SCALE_MIN,
+  NAME_SCALE_MAX,
+  HEADING_SCALE_MIN,
+  HEADING_SCALE_MAX,
+  WATERMARK_OPACITY_MIN,
+  WATERMARK_OPACITY_MAX,
+  CONTENT_SPACING_MIN,
+  CONTENT_SPACING_MAX,
   DEFAULT_TEMPLATE_THEME,
 } from "../config/constant.js";
 
@@ -31,40 +45,96 @@ const BORDER_LABEL_KEY = {
   foil: "borderFoil",
   double: "borderDouble",
   simple: "borderSimple",
+  rounded: "borderRounded",
+  dashed: "borderDashed",
+  inset: "borderInset",
+  groove: "borderGroove",
+  ribbon: "borderRibbon",
+  none: "borderNone",
+};
+const TYPE_LABEL_KEY = {
+  GENERAL: "typeGeneral",
+  GAME: "typeGame",
+};
+const DECORATION_LABEL_KEY = {
+  elegant: "decoElegant",
+  geometric: "decoGeometric",
+  classic: "decoClassic",
+  stars: "decoStars",
+  rainbow: "decoRainbow",
+  crescent: "decoCrescent",
+  balloons: "decoBalloons",
+  badges: "decoBadges",
+  confetti: "decoConfetti",
+  hearts: "decoHearts",
+  lanterns: "decoLanterns",
+  florals: "decoFlorals",
+  sparkles: "decoSparkles",
+  none: "decoNone",
+};
+const FONT_LABEL_KEY = {
+  elegant: "fontElegant",
+  classic: "fontClassic",
+  modern: "fontModern",
+  kufi: "fontKufi",
+  ruqaa: "fontRuqaa",
+  naskh: "fontNaskh",
+};
+const LOGO_SIZE_LABEL_KEY = {
+  sm: "logoSizeSm",
+  md: "logoSizeMd",
+  lg: "logoSizeLg",
 };
 
-function emptyValues() {
+// Brand-new template: theme defaults + the fixed texts PRE-FILLED with the same
+// copy the card would otherwise fall back to, so the inputs always match the
+// live preview (no "empty input but preview shows شهادة تقدير" surprise).
+function emptyValues(txt = {}) {
   return {
     key: "",
+    type: CERTIFICATE_TEMPLATE_TYPES.GENERAL,
     nameAr: "",
     nameEn: "",
-    headingAr: "",
-    headingEn: "",
-    introAr: "",
-    introEn: "",
-    bodyAr: "",
-    bodyEn: "",
-    congratsAr: "",
-    congratsEn: "",
-    thanksAr: "",
-    thanksEn: "",
-    signatureName: "",
-    signatureTitleAr: "",
-    signatureTitleEn: "",
+    headingAr: txt.defaultHeadingAr ?? "",
+    headingEn: txt.defaultHeadingEn ?? "",
+    introAr: txt.defaultIntroAr ?? "",
+    introEn: txt.defaultIntroEn ?? "",
+    bodyAr: txt.defaultBodyAr ?? "",
+    bodyEn: txt.defaultBodyEn ?? "",
+    congratsAr: txt.defaultCongratsAr ?? "",
+    congratsEn: txt.defaultCongratsEn ?? "",
+    thanksAr: txt.defaultThanksAr ?? "",
+    thanksEn: txt.defaultThanksEn ?? "",
+    signatureName: txt.defaultSignatureName ?? "",
+    signatureTitleAr: txt.defaultSignatureTitleAr ?? "",
+    signatureTitleEn: txt.defaultSignatureTitleEn ?? "",
     // theme
     orientation: DEFAULT_TEMPLATE_THEME.orientation,
     borderStyle: DEFAULT_TEMPLATE_THEME.borderStyle,
+    decoration: DEFAULT_TEMPLATE_THEME.decoration,
+    fontStyle: DEFAULT_TEMPLATE_THEME.fontStyle,
     accent: DEFAULT_TEMPLATE_THEME.accent,
     secondary: DEFAULT_TEMPLATE_THEME.secondary,
     background: DEFAULT_TEMPLATE_THEME.background,
+    nameColor: DEFAULT_TEMPLATE_THEME.nameColor,
+    logoSize: DEFAULT_TEMPLATE_THEME.logoSize,
+    sealText: DEFAULT_TEMPLATE_THEME.sealText,
+    nameScale: DEFAULT_TEMPLATE_THEME.nameScale,
+    headingScale: DEFAULT_TEMPLATE_THEME.headingScale,
+    contentSpacing: DEFAULT_TEMPLATE_THEME.contentSpacing,
+    watermarkOpacity: DEFAULT_TEMPLATE_THEME.watermarkOpacity,
     showPhoto: DEFAULT_TEMPLATE_THEME.showPhoto,
     showBismillah: DEFAULT_TEMPLATE_THEME.showBismillah,
+    showSeal: DEFAULT_TEMPLATE_THEME.showSeal,
+    showWatermark: DEFAULT_TEMPLATE_THEME.showWatermark,
+    showTagline: DEFAULT_TEMPLATE_THEME.showTagline,
+    showDate: DEFAULT_TEMPLATE_THEME.showDate,
     isActive: true,
     isDefault: false,
   };
 }
 
-function fromTemplate(tpl) {
+function fromTemplate(tpl, txt = {}) {
   const theme = (() => {
     if (!tpl?.themeJson) return {};
     if (typeof tpl.themeJson === "object") return tpl.themeJson;
@@ -74,10 +144,13 @@ function fromTemplate(tpl) {
       return {};
     }
   })();
-  const base = emptyValues();
+  const base = emptyValues(txt);
+  // Editing keeps the stored copy verbatim (empty stays empty); only theme
+  // values fall back to the defaults.
   return {
     ...base,
     key: tpl.key ?? "",
+    type: tpl.type ?? base.type,
     nameAr: tpl.nameAr ?? "",
     nameEn: tpl.nameEn ?? "",
     headingAr: tpl.headingAr ?? "",
@@ -95,11 +168,24 @@ function fromTemplate(tpl) {
     signatureTitleEn: tpl.signatureTitleEn ?? "",
     orientation: theme.orientation ?? base.orientation,
     borderStyle: theme.borderStyle ?? base.borderStyle,
+    decoration: theme.decoration ?? base.decoration,
+    fontStyle: theme.fontStyle ?? base.fontStyle,
     accent: theme.accent ?? base.accent,
     secondary: theme.secondary ?? base.secondary,
     background: theme.background ?? base.background,
+    nameColor: theme.nameColor ?? base.nameColor,
+    logoSize: theme.logoSize ?? base.logoSize,
+    sealText: theme.sealText ?? base.sealText,
+    nameScale: theme.nameScale ?? base.nameScale,
+    headingScale: theme.headingScale ?? base.headingScale,
+    contentSpacing: theme.contentSpacing ?? base.contentSpacing,
+    watermarkOpacity: theme.watermarkOpacity ?? base.watermarkOpacity,
     showPhoto: theme.showPhoto ?? base.showPhoto,
     showBismillah: theme.showBismillah ?? base.showBismillah,
+    showSeal: theme.showSeal ?? base.showSeal,
+    showWatermark: theme.showWatermark ?? base.showWatermark,
+    showTagline: theme.showTagline ?? base.showTagline,
+    showDate: theme.showDate ?? base.showDate,
     isActive: tpl.isActive ?? true,
     isDefault: tpl.isDefault ?? false,
   };
@@ -109,12 +195,36 @@ function buildThemeJson(v) {
   return {
     orientation: v.orientation,
     borderStyle: v.borderStyle,
+    decoration: v.decoration,
+    fontStyle: v.fontStyle,
     accent: v.accent,
     secondary: v.secondary,
     background: v.background,
+    nameColor: v.nameColor,
+    logoSize: v.logoSize,
+    sealText: v.sealText?.trim() || undefined,
+    nameScale: Number(v.nameScale),
+    headingScale: Number(v.headingScale),
+    contentSpacing: Number(v.contentSpacing),
+    watermarkOpacity: Number(v.watermarkOpacity),
     showPhoto: Boolean(v.showPhoto),
     showBismillah: Boolean(v.showBismillah),
+    showSeal: Boolean(v.showSeal),
+    showWatermark: Boolean(v.showWatermark),
+    showTagline: Boolean(v.showTagline),
+    showDate: Boolean(v.showDate),
   };
+}
+
+// Debounce a value so the heavy CertificateCard preview re-renders at most once
+// per `delay` ms — keeps typing and color-picker dragging snappy.
+function useDebouncedValue(value, delay = 220) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
 }
 
 /**
@@ -123,16 +233,27 @@ function buildThemeJson(v) {
  *   POST certificate-templates  /  PATCH certificate-templates/:id
  */
 export default function TemplateFormDialog({ open, onClose, template, txt, loading, onSubmit }) {
-  const [values, setValues] = useState(emptyValues);
+  const [values, setValues] = useState(() => emptyValues(txt));
   const [error, setError] = useState("");
 
   const isEditing = Boolean(template?.id);
 
-  useEffect(() => {
-    if (!open) return;
-    setError("");
-    setValues(template ? fromTemplate(template) : emptyValues());
-  }, [open, template]);
+  // Reset the form whenever the dialog (re)opens or targets a new template.
+  // Done during render (React's "adjust state on prop change" pattern) rather
+  // than in an effect so it never triggers a cascading-render warning.
+  const openKey = open ? String(template?.id ?? "new") : "__closed__";
+  const [syncedKey, setSyncedKey] = useState("__closed__");
+  if (openKey !== syncedKey) {
+    setSyncedKey(openKey);
+    if (open) {
+      setValues(template ? fromTemplate(template, txt) : emptyValues(txt));
+      setError("");
+    }
+  }
+
+  // Inputs stay instant; the (heavy) live preview follows a debounced copy so
+  // dragging the color pickers / typing never janks.
+  const debouncedValues = useDebouncedValue(values, 220);
 
   function set(key, value) {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -146,6 +267,7 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
     }
     const payload = {
       key: values.key.trim(),
+      type: values.type,
       nameAr: values.nameAr.trim(),
       nameEn: values.nameEn.trim(),
       headingAr: values.headingAr.trim() || undefined,
@@ -168,7 +290,8 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
     onSubmit(payload, isEditing);
   }
 
-  // Synthetic certificate for the live preview (template-driven path).
+  // Synthetic certificate for the live preview (template-driven path). Built
+  // from the DEBOUNCED values so the heavy card re-renders at most ~4×/sec.
   const previewCertificate = useMemo(
     () => ({
       studentName: txt.previewStudent,
@@ -176,23 +299,23 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
       reasonAr: txt.previewReason,
       reasonEn: txt.previewReason,
       template: {
-        headingAr: values.headingAr,
-        headingEn: values.headingEn,
-        introAr: values.introAr,
-        introEn: values.introEn,
-        bodyAr: values.bodyAr,
-        bodyEn: values.bodyEn,
-        congratsAr: values.congratsAr,
-        congratsEn: values.congratsEn,
-        thanksAr: values.thanksAr,
-        thanksEn: values.thanksEn,
-        signatureName: values.signatureName,
-        signatureTitleAr: values.signatureTitleAr,
-        signatureTitleEn: values.signatureTitleEn,
-        themeJson: buildThemeJson(values),
+        headingAr: debouncedValues.headingAr,
+        headingEn: debouncedValues.headingEn,
+        introAr: debouncedValues.introAr,
+        introEn: debouncedValues.introEn,
+        bodyAr: debouncedValues.bodyAr,
+        bodyEn: debouncedValues.bodyEn,
+        congratsAr: debouncedValues.congratsAr,
+        congratsEn: debouncedValues.congratsEn,
+        thanksAr: debouncedValues.thanksAr,
+        thanksEn: debouncedValues.thanksEn,
+        signatureName: debouncedValues.signatureName,
+        signatureTitleAr: debouncedValues.signatureTitleAr,
+        signatureTitleEn: debouncedValues.signatureTitleEn,
+        themeJson: buildThemeJson(debouncedValues),
       },
     }),
-    [values, txt.previewStudent, txt.previewReason],
+    [debouncedValues, txt.previewStudent, txt.previewReason],
   );
 
   const field = (name, label, extra = {}) => (
@@ -230,7 +353,29 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
           </Typography>
           <Grid container spacing={2} sx={{ mt: 0 }}>
             <Grid size={{ xs: 12, sm: 6 }}>{field("key", txt.keyLabel, { required: true })}</Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                label={txt.typeLabel}
+                value={values.type}
+                onChange={(e) => set("type", e.target.value)}
+              >
+                {TEMPLATE_TYPES.map((t) => (
+                  <MenuItem key={t} value={t}>
+                    {txt[TYPE_LABEL_KEY[t]] || t}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            {values.type === CERTIFICATE_TEMPLATE_TYPES.GAME && (
+              <Grid size={{ xs: 12 }}>
+                <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
+                  {txt.typeGameHint}
+                </Alert>
+              </Grid>
+            )}
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControlLabel
                 control={
                   <Switch
@@ -241,7 +386,7 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
                 label={txt.isActiveLabel}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControlLabel
                 control={
                   <Switch
@@ -350,6 +495,16 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
                 slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <TextField
+                type="color"
+                fullWidth
+                label={txt.nameColorLabel}
+                value={values.nameColor}
+                onChange={(e) => set("nameColor", e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
               <FormControlLabel
                 control={
@@ -370,6 +525,173 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
                   />
                 }
                 label={txt.showBismillahLabel}
+              />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 2.5 }} />
+          <Typography variant="overline" color="text.secondary">
+            {txt.sectionMore}
+          </Typography>
+          <Grid container spacing={2} sx={{ mt: 0 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                label={txt.decorationLabel}
+                value={values.decoration}
+                onChange={(e) => set("decoration", e.target.value)}
+              >
+                {TEMPLATE_DECORATIONS.map((d) => (
+                  <MenuItem key={d} value={d}>
+                    {txt[DECORATION_LABEL_KEY[d]] || d}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                label={txt.fontStyleLabel}
+                value={values.fontStyle}
+                onChange={(e) => set("fontStyle", e.target.value)}
+              >
+                {TEMPLATE_FONT_STYLES.map((f) => (
+                  <MenuItem key={f} value={f}>
+                    {txt[FONT_LABEL_KEY[f]] || f}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                label={txt.logoSizeLabel}
+                value={values.logoSize}
+                onChange={(e) => set("logoSize", e.target.value)}
+              >
+                {TEMPLATE_LOGO_SIZES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {txt[LOGO_SIZE_LABEL_KEY[s]] || s}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              {field("sealText", txt.sealTextLabel, {
+                slotProps: { htmlInput: { maxLength: 16 } },
+                disabled: !values.showSeal,
+              })}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ px: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {txt.nameScaleLabel} ({Number(values.nameScale).toFixed(2)}×)
+                </Typography>
+                <Slider
+                  size="small"
+                  value={Number(values.nameScale)}
+                  min={NAME_SCALE_MIN}
+                  max={NAME_SCALE_MAX}
+                  step={0.05}
+                  onChange={(_e, v) => set("nameScale", v)}
+                  valueLabelDisplay="auto"
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ px: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {txt.headingScaleLabel} ({Number(values.headingScale).toFixed(2)}×)
+                </Typography>
+                <Slider
+                  size="small"
+                  value={Number(values.headingScale)}
+                  min={HEADING_SCALE_MIN}
+                  max={HEADING_SCALE_MAX}
+                  step={0.05}
+                  onChange={(_e, v) => set("headingScale", v)}
+                  valueLabelDisplay="auto"
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ px: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {txt.contentSpacingLabel} ({Number(values.contentSpacing).toFixed(2)}×)
+                </Typography>
+                <Slider
+                  size="small"
+                  value={Number(values.contentSpacing)}
+                  min={CONTENT_SPACING_MIN}
+                  max={CONTENT_SPACING_MAX}
+                  step={0.05}
+                  onChange={(_e, v) => set("contentSpacing", v)}
+                  valueLabelDisplay="auto"
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ px: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {txt.watermarkOpacityLabel} ({Number(values.watermarkOpacity).toFixed(2)})
+                </Typography>
+                <Slider
+                  size="small"
+                  value={Number(values.watermarkOpacity)}
+                  min={WATERMARK_OPACITY_MIN}
+                  max={WATERMARK_OPACITY_MAX}
+                  step={0.01}
+                  disabled={!values.showWatermark}
+                  onChange={(_e, v) => set("watermarkOpacity", v)}
+                  valueLabelDisplay="auto"
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(values.showSeal)}
+                    onChange={(e) => set("showSeal", e.target.checked)}
+                  />
+                }
+                label={txt.showSealLabel}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(values.showWatermark)}
+                    onChange={(e) => set("showWatermark", e.target.checked)}
+                  />
+                }
+                label={txt.showWatermarkLabel}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(values.showTagline)}
+                    onChange={(e) => set("showTagline", e.target.checked)}
+                  />
+                }
+                label={txt.showTaglineLabel}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(values.showDate)}
+                    onChange={(e) => set("showDate", e.target.checked)}
+                  />
+                }
+                label={txt.showDateLabel}
               />
             </Grid>
           </Grid>

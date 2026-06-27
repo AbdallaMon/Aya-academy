@@ -201,6 +201,23 @@ class GameUsecase {
     return gameRepo.listAssignmentsForStudent(authUser.id);
   }
 
+  /**
+   * Admin (GAME.ASSIGN): a specific student's game assignments — powers the
+   * student-detail "games" tab (view + add/remove). The route already enforces
+   * GAME.ASSIGN; admins manage every student so no extra scope is needed.
+   */
+  async studentAssignments(authUser, studentId) {
+    return gameRepo.listAssignmentsForStudent(studentId);
+  }
+
+  /**
+   * The single public free game (card data) — shown to a signed-in student on
+   * their dashboard alongside their assigned games. Returns null if none is set.
+   */
+  async getMyFreeGame() {
+    return gameRepo.getFreeCard();
+  }
+
   async unassign(authUser, gameId, studentId) {
     const game = await gameRepo.getById(gameId);
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);

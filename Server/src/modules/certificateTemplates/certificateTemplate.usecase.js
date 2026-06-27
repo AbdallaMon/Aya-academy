@@ -1,4 +1,8 @@
-import { USER_ROLES, messagesNames } from "@aya/shared";
+import {
+  CERTIFICATE_TEMPLATE_TYPES,
+  USER_ROLES,
+  messagesNames,
+} from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { conflict, notFound } from "../../shared/errors/AppError.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
@@ -31,9 +35,42 @@ class CertificateTemplateUsecase {
     return template;
   }
 
+  /** The single active GAME template (auto-applied to game certificates). */
+  getActiveGameTemplate(tx) {
+    return certificateTemplateRepo.getActiveGameTemplate(tx);
+  }
+
+  /**
+   * Public (no-auth) render payload for the single active GAME template — lets
+   * the anonymous free-game certificate match the admin-designed look. Returns
+   * null when no GAME template is configured. Exposes ONLY render fields (copy +
+   * style), never admin/internal flags (key, names, isDefault…).
+   */
+  async getActiveGameTemplatePublic() {
+    const tpl = await certificateTemplateRepo.getActiveGameTemplate();
+    if (!tpl) return null;
+    return {
+      headingAr: tpl.headingAr,
+      headingEn: tpl.headingEn,
+      introAr: tpl.introAr,
+      introEn: tpl.introEn,
+      bodyAr: tpl.bodyAr,
+      bodyEn: tpl.bodyEn,
+      congratsAr: tpl.congratsAr,
+      congratsEn: tpl.congratsEn,
+      thanksAr: tpl.thanksAr,
+      thanksEn: tpl.thanksEn,
+      signatureName: tpl.signatureName,
+      signatureTitleAr: tpl.signatureTitleAr,
+      signatureTitleEn: tpl.signatureTitleEn,
+      themeJson: tpl.themeJson,
+    };
+  }
+
   async create(_authUser, input) {
     const data = {
       key: input.key,
+      type: input.type ?? CERTIFICATE_TEMPLATE_TYPES.GENERAL,
       nameAr: input.nameAr,
       nameEn: input.nameEn,
       headingAr: input.headingAr,
@@ -55,10 +92,13 @@ class CertificateTemplateUsecase {
     };
 
     try {
-      // Promoting a new default must demote all others — atomically.
-      if (data.isDefault) {
+      // Promoting a new default — or a new GAME template — must demote the
+      // existing one(s) atomically (only one default / one GAME template).
+      const isGame = data.type === CERTIFICATE_TEMPLATE_TYPES.GAME;
+      if (data.isDefault || isGame) {
         return await prisma.$transaction(async (tx) => {
-          await certificateTemplateRepo.unsetDefaults(null, tx);
+          if (data.isDefault) await certificateTemplateRepo.unsetDefaults(null, tx);
+          if (isGame) await certificateTemplateRepo.demoteOtherGameTemplates(null, tx);
           return certificateTemplateRepo.create(data, tx);
         });
       }
@@ -82,6 +122,7 @@ class CertificateTemplateUsecase {
 
     const data = {
       key: input.key,
+      type: input.type,
       nameAr: input.nameAr,
       nameEn: input.nameEn,
       headingAr: input.headingAr,
@@ -103,9 +144,11 @@ class CertificateTemplateUsecase {
     };
 
     try {
-      if (data.isDefault === true) {
+      const isGame = data.type === CERTIFICATE_TEMPLATE_TYPES.GAME;
+      if (data.isDefault === true || isGame) {
         return await prisma.$transaction(async (tx) => {
-          await certificateTemplateRepo.unsetDefaults(id, tx);
+          if (data.isDefault === true) await certificateTemplateRepo.unsetDefaults(id, tx);
+          if (isGame) await certificateTemplateRepo.demoteOtherGameTemplates(id, tx);
           return certificateTemplateRepo.update(id, data, tx);
         });
       }

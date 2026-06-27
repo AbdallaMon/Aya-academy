@@ -17,25 +17,6 @@ export function invoiceGeneratePath(subscriptionId) {
   return `subscription/${subscriptionId}/generate`;
 }
 
-/** Format a money amount in the invoice's currency. */
-export function formatMoney(value, currency = "GBP") {
-  if (value === null || value === undefined || value === "") return "—";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  try {
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency || "GBP",
-      maximumFractionDigits: 2,
-    }).format(n);
-  } catch {
-    return `${n.toFixed(2)} ${currency || ""}`.trim();
-  }
-}
-
-export function formatHours(value) {
-  if (value === null || value === undefined || value === "") return "—";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
-}
+// Money/hours formatting lives in the shared money lib so the single global
+// currency renders consistently everywhere. Re-exported here for existing imports.
+export { formatMoney, formatHours } from "../../../shared/lib/money.js";

@@ -124,6 +124,25 @@ computed `correctCount` + `totalQuestions`, then `POST /games/:id/attempt`. Serv
 `{ attempt, passed, certificate }`. The engine shows the **reward studio** then the **certificate**.
 
 ## Phase D kinds — now LIVE in the enum (schema + @aya/shared + prisma generated)
-`MATCHING`, `COMPASS`, `CALENDAR_DROP`, `COLORING`, `BOARD_DICE` are implemented as renderers
+`MATCHING`, `COMPASS`, `CALENDAR_DROP`, `COLORING` are implemented as renderers
 (registered in `engine/renderers/index.js`) and seeded as: `letters-match`, `qibla-compass`,
-`ramadan-hero`, `decorate-mosque`, `akhlaq-ladder`. See the per-kind `mediaJson` shapes above.
+`ramadan-hero`, `decorate-mosque`. See the per-kind `mediaJson` shapes above.
+`BOARD_DICE` (the `BoardDiceTask` renderer) stays available in the enum, but its only
+seeded game `akhlaq-ladder` ("سُلّم الأخلاق") was retired and is no longer seeded.
+
+### TAP_CHOICE — falling-from-the-sky variant
+`TAP_CHOICE` supports an optional **drop** style via `mediaJson` (backward-compatible —
+omit everything for the classic float-up `good-deeds-catch`):
+```jsonc
+{
+  "mode": "catch", "rounds": 8,
+  "direction": "fall",          // "up" (default) | "fall" (drop from the sky)
+  "speed": "fast",              // "slow" | "normal" (default) | "fast"
+  "goalEmoji": "💎",            // progress-meter icon (default 🚀)
+  "catcherEmoji": "💰",         // friendly catcher shown at the bottom (fall only)
+  "hintAr": "...", "hintEn": "...",   // optional per-game hint override
+  "doneAr": "...", "doneEn": "...",   // optional per-game completion message
+  "arena": { "from": "#312e81", "to": "#1e1b4b", "glow": "#fde68a", "border": "#4338ca" }
+}
+```
+Seeded as `dhikr-treasure` ("كنز الأذكار") and `prayer-stars` ("نجوم الصلاة").

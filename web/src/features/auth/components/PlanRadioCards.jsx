@@ -1,17 +1,13 @@
 "use client";
 
-import {
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Card, Chip, Stack, Typography, alpha } from "@mui/material";
+import { MdCheckCircle, MdAccessTime } from "react-icons/md";
 import { formatMoney } from "../../../shared/lib/money.js";
 
-/** Plans as single-select (radio) cards for one billing cycle. */
+/** Plans as single-select (radio) cards for one billing cycle.
+ *  Compact, mobile-first layout: 2-up grid on every breakpoint, each card
+ *  shows only the essentials (title, hours, price). Featured plans get a
+ *  primary-tinted treatment + "most popular" ribbon. */
 export default function PlanRadioCards({
   plans,
   billingPeriod,
@@ -31,7 +27,13 @@ export default function PlanRadioCards({
   const isYearly = billingPeriod === "YEARLY";
 
   return (
-    <Grid container spacing={2}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: { xs: 1.25, sm: 2 },
+      }}
+    >
       {plans.map((p) => {
         const cycle = isYearly ? p.yearly : p.monthly;
         const base = cycle?.base;
@@ -45,91 +47,137 @@ export default function PlanRadioCards({
             ? `-${discount.value}%`
             : `-${formatMoney(discount.value, p.currency)}`);
         const selected = selectedPlanId === p.id;
+        const featured = Boolean(p.isFeatured);
 
         return (
-          <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card
-              variant="outlined"
-              onClick={() => onSelect(p.id)}
-              role="radio"
-              aria-checked={selected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onSelect(p.id);
-                }
-              }}
-              sx={{
-                height: "100%",
-                cursor: "pointer",
-                borderColor: selected ? "primary.main" : "divider",
-                borderWidth: selected ? 2 : 1,
-                boxShadow: selected ? 4 : 0,
-                transition: "all .15s ease",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <CardContent sx={{ flex: 1 }}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={1}
+          <Card
+            key={p.id}
+            variant="outlined"
+            onClick={() => onSelect(p.id)}
+            role="radio"
+            aria-checked={selected}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(p.id);
+              }
+            }}
+            sx={{
+              position: "relative",
+              cursor: "pointer",
+              borderRadius: 3,
+              borderWidth: selected ? 2 : 1,
+              borderColor: selected
+                ? "primary.main"
+                : featured
+                  ? "primary.light"
+                  : "divider",
+              bgcolor: (th) =>
+                featured ? alpha(th.palette.primary.main, 0.05) : "background.paper",
+              boxShadow: selected
+                ? (th) => `0 8px 24px ${alpha(th.palette.primary.main, 0.22)}`
+                : 0,
+              transition: "border-color .15s ease, box-shadow .15s ease",
+              overflow: "hidden",
+            }}
+          >
+            {/* Featured ribbon — top strip so it never competes with the price */}
+            {featured && (
+              <Box
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
+                  textAlign: "center",
+                  py: 0.25,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  fontWeight={800}
+                  sx={{ fontSize: { xs: 10, sm: 11 } }}
                 >
-                  <Typography variant="h6" fontWeight={800}>
-                    {lng === "en" ? p.titleEn : p.titleAr}
-                  </Typography>
-                  {selected && <Chip size="small" color="primary" label="✓" />}
-                </Stack>
+                  {txt.featured}
+                </Typography>
+              </Box>
+            )}
 
-                <Stack direction="row" alignItems="baseline" spacing={1}>
-                  <Typography variant="h4" fontWeight={900} color="primary">
-                    {formatMoney(hasDiscount ? effective : base, p.currency)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {isYearly ? txt.perYear : txt.perMonth}
-                  </Typography>
-                </Stack>
+            {/* Selected check — corner marker */}
+            {selected && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: featured ? 28 : 8,
+                  insetInlineEnd: 8,
+                  color: "primary.main",
+                  display: "flex",
+                }}
+              >
+                <MdCheckCircle size={20} />
+              </Box>
+            )}
 
-                {hasDiscount && (
-                  <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ textDecoration: "line-through" }}
-                    >
-                      {txt.was} {formatMoney(base, p.currency)}
-                    </Typography>
-                    {discountLabel && (
-                      <Chip size="small" color="error" label={discountLabel} />
-                    )}
-                  </Stack>
-                )}
+            <Stack spacing={1} sx={{ p: { xs: 1.5, sm: 2 } }}>
+              <Typography
+                fontWeight={800}
+                sx={{
+                  fontSize: { xs: 15, sm: 17 },
+                  lineHeight: 1.25,
+                  pe: selected ? 3 : 0,
+                }}
+              >
+                {lng === "en" ? p.titleEn : p.titleAr}
+              </Typography>
 
-                <Typography variant="body2" color="text.secondary" mt={1}>
+              {/* Hours — the plan's differentiator, kept as a light pill */}
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <MdAccessTime size={15} style={{ opacity: 0.6 }} />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontWeight={600}
+                >
                   {p.hours} {txt.hours}
                 </Typography>
-                {(lng === "en" ? p.descriptionEn : p.descriptionAr) && (
-                  <Typography variant="body2" mt={1}>
-                    {lng === "en" ? p.descriptionEn : p.descriptionAr}
+              </Stack>
+
+              {/* Price */}
+              <Stack direction="row" alignItems="baseline" spacing={0.5} flexWrap="wrap">
+                <Typography
+                  fontWeight={900}
+                  color="primary"
+                  sx={{ fontSize: { xs: 20, sm: 26 } }}
+                >
+                  {formatMoney(hasDiscount ? effective : base, p.currency)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isYearly ? txt.perYear : txt.perMonth}
+                </Typography>
+              </Stack>
+
+              {hasDiscount && (
+                <Stack direction="row" alignItems="center" spacing={0.75}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ textDecoration: "line-through" }}
+                  >
+                    {formatMoney(base, p.currency)}
                   </Typography>
-                )}
-              </CardContent>
-              <Box sx={{ px: 2, pb: 2 }}>
-                <Chip
-                  size="small"
-                  variant={selected ? "filled" : "outlined"}
-                  color={selected ? "primary" : "default"}
-                  label={selected ? `${txt.choosePlan} ✓` : txt.choosePlan}
-                  sx={{ width: "100%" }}
-                />
-              </Box>
-            </Card>
-          </Grid>
+                  {discountLabel && (
+                    <Chip
+                      size="small"
+                      color="error"
+                      label={discountLabel}
+                      sx={{ height: 20, "& .MuiChip-label": { px: 0.75, fontSize: 11 } }}
+                    />
+                  )}
+                </Stack>
+              )}
+            </Stack>
+          </Card>
         );
       })}
-    </Grid>
+    </Box>
   );
 }

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { Chip, Stack, Tooltip, Typography } from "@mui/material";
-import RowActions from "../components/RowActions.jsx";
+import { RowActionsMenu } from "../../../shared/components/index.js";
 
 /**
  * backupsColumns — column factory for the backup-history table.
@@ -122,7 +122,7 @@ export function backupsColumns({ tr, buildActions }) {
       type: "actions",
       headerName: "colActions",
       width: 80,
-      renderCell: ({ row }) => <RowActions row={row} actions={buildActions(row)} />,
+      renderCell: ({ row }) => <RowActionsMenu actions={buildActions(row)} />,
     },
   ];
 }

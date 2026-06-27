@@ -100,9 +100,11 @@ class InvoiceUsecase {
 
   /**
    * Generate the demand invoice for a subscription, or re-generate it if one
-   * already exists. Regenerate re-copies the CURRENT global template and
-   * recomputes amounts, preserving the invoice number, payment status and the
-   * admin-entered figures (freeHours / previousCredit / previousDebt).
+   * already exists. Regenerate is a FULL reset: it re-copies the CURRENT global
+   * template, recomputes amounts, resets the admin figures (previous credit/debt)
+   * to zero, refreshes the issue/due dates and re-derives the billing period from
+   * the subscription. Only the stable invoice number and the payment status are
+   * kept.
    */
   async generate(authUser, subscriptionId) {
     if (authUser.role !== USER_ROLES.ADMIN) {
@@ -123,12 +125,14 @@ class InvoiceUsecase {
     const settings = await settingsUsecase.getEffective();
     const existing = await invoiceRepo.getBySubscriptionId(subscriptionId);
 
+    // Regenerate is a FULL reset back to the parent template + subscription:
+    // amounts, fees, colors, notes, payment instructions, previous credit/debt,
+    // issue/due dates and the billing period all revert. Only the stable invoice
+    // number and the payment status are kept (re-pulling must not un-pay a paid
+    // invoice). Admin figures start fresh at zero.
     const amounts = await this.computeAmounts(
       subscription,
-      {
-        previousCredit: existing?.previousCredit,
-        previousDebt: existing?.previousDebt,
-      },
+      { previousCredit: 0, previousDebt: 0 },
       template,
       settings,
     );
@@ -140,16 +144,20 @@ class InvoiceUsecase {
     );
     const configJson = { ...template.configJson, discount };
 
+    const issueDate = new Date();
+
     if (existing) {
       const updated = await invoiceRepo.update(existing.id, {
         ...amounts,
         configJson,
-        dueDate: this.computeDueDate(existing.issueDate, template),
+        issueDate,
+        dueDate: this.computeDueDate(issueDate, template),
+        // Clear any manual label so the period derives from the subscription.
+        billingPeriodLabel: null,
       });
       return { invoice: updated, regenerated: true };
     }
 
-    const issueDate = new Date();
     const created = await invoiceRepo.create({
       subscriptionId,
       invoiceNumber: this.invoiceNumberFor(subscriptionId),
@@ -175,6 +183,12 @@ class InvoiceUsecase {
     { template, settings, plan, createdById = null, tx } = {},
   ) {
     if (!subscription || subscription.priceCharged == null) return null;
+
+    // Idempotent: one demand invoice per subscription. If it already exists
+    // (e.g. this is a re-approval, or the caller is retrying), return it as-is
+    // instead of violating the unique subscriptionId constraint.
+    const already = await invoiceRepo.getBySubscriptionId(subscription.id);
+    if (already) return already;
 
     const amounts = await this.computeAmounts(
       subscription,

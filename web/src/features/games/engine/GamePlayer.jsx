@@ -73,6 +73,7 @@ export default function GamePlayer({ game, demo = false }) {
   const [showAdvance, setShowAdvance] = useState(false);
   const [certOpen, setCertOpen] = useState(false);
   const [serverCertificate, setServerCertificate] = useState(null);
+  const [burst, setBurst] = useState(0); // bump → confetti celebration in the shell
 
   // grading accumulators
   const answersRef = useRef({});
@@ -98,6 +99,18 @@ export default function GamePlayer({ game, demo = false }) {
     onSuccess: (res) => {
       if (res?.data?.certificate) setServerCertificate(res.data.certificate);
     },
+  });
+
+  // DEMO (anonymous free-game): no attempt → no server certificate. Pull the
+  // single active GAME template (public, render fields only) so the free-game
+  // certificate matches the admin-designed look instead of a hardcoded card.
+  const { data: gameTemplate } = useRequest({
+    url: "certificate-templates/public/active-game",
+    method: "get",
+    isPublic: true,
+    autoFetch: demo,
+    syncToUrl: false,
+    shouldAutoToast: false,
   });
 
   const currentQuestion = questions[taskIndex];
@@ -157,12 +170,16 @@ export default function GamePlayer({ game, demo = false }) {
       setMood("good");
       setGuideOverride(feedback || gd.greatJob);
       sounds.play("star");
+      setBurst((b) => b + 1);
       setShowAdvance(true);
     },
     [currentQuestion, taskIndex, stars, totalStars, gd, sounds],
   );
 
   const finishGame = useCallback(() => {
+    // a big celebration as the whole adventure completes.
+    sounds.play("win");
+    setBurst((b) => b + 1);
     // REAL game only: record the attempt (auth student). The DEMO is fully
     // client-side — it never posts an attempt.
     if (!demo && game?.id) {
@@ -182,7 +199,7 @@ export default function GamePlayer({ game, demo = false }) {
       setPhase("cert");
       setCertOpen(true);
     }
-  }, [demo, game, gradedTotal, postAttempt, hasStudio, gd, setGuide]);
+  }, [demo, game, gradedTotal, postAttempt, hasStudio, gd, setGuide, sounds]);
 
   const advance = useCallback(() => {
     sounds.play("tap");
@@ -222,10 +239,10 @@ export default function GamePlayer({ game, demo = false }) {
       <BounceIn style={{ width: "100%" }}>
         <Box sx={{ textAlign: "center" }}>
           <Box sx={{ fontSize: 64, lineHeight: 1, my: 1 }}>{heroEmoji}</Box>
-          <Typography sx={{ color: theme.primary, fontWeight: 900, fontSize: 19 }}>
+          <Typography sx={{ color: "#3a1d6e", fontWeight: 900, fontSize: 19 }}>
             {pickText(game, "title", lng)}
           </Typography>
-          <Typography sx={{ color: "#6b6790", fontSize: 13, mt: 0.5 }}>
+          <Typography sx={{ color: "#5a4a86", fontWeight: 700, fontSize: 13, mt: 0.5 }}>
             {gd.chooseAvatar}
           </Typography>
         </Box>
@@ -328,7 +345,7 @@ export default function GamePlayer({ game, demo = false }) {
       return (
         <Box sx={{ textAlign: "center", py: 4 }}>
           <Box sx={{ fontSize: 64 }}>{config.certificate?.emoji || "👑"}</Box>
-          <Typography sx={{ fontWeight: 900, color: theme.primary, mt: 1 }}>
+          <Typography sx={{ fontWeight: 900, color: "#3a1d6e", mt: 1 }}>
             {gd.greatJob}
           </Typography>
         </Box>
@@ -352,6 +369,7 @@ export default function GamePlayer({ game, demo = false }) {
         guideText={guideText}
         subtitle={pickText(game, "title", lng)}
         starLabel="⭐"
+        burst={burst}
       >
         {renderBody()}
       </GameShell>
@@ -360,6 +378,7 @@ export default function GamePlayer({ game, demo = false }) {
         open={certOpen}
         certificateConfig={config.certificate}
         serverCertificate={serverCertificate}
+        gameTemplate={gameTemplate}
         heroEmoji={heroEmoji}
         childName={childName}
         gameTitle={pickText(game, "title", lng)}

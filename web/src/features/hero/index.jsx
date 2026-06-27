@@ -18,7 +18,8 @@ const HERO = {
     primary: 'ابدأ بحصة تجريبية مجانية',
     secondary: 'جرّب ألعابنا التفاعلية 🎮',
     freeTrial: 'بدون بطاقة دفع · بدون التزام · إلغاء في أي وقت',
-    chips: ['تلاوة واضحة', 'ألعاب آداب', 'متابعة لولي الأمر'],
+    chips: ['معلّم خاص لطفلك', 'تلاوة واضحة', 'متابعة لولي الأمر'],
+    imgAlt: 'أطفال يتعلّمون القرآن بسعادة',
   },
   en: {
     eyebrow: 'Quran, manners & games for kids',
@@ -28,7 +29,8 @@ const HERO = {
     primary: 'Start with a free trial session',
     secondary: 'Try our interactive games 🎮',
     freeTrial: 'No card · No commitment · Cancel anytime',
-    chips: ['Clear recitation', 'Manners games', 'Parent tracking'],
+    chips: ['Your child’s own teacher', 'Clear recitation', 'Parent tracking'],
+    imgAlt: 'Children happily learning the Quran',
   },
 };
 
@@ -40,8 +42,12 @@ export default function Hero() {
   const t = HERO[lng === 'en' ? 'en' : 'ar'];
   const isDark = theme.palette.mode === 'dark';
 
-  const heroImg = isDark ? '/hero-dark.png' : '/hero-light.png';
-  const bgImg = isDark ? '/hero-bg-dark.png' : '/hero-bg-light.png';
+  // WebP variants (generated from the source PNGs): the full-bleed backgrounds
+  // drop from ~2.2MB to ~30–60KB, the illustration ~200KB → ~115KB — a big
+  // mobile LCP/data win since the bg is a CSS background under a scrim.
+  const heroImg = isDark ? '/hero-dark.webp' : '/hero-light.webp';
+  const heroDims = isDark ? { width: 1080, height: 848 } : { width: 1082, height: 848 };
+  const bgImg = isDark ? '/hero-bg-dark.webp' : '/hero-bg-light.webp';
 
   return (
     <Box
@@ -137,6 +143,7 @@ export default function Hero() {
             </Typography>
             <Typography
               variant="h6"
+              component="p"
               sx={{
                 fontWeight: 500,
                 color: 'text.primary',
@@ -165,7 +172,6 @@ export default function Hero() {
                 variant="outlinedYellow"
                 size="large"
                 startIcon={<MdSportsEsports />}
-                sx={{ backgroundColor: 'background.paper' }}
               >
                 {t.secondary}
               </Button>
@@ -196,7 +202,7 @@ export default function Hero() {
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap', gap: 1 }}>
+            <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap', gap: 1, display: { xs: 'none', sm: 'flex' } }}>
               {t.chips.map((c) => (
                 <Chip
                   key={c}
@@ -218,11 +224,20 @@ export default function Hero() {
             <Box
               component="img"
               src={heroImg}
-              alt={t.title}
+              alt={t.imgAlt}
+              // LCP image: load it eagerly with high priority, and reserve its
+              // box (intrinsic width/height + aspect-ratio) so it never shifts
+              // the layout as it decodes.
+              width={heroDims.width}
+              height={heroDims.height}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               sx={{
                 width: '100%',
                 maxWidth: 520,
                 height: 'auto',
+                aspectRatio: `${heroDims.width} / ${heroDims.height}`,
                 filter: 'drop-shadow(0 24px 48px rgba(20,30,60,0.28))',
               }}
             />

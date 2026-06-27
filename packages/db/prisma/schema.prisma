@@ -58,11 +58,6 @@ enum DiscountType {
   FIXED
 }
 
-enum DiscountConstraint {
-  COUNT
-  DURATION
-}
-
 enum CouponSource {
   MANUAL
   GAME_REWARD
@@ -84,13 +79,6 @@ enum InvoiceStatus {
   UNPAID
   PAID
   VOID
-}
-
-enum LessonStatus {
-  SCHEDULED
-  COMPLETED
-  CANCELLED
-  MISSED
 }
 
 enum GameType {
@@ -156,6 +144,14 @@ enum CertificateType {
   MANUAL
 }
 
+// Distinguishes a reusable certificate template's purpose. GENERAL templates are
+// admin-picked for manual certificates; a single GAME template is auto-applied to
+// every game certificate. At most one GAME template exists at a time.
+enum CertificateTemplateType {
+  GENERAL
+  GAME
+}
+
 enum RewardType {
   COUPON
   FREE_LECTURES
@@ -179,7 +175,6 @@ enum NotificationType {
   QUIZ_PASSED
   QUIZ_FAILED
   GIFT_RECEIVED
-  LESSON_SCHEDULED
   GENERIC
 }
 
@@ -199,21 +194,6 @@ enum AuditAction {
   LOGOUT
   ASSIGN
   ISSUE
-}
-
-enum RevelationPlace {
-  MAKKI
-  MADANI
-}
-
-enum SegmentStatus {
-  IN_PROGRESS
-  COMPLETED
-}
-
-enum LessonAssignmentKind {
-  MEMORIZE
-  REVIEW
 }
 
 // ============================================================
@@ -256,11 +236,6 @@ model User {
 
   subscriptions        Subscription[]  @relation("StudentSubscriptions")
   createdSubscriptions Subscription[]  @relation("SubscriptionCreatedBy")
-  lessons              LessonSession[] @relation("StudentLessons")
-  createdLessons       LessonSession[] @relation("LessonCreatedBy")
-
-  segmentProgress        StudentSegmentProgress[] @relation("StudentQuranProgress")
-  segmentProgressUpdates StudentSegmentProgress[] @relation("SegmentProgressUpdatedBy")
 
   gameAssignments GameAssignment[] @relation("StudentGameAssignments")
   assignedGames   GameAssignment[] @relation("GameAssignedBy")
@@ -289,6 +264,7 @@ model User {
   auditLogs           AuditLog[]
   createdInvoices     Invoice[]         @relation("InvoiceCreatedBy")
   paymentTemplates    PaymentTemplate[] @relation("PaymentTemplateUpdatedBy")
+  appSettingUpdates   AppSetting[]      @relation("AppSettingUpdatedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -316,20 +292,19 @@ model ParentStudent {
 // ============================================================
 
 model Plan {
-  id            Int           @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   titleAr       String
   titleEn       String
-  descriptionAr String?       @db.Text
-  descriptionEn String?       @db.Text
-  billingPeriod BillingPeriod @default(MONTHLY)
+  descriptionAr String? @db.Text
+  descriptionEn String? @db.Text
+  // A plan stores ONLY its number of hours. The price is derived from the single
+  // global hourly rate (AppSetting.hourlyRate): monthly = hours × rate, yearly =
+  // monthly × 12. The chosen cycle lives on the Subscription, not here.
   hours         Int
-  hourlyRate    Decimal       @db.Decimal(10, 2)
-  currency      String        @default("GBP")
-  isActive      Boolean       @default(true)
-  isFeatured    Boolean       @default(false)
-  sortOrder     Int           @default(0)
+  isActive      Boolean @default(true)
+  isFeatured    Boolean @default(false)
+  sortOrder     Int     @default(0)
 
-  discounts     PlanDiscount[]
   coupons       CouponPlan[]
   subscriptions Subscription[]
 
@@ -339,37 +314,19 @@ model Plan {
   @@index([isActive])
 }
 
-model PlanDiscount {
-  id               Int                @id @default(autoincrement())
-  planId           Int
-  plan             Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
-  type             DiscountType
-  value            Decimal            @db.Decimal(10, 2)
-  constraint       DiscountConstraint
-  maxRedemptions   Int?
-  redemptionsCount Int                @default(0)
-  startsAt         DateTime?
-  endsAt           DateTime?
-  isActive         Boolean            @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([planId])
-  @@index([isActive])
-}
-
 model Coupon {
-  id               Int          @id @default(autoincrement())
-  code             String       @unique
+  id               Int            @id @default(autoincrement())
+  code             String         @unique
   type             DiscountType
-  value            Decimal      @db.Decimal(10, 2)
-  source           CouponSource @default(MANUAL)
+  value            Decimal        @db.Decimal(10, 2)
+  source           CouponSource   @default(MANUAL)
+  // Which billing cycle the coupon applies to. null = applies to both.
+  billingPeriod    BillingPeriod?
   maxRedemptions   Int?
-  redemptionsCount Int          @default(0)
+  redemptionsCount Int            @default(0)
   startsAt         DateTime?
   endsAt           DateTime?
-  isActive         Boolean      @default(true)
+  isActive         Boolean        @default(true)
 
   plans         CouponPlan[]
   subscriptions Subscription[]
@@ -394,7 +351,7 @@ model CouponPlan {
 }
 
 // ============================================================
-// SUBSCRIPTIONS & LESSONS
+// SUBSCRIPTIONS
 // ============================================================
 
 model Subscription {
@@ -403,6 +360,7 @@ model Subscription {
   student        User               @relation("StudentSubscriptions", fields: [studentId], references: [id], onDelete: Cascade)
   planId         Int?
   plan           Plan?              @relation(fields: [planId], references: [id])
+  billingPeriod  BillingPeriod      @default(MONTHLY)
   status         SubscriptionStatus @default(ACTIVE)
   startDate      DateTime
   endDate        DateTime
@@ -416,7 +374,6 @@ model Subscription {
   createdById    Int?
   createdBy      User?              @relation("SubscriptionCreatedBy", fields: [createdById], references: [id])
 
-  lessons LessonSession[]
   invoice Invoice?
 
   createdAt DateTime @default(now())
@@ -445,6 +402,20 @@ model PaymentTemplate {
   updatedAt DateTime @updatedAt
 }
 
+// Global app settings — a singleton (only ever one row, like PaymentTemplate).
+// Holds system-wide billing knobs: the single hourly rate used to price every
+// plan (plan stores hours only) and the single currency used everywhere.
+model AppSetting {
+  id          Int     @id @default(autoincrement())
+  hourlyRate  Decimal @default(8) @db.Decimal(10, 2)
+  currency    String  @default("USD")
+  updatedById Int?
+  updatedBy   User?   @relation("AppSettingUpdatedBy", fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // One invoice per subscription (1:1). Amounts are snapshotted from the
 // subscription at generate/regenerate time; configJson is a per-invoice copy
 // of the global template that an admin can tweak.
@@ -456,15 +427,14 @@ model Invoice {
   status         InvoiceStatus @default(UNPAID)
 
   // Snapshot amounts (derived — not directly editable).
-  currency    String   @default("GBP")
+  currency    String   @default("USD")
   hours       Decimal? @db.Decimal(8, 2)
   hourlyRate  Decimal? @db.Decimal(10, 2)
   subtotal    Decimal  @default(0) @db.Decimal(10, 2)
   transferFee Decimal  @default(0) @db.Decimal(10, 2)
   total       Decimal  @default(0) @db.Decimal(10, 2)
 
-  // Admin-adjustable figures.
-  freeHours      Decimal @default(0) @db.Decimal(8, 2)
+  // Admin-adjustable figures (entered when creating/editing the invoice).
   previousCredit Decimal @default(0) @db.Decimal(10, 2)
   previousDebt   Decimal @default(0) @db.Decimal(10, 2)
 
@@ -482,108 +452,6 @@ model Invoice {
   updatedAt DateTime @updatedAt
 
   @@index([status])
-}
-
-model LessonSession {
-  id             Int           @id @default(autoincrement())
-  studentId      Int
-  student        User          @relation("StudentLessons", fields: [studentId], references: [id], onDelete: Cascade)
-  subscriptionId Int?
-  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
-  title          String?
-  startsAt       DateTime
-  endsAt         DateTime
-  status         LessonStatus  @default(SCHEDULED)
-  meetingLink    String?
-  notes          String?       @db.Text
-  homework       String?       @db.Text
-  assignments    LessonAssignment[]
-  createdById    Int?
-  createdBy      User?         @relation("LessonCreatedBy", fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([studentId])
-  @@index([startsAt])
-  @@index([status])
-}
-
-// ============================================================
-// QURAN REFERENCE (seeded, read-only at runtime) + PROGRESS
-// ============================================================
-
-model QuranSurah {
-  id              Int             @id @default(autoincrement())
-  number          Int             @unique // 1..114, also display order
-  nameAr          String
-  nameEn          String
-  ayahCount       Int
-  revelationPlace RevelationPlace
-
-  segments    QuranJuzSegment[]
-  assignments LessonAssignment[]
-}
-
-model QuranJuz {
-  id     Int    @id @default(autoincrement())
-  number Int    @unique // 1..30
-  nameAr String
-  nameEn String
-
-  segments QuranJuzSegment[]
-}
-
-model QuranJuzSegment {
-  id       Int        @id @default(autoincrement())
-  juzId    Int
-  juz      QuranJuz   @relation(fields: [juzId], references: [id], onDelete: Cascade)
-  surahId  Int
-  surah    QuranSurah @relation(fields: [surahId], references: [id], onDelete: Cascade)
-  fromAyah Int
-  toAyah   Int
-  order    Int        @default(0) // position of this segment within the juz'
-
-  progress StudentSegmentProgress[]
-
-  @@unique([juzId, surahId])
-  @@index([juzId])
-  @@index([surahId])
-}
-
-model StudentSegmentProgress {
-  id          Int             @id @default(autoincrement())
-  studentId   Int
-  student     User            @relation("StudentQuranProgress", fields: [studentId], references: [id], onDelete: Cascade)
-  segmentId   Int
-  segment     QuranJuzSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-  status      SegmentStatus
-  currentAyah Int?
-  completedAt DateTime?
-  updatedById Int?
-  updatedBy   User?           @relation("SegmentProgressUpdatedBy", fields: [updatedById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([studentId, segmentId])
-  @@index([studentId])
-}
-
-model LessonAssignment {
-  id       Int                  @id @default(autoincrement())
-  lessonId Int
-  lesson   LessonSession        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  kind     LessonAssignmentKind
-  surahId  Int
-  surah    QuranSurah           @relation(fields: [surahId], references: [id])
-  fromAyah Int? // null + null toAyah = whole surah
-  toAyah   Int?
-  order    Int                  @default(0)
-
-  createdAt DateTime @default(now())
-
-  @@index([lessonId])
 }
 
 // ============================================================
@@ -910,8 +778,9 @@ model QuizAttempt {
 // Per-certificate dynamic data (student name, reason/purpose, photo) lives on
 // the Certificate row, not here.
 model CertificateTemplate {
-  id     Int    @id @default(autoincrement())
-  key    String @unique
+  id     Int                     @id @default(autoincrement())
+  key    String                  @unique
+  type   CertificateTemplateType @default(GENERAL)
   nameAr String
   nameEn String
 

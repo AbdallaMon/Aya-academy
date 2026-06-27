@@ -21,6 +21,13 @@ export const tableData = {
     view: "عرض",
     edit: "تعديل",
     delete: "حذف",
+    id: "المعرّف",
+    copy: "نسخ المعرّف",
+    copied: "تم نسخ المعرّف",
+    status: "الحالة",
+    active: "نشط",
+    inactive: "غير نشط",
+    all: "الكل",
   },
   en: {
     noData: "No data",
@@ -39,6 +46,13 @@ export const tableData = {
     view: "View",
     edit: "Edit",
     delete: "Delete",
+    id: "ID",
+    copy: "Copy ID",
+    copied: "ID copied",
+    status: "Status",
+    active: "Active",
+    inactive: "Inactive",
+    all: "All",
   },
 };
 

@@ -13,14 +13,17 @@ import {
   AppForm,
   DataTable,
   FormDialog,
+  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
 import {
   COUPONS_URL,
   COUPON_SOURCES,
-  formatGBP,
+  BILLING_SCOPES,
   toDateInput,
 } from "../config/constant.js";
+import { formatMoney } from "../../../shared/lib/money.js";
+import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
 import { useCouponsText } from "../config/couponsText.js";
 
 export default function CouponsPage() {
@@ -32,6 +35,7 @@ export default function CouponsPage() {
   const canCreate = hasPermission(PERMISSIONS.COUPON.CREATE);
   const canEdit = hasPermission(PERMISSIONS.COUPON.EDIT);
   const canDelete = hasPermission(PERMISSIONS.COUPON.DELETE);
+  const { currency } = useAppSettings({ enabled: canList });
 
   const {
     data,
@@ -75,10 +79,15 @@ export default function CouponsPage() {
 
   async function submit(values) {
     const payload = {
-      code: values.code?.trim(),
+      code: values.code?.trim() || undefined,
       type: values.type,
       value: Number(values.value),
       source: values.source || undefined,
+      // "ALL" sentinel → null (applies to both cycles); omit when ALL.
+      billingPeriod:
+        values.billingPeriod && values.billingPeriod !== "ALL"
+          ? values.billingPeriod
+          : undefined,
       maxRedemptions: values.maxRedemptions
         ? Number(values.maxRedemptions)
         : undefined,
@@ -101,13 +110,21 @@ export default function CouponsPage() {
     [txt],
   );
 
+  const scopeOptions = useMemo(
+    () =>
+      BILLING_SCOPES.reduce((acc, s) => {
+        acc[s] = s === "MONTHLY" ? txt.monthly : s === "YEARLY" ? txt.yearly : txt.both;
+        return acc;
+      }, {}),
+    [txt],
+  );
+
   const fields = useMemo(
     () => [
       {
         name: "code",
         label: txt.codeLabel,
         type: "text",
-        rules: { required: txt.required },
       },
       {
         name: "type",
@@ -121,6 +138,12 @@ export default function CouponsPage() {
         label: txt.valueLabel,
         type: "number",
         rules: { required: txt.required },
+      },
+      {
+        name: "billingPeriod",
+        label: txt.scopeLabel,
+        type: "select",
+        options: scopeOptions,
       },
       {
         name: "source",
@@ -143,7 +166,7 @@ export default function CouponsPage() {
       },
       { name: "isActive", label: txt.isActive, type: "switch" },
     ],
-    [txt, sourceOptions],
+    [txt, sourceOptions, scopeOptions],
   );
 
   const defaultValues = useMemo(() => {
@@ -152,6 +175,7 @@ export default function CouponsPage() {
         code: selected.code ?? "",
         type: selected.type ?? "PERCENT",
         value: selected.value ?? "",
+        billingPeriod: selected.billingPeriod ?? "ALL",
         source: selected.source ?? "MANUAL",
         maxRedemptions: selected.maxRedemptions ?? "",
         startsAt: toDateInput(selected.startsAt),
@@ -161,6 +185,7 @@ export default function CouponsPage() {
     }
     return {
       type: "PERCENT",
+      billingPeriod: "ALL",
       source: "MANUAL",
       isActive: true,
       value: "",
@@ -199,7 +224,7 @@ export default function CouponsPage() {
         renderCell: ({ row }) => (
           <Typography fontWeight={700}>
             {row.type === "FIXED"
-              ? formatGBP(Number(row.value))
+              ? formatMoney(Number(row.value), currency)
               : `${Number(row.value)}%`}
           </Typography>
         ),
@@ -216,6 +241,24 @@ export default function CouponsPage() {
           ),
       },
       {
+        field: "scope",
+        headerName: txt.scope,
+        width: 110,
+        renderCell: ({ row }) => (
+          <Chip
+            size="small"
+            variant="outlined"
+            label={
+              row.billingPeriod === "MONTHLY"
+                ? txt.monthly
+                : row.billingPeriod === "YEARLY"
+                  ? txt.yearly
+                  : txt.both
+            }
+          />
+        ),
+      },
+      {
         field: "usage",
         headerName: txt.usage,
         width: 110,
@@ -227,23 +270,46 @@ export default function CouponsPage() {
       {
         field: "plans",
         headerName: txt.plans,
-        width: 130,
+        width: 220,
         renderCell: ({ row }) => {
-          const count = row.plans?.length ?? 0;
-          return count
-            ? `${count}`
-            : txt.allPlans;
+          const links = row.plans ?? [];
+          if (!links.length) {
+            return (
+              <Chip size="small" variant="outlined" label={txt.allPlans} />
+            );
+          }
+          const nameOf = (link) =>
+            (lng === "ar" ? link.plan?.titleAr : link.plan?.titleEn) ||
+            link.plan?.titleEn ||
+            `#${link.planId}`;
+          const shown = links.slice(0, 2);
+          const extra = links.length - shown.length;
+          return (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+              {shown.map((link) => (
+                <Chip
+                  key={link.planId}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  label={nameOf(link)}
+                />
+              ))}
+              {extra > 0 && <Chip size="small" label={`+${extra}`} />}
+            </Stack>
+          );
         },
       },
       {
         field: "isActive",
-        headerName: txt.active,
-        width: 100,
+        headerName: txt.status,
+        width: 110,
         renderCell: ({ row }) => (
           <Chip
             size="small"
             color={row.isActive ? "success" : "default"}
-            label={row.isActive ? txt.yes : txt.no}
+            variant={row.isActive ? "filled" : "outlined"}
+            label={row.isActive ? txt.enabled : txt.disabled}
           />
         ),
       },
@@ -251,27 +317,29 @@ export default function CouponsPage() {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
-        width: 150,
+        width: 80,
         renderCell: ({ row }) => (
-          <Stack direction="row" spacing={0.5}>
-            {canEdit && (
-              <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-                {txt.edit}
-              </Button>
-            )}
-            {canDelete && row.isActive && (
-              <Button
-                size="small"
-                color="error"
-                startIcon={<MdDelete />}
-                onClick={() => onDelete(row)}
-              />
-            )}
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.edit,
+                icon: <MdEdit />,
+                onClick: () => onEdit(row),
+                hidden: !canEdit,
+              },
+              {
+                label: txt.delete,
+                icon: <MdDelete />,
+                color: "error",
+                onClick: () => onDelete(row),
+                hidden: !(canDelete && row.isActive),
+              },
+            ]}
+          />
         ),
       },
     ],
-    [txt, lng, canEdit, canDelete],
+    [txt, lng, canEdit, canDelete, currency],
   );
 
   const filterConfig = useMemo(
@@ -286,8 +354,8 @@ export default function CouponsPage() {
       {
         type: "enum",
         key: "isActive",
-        label: txt.active,
-        options: { ALL: txt.all, true: txt.yes, false: txt.no },
+        label: txt.status,
+        options: { ALL: txt.all, true: txt.enabled, false: txt.disabled },
       },
     ],
     [txt, sourceOptions],

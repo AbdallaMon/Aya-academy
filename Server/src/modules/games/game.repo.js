@@ -48,6 +48,15 @@ class GameRepo {
     });
   }
 
+  // The single free game as CARD data (list fields + configJson, no questions /
+  // answer key) — shown alongside a student's assigned games on the dashboard.
+  getFreeCard() {
+    return prisma.game.findFirst({
+      where: { isFree: true, isPublic: true, isActive: true },
+      select: { ...gameListSelect, configJson: true },
+    });
+  }
+
   // ── free-game selection (admin) ─────────────────────────
   // Clear the free flag on every game (run inside the set-free transaction so
   // exactly one game ends up flagged).
@@ -122,7 +131,9 @@ class GameRepo {
     return prisma.gameAssignment.deleteMany({ where: { gameId, studentId } });
   }
 
-  // A student's own assignments (with the game slug) — for badging "My Games".
+  // A student's assignments WITH full game-card data (list fields + configJson
+  // for the theme/hero on the card). Used by the student's "My Games" grid and
+  // by the admin's student-detail games tab. configJson carries no answer key.
   listAssignmentsForStudent(studentId) {
     return prisma.gameAssignment.findMany({
       where: { studentId },
@@ -132,7 +143,8 @@ class GameRepo {
         gameId: true,
         status: true,
         dueAt: true,
-        game: { select: { slug: true } },
+        createdAt: true,
+        game: { select: { ...gameListSelect, configJson: true } },
       },
     });
   }

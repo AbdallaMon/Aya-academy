@@ -1,31 +1,53 @@
 "use client";
 
-// Certificate — a 👑 modal shown at the end. Uses the game's certificate title
-// (configJson.certificate) + the child's name + a thanks line. If the attempt
-// round-trip returned a server certificate (REAL games only), prefer its title.
+// Certificate — the celebration shown at the end of a game. It now renders the
+// REAL, unified CertificateCard so a game certificate looks EXACTLY like the
+// admin-designed GAME template (heading, body, colors, frame, seal, signature…):
 //
-// DEMO mode (`demo`, the public free-game): there is NO backend. The child can
-// type their name and PRINT the certificate — a self-contained printable page is
-// generated entirely on the client (no attempt, no server certificate).
+//   - REAL game (auth student): the attempt round-trip returns a server
+//     certificate already linked to the active GAME template → render it as-is.
+//   - DEMO (public free-game): no backend, so we fetch the active GAME template
+//     (public, render fields only) and build a synthetic certificate around the
+//     child's typed name + the game title (the template's {reason}). If no GAME
+//     template is configured we fall back to the game's own certificate config.
+//
+// From here the child/parent can PRINT, or DOWNLOAD a PDF / image — the download
+// path is what makes this work on mobile, where printing is often unavailable.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Box, Modal, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "../../../i18n/client.js";
 import { SparkleTrail } from "../animations/index.js";
 import { pickText } from "./helpers.js";
+import CertificateCard from "../../certificates/components/CertificateCard.jsx";
 
-// Escape user/content text before injecting into the printable document.
-const esc = (s) =>
-  String(s ?? "").replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]),
-  );
+// Parse a themeJson value (object or JSON string) into a plain object.
+function parseTheme(themeJson) {
+  if (!themeJson) return {};
+  if (typeof themeJson === "object") return themeJson;
+  try {
+    return JSON.parse(themeJson) || {};
+  } catch {
+    return {};
+  }
+}
+
+// A safe, readable file name for the downloaded certificate.
+function safeFileBase(name) {
+  const cleaned = String(name || "certificate")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "")
+    .replace(/\s+/g, "-")
+    .slice(0, 48);
+  return cleaned || "certificate";
+}
 
 export default function Certificate({
   open,
   certificateConfig,
   serverCertificate,
+  gameTemplate,
   heroEmoji,
   childName,
   gameTitle,
@@ -37,235 +59,229 @@ export default function Certificate({
   const { t, lng } = useTranslation();
   const gd = t("gamesData", { returnObjects: true }) || {};
 
-  const title =
-    pickText(serverCertificate, "title", lng) ||
-    pickText(certificateConfig, "title", lng) ||
-    gd.certDefaultTitle;
-  const emoji = certificateConfig?.emoji || "👑";
-
-  // Editable name (demo only): an optional override. Left blank, the certificate
-  // falls back to the child/avatar name — so the placeholder invites a real name
-  // without forcing the child to clear a prefilled field.
+  // Editable name (demo only). Left blank, the certificate falls back to the
+  // child/avatar name — the placeholder invites a real name without forcing the
+  // child to clear a prefilled field.
   const [nameInput, setNameInput] = useState("");
-
   const displayName =
     (demo ? nameInput.trim() : "") || childName || gd.certDefaultName;
 
-  // ── frontend-only printable certificate (no backend) ────────────────────────
-  function handlePrint() {
-    sounds?.play("tap");
-    if (typeof window === "undefined") return;
-    const dir = lng === "ar" ? "rtl" : "ltr";
-    const logoUrl = `${window.location.origin}/logos/logo.png`;
-    const dateStr = new Date().toLocaleDateString(lng === "ar" ? "ar-EG" : "en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const [busy, setBusy] = useState(null); // "print" | "pdf" | "png" | null
+  const certWrapRef = useRef(null);
 
-    const docHtml = `<!doctype html>
-<html dir="${dir}" lang="${esc(lng)}">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${esc(title)}</title>
-<style>
-  @page { size: A4 landscape; margin: 0; }
-  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { margin: 0; min-height: 100vh; padding: 24px;
-         font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', system-ui, sans-serif;
-         background: #fffdf5; display: flex; align-items: center; justify-content: center; }
-  .cert { position: relative; width: 100%; max-width: 1040px; aspect-ratio: 1.414;
-          background: radial-gradient(circle at 50% 0%, #fffef9 0%, #fff6df 100%);
-          border: 14px solid #ffd33d; border-radius: 22px;
-          box-shadow: 0 0 0 5px #b9760a inset; padding: 44px 56px; text-align: center;
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          gap: 12px; }
-  .brand { display: flex; align-items: center; gap: 10px; }
-  .brand img { height: 46px; width: auto; }
-  .brand span { color: #b9760a; font-weight: 800; font-size: 21px; }
-  .emoji { font-size: 86px; line-height: 1; }
-  .title { color: #b9760a; font-weight: 900; font-size: 42px; margin: 2px 0; }
-  .body { color: #6b6790; font-size: 20px; max-width: 760px; line-height: 1.7; }
-  .name { font-size: 40px; font-weight: 900; color: #6536e0; margin: 6px 0;
-          border-bottom: 3px dashed #cdbcff; padding: 4px 36px; }
-  .game { color: #5a5577; font-size: 19px; font-weight: 700; }
-  .date { color: #9a96b5; font-size: 15px; margin-top: 4px; }
-  @media print { body { padding: 0; } }
-</style>
-</head>
-<body>
-  <div class="cert">
-    <div class="brand"><img src="${logoUrl}" alt="" /><span>${esc(gd.certAcademy)}</span></div>
-    <div class="emoji">${esc(emoji)}</div>
-    <div class="title">${esc(title)}</div>
-    <div class="body">${esc(gd.certBody)}</div>
-    <div class="name">${esc(heroEmoji)} ${esc(displayName)}</div>
-    ${gameTitle ? `<div class="game">${esc(gameTitle)}</div>` : ""}
-    <div class="date">${esc(dateStr)}</div>
-  </div>
-  <script>
-    window.addEventListener('load', function () {
-      setTimeout(function () { window.print(); }, 300);
-    });
-  </script>
-</body>
-</html>`;
-
-    // Open a fully self-contained document via a Blob URL (no document.write).
-    const blob = new Blob([docHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const w = window.open(url, "_blank", "width=1040,height=760");
-    if (!w) {
-      URL.revokeObjectURL(url);
-      return; // popup blocked — nothing else to do
+  // The certificate object handed to the unified renderer.
+  const certForRender = (() => {
+    if (serverCertificate) {
+      // Server cert may carry its own studentName; for the demo-less real path
+      // it's already correct. Keep it as the source of truth.
+      return serverCertificate;
     }
-    w.focus();
-    // Release the object URL once the print window has loaded it.
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    const base = {
+      type: "GAME",
+      studentName: displayName,
+      issuedAt: new Date().toISOString(),
+      // The game title is the dynamic {reason} on the template.
+      reasonAr: gameTitle || "",
+      reasonEn: gameTitle || "",
+    };
+    if (gameTemplate) return { ...base, template: gameTemplate };
+
+    // No GAME template configured: fall back to the game's own certificate
+    // config so the unified card still renders (branded, framed, not hardcoded).
+    const title =
+      pickText(certificateConfig, "title", lng) || gd.certDefaultTitle;
+    return {
+      ...base,
+      titleAr: title,
+      titleEn: title,
+      bodyAr: gd.certBody,
+      bodyEn: gd.certBody,
+      themeJson: certificateConfig || undefined,
+    };
+  })();
+
+  // Orientation drives the PDF page + print @page size.
+  const renderTheme = {
+    ...parseTheme(certForRender.template?.themeJson),
+    ...parseTheme(certForRender.themeJson),
+  };
+  const orientation =
+    renderTheme.orientation === "portrait" ? "portrait" : "landscape";
+
+  const fileBase = `certificate-${safeFileBase(displayName)}`;
+  const docTitle = pickText(certForRender, "title", lng) || gd.certDefaultTitle;
+
+  // Grab the actual certificate root node for rasterized export.
+  function getCertNode() {
+    return certWrapRef.current?.querySelector("[data-certificate-root]") || null;
+  }
+
+  async function runExport(kind, fn) {
+    const node = getCertNode();
+    if (!node || busy) return;
+    sounds?.play("tap");
+    setBusy(kind);
+    try {
+      await fn(node);
+    } catch {
+      /* capture/popup failed — leave the modal open so the user can retry */
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function handlePrint() {
+    runExport("print", async (node) => {
+      const { printCertificateNode } = await import(
+        "../../certificates/lib/exportCertificate.js"
+      );
+      await printCertificateNode(node, { orientation, title: docTitle });
+    });
+  }
+
+  function handleDownloadPdf() {
+    runExport("pdf", async (node) => {
+      const { downloadCertificatePdf } = await import(
+        "../../certificates/lib/exportCertificate.js"
+      );
+      await downloadCertificatePdf(node, `${fileBase}.pdf`, { orientation });
+    });
+  }
+
+  function handleDownloadPng() {
+    runExport("png", async (node) => {
+      const { downloadCertificatePng } = await import(
+        "../../certificates/lib/exportCertificate.js"
+      );
+      await downloadCertificatePng(node, `${fileBase}.png`);
+    });
   }
 
   return (
     <Modal open={open} onClose={onClose} aria-labelledby="certificate-title">
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          display: "grid",
-          placeItems: "center",
-          p: 2,
-        }}
-      >
+      <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", p: { xs: 1, sm: 2 } }}>
         <motion.div
-          initial={{ scale: 0.7, opacity: 0 }}
+          initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 320, damping: 18 }}
+          transition={{ type: "spring", stiffness: 320, damping: 20 }}
           style={{
             background: "#fff",
             border: "6px solid #ffd33d",
             borderRadius: 24,
-            padding: 24,
+            padding: 18,
             textAlign: "center",
-            maxWidth: 360,
+            width: "min(980px, 96vw)",
+            maxHeight: "94vh",
+            overflowY: "auto",
             position: "relative",
           }}
         >
           <SparkleTrail count={8} />
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 0.75,
-              mb: 0.5,
-            }}
-          >
-            <Box component="img" src="/logos/logo.png" alt="" sx={{ height: 22, width: "auto" }} />
-            <Typography sx={{ color: "#b9760a", fontWeight: 900, fontSize: 13 }}>
-              {gd.certAcademy}
+
+          {/* Celebration header */}
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mb: 0.5 }}>
+            <Box component="img" src="/logos/logo.png" alt="" sx={{ height: 24, width: "auto" }} />
+            <Typography id="certificate-title" sx={{ color: "#b9760a", fontWeight: 900, fontSize: { xs: 16, sm: 20 } }}>
+              {gd.certCongrats}
             </Typography>
           </Box>
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity }}
-            style={{ fontSize: 52 }}
-          >
-            {emoji}
-          </motion.div>
-          <Typography id="certificate-title" sx={{ color: "#b9760a", fontWeight: 900, fontSize: 20, my: 1 }}>
-            {title}
-          </Typography>
-          <Typography sx={{ color: "#6b6790", fontSize: 13, lineHeight: 1.7 }}>
-            {gd.certBody}
-          </Typography>
-          <Box
-            sx={{
-              border: "2px dashed #cdbcff",
-              borderRadius: "14px",
-              p: 1.5,
-              my: 1.75,
-              fontWeight: 900,
-              color: "#6536e0",
-            }}
-          >
-            <Typography component="small" sx={{ display: "block", color: "#6b6790", fontWeight: 700, mb: 0.5 }}>
-              {gd.certWho}
-            </Typography>
-            {demo ? (
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
-                <Box component="span" sx={{ fontSize: 20 }}>{heroEmoji}</Box>
-                <Box
-                  component="input"
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  placeholder={gd.certNamePlaceholder}
-                  maxLength={32}
-                  aria-label={gd.certWho}
-                  sx={{
-                    border: "none",
-                    borderBottom: "2px dashed #cdbcff",
-                    outline: "none",
-                    background: "transparent",
-                    textAlign: "center",
-                    fontWeight: 900,
-                    fontSize: 16,
-                    color: "#6536e0",
-                    fontFamily: "inherit",
-                    width: 190,
-                    maxWidth: "65%",
-                    "&:focus": { borderBottomColor: "#6536e0" },
-                  }}
-                />
-              </Box>
-            ) : (
-              <>
-                {heroEmoji} {displayName}
-              </>
-            )}
+
+          {/* Demo: let the child type their name (updates the certificate live) */}
+          {demo && (
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mb: 1 }}>
+              <Box component="span" sx={{ fontSize: 20 }}>{heroEmoji}</Box>
+              <Box
+                component="input"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder={gd.certNamePlaceholder}
+                maxLength={32}
+                aria-label={gd.certWho}
+                sx={{
+                  border: "none",
+                  borderBottom: "2px dashed #cdbcff",
+                  outline: "none",
+                  background: "transparent",
+                  textAlign: "center",
+                  fontWeight: 900,
+                  fontSize: 16,
+                  color: "#6536e0",
+                  fontFamily: "inherit",
+                  width: 220,
+                  maxWidth: "70%",
+                  "&:focus": { borderBottomColor: "#6536e0" },
+                }}
+              />
+            </Box>
+          )}
+
+          {/* The REAL certificate — identical to the admin-designed template */}
+          <Box ref={certWrapRef} sx={{ my: 1.5, display: "flex", justifyContent: "center" }}>
+            <CertificateCard certificate={certForRender} />
           </Box>
-          {demo ? (
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.97 }}
-              onClick={handlePrint}
-              style={{
-                width: "100%", border: "none", borderRadius: 16, padding: "15px",
-                fontWeight: 900, fontSize: 16, cursor: "pointer", color: "#fff",
-                background: "linear-gradient(180deg, #ffb43d, #f6970a)", fontFamily: "inherit",
-                marginBottom: 10,
-              }}
-            >
+
+          {/* Actions: print + downloads (download is the mobile-friendly path) */}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center", mt: 1.5 }}>
+            <PlayfulButton onClick={handlePrint} disabled={!!busy} bg="linear-gradient(180deg, #ffb43d, #f6970a)">
               {gd.certPrint}
-            </motion.button>
-          ) : null}
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.97 }}
-            onClick={() => { sounds?.play("tap"); onClose(); }}
-            style={{
-              width: "100%", border: "none", borderRadius: 16, padding: "15px",
-              fontWeight: 900, fontSize: 16, cursor: "pointer", color: "#fff",
-              background: "linear-gradient(180deg, #20cf99, #0fa377)", fontFamily: "inherit",
-            }}
-          >
-            {gd.certThanks}
-          </motion.button>
-          {onReplay ? (
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.97 }}
-              onClick={() => { sounds?.play("tap"); onReplay(); }}
-              style={{
-                marginTop: 10, width: "100%", border: "none", borderRadius: 16, padding: "13px",
-                fontWeight: 900, fontSize: 14, cursor: "pointer", background: "#eef0fb",
-                color: "#2b2350", fontFamily: "inherit",
-              }}
+            </PlayfulButton>
+            <PlayfulButton onClick={handleDownloadPdf} disabled={!!busy} bg="linear-gradient(180deg, #4dabf7, #1c7ed6)">
+              {busy === "pdf" ? "…" : gd.certDownloadPdf}
+            </PlayfulButton>
+            <PlayfulButton onClick={handleDownloadPng} disabled={!!busy} bg="linear-gradient(180deg, #9775fa, #7048e8)">
+              {busy === "png" ? "…" : gd.certDownloadImage}
+            </PlayfulButton>
+          </Box>
+
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center", mt: 1 }}>
+            <PlayfulButton
+              onClick={() => { sounds?.play("tap"); onClose(); }}
+              bg="linear-gradient(180deg, #20cf99, #0fa377)"
+              grow
             >
-              {gd.replay}
-            </motion.button>
-          ) : null}
+              {gd.certThanks}
+            </PlayfulButton>
+            {onReplay ? (
+              <PlayfulButton
+                onClick={() => { sounds?.play("tap"); onReplay(); }}
+                bg="#eef0fb"
+                color="#2b2350"
+                grow
+              >
+                {gd.replay}
+              </PlayfulButton>
+            ) : null}
+          </Box>
         </motion.div>
       </Box>
     </Modal>
+  );
+}
+
+// A small playful pill button matching the kids' game chrome.
+function PlayfulButton({ children, onClick, disabled, bg, color = "#fff", grow }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={disabled ? undefined : { scale: 0.97 }}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        flex: grow ? "1 1 160px" : "0 1 auto",
+        minWidth: 130,
+        border: "none",
+        borderRadius: 16,
+        padding: "13px 18px",
+        fontWeight: 900,
+        fontSize: 15,
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.6 : 1,
+        color,
+        background: bg,
+        fontFamily: "inherit",
+      }}
+    >
+      {children}
+    </motion.button>
   );
 }

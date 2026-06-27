@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { MdGroupAdd, MdBarChart, MdPlayArrow, MdStar } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
@@ -11,7 +10,7 @@ import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
-import { DataTable, useConfirm } from "../../../shared/components/index.js";
+import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
 import { useGamesAdminText } from "../config/gamesAdminText.js";
 import GameAssignDialog from "../components/GameAssignDialog.jsx";
 
@@ -155,39 +154,29 @@ export default function GamesAdminPage() {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
-        width: 280,
+        width: 80,
         renderCell: ({ row }) => (
-          <Stack direction="row" spacing={0.5}>
-            {canAssign && (
-              <Button
-                size="small"
-                startIcon={<MdGroupAdd />}
-                onClick={() => onAssign(row)}
-              >
-                {txt.assign}
-              </Button>
-            )}
-            {canViewResults && (
-              <Button
-                size="small"
-                color="secondary"
-                startIcon={<MdBarChart />}
-                component={Link}
-                href={localePath(lng, `/dashboard/games/${row.slug}/results`)}
-              >
-                {txt.results}
-              </Button>
-            )}
-            <Button
-              size="small"
-              color="inherit"
-              startIcon={<MdPlayArrow />}
-              component={Link}
-              href={localePath(lng, `/dashboard/games/${row.slug}`)}
-            >
-              {txt.preview}
-            </Button>
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.assign,
+                icon: <MdGroupAdd />,
+                onClick: () => onAssign(row),
+                hidden: !canAssign,
+              },
+              {
+                label: txt.results,
+                icon: <MdBarChart />,
+                href: localePath(lng, `/dashboard/games/${row.slug}/results`),
+                hidden: !canViewResults,
+              },
+              {
+                label: txt.preview,
+                icon: <MdPlayArrow />,
+                href: localePath(lng, `/dashboard/games/${row.slug}`),
+              },
+            ]}
+          />
         ),
       },
     ],

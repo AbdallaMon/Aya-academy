@@ -27,6 +27,7 @@ export class UserValidation {
     locale: z.enum(["ar", "en"]).optional(),
     nickname: z.string().trim().optional(),
     birthDate: z.coerce.date().optional(),
+    avatarId: z.number().int().positive().optional(),
     parentIds: z.array(z.number().int().positive()).optional(),
   });
 
@@ -37,6 +38,7 @@ export class UserValidation {
     password: z.string().min(6, authMessagesCodes.PASSWORD_TOO_SHORT),
     nickname: z.string().trim().optional(),
     birthDate: z.coerce.date().optional(),
+    avatarId: z.number().int().positive().optional(),
     relation: z.enum(relations).optional(),
   });
 

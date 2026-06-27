@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Box, Container, Divider, Stack, Typography } from '@mui/material';
 import { MdEmail, MdFavorite } from 'react-icons/md';
-import { navSections } from '@/shared/data/navigation/navbar';
+import { navSections, navHref } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { localePath } from '@/i18n/routing.js';
@@ -50,6 +50,12 @@ export default function SiteFooter() {
     fontSize: 14,
     transition: 'color .2s',
     '&:hover': { color: 'primary.main' },
+    '&:focus-visible': {
+      outline: '2px solid',
+      outlineColor: 'primary.main',
+      outlineOffset: 2,
+      borderRadius: 1,
+    },
   };
 
   return (
@@ -89,7 +95,7 @@ export default function SiteFooter() {
             </Typography>
             <Stack spacing={1}>
               {navSections.map((s) => (
-                <Box key={s.id} component={Link} href={localePath(lng, `/#${s.id}`)} sx={linkSx}>
+                <Box key={s.id} component={Link} href={navHref(localePath, lng, s)} sx={linkSx}>
                   {s[lng] || s.ar}
                 </Box>
               ))}

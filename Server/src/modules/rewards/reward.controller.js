@@ -1,20 +1,7 @@
 import { generalMessagesCodes } from "@aya/shared";
 import { ok } from "../../shared/http/response.js";
-import { badRequest } from "../../shared/errors/AppError.js";
+import { idParam, optionalIntQuery } from "../../shared/http/params.js";
 import { rewardUsecase } from "./reward.usecase.js";
-
-function idParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
-
-function optionalIntQuery(value) {
-  if (value === undefined || value === null || value === "") return undefined;
-  const n = Number(Array.isArray(value) ? value[0] : value);
-  return Number.isInteger(n) && n > 0 ? n : undefined;
-}
 
 class RewardController {
   list = async (req, res) => {

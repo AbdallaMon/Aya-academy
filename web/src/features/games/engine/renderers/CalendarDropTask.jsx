@@ -18,7 +18,7 @@ import { Box, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "../../../../i18n/client.js";
 import { pickText } from "../helpers.js";
-import { jelly, shake, SparkleTrail } from "../../animations/index.js";
+import { jelly, shake, SparkleTrail, stampIn } from "../../animations/index.js";
 
 export default function CalendarDropTask({ question, onCorrect, onWrong, sounds }) {
   const { t, lng } = useTranslation();
@@ -31,7 +31,12 @@ export default function CalendarDropTask({ question, onCorrect, onWrong, sounds 
   const [held, setHeld] = useState(null); // item currently picked up
   const [wrongSlot, setWrongSlot] = useState(null);
   const [sparkSlot, setSparkSlot] = useState(null);
+  const [stampSlot, setStampSlot] = useState(null); // slot whose sticker just landed
   const doneRef = useRef(false);
+
+  // While a deed is held, gently glow the slot it belongs to — a kind hint so the
+  // child always knows where the good deed goes (never lost).
+  const hintSlotId = held && !placed[held.slotId] ? held.slotId : null;
 
   const placedItemIds = useMemo(
     () => new Set(Object.values(placed).map((it) => it.id)),
@@ -55,7 +60,11 @@ export default function CalendarDropTask({ question, onCorrect, onWrong, sounds 
     if (placed[slot.id]) return; // already filled
 
     if (held.slotId === slot.id) {
-      sounds?.play("star");
+      // a distinct "lands in the right slot" cue: soft place chime + a stamp thud,
+      // then a star sparkle — clearly different from a wrong tap.
+      sounds?.play("place");
+      sounds?.play("stamp");
+      setStampSlot(slot.id); // the sticker plays a stamp-landing animation
       setSparkSlot(slot.id);
       const item = held;
       setHeld(null);
@@ -69,6 +78,7 @@ export default function CalendarDropTask({ question, onCorrect, onWrong, sounds 
         return next;
       });
       setTimeout(() => setSparkSlot(null), 700);
+      setTimeout(() => setStampSlot(null), 560);
     } else {
       sounds?.play("wrong");
       onWrong({ feedback: pickText(held, "feedback", lng) || gd.calendarWrong });
@@ -101,20 +111,51 @@ export default function CalendarDropTask({ question, onCorrect, onWrong, sounds 
         {slots.map((slot) => {
           const filled = placed[slot.id];
           const isWrong = wrongSlot === slot.id;
+          const isHint = hintSlotId === slot.id; // matches the held deed → glow it
+          const justStamped = stampSlot === slot.id;
+          const borderColor = filled
+            ? "#b5f0db"
+            : isWrong
+              ? "#ff5fa2"
+              : isHint
+                ? "#18c08f" // friendly green "place here" glow
+                : held
+                  ? "#7c4dff"
+                  : "#cdbcff";
           return (
             <Box key={slot.id} sx={{ position: "relative" }}>
               <motion.button
                 type="button"
                 onClick={() => dropOn(slot)}
-                animate={isWrong ? shake.shake : filled ? jelly(true) : { x: 0, scale: 1 }}
+                animate={
+                  isWrong
+                    ? shake.shake
+                    : justStamped
+                      ? jelly(true)
+                      : isHint
+                        ? {
+                            scale: [1, 1.04, 1],
+                            boxShadow: [
+                              "0 0 0 0 rgba(24,192,143,0)",
+                              "0 0 0 7px rgba(24,192,143,0.30)",
+                              "0 0 0 0 rgba(24,192,143,0)",
+                            ],
+                          }
+                        : { x: 0, scale: 1, boxShadow: "0 0 0 0 rgba(0,0,0,0)" }
+                }
+                transition={isHint ? { duration: 1.1, repeat: Infinity } : undefined}
                 whileTap={filled ? undefined : { scale: 0.97 }}
                 style={{
                   width: "100%",
                   minHeight: 96,
-                  border: `2px ${filled ? "solid" : "dashed"} ${
-                    filled ? "#b5f0db" : isWrong ? "#ff5fa2" : held ? "#7c4dff" : "#cdbcff"
-                  }`,
-                  background: filled ? "#e7fbf3" : isWrong ? "#ffeef2" : "#fbf9ff",
+                  border: `2px ${filled ? "solid" : "dashed"} ${borderColor}`,
+                  background: filled
+                    ? "#e7fbf3"
+                    : isWrong
+                      ? "#ffeef2"
+                      : isHint
+                        ? "#e7fbf3" // soft green wash on the hinted slot
+                        : "#fbf9ff",
                   borderRadius: 16,
                   cursor: filled ? "default" : "pointer",
                   fontFamily: "inherit",
@@ -127,15 +168,26 @@ export default function CalendarDropTask({ question, onCorrect, onWrong, sounds 
                   padding: 8,
                 }}
               >
-                <span style={{ fontSize: 12, fontWeight: 800, color: "#6536e0" }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: filled || isHint ? "#0fa377" : "#6536e0" }}>
                   {slot.emoji ? `${slot.emoji} ` : ""}
                   {pickText(slot, "label", lng)}
                 </span>
                 {filled ? (
-                  <>
+                  <motion.span
+                    animate={justStamped ? stampIn() : { scale: 1, rotate: 0 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                      transformOrigin: "center",
+                    }}
+                  >
                     <span style={{ fontSize: 30, lineHeight: 1 }}>{filled.emoji || "⭐"}</span>
-                    <span style={{ fontSize: 11, fontWeight: 800 }}>{pickText(filled, "label", lng)}</span>
-                  </>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0fa377" }}>{pickText(filled, "label", lng)}</span>
+                  </motion.span>
+                ) : isHint ? (
+                  <span style={{ fontSize: 22, color: "#18c08f", fontWeight: 900 }}>👇</span>
                 ) : (
                   <span style={{ fontSize: 22, opacity: 0.5 }}>＋</span>
                 )}

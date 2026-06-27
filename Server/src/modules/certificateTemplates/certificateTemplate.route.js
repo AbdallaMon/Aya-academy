@@ -8,6 +8,14 @@ import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
 
 const certificateTemplateRoutes = Router();
 
+// PUBLIC — must be declared BEFORE the blanket requireAuth below. The anonymous
+// free-game certificate reads the active GAME template so it matches the
+// admin-designed look (render fields only; no internal flags).
+certificateTemplateRoutes.get(
+  "/public/active-game",
+  asyncHandler(certificateTemplateController.getActiveGamePublic),
+);
+
 certificateTemplateRoutes.use(authMiddleware.requireAuth);
 
 certificateTemplateRoutes.get(

@@ -10,6 +10,15 @@ export const REPORTS_URL = "reports";
 export const INVITES_URL = "quizzes/invites";
 export const SUBSCRIPTIONS_URL = "subscriptions";
 export const PLANS_URL = "plans";
+export const GAMES_URL = "games";
+export const CERTIFICATES_URL = "certificates";
+
+/** MUI Chip color per game-assignment status. */
+export const ASSIGNMENT_STATUS_COLOR = {
+  ASSIGNED: "info",
+  IN_PROGRESS: "warning",
+  COMPLETED: "success",
+};
 
 /** The ordered list of pedagogical levels (mirrors the server enum). */
 export const LEVELS = STUDENT_LEVEL_ORDER;

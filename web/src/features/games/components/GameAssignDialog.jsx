@@ -63,12 +63,23 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
     },
   });
 
+  // Reset the form the moment the dialog opens — done during render via the
+  // "store previous prop" pattern (React-recommended) so we don't call setState
+  // inside an effect (which triggers cascading renders / the lint rule).
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setSelectedIds([]);
+      setDueAt("");
+    }
+  }
+
+  // Fetch students + current assignments whenever the dialog opens.
   useEffect(() => {
     if (open && gameId) {
       studentsReq.fetchData();
       assignmentsReq.fetchData();
-      setSelectedIds([]);
-      setDueAt("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, gameId]);

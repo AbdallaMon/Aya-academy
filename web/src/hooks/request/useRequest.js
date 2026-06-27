@@ -126,7 +126,11 @@ export function useRequest({
       setSuccessMessage(null);
 
       const currentToastId = createToastId(method, builtUrl);
-      if (shouldAutoToast && isMutationMethod) {
+      // When we auto-toast a mutation, the loading toast transforms in place into
+      // a single success/error toast. Suppress ApiFetch's global onError toast for
+      // that request so we don't ALSO get a second, duplicate error toast.
+      const wantsAutoToast = shouldAutoToast && isMutationMethod;
+      if (wantsAutoToast) {
         showToast({
           id: currentToastId,
           message: td.requestInProgress,
@@ -157,14 +161,22 @@ export function useRequest({
           if (onSuccessRef.current) onSuccessRef.current(response);
           return response;
         } else if (isFormData && method === "post" && !isPublic) {
-          response = await apiFetch.post(builtUrl, params, false, undefined, true);
+          response = await apiFetch.post(builtUrl, params, false, undefined, true, {
+            suppressGlobalError: wantsAutoToast,
+          });
+        } else if (wantsAutoToast && !isPublic) {
+          // Auto-toasting mutation: settle the loading toast in place (one toast)
+          // and suppress the global error toast to avoid a duplicate.
+          response = await apiFetch.submit(method, builtUrl, params, false, undefined, false, {
+            suppressGlobalError: true,
+          });
         } else {
           response = await client[method](builtUrl, params);
         }
 
         if (!response || !response.success) return response;
 
-        if (shouldAutoToast && isMutationMethod) {
+        if (wantsAutoToast) {
           showToast({
             id: currentToastId,
             message: response.message || td.operationSuccessful,
@@ -208,7 +220,7 @@ export function useRequest({
       } catch (e) {
         const message = e?.data?.message || e?.message || td.somethingWentWrong;
         setError(message);
-        if (shouldAutoToast && isMutationMethod) {
+        if (wantsAutoToast) {
           showToast({
             id: currentToastId,
             message,

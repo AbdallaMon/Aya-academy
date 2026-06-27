@@ -11,11 +11,6 @@ export const DISCOUNT_TYPES = {
   FIXED: "FIXED",
 };
 
-export const DISCOUNT_CONSTRAINTS = {
-  COUNT: "COUNT",
-  DURATION: "DURATION",
-};
-
 export const COUPON_SOURCES = {
   MANUAL: "MANUAL",
   GAME_REWARD: "GAME_REWARD",
@@ -79,13 +74,6 @@ export const INVOICE_STATUSES = {
   VOID: "VOID",
 };
 
-export const LESSON_STATUSES = {
-  SCHEDULED: "SCHEDULED",
-  COMPLETED: "COMPLETED",
-  CANCELLED: "CANCELLED",
-  MISSED: "MISSED",
-};
-
 export const GAME_TYPES = {
   INTERACTIVE: "INTERACTIVE",
   QUIZ: "QUIZ",
@@ -132,6 +120,14 @@ export const CERTIFICATE_TYPES = {
   MANUAL: "MANUAL",
 };
 
+// Reusable-template purpose. GENERAL = admin-picked for manual certificates;
+// GAME = the single template auto-applied to every game certificate (only one
+// GAME template may exist at a time — promoting a new one demotes the old).
+export const CERTIFICATE_TEMPLATE_TYPES = {
+  GENERAL: "GENERAL",
+  GAME: "GAME",
+};
+
 // Certificate template keys drive the frontend's decorative rendering.
 // GAME certificates use the game's `slug` as their templateKey (one look per
 // game). QUIZ (exam-pass) certificates all share a single unified template,
@@ -163,7 +159,6 @@ export const NOTIFICATION_TYPES = {
   QUIZ_PASSED: "QUIZ_PASSED",
   QUIZ_FAILED: "QUIZ_FAILED",
   GIFT_RECEIVED: "GIFT_RECEIVED",
-  LESSON_SCHEDULED: "LESSON_SCHEDULED",
   GENERIC: "GENERIC",
 };
 
@@ -198,17 +193,3 @@ export const DRIVE_ACCOUNT_TYPES = {
   DB: "DB",
 };
 
-export const REVELATION_PLACES = {
-  MAKKI: "MAKKI",
-  MADANI: "MADANI",
-};
-
-export const SEGMENT_STATUSES = {
-  IN_PROGRESS: "IN_PROGRESS",
-  COMPLETED: "COMPLETED",
-};
-
-export const LESSON_ASSIGNMENT_KINDS = {
-  MEMORIZE: "MEMORIZE",
-  REVIEW: "REVIEW",
-};

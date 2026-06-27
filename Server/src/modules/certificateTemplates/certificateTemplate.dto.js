@@ -2,6 +2,7 @@
 export const certificateTemplateSelect = {
   id: true,
   key: true,
+  type: true,
   nameAr: true,
   nameEn: true,
   headingAr: true,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Alert,
@@ -17,7 +17,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdCheck, MdInfoOutline } from "react-icons/md";
-import { FormDialog, PhotoUpload } from "../../../shared/components/index.js";
+import { FormDialog } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -58,7 +58,6 @@ const EMPTY_VALUES = {
   templateId: "", // "" = custom / no template
   reasonAr: "",
   reasonEn: "",
-  photoId: "",
   titleAr: "",
   titleEn: "",
   subtitleAr: "",
@@ -91,6 +90,9 @@ const FONT_LABEL_KEY = {
   elegant: "fontElegant",
   classic: "fontClassic",
   modern: "fontModern",
+  kufi: "fontKufi",
+  ruqaa: "fontRuqaa",
+  naskh: "fontNaskh",
 };
 
 // Localized labels for the enum selects (value → txt key).
@@ -103,6 +105,11 @@ const BORDER_LABEL_KEY = {
   ornate: "borderOrnate",
   double: "borderDouble",
   simple: "borderSimple",
+  rounded: "borderRounded",
+  dashed: "borderDashed",
+  inset: "borderInset",
+  groove: "borderGroove",
+  ribbon: "borderRibbon",
   none: "borderNone",
 };
 const LOGO_SIZE_LABEL_KEY = {
@@ -141,7 +148,15 @@ function buildThemeJson(v) {
   };
 }
 
-export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
+export default function CreateCertificateDialog({
+  open,
+  onClose,
+  onSuccess,
+  // When set, the student is fixed (e.g. opened from a student-detail page): the
+  // picker is hidden and this student is preselected/locked.
+  lockedStudentId,
+  lockedStudentName,
+}) {
   const txt = useCertificatesText();
   const { lng } = useTranslation();
 
@@ -150,22 +165,22 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
     mode: "onTouched",
   });
 
-  // The uploaded photo attachment ({ id, url }) for the preview circle.
-  const [photo, setPhoto] = useState(null);
-
   useEffect(() => {
     if (open) {
-      reset(EMPTY_VALUES);
-      setPhoto(null);
+      reset({
+        ...EMPTY_VALUES,
+        studentId: lockedStudentId ? String(lockedStudentId) : "",
+      });
     }
-  }, [open, reset]);
+  }, [open, reset, lockedStudentId]);
 
   // Student picker — admin only endpoint. Fetched lazily when the dialog opens.
+  // Skipped entirely when the student is locked (we already know who it is).
   const studentsReq = useRequest({
     url: STUDENTS_PICKER_URL,
     method: "get",
     isPaginated: true,
-    autoFetch: open,
+    autoFetch: open && !lockedStudentId,
     syncToUrl: false,
     initialParams: STUDENTS_PICKER_PARAMS,
   });
@@ -180,7 +195,12 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
     syncToUrl: false,
     initialParams: { limit: 100 },
   });
-  const templates = useMemo(() => templatesReq.data || [], [templatesReq.data]);
+  // GAME templates are auto-applied to game certificates only — never offered in
+  // the manual picker.
+  const templates = useMemo(
+    () => (templatesReq.data || []).filter((t) => t.type !== "GAME"),
+    [templatesReq.data],
+  );
 
   // Default-select the isDefault template (if any) once per open, after the
   // templates load. A ref guard keeps this from clobbering a manual choice.
@@ -206,18 +226,26 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
   });
 
   const values = watch();
-  const selectedStudent = useMemo(
-    () => students.find((s) => String(s.id) === String(values.studentId)),
-    [students, values.studentId],
-  );
+  const selectedStudent = useMemo(() => {
+    if (lockedStudentId) {
+      return (
+        students.find((s) => String(s.id) === String(lockedStudentId)) || {
+          id: lockedStudentId,
+          name: lockedStudentName,
+        }
+      );
+    }
+    return students.find((s) => String(s.id) === String(values.studentId));
+  }, [students, values.studentId, lockedStudentId, lockedStudentName]);
   const selectedTemplate = useMemo(
     () => templates.find((t) => String(t.id) === String(values.templateId)),
     [templates, values.templateId],
   );
   const usingTemplate = Boolean(selectedTemplate);
 
-  // Default the photo to the selected student's avatar when none chosen yet.
-  const previewPhoto = photo || selectedStudent?.avatar || null;
+  // The certificate always uses the student's own saved photo (avatar) — it is
+  // pulled automatically, never uploaded into the certificate.
+  const previewPhoto = selectedStudent?.avatar || null;
 
   // Live preview object shaped exactly like the API certificate.
   const previewCertificate = useMemo(() => {
@@ -269,7 +297,6 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
         templateId: Number(v.templateId),
         reasonAr: v.reasonAr || undefined,
         reasonEn: v.reasonEn || undefined,
-        photoId: photo?.id ? Number(photo.id) : undefined,
       };
       await createMut.postRequest(null, payload);
       return;
@@ -317,32 +344,41 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
             </Typography>
             <Grid container spacing={2} sx={{ mt: 0 }}>
               <Grid size={{ xs: 12 }}>
-                <Controller
-                  name="studentId"
-                  control={control}
-                  rules={{ required: txt.required }}
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      select
-                      fullWidth
-                      required
-                      label={txt.studentLabel}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                    >
-                      <MenuItem value="" disabled>
-                        {txt.studentPlaceholder}
-                      </MenuItem>
-                      {students.map((s) => (
-                        <MenuItem key={s.id} value={String(s.id)}>
-                          {s.name}
-                          {s.nickname ? ` (${s.nickname})` : ""}
+                {lockedStudentId ? (
+                  <TextField
+                    fullWidth
+                    label={txt.studentLabel}
+                    value={lockedStudentName || selectedStudent?.name || ""}
+                    disabled
+                  />
+                ) : (
+                  <Controller
+                    name="studentId"
+                    control={control}
+                    rules={{ required: txt.required }}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        select
+                        fullWidth
+                        required
+                        label={txt.studentLabel}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                      >
+                        <MenuItem value="" disabled>
+                          {txt.studentPlaceholder}
                         </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
+                        {students.map((s) => (
+                          <MenuItem key={s.id} value={String(s.id)}>
+                            {s.name}
+                            {s.nickname ? ` (${s.nickname})` : ""}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                )}
               </Grid>
 
               {/* Template picker — default to the isDefault template. */}
@@ -394,17 +430,9 @@ export default function CreateCertificateDialog({ open, onClose, onSuccess }) {
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
                       {txt.reasonHint}
                     </Typography>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      {txt.studentPhoto}
-                    </Typography>
-                    <PhotoUpload
-                      value={previewPhoto}
-                      onUploaded={(att) => {
-                        setPhoto(att);
-                        setValue("photoId", att?.id ? String(att.id) : "");
-                      }}
-                      buttonLabel={txt.uploadPhoto}
-                    />
+                    <Alert icon={<MdInfoOutline />} severity="info" sx={{ py: 0.25 }}>
+                      {txt.photoAutoNote}
+                    </Alert>
                   </Grid>
                 </>
               )}

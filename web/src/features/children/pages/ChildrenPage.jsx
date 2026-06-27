@@ -101,11 +101,13 @@ export default function ChildrenPage() {
     pickerDialog.open();
   }
 
-  async function requestPlan(plan) {
+  async function requestPlan(plan, options = {}) {
     if (!pickerChild) return;
     await requestMut.postRequest(null, {
       studentId: pickerChild.id,
       planId: plan.id,
+      billingPeriod: options.billingPeriod || "MONTHLY",
+      ...(options.couponCode ? { couponCode: options.couponCode } : {}),
     });
     pickerDialog.close();
   }

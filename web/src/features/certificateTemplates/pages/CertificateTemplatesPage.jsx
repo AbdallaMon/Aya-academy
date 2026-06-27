@@ -9,7 +9,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { DataTable, useConfirm } from "../../../shared/components/index.js";
+import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
 import { CERTIFICATE_TEMPLATES_URL } from "../config/constant.js";
 import { useCertificateTemplatesText } from "../config/certificateTemplatesText.js";
 import TemplateFormDialog from "../components/TemplateFormDialog.jsx";
@@ -82,8 +82,19 @@ export default function CertificateTemplatesPage() {
       {
         field: "key",
         headerName: txt.key,
-        width: 180,
+        width: 160,
         renderCell: ({ row }) => <Typography variant="body2">{row.key}</Typography>,
+      },
+      {
+        field: "type",
+        headerName: txt.type,
+        width: 140,
+        renderCell: ({ row }) =>
+          row.type === "GAME" ? (
+            <Chip size="small" color="secondary" label={txt.typeGame} />
+          ) : (
+            <Chip size="small" variant="outlined" label={txt.typeGeneral} />
+          ),
       },
       {
         field: "isDefault",
@@ -113,19 +124,23 @@ export default function CertificateTemplatesPage() {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
-        width: 170,
+        width: 80,
         renderCell: ({ row }) => (
-          <Stack direction="row" spacing={0.5}>
-            <Button size="small" startIcon={<MdEdit />} onClick={() => onEdit(row)}>
-              {txt.edit}
-            </Button>
-            <Button
-              size="small"
-              color="error"
-              startIcon={<MdDelete />}
-              onClick={() => onDelete(row)}
-            />
-          </Stack>
+          <RowActionsMenu
+            actions={[
+              {
+                label: txt.edit,
+                icon: <MdEdit />,
+                onClick: () => onEdit(row),
+              },
+              {
+                label: txt.delete,
+                icon: <MdDelete />,
+                color: "error",
+                onClick: () => onDelete(row),
+              },
+            ]}
+          />
         ),
       },
     ],

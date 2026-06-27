@@ -3,15 +3,17 @@
 // the frontend form/preview agree on the same structure.
 //
 // configJson = {
-//   company:  { nameAr, nameEn, addressAr, addressEn, phone, email, logoUrl },
-//   theme:    { headerColor, accentColor, textColor },
+//   company:  { nameAr, nameEn, addressAr, addressEn, phone, email },
+//   theme:    { headerColor, headerTextColor, accentColor, textColor },
 //   fees:     { transferFeePercent, transferFeeFixed },
 //   notes:    [ { ar, en } ],                 // customer-facing notices
 //   footerAr, footerEn,
 //   paymentInstructionsAr, paymentInstructionsEn,
 //   dueDays,                                   // due-date offset in days from issue
-//   showFreeHours, showPreviousCredit, showPreviousDebt
+//   showPreviousCredit, showPreviousDebt
 // }
+// NOTE: the logo is always our own academy logo (served from /logos), so it is
+// not part of the editable config.
 
 export const DEFAULT_PAYMENT_TEMPLATE = {
   company: {
@@ -21,10 +23,10 @@ export const DEFAULT_PAYMENT_TEMPLATE = {
     addressEn: "",
     phone: "",
     email: "",
-    logoUrl: "",
   },
   theme: {
     headerColor: "#3D1F08",
+    headerTextColor: "#FFFFFF",
     accentColor: "#C9A84C",
     textColor: "#25313F",
   },
@@ -47,7 +49,6 @@ export const DEFAULT_PAYMENT_TEMPLATE = {
   paymentInstructionsAr: "",
   paymentInstructionsEn: "",
   dueDays: 7,
-  showFreeHours: true,
   showPreviousCredit: true,
   showPreviousDebt: true,
 };
@@ -63,7 +64,6 @@ export const INVOICE_EDITABLE_CONFIG_KEYS = [
   "footerEn",
   "paymentInstructionsAr",
   "paymentInstructionsEn",
-  "showFreeHours",
   "showPreviousCredit",
   "showPreviousDebt",
 ];

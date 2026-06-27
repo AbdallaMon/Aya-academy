@@ -1,0 +1,41 @@
+import { SITE_URL, languages, fallbackLng } from '@/shared/lib/seo';
+import { localePath } from '@/i18n/routing.js';
+import { sortedArticles } from '@/features/blog';
+
+// PUBLIC, indexable routes only (the dashboard is auth-gated + noindex). Each
+// entry is emitted once per locale and cross-links its other-language variants
+// via hreflang `alternates.languages`, so Google understands the ar/en pairing.
+const PUBLIC_PATHS = [
+  { path: '/', priority: 1.0, changeFrequency: 'weekly' },
+  { path: '/blog', priority: 0.8, changeFrequency: 'weekly' },
+  { path: '/free-game', priority: 0.8, changeFrequency: 'monthly' },
+  { path: '/register', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/login', priority: 0.5, changeFrequency: 'yearly' },
+  // Every blog article (data-driven — new posts appear automatically).
+  ...sortedArticles.map((a) => ({
+    path: `/blog/${a.slug}`,
+    priority: 0.6,
+    changeFrequency: 'monthly',
+  })),
+];
+
+export default function sitemap() {
+  const entries = [];
+  for (const { path, priority, changeFrequency } of PUBLIC_PATHS) {
+    const languagesMap = {};
+    for (const lng of languages) {
+      languagesMap[lng] = `${SITE_URL}${localePath(lng, path)}`;
+    }
+    languagesMap['x-default'] = `${SITE_URL}${localePath(fallbackLng, path)}`;
+
+    for (const lng of languages) {
+      entries.push({
+        url: `${SITE_URL}${localePath(lng, path)}`,
+        changeFrequency,
+        priority,
+        alternates: { languages: languagesMap },
+      });
+    }
+  }
+  return entries;
+}

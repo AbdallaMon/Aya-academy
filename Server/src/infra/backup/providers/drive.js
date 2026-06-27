@@ -150,7 +150,15 @@ class DriveProvider {
       const res = await drive.about.get({ fields: "user(emailAddress,permissionId)" });
       const user = res?.data?.user || {};
       return { email: user.emailAddress || null, googleUserId: user.permissionId || null };
-    } catch {
+    } catch (err) {
+      // Diagnostic: identity fetch is best-effort, but a failure here means email/
+      // googleUserId end up null — which breaks reconnect/identity-binding. Log why.
+      console.error(
+        "[drive-callback] identity fetch failed:",
+        "status=", err?.code || err?.response?.status,
+        "message=", err?.message,
+        "googleError=", err?.response?.data?.error,
+      );
       return { email: null, googleUserId: null };
     }
   }
@@ -168,10 +176,27 @@ class DriveProvider {
     let tokens;
     try {
       ({ tokens } = await oauth2.getToken(code));
-    } catch {
+    } catch (err) {
+      // Diagnostic: surface the underlying Google error (redirect_uri mismatch,
+      // invalid/expired code, clock skew, etc.) without logging the code/tokens.
+      console.error(
+        "[drive-callback] getToken failed:",
+        "message=", err?.message,
+        "googleError=", err?.response?.data?.error,
+        "googleErrorDescription=", err?.response?.data?.error_description,
+      );
       throw new AppError({ statusCode: 400, code: backupMessagesCodes.DRIVE_AUTH_FAILED, translationKey: TK });
     }
     if (!tokens || !tokens.refresh_token) {
+      // Diagnostic: tokens arrived but without a refresh_token. Google only returns
+      // one with access_type=offline + prompt=consent on (re)consent — if the app was
+      // previously authorized and consent was not re-shown, this is the cause.
+      console.error(
+        "[drive-callback] missing refresh_token:",
+        "hasTokens=", !!tokens,
+        "hasAccessToken=", !!tokens?.access_token,
+        "scope=", tokens?.scope,
+      );
       throw new AppError({ statusCode: 400, code: backupMessagesCodes.DRIVE_AUTH_FAILED, translationKey: TK });
     }
 

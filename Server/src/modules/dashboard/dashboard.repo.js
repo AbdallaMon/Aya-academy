@@ -1,9 +1,5 @@
 import { prisma } from "@aya/db/prisma.client.js";
-import {
-  LESSON_STATUSES,
-  USER_ROLES,
-  activeSubscriptionWhere,
-} from "@aya/shared";
+import { USER_ROLES, activeSubscriptionWhere } from "@aya/shared";
 
 // All Prisma I/O for the dashboard module lives here. Read-only aggregates.
 class DashboardRepo {
@@ -16,6 +12,7 @@ class DashboardRepo {
       students,
       parents,
       admins,
+      plans,
       activeSubscriptions,
       expiringSoon,
       totalCertificates,
@@ -25,6 +22,7 @@ class DashboardRepo {
       prisma.user.count({ where: { role: USER_ROLES.STUDENT } }),
       prisma.user.count({ where: { role: USER_ROLES.PARENT } }),
       prisma.user.count({ where: { role: USER_ROLES.ADMIN } }),
+      prisma.plan.count(),
       prisma.subscription.count({
         where: activeSubscriptionWhere(now),
       }),
@@ -43,6 +41,7 @@ class DashboardRepo {
       students,
       parents,
       admins,
+      plans,
       activeSubscriptions,
       expiringSoon,
       totalCertificates,
@@ -75,6 +74,8 @@ class DashboardRepo {
         studentName: true,
         titleAr: true,
         titleEn: true,
+        reasonAr: true,
+        reasonEn: true,
         issuedAt: true,
       },
     });
@@ -124,6 +125,7 @@ class DashboardRepo {
         nickname: true,
         points: true,
         level: true,
+        _count: { select: { studentBadges: true } },
       },
     });
   }
@@ -137,26 +139,6 @@ class DashboardRepo {
         planId: true,
         endDate: true,
         remainingHours: true,
-      },
-    });
-  }
-
-  upcomingLessons(studentIds, limit) {
-    const now = new Date();
-    return prisma.lessonSession.findMany({
-      where: {
-        studentId: { in: studentIds },
-        status: LESSON_STATUSES.SCHEDULED,
-        startsAt: { gte: now },
-      },
-      take: limit,
-      orderBy: { startsAt: "asc" },
-      select: {
-        id: true,
-        studentId: true,
-        title: true,
-        startsAt: true,
-        meetingLink: true,
       },
     });
   }
@@ -185,6 +167,8 @@ class DashboardRepo {
         studentName: true,
         titleAr: true,
         titleEn: true,
+        reasonAr: true,
+        reasonEn: true,
         issuedAt: true,
       },
     });
@@ -234,6 +218,8 @@ class DashboardRepo {
         studentName: true,
         titleAr: true,
         titleEn: true,
+        reasonAr: true,
+        reasonEn: true,
         issuedAt: true,
       },
     });

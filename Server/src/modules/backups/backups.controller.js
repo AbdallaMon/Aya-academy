@@ -60,6 +60,17 @@ class BackupsController {
       await backupsUsecase.handleDriveCallback({ input: req.query });
       return res.redirect(302, `${base}?drive=connected`);
     } catch (err) {
+      // Diagnostic: the browser only sees the language-neutral `reason` code, so the
+      // true cause is surfaced here in the server log (never the tokens). Remove once
+      // the drive-connect failure is understood.
+      console.error(
+        "[drive-callback] failed:",
+        "code=", err?.code,
+        "statusCode=", err?.statusCode,
+        "message=", err?.message,
+        "details=", err?.details,
+      );
+      console.error("[drive-callback] stack:", err?.stack);
       const reason = encodeURIComponent(err?.code || backupMessagesCodes.DRIVE_AUTH_FAILED);
       return res.redirect(302, `${base}?drive=error&reason=${reason}`);
     }
