@@ -11,6 +11,13 @@ const planRoutes = Router();
 // PUBLIC — must be declared before "/:id".
 planRoutes.get("/public", asyncHandler(planController.listPublic));
 
+// PUBLIC — price quote for the registration wizard (coupon verify).
+planRoutes.post(
+  "/quote",
+  validate(PlanValidation.quoteSchema),
+  asyncHandler(planController.quote),
+);
+
 planRoutes.get(
   "/",
   authMiddleware.requireAuth,
@@ -46,29 +53,6 @@ planRoutes.delete(
   authMiddleware.requireAuth,
   authMiddleware.requirePermissions([PERMISSIONS.PLAN.DELETE]),
   asyncHandler(planController.remove),
-);
-
-planRoutes.post(
-  "/:planId/discounts",
-  authMiddleware.requireAuth,
-  authMiddleware.requirePermissions([PERMISSIONS.PLAN.EDIT]),
-  validate(PlanValidation.createDiscountSchema),
-  asyncHandler(planController.createDiscount),
-);
-
-planRoutes.put(
-  "/:planId/discounts/:id",
-  authMiddleware.requireAuth,
-  authMiddleware.requirePermissions([PERMISSIONS.PLAN.EDIT]),
-  validate(PlanValidation.updateDiscountSchema),
-  asyncHandler(planController.updateDiscount),
-);
-
-planRoutes.delete(
-  "/:planId/discounts/:id",
-  authMiddleware.requireAuth,
-  authMiddleware.requirePermissions([PERMISSIONS.PLAN.DELETE]),
-  asyncHandler(planController.removeDiscount),
 );
 
 export default planRoutes;

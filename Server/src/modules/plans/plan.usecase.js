@@ -1,15 +1,26 @@
-import { DISCOUNT_TYPES } from "@aya/shared";
+import { BILLING_PERIODS } from "@aya/shared";
 import { notFound } from "../../shared/errors/AppError.js";
 import {
   buildSearchQuery,
   parseBooleanFilter,
 } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
+import {
+  applyDiscount,
+  couponAppliesToPeriod,
+  effectiveMonthlyPrice,
+  effectiveYearlyPrice,
+  isCouponActive,
+  priceForPeriod,
+  roundMoney,
+} from "../../shared/utility/pricing.js";
+import { settingsUsecase } from "../settings/settings.usecase.js";
+import { couponUsecase } from "../coupons/coupon.usecase.js";
 import { planRepo } from "./plan.repo.js";
 import { planMessagesCodes } from "./plan.messages.js";
 
 class PlanUsecase {
-  buildListWhere({ search, isActive, billingPeriod }) {
+  buildListWhere({ search, isActive }) {
     const where = {};
     const or = buildSearchQuery({
       search: typeof search === "string" ? search : undefined,
@@ -20,9 +31,6 @@ class PlanUsecase {
     const active = parseBooleanFilter(isActive);
     if (active !== undefined) where.isActive = active;
 
-    if (billingPeriod && billingPeriod !== "ALL") {
-      where.billingPeriod = billingPeriod;
-    }
     return where;
   }
 
@@ -48,10 +56,7 @@ class PlanUsecase {
       titleEn: input.titleEn,
       descriptionAr: input.descriptionAr,
       descriptionEn: input.descriptionEn,
-      billingPeriod: input.billingPeriod,
       hours: input.hours,
-      hourlyRate: input.hourlyRate,
-      currency: input.currency,
       isActive: input.isActive,
       isFeatured: input.isFeatured,
       sortOrder: input.sortOrder,
@@ -66,10 +71,7 @@ class PlanUsecase {
       titleEn: input.titleEn,
       descriptionAr: input.descriptionAr,
       descriptionEn: input.descriptionEn,
-      billingPeriod: input.billingPeriod,
       hours: input.hours,
-      hourlyRate: input.hourlyRate,
-      currency: input.currency,
       isActive: input.isActive,
       isFeatured: input.isFeatured,
       sortOrder: input.sortOrder,
@@ -82,82 +84,130 @@ class PlanUsecase {
     return planRepo.deactivatePlan(id);
   }
 
-  // ── discounts ───────────────────────────────────────────
-  async createDiscount(planId, input) {
-    await this.getById(planId);
-    return planRepo.createDiscount({
-      planId,
-      type: input.type,
-      value: input.value,
-      constraint: input.constraint,
-      maxRedemptions: input.maxRedemptions,
-      startsAt: input.startsAt,
-      endsAt: input.endsAt,
-      isActive: input.isActive,
-    });
-  }
-
-  async updateDiscount(planId, id, input) {
-    const existing = await planRepo.getDiscount(id, planId);
-    if (!existing) throw notFound(planMessagesCodes.DISCOUNT_NOT_FOUND);
-    const data = {
-      type: input.type,
-      value: input.value,
-      constraint: input.constraint,
-      maxRedemptions: input.maxRedemptions,
-      startsAt: input.startsAt,
-      endsAt: input.endsAt,
-      isActive: input.isActive,
-    };
-    return planRepo.updateDiscount(id, data);
-  }
-
-  async removeDiscount(planId, id) {
-    const existing = await planRepo.getDiscount(id, planId);
-    if (!existing) throw notFound(planMessagesCodes.DISCOUNT_NOT_FOUND);
-    return planRepo.deleteDiscount(id);
-  }
-
   // ── public pricing ──────────────────────────────────────
-  isDiscountActive(discount, now) {
-    if (!discount.isActive) return false;
-    if (discount.startsAt && now < discount.startsAt) return false;
-    if (discount.endsAt && now > discount.endsAt) return false;
-    if (
-      discount.maxRedemptions !== null &&
-      discount.redemptionsCount >= discount.maxRedemptions
-    ) {
-      return false;
+  // Pick the cheapest active coupon that applies to a billing cycle.
+  bestCoupon(coupons, base, period, now) {
+    let bestPrice = base;
+    let bestCoupon = null;
+    for (const coupon of coupons) {
+      if (!isCouponActive(coupon, now)) continue;
+      if (!couponAppliesToPeriod(coupon, period)) continue;
+      const candidate = applyDiscount(base, coupon);
+      if (candidate < bestPrice) {
+        bestPrice = candidate;
+        bestCoupon = coupon;
+      }
     }
-    return true;
+    return { price: roundMoney(bestPrice), coupon: bestCoupon };
   }
 
-  applyDiscount(price, discount) {
-    const value = Number(discount.value);
-    if (discount.type === DISCOUNT_TYPES.PERCENT) {
-      return price * (1 - value / 100);
+  // Monthly + yearly base/effective prices with the best plan-linked discount.
+  pricingFor(plan, coupons = [], hourlyRate, now = new Date()) {
+    const monthlyBase = roundMoney(effectiveMonthlyPrice(plan, hourlyRate));
+    const yearlyBase = roundMoney(effectiveYearlyPrice(plan, hourlyRate));
+    const m = this.bestCoupon(coupons, monthlyBase, BILLING_PERIODS.MONTHLY, now);
+    const y = this.bestCoupon(coupons, yearlyBase, BILLING_PERIODS.YEARLY, now);
+    const summarize = (base, picked) => ({
+      base,
+      effective: picked.price,
+      discount: picked.coupon
+        ? {
+            type: picked.coupon.type,
+            value: Number(picked.coupon.value),
+            code: picked.coupon.code,
+          }
+        : null,
+    });
+    return {
+      monthly: summarize(monthlyBase, m),
+      yearly: summarize(yearlyBase, y),
+    };
+  }
+
+  /**
+   * Public price quote for one plan/cycle with an optional coupon code. Mirrors
+   * `subscriptionUsecase.computePricing` (best of auto plan-coupon vs typed code)
+   * but NEVER throws on an invalid code — it reports `{couponValid:false,reason}`
+   * so the registration wizard can show an inline error. Money stays
+   * server-authoritative; the client only previews.
+   */
+  async quote({ planId, billingPeriod, couponCode }) {
+    const plan = await planRepo.getByIdWithCoupons(planId);
+    if (!plan || !plan.isActive) throw notFound(planMessagesCodes.PLAN_NOT_FOUND);
+
+    const settings = await settingsUsecase.getEffective();
+    const hourlyRate = Number(settings.hourlyRate);
+    const now = new Date();
+    const base = roundMoney(priceForPeriod(plan, billingPeriod, hourlyRate));
+
+    // (1) best active plan-linked coupon for this cycle (auto-applied)
+    const linked = (plan.coupons ?? [])
+      .map((link) => link.coupon)
+      .filter(Boolean);
+    let net = base;
+    let applied = null;
+    for (const coupon of linked) {
+      if (!isCouponActive(coupon, now)) continue;
+      if (!couponAppliesToPeriod(coupon, billingPeriod)) continue;
+      const candidate = roundMoney(applyDiscount(base, coupon));
+      if (candidate < net) {
+        net = candidate;
+        applied = { type: coupon.type, value: Number(coupon.value), code: coupon.code };
+      }
     }
-    return Math.max(0, price - value);
+
+    // (2) typed coupon code, if supplied
+    let couponValid = null;
+    let reason = null;
+    if (couponCode) {
+      const result = await couponUsecase.validateCoupon({
+        code: couponCode,
+        planId,
+        billingPeriod,
+      });
+      if (!result.valid) {
+        couponValid = false;
+        reason = result.reason;
+      } else {
+        couponValid = true;
+        const candidate = roundMoney(
+          applyDiscount(base, {
+            type: result.discount.type,
+            value: result.discount.value,
+          }),
+        );
+        if (candidate < net) {
+          net = candidate;
+          applied = {
+            type: result.discount.type,
+            value: result.discount.value,
+            code: couponCode,
+          };
+        }
+      }
+    }
+
+    return {
+      currency: settings.currency,
+      base,
+      net: roundMoney(net),
+      discount: applied,
+      couponValid,
+      reason,
+    };
   }
 
   async listPublic() {
-    const plans = await planRepo.listActiveWithDiscounts();
+    const plans = await planRepo.listActiveWithCoupons();
+    const settings = await settingsUsecase.getEffective();
+    const hourlyRate = Number(settings.hourlyRate);
     const now = new Date();
 
     return plans.map((plan) => {
-      const hourlyRate = Number(plan.hourlyRate);
-      const basePrice = plan.hours * hourlyRate;
-
-      let bestPrice = basePrice;
-      let bestDiscount = null;
-      for (const discount of plan.discounts) {
-        if (!this.isDiscountActive(discount, now)) continue;
-        const candidate = this.applyDiscount(basePrice, discount);
-        if (candidate < bestPrice) {
-          bestPrice = candidate;
-          bestDiscount = discount;
-        }
-      }
+      const coupons = (plan.coupons || [])
+        .map((link) => link.coupon)
+        .filter(Boolean);
+      const pricing = this.pricingFor(plan, coupons, hourlyRate, now);
 
       return {
         id: plan.id,
@@ -165,19 +215,12 @@ class PlanUsecase {
         titleEn: plan.titleEn,
         descriptionAr: plan.descriptionAr,
         descriptionEn: plan.descriptionEn,
-        billingPeriod: plan.billingPeriod,
         hours: plan.hours,
         hourlyRate,
-        currency: plan.currency,
-        basePrice,
-        effectivePrice: bestPrice,
-        discount: bestDiscount
-          ? {
-              type: bestDiscount.type,
-              value: Number(bestDiscount.value),
-            }
-          : null,
+        currency: settings.currency,
         isFeatured: plan.isFeatured,
+        monthly: pricing.monthly,
+        yearly: pricing.yearly,
       };
     });
   }
