@@ -38,6 +38,16 @@ class AuthController {
     );
   };
 
+  enroll = async (req, res) => {
+    const result = await authUsecase.enrollFamily(req.body);
+    return created(
+      res,
+      result,
+      authMessagesCodes.ENROLLED_SUCCESS,
+      messagesNames.authMessages,
+    );
+  };
+
   login = async (req, res) => {
     const user = await authUsecase.login(req.body);
     setAuthCookies(res, {

@@ -14,6 +14,12 @@ authRoutes.post(
 );
 
 authRoutes.post(
+  "/enroll",
+  validate(AuthValidation.enrollSchema),
+  asyncHandler(authController.enroll),
+);
+
+authRoutes.post(
   "/login",
   validate(AuthValidation.loginSchema),
   asyncHandler(authController.login),
