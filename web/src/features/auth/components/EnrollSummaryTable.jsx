@@ -32,7 +32,7 @@ function priceFor(child, plans) {
   };
 }
 
-export default function EnrollSummaryTable({ children, plans, lng, txt }) {
+export default function EnrollSummaryTable({ items, plans, lng, txt }) {
   return (
     <TableContainer component={Paper} variant="outlined">
       <Table size="small">
@@ -48,7 +48,7 @@ export default function EnrollSummaryTable({ children, plans, lng, txt }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {children.map((child, i) => {
+          {items.map((child, i) => {
             const p = priceFor(child, plans);
             return (
               <TableRow key={i}>

@@ -1,12 +1,16 @@
 import { Suspense } from 'react';
-import RegisterForm from '@/features/auth/components/RegisterForm.jsx';
+import RegisterWizard from '@/features/auth/components/RegisterWizard.jsx';
+import { buildMetadata } from '@/shared/lib/seo';
 
-export const metadata = { title: 'إنشاء حساب | Aya Academy' };
+export async function generateMetadata({ params }) {
+  const { lng } = await params;
+  return buildMetadata({ lng, page: 'register', path: '/register' });
+}
 
 export default function RegisterPage() {
   return (
     <Suspense>
-      <RegisterForm />
+      <RegisterWizard />
     </Suspense>
   );
 }
