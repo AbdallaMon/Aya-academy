@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import PlanRadioCards from "./PlanRadioCards.jsx";
 import CouponField from "./CouponField.jsx";
+import { PasswordField } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { PLAN_QUOTE_URL } from "../config/constant.js";
 import { formatMoney } from "../../../shared/lib/money.js";
@@ -168,9 +169,8 @@ export default function ChildEnrollCard({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <PasswordField
               label={txt.password}
-              type="password"
               value={child.password}
               onChange={setField("password")}
               error={Boolean(errors.password)}

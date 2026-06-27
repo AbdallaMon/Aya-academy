@@ -1,6 +1,7 @@
 "use client";
 
 import { Grid, TextField } from "@mui/material";
+import { PasswordField } from "../../../shared/components/index.js";
 
 export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }) {
   const setField = (key) => (e) => onChange({ [key]: e.target.value });
@@ -42,9 +43,8 @@ export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
+        <PasswordField
           label={txt.password}
-          type="password"
           value={parent.password}
           onChange={setField("password")}
           error={Boolean(errors.password)}
