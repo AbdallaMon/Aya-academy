@@ -40,6 +40,15 @@ export function buildTheme({
   const textPrimary = base.text;
   const textSecondary = base.mutedText;
 
+  // Accessibility (WCAG 1.4.3): bright teal #1ABC9C carries white text at only
+  // ~2.4:1 and is itself ~2.4:1 as text on light surfaces — both fail AA. So we
+  // derive darker teals that pass: `ctaTeal` for white-on-teal button fills, and
+  // `tealText` for teal TEXT (eyebrows/links/prices) on light backgrounds. In
+  // dark mode the bright teal already passes on navy, so tealText stays bright.
+  const ctaTeal = darken(primaryMain, 0.32); // ~4.8:1 with #FFFFFF
+  const ctaTealHover = darken(primaryMain, 0.42);
+  const tealText = mode === 'light' ? darken(primaryMain, 0.34) : primaryMain; // ~4.9:1 on white
+
   // Soft, layered shadows — warmer/cleaner than MUI defaults. In dark mode the
   // surfaces are deep navy, so we lean on darker, slightly tinted shadows.
   const shadowColor = mode === 'light' ? '20, 35, 60' : '0, 0, 0';
@@ -99,7 +108,7 @@ export function buildTheme({
     spacing: 8,
     colorSchemes: {},
     typography: {
-      fontFamily: ['Nunito', 'system-ui', 'sans-serif'].join(','),
+      fontFamily: 'var(--font-sans), "Cairo", system-ui, sans-serif',
       h1: {
         fontWeight: 800,
         fontSize: '2.4rem',
@@ -221,15 +230,23 @@ export function buildTheme({
       MuiButton: {
         variants: [
           {
+            // Secondary "play / games" CTA. Was yellow TEXT on a near-white
+            // surface (~1.6:1 — effectively invisible in light mode). Now a
+            // FILLED warm-amber button with dark slate text (secondary.contrastText
+            // #25313F on #F6C453 ≈ 8:1) — readable, on-brand, and a stronger CTA.
             props: { variant: 'outlinedYellow' },
             style: {
-              borderColor: base.accent,
-              color: base.accent,
-              backgroundColor: base.white,
+              backgroundColor: base.accent,
+              // Fixed dark slate (= secondary.contrastText) in BOTH themes: the
+              // amber fill is the same light color in light AND dark mode, so the
+              // label must always be dark (base.text would be near-white in dark
+              // mode → unreadable on amber).
+              color: '#25313F',
               border: '1px solid',
+              borderColor: base.accent,
               '&:hover': {
-                borderColor: base.accent,
-                backgroundColor: alpha(base.accent, 0.08),
+                borderColor: darken(base.accent, 0.08),
+                backgroundColor: darken(base.accent, 0.08),
               },
             },
           },
@@ -247,17 +264,19 @@ export function buildTheme({
           contained: {
             color: base.lightText,
           },
-          // outlinedYellow:{
-
-          // },
-          // i want to make new varaint outlined yellow extend outline and have yellow border and text
-
           text: {
             color: textPrimary,
           },
+          // Primary CTA. White text on raw teal #1ABC9C is ~2.4:1 (fails WCAG AA),
+          // so the fill is the darker `ctaTeal` (~4.8:1 with pure #FFFFFF) in both
+          // light and dark mode (the fill color is the same regardless of page bg).
           containedPrimary: {
+            backgroundColor: ctaTeal,
+            color: '#FFFFFF',
             boxShadow: `0 8px 18px ${alpha(primaryMain, 0.25)}`,
-            color: base.lightText,
+            '&:hover': {
+              backgroundColor: ctaTealHover,
+            },
           },
           outlined: {
             borderColor: alpha(primaryMain, 0.5),
@@ -265,14 +284,27 @@ export function buildTheme({
           },
         },
       },
+      // Strong, brand-colored focus ring for keyboard users across every
+      // button/icon-button/link-button (WCAG 2.4.7) — the default ring is faint
+      // on the teal/amber surfaces.
+      MuiButtonBase: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focusVisible': {
+              outline: `3px solid ${mode === 'light' ? tealText : secondaryMain}`,
+              outlineOffset: 2,
+            },
+          },
+        },
+      },
       MuiLink: {
         styleOverrides: {
           root: {
-            color: primaryMain,
+            color: tealText,
             textDecoration: 'none',
             transition: '0.3s',
             '&:hover': {
-              color: primaryDark,
+              color: mode === 'light' ? darken(primaryMain, 0.45) : primaryLight,
             },
           },
         },
@@ -352,12 +384,12 @@ export function buildTheme({
         styleOverrides: {
           switchBase: {
             '&.Mui-checked': {
-              // Honor direction: the thumb must travel toward the inline-end,
-              // which is negative-X in RTL.
-              transform:
-                direction === 'rtl'
-                  ? 'translateX(-20px)'
-                  : 'translateX(20px)',
+              // Always write the LTR value. The RTL emotion cache
+              // (stylis-plugin-rtl) flips `translateX(20px)` -> `translateX(-20px)`
+              // for Arabic. Hard-coding the negative value for RTL here used to
+              // get flipped a SECOND time by the plugin, so the thumb overshot
+              // and slid out of the track.
+              transform: 'translateX(20px)',
               color: primaryMain,
               '+ .MuiSwitch-track': {
                 backgroundColor: alpha(primaryMain, 0.5),

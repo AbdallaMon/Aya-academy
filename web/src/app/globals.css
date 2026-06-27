@@ -1,3 +1,9 @@
+/* Arabic display fonts for certificate templates (heading / student name /
+   body fonts the admin can pick per template). Loaded once globally so both
+   the live preview and the printable certificate render with the chosen font.
+   Must precede every other rule per the CSS @import spec. */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;700;900&family=Reem+Kufi:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Markazi+Text:wght@400;700&display=swap');
+
 html,
 body {
   max-width: 100vw;
@@ -7,7 +13,7 @@ body {
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), 'Cairo', Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -26,5 +32,32 @@ a {
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
+  }
+}
+
+/* Splash/loading screen — gentle logo pulse while the page opens. */
+@keyframes ayaPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.82;
+  }
+}
+
+/* Respect the user's "reduce motion" OS setting for CSS animations/transitions
+   (the ayaPulse splash + any others). framer-motion is handled separately via
+   <MotionConfig reducedMotion="user"> in AppProviders. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
