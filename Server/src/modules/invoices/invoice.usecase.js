@@ -7,18 +7,16 @@ import {
 } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
+import { priceForPeriod, roundMoney } from "../../shared/utility/pricing.js";
 import { userRepo } from "../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { subscriptionRepo } from "../subscriptions/subscription.repo.js";
 import { subscriptionUsecase } from "../subscriptions/subscription.usecase.js";
 import { paymentTemplateUsecase } from "../paymentTemplates/paymentTemplate.usecase.js";
+import { settingsUsecase } from "../settings/settings.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { invoiceRepo } from "./invoice.repo.js";
 import { invoiceMessagesCodes } from "./invoice.messages.js";
-
-function round2(value) {
-  return Math.round((Number(value) || 0) * 100) / 100;
-}
 
 class InvoiceUsecase {
   /** Stable, human-friendly invoice number derived from the subscription id. */
@@ -27,43 +25,67 @@ class InvoiceUsecase {
   }
 
   /**
-   * Compute the snapshot amounts for a subscription. Hours/rate/subtotal come
-   * straight from the subscription (the charged amount is authoritative); the
-   * transfer fee comes from the template; previous credit/debt are admin figures.
+   * Compute the snapshot amounts for a subscription. Hours/subtotal come straight
+   * from the subscription (the charged amount is authoritative); the hourly rate
+   * and currency come from the single global settings; the transfer fee comes
+   * from the template; previous credit/debt are admin figures.
    */
-  async computeAmounts(subscription, adjust, template) {
+  async computeAmounts(subscription, adjust, template, settings) {
     const hours = subscription.totalHours ?? null;
-    const subtotal = round2(subscription.priceCharged ?? 0);
+    const subtotal = roundMoney(subscription.priceCharged ?? 0);
 
-    let hourlyRate = null;
-    if (subscription.planId) {
-      const plan = await planRepo.getById(subscription.planId);
-      if (plan?.hourlyRate != null) hourlyRate = round2(plan.hourlyRate);
-    }
-    if (hourlyRate == null && hours) hourlyRate = round2(subtotal / hours);
+    let hourlyRate = settings?.hourlyRate != null ? roundMoney(settings.hourlyRate) : null;
+    if (hourlyRate == null && hours) hourlyRate = roundMoney(subtotal / hours);
 
     const fees = template?.configJson?.fees ?? {};
-    const transferFee = round2(
+    const transferFee = roundMoney(
       subtotal * (Number(fees.transferFeePercent) || 0) / 100 +
         (Number(fees.transferFeeFixed) || 0),
     );
 
-    const freeHours = round2(adjust?.freeHours ?? 0);
-    const previousCredit = round2(adjust?.previousCredit ?? 0);
-    const previousDebt = round2(adjust?.previousDebt ?? 0);
+    const previousCredit = roundMoney(adjust?.previousCredit ?? 0);
+    const previousDebt = roundMoney(adjust?.previousDebt ?? 0);
 
-    const total = round2(subtotal + transferFee + previousDebt - previousCredit);
+    const total = roundMoney(subtotal + transferFee + previousDebt - previousCredit);
 
     return {
-      currency: subscription.currency ?? "GBP",
+      currency: settings?.currency ?? subscription.currency ?? "USD",
       hours,
       hourlyRate,
       subtotal,
       transferFee,
       total,
-      freeHours,
       previousCredit,
       previousDebt,
+    };
+  }
+
+  /**
+   * Render-only discount snapshot for the invoice: the pre-discount base price
+   * for the subscription's cycle, the discount amount, and the coupon that was
+   * applied. Stored under `configJson.discount` so the printable document can
+   * show the full discount breakdown even if the plan price changes later.
+   */
+  async computeDiscountSnapshot(subscription, hourlyRate, plan) {
+    if (!subscription?.planId || subscription.priceCharged == null) return null;
+    const planRow = plan ?? (await planRepo.getById(subscription.planId));
+    if (!planRow) return null;
+
+    const base = roundMoney(
+      priceForPeriod(planRow, subscription.billingPeriod, hourlyRate),
+    );
+    const net = roundMoney(subscription.priceCharged);
+    const amount = roundMoney(Math.max(0, base - net));
+    if (amount <= 0) return null;
+
+    const coupon = subscription.coupon ?? null;
+    return {
+      base,
+      amount,
+      code: coupon?.code ?? null,
+      type: coupon?.type ?? null,
+      value: coupon != null ? Number(coupon.value) : null,
+      billingPeriod: subscription.billingPeriod ?? null,
     };
   }
 
@@ -98,22 +120,30 @@ class InvoiceUsecase {
     }
 
     const template = await paymentTemplateUsecase.get(authUser);
+    const settings = await settingsUsecase.getEffective();
     const existing = await invoiceRepo.getBySubscriptionId(subscriptionId);
 
     const amounts = await this.computeAmounts(
       subscription,
       {
-        freeHours: existing?.freeHours,
         previousCredit: existing?.previousCredit,
         previousDebt: existing?.previousDebt,
       },
       template,
+      settings,
     );
+
+    // Snapshot the discount breakdown alongside the copied template config.
+    const discount = await this.computeDiscountSnapshot(
+      subscription,
+      Number(settings.hourlyRate),
+    );
+    const configJson = { ...template.configJson, discount };
 
     if (existing) {
       const updated = await invoiceRepo.update(existing.id, {
         ...amounts,
-        configJson: template.configJson,
+        configJson,
         dueDate: this.computeDueDate(existing.issueDate, template),
       });
       return { invoice: updated, regenerated: true };
@@ -125,12 +155,54 @@ class InvoiceUsecase {
       invoiceNumber: this.invoiceNumberFor(subscriptionId),
       status: INVOICE_STATUSES.UNPAID,
       ...amounts,
-      configJson: template.configJson,
+      configJson,
       issueDate,
       dueDate: this.computeDueDate(issueDate, template),
       createdById: authUser.id,
     });
     return { invoice: created, regenerated: false };
+  }
+
+  /**
+   * System-initiated invoice creation (no admin gate) — used by the public
+   * family-enrollment flow. Always creates a fresh UNPAID invoice for a
+   * just-created subscription. `template` + `settings` are passed in (loaded
+   * once by the caller); `plan` lets us skip a DB read inside the caller's tx.
+   * Pass `tx` to run inside the caller's transaction.
+   */
+  async generateForSubscription(
+    subscription,
+    { template, settings, plan, createdById = null, tx } = {},
+  ) {
+    if (!subscription || subscription.priceCharged == null) return null;
+
+    const amounts = await this.computeAmounts(
+      subscription,
+      { previousCredit: 0, previousDebt: 0 },
+      template,
+      settings,
+    );
+    const discount = await this.computeDiscountSnapshot(
+      subscription,
+      Number(settings.hourlyRate),
+      plan,
+    );
+    const configJson = { ...template.configJson, discount };
+    const issueDate = new Date();
+
+    return invoiceRepo.create(
+      {
+        subscriptionId: subscription.id,
+        invoiceNumber: this.invoiceNumberFor(subscription.id),
+        status: INVOICE_STATUSES.UNPAID,
+        ...amounts,
+        configJson,
+        issueDate,
+        dueDate: this.computeDueDate(issueDate, template),
+        createdById,
+      },
+      tx,
+    );
   }
 
   async getById(authUser, id) {
@@ -186,7 +258,14 @@ class InvoiceUsecase {
     if (!existing) throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
 
     const data = {};
-    if (input.configJson !== undefined) data.configJson = input.configJson;
+    if (input.configJson !== undefined) {
+      // Keep the render-only discount snapshot even if the edit form omits it.
+      data.configJson = {
+        ...input.configJson,
+        discount:
+          input.configJson.discount ?? existing.configJson?.discount ?? null,
+      };
+    }
     if (input.notes !== undefined) data.notes = input.notes;
     if (input.billingPeriodLabel !== undefined) {
       data.billingPeriodLabel = input.billingPeriodLabel;
@@ -197,28 +276,25 @@ class InvoiceUsecase {
     // If any financial figure changed, recompute the dependent amounts using the
     // invoice's own (possibly overridden) fees and the immutable subtotal.
     const figuresChanged =
-      input.freeHours !== undefined ||
       input.previousCredit !== undefined ||
       input.previousDebt !== undefined ||
       input.configJson !== undefined;
 
     if (figuresChanged) {
-      const freeHours = round2(input.freeHours ?? existing.freeHours);
-      const previousCredit = round2(
+      const previousCredit = roundMoney(
         input.previousCredit ?? existing.previousCredit,
       );
-      const previousDebt = round2(input.previousDebt ?? existing.previousDebt);
-      const subtotal = round2(existing.subtotal);
+      const previousDebt = roundMoney(input.previousDebt ?? existing.previousDebt);
+      const subtotal = roundMoney(existing.subtotal);
       const fees = (data.configJson ?? existing.configJson)?.fees ?? {};
-      const transferFee = round2(
+      const transferFee = roundMoney(
         subtotal * (Number(fees.transferFeePercent) || 0) / 100 +
           (Number(fees.transferFeeFixed) || 0),
       );
-      data.freeHours = freeHours;
       data.previousCredit = previousCredit;
       data.previousDebt = previousDebt;
       data.transferFee = transferFee;
-      data.total = round2(subtotal + transferFee + previousDebt - previousCredit);
+      data.total = roundMoney(subtotal + transferFee + previousDebt - previousCredit);
     }
 
     const becomingPaid =

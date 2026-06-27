@@ -13,7 +13,6 @@ export class InvoiceValidation {
   // they always derive from the subscription.
   static updateSchema = z.object({
     configJson: paymentTemplateConfigSchema.optional(),
-    freeHours: z.coerce.number().min(0).optional(),
     previousCredit: z.coerce.number().min(0).optional(),
     previousDebt: z.coerce.number().min(0).optional(),
     notes: z.string().optional(),

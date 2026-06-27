@@ -32,8 +32,11 @@ class InvoiceRepo {
     return toInvoice(row);
   }
 
-  async create(data) {
-    const row = await prisma.invoice.create({ data, select: invoiceSelect });
+  async create(data, client) {
+    const row = await (client ?? prisma).invoice.create({
+      data,
+      select: invoiceSelect,
+    });
     return toInvoice(row);
   }
 

@@ -1,19 +1,8 @@
 import { messagesNames } from "@aya/shared";
 import { ok, created } from "../../shared/http/response.js";
-import { badRequest } from "../../shared/errors/AppError.js";
+import { idParam, authUser } from "../../shared/http/params.js";
 import { invoiceUsecase } from "./invoice.usecase.js";
 import { invoiceMessagesCodes } from "./invoice.messages.js";
-
-function authUser(req) {
-  return req.auth;
-}
-
-function idParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) throw badRequest();
-  return n;
-}
 
 class InvoiceController {
   list = async (req, res) => {

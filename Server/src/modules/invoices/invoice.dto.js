@@ -26,15 +26,21 @@ const invoicePlanSelect = {
   id: true,
   titleAr: true,
   titleEn: true,
+};
+
+const invoiceCouponSelect = {
+  id: true,
+  code: true,
+  type: true,
+  value: true,
   billingPeriod: true,
-  hourlyRate: true,
-  currency: true,
 };
 
 const invoiceSubscriptionSelect = {
   id: true,
   studentId: true,
   planId: true,
+  billingPeriod: true,
   status: true,
   startDate: true,
   endDate: true,
@@ -44,6 +50,7 @@ const invoiceSubscriptionSelect = {
   priceCharged: true,
   student: { select: invoiceStudentSelect },
   plan: { select: invoicePlanSelect },
+  coupon: { select: invoiceCouponSelect },
 };
 
 export const invoiceSelect = {
@@ -57,7 +64,6 @@ export const invoiceSelect = {
   subtotal: true,
   transferFee: true,
   total: true,
-  freeHours: true,
   previousCredit: true,
   previousDebt: true,
   configJson: true,
@@ -82,7 +88,6 @@ export function toInvoice(row) {
     subtotal: toNum(rest.subtotal),
     transferFee: toNum(rest.transferFee),
     total: toNum(rest.total),
-    freeHours: toNum(rest.freeHours),
     previousCredit: toNum(rest.previousCredit),
     previousDebt: toNum(rest.previousDebt),
   };
@@ -112,7 +117,7 @@ export function toInvoice(row) {
       ...subRest,
       priceCharged: toNum(subRest.priceCharged),
       student: subStudent,
-      plan: plan ? { ...plan, hourlyRate: toNum(plan.hourlyRate) } : plan,
+      plan,
     },
   };
 }
