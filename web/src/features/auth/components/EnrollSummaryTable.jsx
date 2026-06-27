@@ -18,25 +18,18 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { formatMoney } from "../../../shared/lib/money.js";
+import { resolveCoupon } from "../../../shared/lib/couponPricing.js";
 
-/** Resolve the {base, net, discountAmount, currency} a child will be charged. */
+/** Resolve the {plan, base, net, discountAmount, currency} a child will be charged. */
 function priceFor(child, plans) {
   const plan = plans.find((p) => p.id === child.planId);
   if (!plan) return null;
-  const cycle = child.billingPeriod === "YEARLY" ? plan.yearly : plan.monthly;
-  const base = cycle?.base ?? 0;
-  // valid typed coupon → its quoted net; otherwise the plan's auto-effective.
-  const net =
-    child.coupon?.status === "valid" && child.coupon.quote?.net != null
-      ? child.coupon.quote.net
-      : cycle?.effective ?? base;
-  return {
+  const { base, net, discountAmount, currency } = resolveCoupon(
     plan,
-    base,
-    net,
-    discountAmount: Math.max(0, base - net),
-    currency: plan.currency,
-  };
+    child.billingPeriod,
+    child.coupon,
+  );
+  return { plan, base, net, discountAmount, currency };
 }
 
 /** One label:value row used in the mobile card layout. */

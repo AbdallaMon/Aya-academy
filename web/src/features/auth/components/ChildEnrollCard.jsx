@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   Divider,
   Grid,
   Stack,
@@ -16,11 +15,8 @@ import {
   Typography,
 } from "@mui/material";
 import PlanRadioCards from "./PlanRadioCards.jsx";
-import CouponField from "./CouponField.jsx";
-import { PasswordField } from "../../../shared/components/index.js";
-import { useRequest } from "../../../hooks/request/useRequest.js";
-import { PLAN_QUOTE_URL } from "../config/constant.js";
-import { formatMoney } from "../../../shared/lib/money.js";
+import { PasswordField, CouponControl } from "../../../shared/components/index.js";
+import { initialCoupon } from "../../../shared/lib/couponPricing.js";
 
 export default function ChildEnrollCard({
   index,
@@ -33,88 +29,21 @@ export default function ChildEnrollCard({
   txt,
   lng,
 }) {
-  const quoteReq = useRequest({
-    url: PLAN_QUOTE_URL,
-    method: "post",
-    isPublic: true,
-    syncToUrl: false,
-  });
-
-  const coupon = child.coupon || {
-    code: "",
-    status: "idle",
-    reason: null,
-    quote: null,
-  };
-
-  // The plan may carry its own (auto-applied) coupon for the chosen cycle. When
-  // it does we surface it as a LOCKED chip — it follows plan/cycle changes and
-  // the parent can't remove it. The server applies it automatically, so we never
-  // send it as a typed couponCode.
   const selectedPlan = plans.find((p) => p.id === child.planId) || null;
-  const cycle = selectedPlan
-    ? child.billingPeriod === "YEARLY"
-      ? selectedPlan.yearly
-      : selectedPlan.monthly
-    : null;
-  const planCoupon = cycle?.discount?.code ? cycle.discount : null;
-  const planCouponLabel =
-    planCoupon &&
-    (planCoupon.type === "PERCENT"
-      ? `-${planCoupon.value}%`
-      : `-${formatMoney(planCoupon.value, selectedPlan.currency)}`);
 
   const setField = (key) => (e) => onChange({ [key]: e.target.value });
 
+  // Selecting a plan / switching the cycle resets the coupon to that plan's
+  // removable default (its own coupon, if any) for the new context.
   const handleBilling = (_e, value) => {
     if (!value) return;
-    // Changing the cycle invalidates any applied coupon.
-    onChange({
-      billingPeriod: value,
-      coupon: { ...coupon, status: "idle", reason: null, quote: null },
-    });
+    onChange({ billingPeriod: value, coupon: initialCoupon(selectedPlan, value) });
   };
 
   const handleSelectPlan = (planId) => {
-    // Changing the plan invalidates any applied coupon.
-    onChange({
-      planId,
-      coupon: { ...coupon, status: "idle", reason: null, quote: null },
-    });
+    const plan = plans.find((p) => p.id === planId) || null;
+    onChange({ planId, coupon: initialCoupon(plan, child.billingPeriod) });
   };
-
-  const verifyCoupon = async () => {
-    if (!child.planId) return;
-    try {
-      const res = await quoteReq.fetchData(null, {
-        planId: child.planId,
-        billingPeriod: child.billingPeriod,
-        couponCode: coupon.code.trim(),
-      });
-      const data = res?.data;
-      if (data?.couponValid) {
-        onChange({
-          coupon: { ...coupon, status: "valid", reason: null, quote: data },
-        });
-      } else {
-        onChange({
-          coupon: {
-            ...coupon,
-            status: "invalid",
-            reason: data?.reason || null,
-            quote: null,
-          },
-        });
-      }
-    } catch {
-      onChange({
-        coupon: { ...coupon, status: "invalid", reason: null, quote: null },
-      });
-    }
-  };
-
-  const removeCoupon = () =>
-    onChange({ coupon: { code: "", status: "idle", reason: null, quote: null } });
 
   return (
     <Card variant="outlined" sx={{ borderRadius: 3 }}>
@@ -232,46 +161,16 @@ export default function ChildEnrollCard({
           </Typography>
         )}
 
-        <Box sx={{ mt: 2 }}>
-          {planCoupon ? (
-            <Alert severity="success" icon={false}>
-              <Stack spacing={0.5}>
-                <Typography fontWeight={700}>{txt.planCouponTitle}</Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  flexWrap="wrap"
-                  useFlexGap
-                >
-                  <Chip size="small" color="success" label={planCoupon.code} />
-                  {planCouponLabel && (
-                    <Chip size="small" color="error" label={planCouponLabel} />
-                  )}
-                  <Typography variant="caption" color="text.secondary">
-                    {txt.planCouponNote}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Alert>
-          ) : (
-            <CouponField
-              code={coupon.code}
-              status={coupon.status}
-              reason={coupon.reason}
-              net={coupon.quote?.net ?? null}
-              currency={coupon.quote?.currency}
-              disabled={!child.planId}
-              verifying={quoteReq.isLoading}
-              onCodeChange={(value) =>
-                onChange({ coupon: { ...coupon, code: value } })
-              }
-              onVerify={verifyCoupon}
-              onRemove={removeCoupon}
-              txt={txt}
+        {child.planId && (
+          <Box sx={{ mt: 2 }}>
+            <CouponControl
+              plan={selectedPlan}
+              billingPeriod={child.billingPeriod}
+              coupon={child.coupon}
+              onCoupon={(c) => onChange({ coupon: c })}
             />
-          )}
-        </Box>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

@@ -125,11 +125,11 @@ class PlanUsecase {
   }
 
   /**
-   * Public price quote for one plan/cycle with an optional coupon code. Mirrors
-   * `subscriptionUsecase.computePricing` (best of auto plan-coupon vs typed code)
-   * but NEVER throws on an invalid code — it reports `{couponValid:false,reason}`
-   * so the registration wizard can show an inline error. Money stays
-   * server-authoritative; the client only previews.
+   * Public price quote for verifying a coupon CODE against one plan/cycle. The
+   * discount is driven solely by the supplied code (the plan's own coupon is the
+   * UI's removable default, surfaced via `/plans/public`, not auto-applied here).
+   * Never throws on an invalid code — reports `{couponValid:false, reason}` so the
+   * UI can show an inline error. Money stays server-authoritative (preview only).
    */
   async quote({ planId, billingPeriod, couponCode }) {
     const plan = await planRepo.getByIdWithCoupons(planId);
@@ -137,63 +137,53 @@ class PlanUsecase {
 
     const settings = await settingsUsecase.getEffective();
     const hourlyRate = Number(settings.hourlyRate);
-    const now = new Date();
     const base = roundMoney(priceForPeriod(plan, billingPeriod, hourlyRate));
 
-    // (1) best active plan-linked coupon for this cycle (auto-applied)
-    const linked = (plan.coupons ?? [])
-      .map((link) => link.coupon)
-      .filter(Boolean);
-    let net = base;
-    let applied = null;
-    for (const coupon of linked) {
-      if (!isCouponActive(coupon, now)) continue;
-      if (!couponAppliesToPeriod(coupon, billingPeriod)) continue;
-      const candidate = roundMoney(applyDiscount(base, coupon));
-      if (candidate < net) {
-        net = candidate;
-        applied = { type: coupon.type, value: Number(coupon.value), code: coupon.code };
-      }
+    // No code → base price (no discount).
+    if (!couponCode) {
+      return {
+        currency: settings.currency,
+        base,
+        net: base,
+        discount: null,
+        couponValid: null,
+        reason: null,
+      };
     }
 
-    // (2) typed coupon code, if supplied
-    let couponValid = null;
-    let reason = null;
-    if (couponCode) {
-      const result = await couponUsecase.validateCoupon({
-        code: couponCode,
-        planId,
-        billingPeriod,
-      });
-      if (!result.valid) {
-        couponValid = false;
-        reason = result.reason;
-      } else {
-        couponValid = true;
-        const candidate = roundMoney(
-          applyDiscount(base, {
-            type: result.discount.type,
-            value: result.discount.value,
-          }),
-        );
-        if (candidate < net) {
-          net = candidate;
-          applied = {
-            type: result.discount.type,
-            value: result.discount.value,
-            code: couponCode,
-          };
-        }
-      }
+    const result = await couponUsecase.validateCoupon({
+      code: couponCode,
+      planId,
+      billingPeriod,
+    });
+    if (!result.valid) {
+      return {
+        currency: settings.currency,
+        base,
+        net: base,
+        discount: null,
+        couponValid: false,
+        reason: result.reason,
+      };
     }
 
+    const net = roundMoney(
+      applyDiscount(base, {
+        type: result.discount.type,
+        value: result.discount.value,
+      }),
+    );
     return {
       currency: settings.currency,
       base,
-      net: roundMoney(net),
-      discount: applied,
-      couponValid,
-      reason,
+      net,
+      discount: {
+        type: result.discount.type,
+        value: result.discount.value,
+        code: couponCode,
+      },
+      couponValid: true,
+      reason: null,
     };
   }
 

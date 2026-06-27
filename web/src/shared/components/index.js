@@ -9,6 +9,7 @@ export { default as RHFSelect } from "./forms/rhf/RHFSelect.jsx";
 export { default as RHFSwitch } from "./forms/rhf/RHFSwitch.jsx";
 export { default as RHFPhoneField } from "./forms/rhf/RHFPhoneField.jsx";
 export { default as PasswordField } from "./forms/PasswordField.jsx";
+export { default as CouponControl } from "./CouponControl.jsx";
 
 // ── Tables ───────────────────────────────────────────────────────────────────
 export { DataTable, default as DataTableDefault } from "./tables/DataTable.jsx";

@@ -22,6 +22,7 @@ import { ENROLL_URL, PLANS_PUBLIC_URL } from "../config/constant.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
+import { resolveCoupon } from "../../../shared/lib/couponPricing.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -145,19 +146,20 @@ export default function RegisterWizard() {
         phone: parent.phone.trim(),
         locale: lng === "en" ? "en" : "ar",
       },
-      children: children.map((c) => ({
-        name: c.name.trim(),
-        email: c.email.trim(),
-        password: c.password,
-        nickname: c.nickname.trim() || undefined,
-        birthDate: c.birthDate || undefined,
-        planId: c.planId,
-        billingPeriod: c.billingPeriod,
-        couponCode:
-          c.coupon?.status === "valid" && c.coupon.code.trim()
-            ? c.coupon.code.trim()
-            : undefined,
-      })),
+      children: children.map((c) => {
+        const plan = plans.find((p) => p.id === c.planId) || null;
+        const { codeToSend } = resolveCoupon(plan, c.billingPeriod, c.coupon);
+        return {
+          name: c.name.trim(),
+          email: c.email.trim(),
+          password: c.password,
+          nickname: c.nickname.trim() || undefined,
+          birthDate: c.birthDate || undefined,
+          planId: c.planId,
+          billingPeriod: c.billingPeriod,
+          couponCode: codeToSend,
+        };
+      }),
     };
     try {
       await enrollReq.fetchData(null, payload);
