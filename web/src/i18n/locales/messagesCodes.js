@@ -12,11 +12,10 @@ import {
   authMessagesCodes,
   generalMessagesCodes,
   userMessagesCodes,
+  backupMessagesCodes,
   planMessagesCodes,
   couponMessagesCodes,
   subscriptionMessagesCodes,
-  sessionMessagesCodes,
-  quranMessagesCodes,
   gameMessagesCodes,
   reportMessagesCodes,
   quizMessagesCodes,
@@ -29,6 +28,7 @@ import {
   attachmentMessagesCodes,
   invoiceMessagesCodes,
   paymentTemplateMessagesCodes,
+  settingsMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 
@@ -55,6 +55,7 @@ const ar = {
   // ── auth-messages ─────────────────────────────────────────────────────────
   [messagesNames.authMessages]: {
     [authMessagesCodes.REGISTERED_SUCCESS]: "تم إنشاء الحساب بنجاح",
+    [authMessagesCodes.ENROLLED_SUCCESS]: "تم التسجيل بنجاح، يمكنك تسجيل الدخول الآن",
     [authMessagesCodes.LOGIN_SUCCESS]: "تم تسجيل الدخول بنجاح",
     [authMessagesCodes.LOGOUT_SUCCESS]: "تم تسجيل الخروج",
     [authMessagesCodes.TOKEN_REFRESHED]: "تم تحديث الجلسة",
@@ -71,8 +72,15 @@ const ar = {
     [authMessagesCodes.INVALID_EMAIL]: "بريد إلكتروني غير صالح",
     [authMessagesCodes.PASSWORD_REQUIRED]: "كلمة المرور مطلوبة",
     [authMessagesCodes.PASSWORD_TOO_SHORT]: "كلمة المرور قصيرة جداً",
+    [authMessagesCodes.PHONE_REQUIRED]: "رقم الهاتف مطلوب",
+    [authMessagesCodes.INVALID_PHONE]: "رقم هاتف غير صالح",
     [authMessagesCodes.BACK_TO_LOGIN]: "العودة لتسجيل الدخول",
     [authMessagesCodes.BACK_TO_DASHBOARD]: "العودة للوحة التحكم",
+    [authMessagesCodes.CHILD_EMAIL_DUPLICATE]: "هناك بريد إلكتروني مكرر بين الأبناء في نفس الطلب",
+    [authMessagesCodes.CHILD_EMAIL_EXISTS]: "البريد الإلكتروني لأحد الأبناء مستخدم بالفعل",
+    [authMessagesCodes.NO_CHILDREN]: "يجب إضافة ابن واحد على الأقل",
+    [authMessagesCodes.PLAN_REQUIRED]: "يجب اختيار خطة لكل ابن",
+    [authMessagesCodes.COUPON_INVALID_FOR_PLAN]: "الكوبون غير صالح للخطة أو الدورة المختارة",
   },
   // ── user-messages ─────────────────────────────────────────────────────────
   [messagesNames.userMessages]: {
@@ -134,24 +142,6 @@ const ar = {
     [subscriptionMessagesCodes.COUPON_INVALID]: "كوبون غير صالح",
     [subscriptionMessagesCodes.CANNOT_CANCEL]: "لا يمكن إلغاء هذا الاشتراك",
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: "تم إلغاء الاشتراك",
-  },
-  // ── session-messages ──────────────────────────────────────────────────────
-  [messagesNames.sessionMessages]: {
-    [sessionMessagesCodes.SESSION_NOT_FOUND]: "الجلسة غير موجودة",
-    [sessionMessagesCodes.STUDENT_REQUIRED]: "الطالب مطلوب",
-    [sessionMessagesCodes.INVALID_TIME_RANGE]: "نطاق الوقت غير صالح",
-    [sessionMessagesCodes.CANNOT_ACCESS_SESSION]: "لا يمكنك الوصول لهذه الجلسة",
-    [sessionMessagesCodes.PLAN_REQUIRED]: "يجب تحديد واجب أو تكليف واحد على الأقل",
-    [sessionMessagesCodes.SURAH_NOT_FOUND]: "السورة غير موجودة",
-    [sessionMessagesCodes.INVALID_AYAH_RANGE]: "نطاق الآيات غير صالح",
-  },
-  // ── quran-messages ────────────────────────────────────────────────────────
-  [messagesNames.quranMessages]: {
-    [quranMessagesCodes.STUDENT_NOT_FOUND]: "الطالب غير موجود",
-    [quranMessagesCodes.JUZ_NOT_FOUND]: "الجزء غير موجود",
-    [quranMessagesCodes.SEGMENT_NOT_IN_JUZ]: "السورة لا تنتمي لهذا الجزء",
-    [quranMessagesCodes.INVALID_AYAH_RANGE]: "نطاق الآيات غير صالح",
-    [quranMessagesCodes.CANNOT_ACCESS_PROGRESS]: "لا يمكنك الوصول لهذا التقدم",
   },
   // ── game-messages ─────────────────────────────────────────────────────────
   [messagesNames.gameMessages]: {
@@ -279,6 +269,118 @@ const ar = {
   [messagesNames.paymentTemplateMessages]: {
     [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "تم حفظ إعدادات قالب الفاتورة",
   },
+  [messagesNames.settingsMessages]: {
+    [settingsMessagesCodes.SETTINGS_UPDATED]: "تم حفظ الإعدادات",
+    [settingsMessagesCodes.INVALID_CURRENCY]: "عملة غير صالحة",
+    [settingsMessagesCodes.INVALID_HOURLY_RATE]: "سعر ساعة غير صالح",
+  },
+  // ── backup-messages ───────────────────────────────────────────────────────
+  [messagesNames.backupMessages]: {
+    // backup + restore
+    [backupMessagesCodes.NOT_FOUND]: "النسخة الاحتياطية غير موجودة.",
+    [backupMessagesCodes.CREATED]: "تم إنشاء النسخة الاحتياطية بنجاح.",
+    [backupMessagesCodes.FAILED]: "فشل إنشاء النسخة الاحتياطية.",
+    [backupMessagesCodes.FILE_MISSING]:
+      "ملف النسخة الاحتياطية غير متوفّر على الجهاز.",
+    [backupMessagesCodes.RESTORE_DONE]: "تم استرجاع قاعدة البيانات بنجاح.",
+    [backupMessagesCodes.RESTORE_FAILED]: "فشل استرجاع قاعدة البيانات.",
+    [backupMessagesCodes.RESTORE_CONFIRM_REQUIRED]:
+      "هذه عملية مدمّرة — يجب تأكيدها صراحةً قبل التنفيذ.",
+    [backupMessagesCodes.DB_CONNECT_FAILED]:
+      "تعذّر الاتصال بقاعدة البيانات لإنشاء النسخة الاحتياطية — تأكّد من تشغيل MySQL وصحّة DATABASE_URL.",
+    [backupMessagesCodes.RESTORE_DB_CONNECT_FAILED]:
+      "تعذّر الاتصال بقاعدة البيانات لاسترجاع النسخة — تأكّد من تشغيل MySQL وصحّة DATABASE_URL.",
+    [backupMessagesCodes.OPERATION_IN_PROGRESS]:
+      "توجد عملية نسخ أو استرجاع جارية — انتظر حتى تنتهي ثم أعد المحاولة.",
+    [backupMessagesCodes.RESTORE_SOURCE_UNAVAILABLE]:
+      "لا توجد نسخة قابلة للاسترجاع (الملف مفقود محليًا وعلى Drive).",
+    [backupMessagesCodes.DELETED]: "تم حذف النسخة الاحتياطية.",
+
+    // per-row restore-blocked reasons
+    [backupMessagesCodes.FILE_MISSING_LOCAL]:
+      "الملف المحلي لهذه النسخة محذوف ولا يوجد حساب Drive مرتبط لاستعادته.",
+    [backupMessagesCodes.NO_LINKED_ACCOUNT]:
+      "لا يوجد حساب Google Drive مرتبط ومتصل بهذه النسخة لاستعادة ملفها.",
+    [backupMessagesCodes.STORAGE_KEY_MISSING]:
+      "لا يوجد مرجع تخزين لهذه النسخة — لا يمكن تحديد موضع ملفها.",
+    [backupMessagesCodes.NOT_SUCCESSFUL]:
+      "هذه النسخة لم تكتمل بنجاح — لا يوجد ملف قابل للاسترجاع.",
+
+    // schema check + external restore
+    [backupMessagesCodes.RESTORE_SCHEMA_MISMATCH]:
+      "بنية الملف لا تطابق قاعدة البيانات الحالية — لا يمكن الاسترجاع.",
+    [backupMessagesCodes.RESTORE_EXTERNAL_INVALID_KEY]:
+      "مفتاح التشفير غير صالح (يجب أن يكون 32 بايت بعد فكّ base64).",
+    [backupMessagesCodes.RESTORE_EXTERNAL_DECRYPT_FAILED]:
+      "تعذّر فكّ تشفير الملف — مفتاح خاطئ أو ملف تالف.",
+    [backupMessagesCodes.RESTORE_EXTERNAL_CHECKED]: "تم فحص الملف بنجاح.",
+    [backupMessagesCodes.EXTERNAL_CHECK_TOKEN_INVALID]:
+      "انتهت صلاحية جلسة الفحص — أعد رفع الملف وافحصه من جديد.",
+    [backupMessagesCodes.EXTERNAL_FILE_REQUIRED]:
+      "يجب اختيار ملف النسخة (.enc) أولًا.",
+    [backupMessagesCodes.EXTERNAL_FILE_INVALID_TYPE]:
+      "صيغة الملف غير مدعومة — يجب ملف بامتداد .enc.",
+    [backupMessagesCodes.EXTERNAL_FILE_TOO_LARGE]:
+      "حجم الملف كبير جدًا (الحدّ الأقصى 200 ميجابايت).",
+
+    // Google Drive (multi-account) + S3
+    [backupMessagesCodes.DRIVE_NOT_CONFIGURED]:
+      "لم يتم ضبط بيانات Google Drive (Client ID/Secret) في الإعدادات.",
+    [backupMessagesCodes.DRIVE_NOT_CONNECTED]:
+      "حساب Google Drive غير مربوط — اربط الحساب أولًا.",
+    [backupMessagesCodes.DRIVE_AUTH_FAILED]:
+      "فشلت مصادقة Google Drive — أعد ربط الحساب.",
+    [backupMessagesCodes.DRIVE_STATE_MISMATCH]:
+      "تعذّر التحقّق من طلب ربط Google Drive (state غير مطابق) — أعد المحاولة من زر الربط.",
+    [backupMessagesCodes.DRIVE_UPLOAD_FAILED]:
+      "فشل رفع النسخة على Google Drive.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_NOT_FOUND]: "الحساب غير موجود.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_HAS_BACKUPS]:
+      "لا يمكن حذف الحساب لوجود نسخ مرتبطة به.",
+    [backupMessagesCodes.DRIVE_RECONNECT_REQUIRED]:
+      "يتطلّب إعادة الاتصال بحساب Google Drive المرتبط بهذه النسخة ثم المحاولة مجددًا.",
+    [backupMessagesCodes.DRIVE_RECONNECT_IDENTITY_MISMATCH]:
+      "الحساب الذي صرّحت به يختلف عن الحساب المطلوب إعادة ربطه.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_REMOVED]: "تم حذف حساب Google Drive.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_ACTIVATED]:
+      "تم تعيين الحساب كحساب مُفعّل للرفع.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_DISCONNECTED]:
+      "تم فصل حساب Google Drive.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_CHECKED]: "تم فحص حالة الاتصال.",
+    [backupMessagesCodes.STORAGE_UPLOAD_FAILED]:
+      "فشل رفع النسخة إلى وجهة التخزين.",
+
+    // encryption keys (EncryptionKey) stored on Drive
+    [backupMessagesCodes.ENCRYPTION_KEY_NOT_FOUND]: "مفتاح التشفير غير موجود.",
+    [backupMessagesCodes.ENCRYPTION_KEY_GENERATED]: "تم توليد مفتاح تشفير جديد.",
+    [backupMessagesCodes.ENCRYPTION_KEY_SAVED]:
+      "تم حفظ مفتاح التشفير على Google Drive.",
+    [backupMessagesCodes.ENCRYPTION_KEY_DELETED]: "تم حذف مفتاح التشفير.",
+    [backupMessagesCodes.ENCRYPTION_KEY_PRIMARY_SET]:
+      "تم تعيين المفتاح الأساسي للنسخ التلقائية.",
+    [backupMessagesCodes.ENCRYPTION_KEY_INVALID]:
+      "مفتاح التشفير غير صالح (يجب أن يكون 32 بايت بعد فكّ base64).",
+    [backupMessagesCodes.KEY_FILE_MISSING]:
+      "ملف المفتاح مفقود على Drive — لا يمكن الاسترجاع بهذا المفتاح.",
+    [backupMessagesCodes.KEY_FINGERPRINT_MISMATCH]:
+      "بصمة ملف المفتاح لا تطابق المتوقّع — المفتاح غير صحيح.",
+    [backupMessagesCodes.NO_PRIMARY_KEY]:
+      "لا يوجد مفتاح تشفير أساسي — أنشئ مفتاحًا وعيّنه أساسيًّا أولًا.",
+
+    // account types + connection state
+    [backupMessagesCodes.ACCOUNT_TYPE_LOCKED]:
+      "نوع الحساب مُثبَّت لوجود بيانات مرتبطة به — لا يمكن تغييره.",
+    [backupMessagesCodes.KEY_ACCOUNT_REQUIRED]:
+      "هذا الإجراء يتطلّب حساب مفاتيح (KEY).",
+    [backupMessagesCodes.DB_ACCOUNT_REQUIRED]:
+      "هذا الإجراء يتطلّب حساب نسخ (DB).",
+    [backupMessagesCodes.KEY_ACCOUNT_DISCONNECTED]:
+      "حساب المفتاح مفصول — أعد ربطه ثم أعد المحاولة.",
+    [backupMessagesCodes.DB_ACCOUNT_DISCONNECTED]:
+      "حساب النسخ (DB) مفصول — أعد ربطه ثم أعد المحاولة.",
+    [backupMessagesCodes.ACCOUNTS_RECONNECT_REQUIRED]:
+      "يتطلّب الاسترجاع إعادة ربط حساب أو أكثر ثم إعادة المحاولة.",
+  },
 };
 
 const en = {
@@ -302,6 +404,7 @@ const en = {
   },
   [messagesNames.authMessages]: {
     [authMessagesCodes.REGISTERED_SUCCESS]: "Account created successfully",
+    [authMessagesCodes.ENROLLED_SUCCESS]: "Registered successfully — you can sign in now",
     [authMessagesCodes.LOGIN_SUCCESS]: "Logged in successfully",
     [authMessagesCodes.LOGOUT_SUCCESS]: "Logged out",
     [authMessagesCodes.TOKEN_REFRESHED]: "Session refreshed",
@@ -318,8 +421,15 @@ const en = {
     [authMessagesCodes.INVALID_EMAIL]: "Invalid email",
     [authMessagesCodes.PASSWORD_REQUIRED]: "Password is required",
     [authMessagesCodes.PASSWORD_TOO_SHORT]: "Password is too short",
+    [authMessagesCodes.PHONE_REQUIRED]: "Phone number is required",
+    [authMessagesCodes.INVALID_PHONE]: "Invalid phone number",
     [authMessagesCodes.BACK_TO_LOGIN]: "Back to login",
     [authMessagesCodes.BACK_TO_DASHBOARD]: "Back to dashboard",
+    [authMessagesCodes.CHILD_EMAIL_DUPLICATE]: "A child email is duplicated within the same request",
+    [authMessagesCodes.CHILD_EMAIL_EXISTS]: "A child email is already registered",
+    [authMessagesCodes.NO_CHILDREN]: "Add at least one child",
+    [authMessagesCodes.PLAN_REQUIRED]: "Select a plan for each child",
+    [authMessagesCodes.COUPON_INVALID_FOR_PLAN]: "The coupon is not valid for the chosen plan or cycle",
   },
   [messagesNames.userMessages]: {
     [userMessagesCodes.USER_NOT_FOUND]: "User not found",
@@ -377,22 +487,6 @@ const en = {
     [subscriptionMessagesCodes.COUPON_INVALID]: "Invalid coupon",
     [subscriptionMessagesCodes.CANNOT_CANCEL]: "This subscription cannot be cancelled",
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: "Subscription cancelled",
-  },
-  [messagesNames.sessionMessages]: {
-    [sessionMessagesCodes.SESSION_NOT_FOUND]: "Session not found",
-    [sessionMessagesCodes.STUDENT_REQUIRED]: "Student is required",
-    [sessionMessagesCodes.INVALID_TIME_RANGE]: "Invalid time range",
-    [sessionMessagesCodes.CANNOT_ACCESS_SESSION]: "You cannot access this session",
-    [sessionMessagesCodes.PLAN_REQUIRED]: "At least one assignment or homework note is required",
-    [sessionMessagesCodes.SURAH_NOT_FOUND]: "Surah not found",
-    [sessionMessagesCodes.INVALID_AYAH_RANGE]: "Invalid ayah range",
-  },
-  [messagesNames.quranMessages]: {
-    [quranMessagesCodes.STUDENT_NOT_FOUND]: "Student not found",
-    [quranMessagesCodes.JUZ_NOT_FOUND]: "Juz not found",
-    [quranMessagesCodes.SEGMENT_NOT_IN_JUZ]: "This surah is not part of this juz",
-    [quranMessagesCodes.INVALID_AYAH_RANGE]: "Invalid ayah range",
-    [quranMessagesCodes.CANNOT_ACCESS_PROGRESS]: "You cannot access this progress",
   },
   [messagesNames.gameMessages]: {
     [gameMessagesCodes.GAME_NOT_FOUND]: "Game not found",
@@ -452,6 +546,10 @@ const en = {
     [certificateMessagesCodes.CERTIFICATE_STUDENT_NOT_FOUND]: "Student not found",
     [certificateMessagesCodes.CERTIFICATE_STUDENT_REQUIRED]: "Student is required",
     [certificateMessagesCodes.CERTIFICATE_TITLE_REQUIRED]: "Certificate title is required",
+    [certificateMessagesCodes.TEMPLATE_NOT_FOUND]: "Template not found",
+    [certificateMessagesCodes.TEMPLATE_KEY_REQUIRED]: "Template key is required",
+    [certificateMessagesCodes.TEMPLATE_KEY_EXISTS]: "Template key already in use",
+    [certificateMessagesCodes.TEMPLATE_NAME_REQUIRED]: "Template name is required",
   },
   [messagesNames.rewardMessages]: {
     [rewardMessagesCodes.REWARD_NOT_FOUND]: "Reward not found",
@@ -499,6 +597,128 @@ const en = {
   },
   [messagesNames.paymentTemplateMessages]: {
     [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "Invoice template settings saved",
+  },
+  [messagesNames.settingsMessages]: {
+    [settingsMessagesCodes.SETTINGS_UPDATED]: "Settings saved",
+    [settingsMessagesCodes.INVALID_CURRENCY]: "Invalid currency",
+    [settingsMessagesCodes.INVALID_HOURLY_RATE]: "Invalid hourly rate",
+  },
+  [messagesNames.attachmentMessages]: {
+    [attachmentMessagesCodes.NO_FILE]: "No file selected",
+    [attachmentMessagesCodes.FILE_TOO_LARGE]: "File is too large",
+    [attachmentMessagesCodes.UNSUPPORTED_TYPE]: "Unsupported file type",
+    [attachmentMessagesCodes.UPLOAD_FAILED]: "File upload failed",
+    [attachmentMessagesCodes.ATTACHMENT_NOT_FOUND]: "File not found",
+    [attachmentMessagesCodes.CANNOT_SET_AVATAR]: "You cannot set this image",
+    [attachmentMessagesCodes.AVATAR_UPDATED]: "Image updated",
+  },
+  // ── backup-messages ───────────────────────────────────────────────────────
+  [messagesNames.backupMessages]: {
+    // Backup + restore
+    [backupMessagesCodes.NOT_FOUND]: "Backup not found.",
+    [backupMessagesCodes.CREATED]: "Backup created successfully.",
+    [backupMessagesCodes.FAILED]: "Backup creation failed.",
+    [backupMessagesCodes.FILE_MISSING]:
+      "The backup file is not available on this machine.",
+    [backupMessagesCodes.RESTORE_DONE]: "Database restored successfully.",
+    [backupMessagesCodes.RESTORE_FAILED]: "Database restore failed.",
+    [backupMessagesCodes.RESTORE_CONFIRM_REQUIRED]:
+      "This is a destructive operation — it must be explicitly confirmed before running.",
+    [backupMessagesCodes.DB_CONNECT_FAILED]:
+      "Could not connect to the database to create the backup — make sure MySQL is running and DATABASE_URL is correct.",
+    [backupMessagesCodes.RESTORE_DB_CONNECT_FAILED]:
+      "Could not connect to the database to restore the backup — make sure MySQL is running and DATABASE_URL is correct.",
+    [backupMessagesCodes.OPERATION_IN_PROGRESS]:
+      "A backup or restore operation is already in progress — wait for it to finish and try again.",
+    [backupMessagesCodes.RESTORE_SOURCE_UNAVAILABLE]:
+      "No restorable backup is available (the file is missing both locally and on Drive).",
+    [backupMessagesCodes.DELETED]: "Backup deleted.",
+
+    // Reasons a restore is unavailable (per row)
+    [backupMessagesCodes.FILE_MISSING_LOCAL]:
+      "The local file for this backup was deleted and there is no linked Drive account to restore it from.",
+    [backupMessagesCodes.NO_LINKED_ACCOUNT]:
+      "No connected Google Drive account is linked to this backup to restore its file.",
+    [backupMessagesCodes.STORAGE_KEY_MISSING]:
+      "This backup has no storage reference — its file location cannot be determined.",
+    [backupMessagesCodes.NOT_SUCCESSFUL]:
+      "This backup did not complete successfully — there is no restorable file.",
+
+    // Schema check + external restore
+    [backupMessagesCodes.RESTORE_SCHEMA_MISMATCH]:
+      "The file structure does not match the current database — restore is not possible.",
+    [backupMessagesCodes.RESTORE_EXTERNAL_INVALID_KEY]:
+      "Invalid encryption key (it must be 32 bytes after base64 decoding).",
+    [backupMessagesCodes.RESTORE_EXTERNAL_DECRYPT_FAILED]:
+      "Could not decrypt the file — wrong key or corrupted file.",
+    [backupMessagesCodes.RESTORE_EXTERNAL_CHECKED]: "File checked successfully.",
+    [backupMessagesCodes.EXTERNAL_CHECK_TOKEN_INVALID]:
+      "The check session expired — re-upload the file and check it again.",
+    [backupMessagesCodes.EXTERNAL_FILE_REQUIRED]:
+      "Please choose the backup file (.enc) first.",
+    [backupMessagesCodes.EXTERNAL_FILE_INVALID_TYPE]:
+      "Unsupported file format — a file with a .enc extension is required.",
+    [backupMessagesCodes.EXTERNAL_FILE_TOO_LARGE]:
+      "The file is too large (maximum 200 MB).",
+
+    // Google Drive (multi-account) + S3
+    [backupMessagesCodes.DRIVE_NOT_CONFIGURED]:
+      "Google Drive credentials (Client ID/Secret) are not configured in settings.",
+    [backupMessagesCodes.DRIVE_NOT_CONNECTED]:
+      "No Google Drive account is connected — connect an account first.",
+    [backupMessagesCodes.DRIVE_AUTH_FAILED]:
+      "Google Drive authentication failed — reconnect the account.",
+    [backupMessagesCodes.DRIVE_STATE_MISMATCH]:
+      "Could not verify the Google Drive connection request (state mismatch) — try again from the connect button.",
+    [backupMessagesCodes.DRIVE_UPLOAD_FAILED]:
+      "Failed to upload the backup to Google Drive.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_NOT_FOUND]: "Account not found.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_HAS_BACKUPS]:
+      "The account cannot be deleted because backups are linked to it.",
+    [backupMessagesCodes.DRIVE_RECONNECT_REQUIRED]:
+      "Reconnect the Google Drive account linked to this backup, then try again.",
+    [backupMessagesCodes.DRIVE_RECONNECT_IDENTITY_MISMATCH]:
+      "The account you authorized differs from the account to be reconnected.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_REMOVED]: "Google Drive account removed.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_ACTIVATED]:
+      "The account is now set as the active upload account.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_DISCONNECTED]:
+      "Google Drive account disconnected.",
+    [backupMessagesCodes.DRIVE_ACCOUNT_CHECKED]: "Connection status checked.",
+    [backupMessagesCodes.STORAGE_UPLOAD_FAILED]:
+      "Failed to upload the backup to the storage destination.",
+
+    // Encryption keys (EncryptionKey) stored on Drive
+    [backupMessagesCodes.ENCRYPTION_KEY_NOT_FOUND]: "Encryption key not found.",
+    [backupMessagesCodes.ENCRYPTION_KEY_GENERATED]:
+      "A new encryption key was generated.",
+    [backupMessagesCodes.ENCRYPTION_KEY_SAVED]:
+      "Encryption key saved to Google Drive.",
+    [backupMessagesCodes.ENCRYPTION_KEY_DELETED]: "Encryption key deleted.",
+    [backupMessagesCodes.ENCRYPTION_KEY_PRIMARY_SET]:
+      "Primary key for automatic backups was set.",
+    [backupMessagesCodes.ENCRYPTION_KEY_INVALID]:
+      "Invalid encryption key (it must be 32 bytes after base64 decoding).",
+    [backupMessagesCodes.KEY_FILE_MISSING]:
+      "The key file is missing on Drive — this backup cannot be restored with this key.",
+    [backupMessagesCodes.KEY_FINGERPRINT_MISMATCH]:
+      "The key file fingerprint does not match the expected one — wrong key.",
+    [backupMessagesCodes.NO_PRIMARY_KEY]:
+      "There is no primary encryption key — create one and set it as primary first.",
+
+    // Account types + connection state
+    [backupMessagesCodes.ACCOUNT_TYPE_LOCKED]:
+      "The account type is locked because data is linked to it — it cannot be changed.",
+    [backupMessagesCodes.KEY_ACCOUNT_REQUIRED]:
+      "This action requires a key account (KEY).",
+    [backupMessagesCodes.DB_ACCOUNT_REQUIRED]:
+      "This action requires a backup account (DB).",
+    [backupMessagesCodes.KEY_ACCOUNT_DISCONNECTED]:
+      "The key account is disconnected — reconnect it and try again.",
+    [backupMessagesCodes.DB_ACCOUNT_DISCONNECTED]:
+      "The backup (DB) account is disconnected — reconnect it and try again.",
+    [backupMessagesCodes.ACCOUNTS_RECONNECT_REQUIRED]:
+      "Restore requires reconnecting one or more accounts, then retrying.",
   },
 };
 
