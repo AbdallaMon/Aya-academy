@@ -42,7 +42,11 @@ export default function CouponField({
 
   return (
     <Stack spacing={1}>
-      <Stack direction="row" spacing={1} alignItems="flex-start">
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1}
+        alignItems={{ xs: "stretch", sm: "flex-start" }}
+      >
         <TextField
           label={txt.couponLabel}
           placeholder={txt.couponPlaceholder}
@@ -57,7 +61,7 @@ export default function CouponField({
             color="error"
             variant="outlined"
             onClick={onRemove}
-            sx={{ whiteSpace: "nowrap" }}
+            sx={{ whiteSpace: "nowrap", width: { xs: "100%", sm: "auto" } }}
           >
             {txt.removeCoupon}
           </Button>
@@ -67,7 +71,7 @@ export default function CouponField({
             onClick={onVerify}
             disabled={disabled || verifying || !code.trim()}
             startIcon={verifying ? <CircularProgress size={16} /> : undefined}
-            sx={{ whiteSpace: "nowrap" }}
+            sx={{ whiteSpace: "nowrap", width: { xs: "100%", sm: "auto" } }}
           >
             {verifying ? txt.verifying : txt.verifyCoupon}
           </Button>

@@ -1,15 +1,22 @@
 "use client";
 
 import {
+  Card,
+  CardContent,
   Chip,
+  Divider,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { formatMoney } from "../../../shared/lib/money.js";
 
 /** Resolve the {base, net, discountAmount, currency} a child will be charged. */
@@ -32,7 +39,87 @@ function priceFor(child, plans) {
   };
 }
 
+/** One label:value row used in the mobile card layout. */
+function Row({ label, value, strong }) {
+  return (
+    <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={strong ? 800 : 500}>
+        {value}
+      </Typography>
+    </Stack>
+  );
+}
+
 export default function EnrollSummaryTable({ items, plans, lng, txt }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"), { noSsr: true });
+
+  // ── Mobile: a stacked card per student (tables don't fit phones) ──
+  if (isMobile) {
+    return (
+      <Stack spacing={2}>
+        {items.map((child, i) => {
+          const p = priceFor(child, plans);
+          const planTitle = p
+            ? lng === "en"
+              ? p.plan.titleEn
+              : p.plan.titleAr
+            : "—";
+          return (
+            <Card key={i} variant="outlined" sx={{ borderRadius: 3 }}>
+              <CardContent>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ mb: 1 }}
+                >
+                  <Typography fontWeight={800}>
+                    {child.name || `${txt.childNumber} ${i + 1}`}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    color="success"
+                    label={txt.firstSessionFree}
+                  />
+                </Stack>
+                <Divider sx={{ mb: 1 }} />
+                <Stack spacing={0.75}>
+                  <Row label={txt.colPlan} value={planTitle} />
+                  <Row
+                    label={txt.colCycle}
+                    value={
+                      child.billingPeriod === "YEARLY" ? txt.yearly : txt.monthly
+                    }
+                  />
+                  <Row
+                    label={txt.colBase}
+                    value={p ? formatMoney(p.base, p.currency) : "—"}
+                  />
+                  {p && p.discountAmount > 0 && (
+                    <Row
+                      label={txt.colDiscount}
+                      value={`-${formatMoney(p.discountAmount, p.currency)}`}
+                    />
+                  )}
+                  <Row
+                    label={txt.colNet}
+                    value={p ? formatMoney(p.net, p.currency) : "—"}
+                    strong
+                  />
+                </Stack>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </Stack>
+    );
+  }
+
+  // ── Desktop / tablet: the full table ──
   return (
     <TableContainer component={Paper} variant="outlined">
       <Table size="small">

@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Divider,
   Grid,
   Stack,
@@ -18,6 +19,7 @@ import PlanRadioCards from "./PlanRadioCards.jsx";
 import CouponField from "./CouponField.jsx";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { PLAN_QUOTE_URL } from "../config/constant.js";
+import { formatMoney } from "../../../shared/lib/money.js";
 
 export default function ChildEnrollCard({
   index,
@@ -43,6 +45,23 @@ export default function ChildEnrollCard({
     reason: null,
     quote: null,
   };
+
+  // The plan may carry its own (auto-applied) coupon for the chosen cycle. When
+  // it does we surface it as a LOCKED chip — it follows plan/cycle changes and
+  // the parent can't remove it. The server applies it automatically, so we never
+  // send it as a typed couponCode.
+  const selectedPlan = plans.find((p) => p.id === child.planId) || null;
+  const cycle = selectedPlan
+    ? child.billingPeriod === "YEARLY"
+      ? selectedPlan.yearly
+      : selectedPlan.monthly
+    : null;
+  const planCoupon = cycle?.discount?.code ? cycle.discount : null;
+  const planCouponLabel =
+    planCoupon &&
+    (planCoupon.type === "PERCENT"
+      ? `-${planCoupon.value}%`
+      : `-${formatMoney(planCoupon.value, selectedPlan.currency)}`);
 
   const setField = (key) => (e) => onChange({ [key]: e.target.value });
 
@@ -118,7 +137,7 @@ export default function ChildEnrollCard({
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label={txt.name}
+              label={txt.childName}
               value={child.name}
               onChange={setField("name")}
               error={Boolean(errors.name)}
@@ -214,21 +233,44 @@ export default function ChildEnrollCard({
         )}
 
         <Box sx={{ mt: 2 }}>
-          <CouponField
-            code={coupon.code}
-            status={coupon.status}
-            reason={coupon.reason}
-            net={coupon.quote?.net ?? null}
-            currency={coupon.quote?.currency}
-            disabled={!child.planId}
-            verifying={quoteReq.isLoading}
-            onCodeChange={(value) =>
-              onChange({ coupon: { ...coupon, code: value } })
-            }
-            onVerify={verifyCoupon}
-            onRemove={removeCoupon}
-            txt={txt}
-          />
+          {planCoupon ? (
+            <Alert severity="success" icon={false}>
+              <Stack spacing={0.5}>
+                <Typography fontWeight={700}>{txt.planCouponTitle}</Typography>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  flexWrap="wrap"
+                  useFlexGap
+                >
+                  <Chip size="small" color="success" label={planCoupon.code} />
+                  {planCouponLabel && (
+                    <Chip size="small" color="error" label={planCouponLabel} />
+                  )}
+                  <Typography variant="caption" color="text.secondary">
+                    {txt.planCouponNote}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Alert>
+          ) : (
+            <CouponField
+              code={coupon.code}
+              status={coupon.status}
+              reason={coupon.reason}
+              net={coupon.quote?.net ?? null}
+              currency={coupon.quote?.currency}
+              disabled={!child.planId}
+              verifying={quoteReq.isLoading}
+              onCodeChange={(value) =>
+                onChange({ coupon: { ...coupon, code: value } })
+              }
+              onVerify={verifyCoupon}
+              onRemove={removeCoupon}
+              txt={txt}
+            />
+          )}
         </Box>
       </CardContent>
     </Card>

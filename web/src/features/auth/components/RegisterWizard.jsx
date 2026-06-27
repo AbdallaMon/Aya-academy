@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Box,
@@ -25,15 +25,15 @@ import { localePath } from "../../../i18n/routing.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function emptyChild() {
+function emptyChild(planId = null, billingPeriod = "MONTHLY") {
   return {
     name: "",
     email: "",
     password: "",
     nickname: "",
     birthDate: "",
-    billingPeriod: "MONTHLY",
-    planId: null,
+    billingPeriod,
+    planId,
     coupon: { code: "", status: "idle", reason: null, quote: null },
   };
 }
@@ -42,9 +42,17 @@ export default function RegisterWizard() {
   const txt = useAuthText();
   const router = useRouter();
   const { lng } = useTranslation();
+  const searchParams = useSearchParams();
 
   const [step, setStep] = useState(0);
-  const [children, setChildren] = useState([emptyChild()]);
+  // Pre-select the plan/cycle when arriving from a home-page plan card
+  // (/register?planId=…&billingPeriod=…).
+  const [children, setChildren] = useState(() => {
+    const planId = Number(searchParams.get("planId")) || null;
+    const billingPeriod =
+      searchParams.get("billingPeriod") === "YEARLY" ? "YEARLY" : "MONTHLY";
+    return [emptyChild(planId, billingPeriod)];
+  });
   const [parent, setParent] = useState({
     name: "",
     email: "",
@@ -182,7 +190,7 @@ export default function RegisterWizard() {
           </Typography>
         </Stack>
 
-        <Stepper activeStep={step} sx={{ mb: 4 }}>
+        <Stepper activeStep={step} alternativeLabel sx={{ mb: 4 }}>
           <Step>
             <StepLabel>{txt.stepChildren}</StepLabel>
           </Step>
@@ -207,7 +215,11 @@ export default function RegisterWizard() {
                 lng={lng}
               />
             ))}
-            <Button variant="outlined" onClick={addChild}>
+            <Button
+              variant="outlined"
+              onClick={addChild}
+              sx={{ width: { xs: "100%", sm: "auto" }, alignSelf: "flex-start" }}
+            >
               {txt.addChild}
             </Button>
             {formError && (
@@ -216,7 +228,12 @@ export default function RegisterWizard() {
               </Typography>
             )}
             <Box>
-              <Button variant="contained" size="large" onClick={goNext}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={goNext}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 {txt.next}
               </Button>
             </Box>
@@ -256,11 +273,15 @@ export default function RegisterWizard() {
               </Typography>
             )}
 
-            <Stack direction="row" spacing={2}>
+            <Stack
+              direction={{ xs: "column-reverse", sm: "row" }}
+              spacing={2}
+            >
               <Button
                 variant="text"
                 onClick={goBack}
                 disabled={enrollReq.isLoading}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 {txt.back}
               </Button>
@@ -269,6 +290,7 @@ export default function RegisterWizard() {
                 size="large"
                 onClick={submit}
                 disabled={enrollReq.isLoading}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 {enrollReq.isLoading ? txt.submitting : txt.submit}
               </Button>
