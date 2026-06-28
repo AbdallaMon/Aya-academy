@@ -1,5 +1,6 @@
-import { generalMessagesCodes } from "@aya/shared";
+import { generalMessagesCodes, messagesNames } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
+import { subscriptionMessagesCodes } from "./subscription.messages.js";
 import { idParam, optionalIntQuery, authUser } from "../../shared/http/params.js";
 import { subscriptionUsecase } from "./subscription.usecase.js";
 
@@ -88,6 +89,20 @@ class SubscriptionController {
       idParam(req.params.id),
     );
     return ok(res, subscription, generalMessagesCodes.UPDATED);
+  };
+
+  renew = async (req, res) => {
+    const subscription = await subscriptionUsecase.renew(
+      authUser(req),
+      idParam(req.params.id),
+      req.body,
+    );
+    return created(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_RENEWED,
+      messagesNames.subscriptionMessages,
+    );
   };
 }
 

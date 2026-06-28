@@ -65,6 +65,18 @@ subscriptionRoutes.post(
   asyncHandler(subscriptionController.cancel),
 );
 
+// Renew a subscription → new PENDING sub. Admin (RENEW) or parent (REQUEST);
+// the usecase scope-checks that a parent owns the source subscription's child.
+subscriptionRoutes.post(
+  "/:id/renew",
+  authMiddleware.requireAnyPermission([
+    SUBSCRIPTION_PERMISSIONS.RENEW,
+    SUBSCRIPTION_PERMISSIONS.REQUEST,
+  ]),
+  validate(SubscriptionValidation.renewSubscriptionSchema),
+  asyncHandler(subscriptionController.renew),
+);
+
 subscriptionRoutes.put(
   "/:id",
   authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.EDIT]),

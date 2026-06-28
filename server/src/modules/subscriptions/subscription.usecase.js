@@ -6,7 +6,13 @@ import {
   messagesNames,
 } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
-import { badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
+import {
+  AppError,
+  badRequest,
+  conflict,
+  forbidden,
+  notFound,
+} from "../../shared/errors/AppError.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import {
   applyDiscount,
@@ -575,6 +581,127 @@ class SubscriptionUsecase {
     }
 
     return updated;
+  }
+
+  /**
+   * Renew a subscription: create a brand-new PENDING subscription for the same
+   * student, defaulting plan/period from the source and overridable per input.
+   * Mirrors request()/create(): coupon validation + atomic redemption bump in a
+   * tx, best-effort demand invoice, best-effort notification.
+   *
+   * Active guard: if the student already has a currently-active subscription
+   * (status ACTIVE and now within its window), renewal is refused unless the
+   * caller explicitly passes allowWhileActive.
+   */
+  async renew(authUser, id, input = {}) {
+    // 1. Load the source subscription and scope-check by its studentId.
+    //    ADMIN: any; PARENT: only their own child; STUDENT: only self (and they
+    //    lack the RENEW/REQUEST permission, so the route already blocks them).
+    const source = await subscriptionRepo.getById(id);
+    if (!source) {
+      throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
+    }
+    await this.assertCanAccess(authUser, source.studentId);
+
+    // 2. Resolve studentId + plan/period: default from source, override by input.
+    const studentId = source.studentId;
+    const planId = input.planId ?? source.planId;
+    if (!planId) {
+      throw badRequest(
+        subscriptionMessagesCodes.PLAN_REQUIRED,
+        messagesNames.subscriptionMessages,
+      );
+    }
+    const billingPeriod =
+      input.billingPeriod ?? source.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+
+    // 3. Active guard — refuse if the student is currently subscribed unless the
+    //    caller explicitly opts in.
+    const activeIds = await this.getCurrentlySubscribedStudentIds([studentId]);
+    if (activeIds.has(studentId) && input.allowWhileActive !== true) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    const plan = await planRepo.getByIdWithCoupons(planId);
+    if (!plan || !plan.isActive) {
+      throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+    }
+
+    const startDate = input.startDate ? new Date(input.startDate) : new Date();
+    const endDate = this.computeEndDate(startDate, billingPeriod);
+
+    // Hours scale with the cycle (yearly bundles 12× the monthly hours).
+    const hours =
+      billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
+
+    const settings = await settingsUsecase.getEffective();
+
+    // 4. Price the chosen cycle with the (optional) coupon code.
+    const { priceCharged, couponId } = await this.computePricing(
+      plan,
+      billingPeriod,
+      input.couponCode,
+      Number(settings.hourlyRate),
+    );
+
+    const data = {
+      status: SUBSCRIPTION_STATUSES.PENDING,
+      billingPeriod,
+      startDate,
+      endDate,
+      totalHours: hours,
+      remainingHours: hours,
+      priceCharged,
+      currency: settings.currency,
+      student: { connect: { id: studentId } },
+      plan: { connect: { id: plan.id } },
+      createdBy: { connect: { id: authUser.id } },
+    };
+    if (couponId) data.coupon = { connect: { id: couponId } };
+
+    // Create the new subscription and consume any coupon atomically.
+    const subscription = await prisma.$transaction(async (tx) => {
+      const sub = await subscriptionRepo.createSubscription(data, tx);
+      if (couponId) {
+        await couponRepo.incrementCouponRedemption(couponId, tx);
+      }
+      return sub;
+    });
+
+    // 5. Auto-create the demand invoice (snapshot of the template) — best-effort.
+    await this.ensureInvoice(subscription, { plan });
+
+    // 6. Notify: a parent-initiated renewal pings admins to review; otherwise the
+    //    student is told their subscription was renewed. Best-effort.
+    try {
+      if (authUser.role === USER_ROLES.PARENT) {
+        const adminIds = await userRepo.findAdminIds();
+        if (adminIds.length) {
+          await notificationUsecase.createManyForUsers(adminIds, {
+            type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
+            titleAr: "طلب تجديد اشتراك بانتظار الموافقة",
+            titleEn: "Subscription renewal request pending approval",
+            link: "/dashboard/subscriptions",
+          });
+        }
+      } else {
+        await notificationUsecase.createNotification({
+          userId: studentId,
+          type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
+          titleAr: "تم تجديد اشتراكك",
+          titleEn: "Your subscription has been renewed",
+          link: "/dashboard",
+        });
+      }
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return subscription;
   }
 }
 
