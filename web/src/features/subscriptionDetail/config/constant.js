@@ -7,6 +7,10 @@ export {
   invoiceSubscriptionPath,
 } from "../../invoices/config/constant.js";
 
+// Public active plans (with pricing + the plan's own removable coupon) for the
+// renew / change-plan plan pickers. Mirrors what SubscriptionCreateDialog uses.
+export const PLANS_PUBLIC_URL = "plans/public";
+
 /** Round a money value to 2 decimals (number, NaN-safe). */
 export function round2(value) {
   const n = Number(value);

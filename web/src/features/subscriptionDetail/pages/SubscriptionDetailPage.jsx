@@ -19,6 +19,7 @@ import {
 import { useSubscriptionDetailText } from "../config/subscriptionDetailText.js";
 import SubscriptionCard from "../components/SubscriptionCard.jsx";
 import InvoiceCard from "../components/InvoiceCard.jsx";
+import SubscriptionActions from "../components/SubscriptionActions.jsx";
 
 export default function SubscriptionDetailPage({ subscriptionId }) {
   const txt = useSubscriptionDetailText();
@@ -37,6 +38,7 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
     data: subscription,
     isLoading,
     error,
+    triggerRefetch: refetchSubscription,
   } = useRequest({
     url: `${SUBSCRIPTIONS_URL}/${subscriptionId}`,
     method: "get",
@@ -51,6 +53,12 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
     autoFetch: loadInvoice && canViewInvoice,
     syncToUrl: false,
   });
+
+  // Any action (renew/change-plan/activate/send/mark-paid) refetches both.
+  function refetchAll() {
+    refetchSubscription();
+    refetchInvoice();
+  }
 
   if (!canView) return null;
 
@@ -108,6 +116,13 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
           label={txt[subscription.status] || subscription.status}
         />
       </Stack>
+
+      <SubscriptionActions
+        subscription={subscription}
+        invoice={invoice || null}
+        txt={txt}
+        onChanged={refetchAll}
+      />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>

@@ -46,6 +46,34 @@ export const subscriptionDetailText = {
     PAID: "مدفوعة",
     VOID: "ملغاة",
     none: "—",
+    // shared dialog labels
+    save: "حفظ",
+    cancel: "إلغاء",
+    selectPlan: "اختر الخطة",
+    // actions section
+    actions: "إجراءات",
+    // renew
+    renew: "تجديد",
+    renewTitle: "تجديد الاشتراك",
+    renewSubmit: "تجديد",
+    stillActiveConfirm: "ما زال هناك اشتراك فعّال لم ينتهِ بعد. هل تريد التجديد على أي حال؟",
+    // change plan
+    changePlan: "تعديل الخطة",
+    changePlanTitle: "تعديل خطة الاشتراك",
+    changePlanSubmit: "حفظ التغيير",
+    // send to parent
+    sendToParent: "إرسال لولي الأمر",
+    resend: "إعادة الإرسال",
+    sendSuccess: "تم إرسال الفاتورة لولي الأمر",
+    // activate subscription
+    activate: "تفعيل الاشتراك",
+    activateTitle: "تفعيل الاشتراك",
+    activateMarkPaid: "اعتمد الفاتورة كمدفوعة كمان؟",
+    // mark invoice paid
+    markPaid: "اعتماد الفاتورة كمدفوعة",
+    markPaidTitle: "اعتماد الفاتورة كمدفوعة",
+    markPaidActivate: "فعّل الاشتراك كمان؟",
+    confirm: "تأكيد",
   },
   en: {
     pageTitle: "Subscription details",
@@ -85,6 +113,34 @@ export const subscriptionDetailText = {
     PAID: "Paid",
     VOID: "Void",
     none: "—",
+    // shared dialog labels
+    save: "Save",
+    cancel: "Cancel",
+    selectPlan: "Select plan",
+    // actions section
+    actions: "Actions",
+    // renew
+    renew: "Renew",
+    renewTitle: "Renew subscription",
+    renewSubmit: "Renew",
+    stillActiveConfirm: "There is still an active subscription that hasn't expired. Renew anyway?",
+    // change plan
+    changePlan: "Change plan",
+    changePlanTitle: "Change subscription plan",
+    changePlanSubmit: "Save change",
+    // send to parent
+    sendToParent: "Send to parent",
+    resend: "Resend",
+    sendSuccess: "Invoice sent to the parent",
+    // activate subscription
+    activate: "Activate",
+    activateTitle: "Activate subscription",
+    activateMarkPaid: "Also mark the invoice as paid?",
+    // mark invoice paid
+    markPaid: "Mark invoice paid",
+    markPaidTitle: "Mark invoice as paid",
+    markPaidActivate: "Also activate the subscription?",
+    confirm: "Confirm",
   },
 };
 
