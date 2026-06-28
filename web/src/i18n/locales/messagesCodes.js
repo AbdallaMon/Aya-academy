@@ -142,6 +142,11 @@ const ar = {
     [subscriptionMessagesCodes.COUPON_INVALID]: "كوبون غير صالح",
     [subscriptionMessagesCodes.CANNOT_CANCEL]: "لا يمكن إلغاء هذا الاشتراك",
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: "تم إلغاء الاشتراك",
+    [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]: "يوجد اشتراك فعّال لم ينتهِ بعد",
+    [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: "تم تجديد الاشتراك",
+    [subscriptionMessagesCodes.PLAN_CHANGED]: "تم تغيير الخطة",
+    [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: "تم تفعيل الاشتراك",
+    [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]: "لا يمكن تغيير الخطة بعد دفع الفاتورة",
   },
   // ── game-messages ─────────────────────────────────────────────────────────
   [messagesNames.gameMessages]: {
@@ -266,6 +271,10 @@ const ar = {
     [invoiceMessagesCodes.INVOICE_REGENERATED]: "تم إعادة توليد الفاتورة",
     [invoiceMessagesCodes.INVOICE_UPDATED]: "تم تحديث الفاتورة",
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]: "لا يمكن تغيير حالة الفاتورة بهذا الشكل",
+    [invoiceMessagesCodes.INVOICE_SENT]: "تم إرسال الفاتورة",
+    [invoiceMessagesCodes.INVOICE_SEND_FAILED]: "فشل إرسال الفاتورة",
+    [invoiceMessagesCodes.CANNOT_SEND_INVOICE]: "لا تملك صلاحية إرسال الفاتورة",
+    [invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED]: "إعدادات واتساب غير مكتملة",
   },
   [messagesNames.paymentTemplateMessages]: {
     [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "تم حفظ إعدادات قالب الفاتورة",
@@ -488,6 +497,11 @@ const en = {
     [subscriptionMessagesCodes.COUPON_INVALID]: "Invalid coupon",
     [subscriptionMessagesCodes.CANNOT_CANCEL]: "This subscription cannot be cancelled",
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: "Subscription cancelled",
+    [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]: "There is still an active subscription",
+    [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: "Subscription renewed",
+    [subscriptionMessagesCodes.PLAN_CHANGED]: "Plan changed",
+    [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: "Subscription activated",
+    [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]: "Cannot change the plan after the invoice is paid",
   },
   [messagesNames.gameMessages]: {
     [gameMessagesCodes.GAME_NOT_FOUND]: "Game not found",
@@ -596,6 +610,10 @@ const en = {
     [invoiceMessagesCodes.INVOICE_REGENERATED]: "Invoice regenerated",
     [invoiceMessagesCodes.INVOICE_UPDATED]: "Invoice updated",
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]: "This invoice status change isn't allowed",
+    [invoiceMessagesCodes.INVOICE_SENT]: "Invoice sent",
+    [invoiceMessagesCodes.INVOICE_SEND_FAILED]: "Failed to send the invoice",
+    [invoiceMessagesCodes.CANNOT_SEND_INVOICE]: "You are not allowed to send this invoice",
+    [invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED]: "WhatsApp is not configured",
   },
   [messagesNames.paymentTemplateMessages]: {
     [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "Invoice template settings saved",
