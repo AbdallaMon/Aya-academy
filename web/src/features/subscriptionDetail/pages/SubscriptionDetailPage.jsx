@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Button, Chip, CircularProgress, Stack, Typography } from "@mui/material";
+import { useState } from "react";
+import { Box, Button, Chip, CircularProgress, Grid, Stack, Typography } from "@mui/material";
 import { MdArrowBack } from "react-icons/md";
 import Link from "next/link";
 import { PERMISSIONS } from "@aya/shared";
@@ -9,8 +10,15 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { EmptyState } from "../../../shared/components/index.js";
-import { SUBSCRIPTIONS_URL, STATUS_COLOR } from "../config/constant.js";
+import {
+  SUBSCRIPTIONS_URL,
+  INVOICES_URL,
+  STATUS_COLOR,
+  invoiceSubscriptionPath,
+} from "../config/constant.js";
 import { useSubscriptionDetailText } from "../config/subscriptionDetailText.js";
+import SubscriptionCard from "../components/SubscriptionCard.jsx";
+import InvoiceCard from "../components/InvoiceCard.jsx";
 
 export default function SubscriptionDetailPage({ subscriptionId }) {
   const txt = useSubscriptionDetailText();
@@ -18,6 +26,12 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
   const { hasPermission } = usePermission();
 
   const canView = hasPermission(PERMISSIONS.SUBSCRIPTION.VIEW);
+  const canViewInvoice = hasPermission(PERMISSIONS.INVOICE.VIEW);
+  const canGenerateInvoice = hasPermission(PERMISSIONS.INVOICE.GENERATE);
+  const canEditInvoice = hasPermission(PERMISSIONS.INVOICE.EDIT);
+
+  // Lazy second fetch: load the invoice only once the subscription resolves.
+  const [loadInvoice, setLoadInvoice] = useState(false);
 
   const {
     data: subscription,
@@ -27,6 +41,14 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
     url: `${SUBSCRIPTIONS_URL}/${subscriptionId}`,
     method: "get",
     autoFetch: canView,
+    syncToUrl: false,
+    onSuccess: () => setLoadInvoice(true),
+  });
+
+  const { data: invoice, triggerRefetch: refetchInvoice } = useRequest({
+    url: `${INVOICES_URL}/${invoiceSubscriptionPath(subscriptionId)}`,
+    method: "get",
+    autoFetch: loadInvoice && canViewInvoice,
     syncToUrl: false,
   });
 
@@ -86,6 +108,24 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
           label={txt[subscription.status] || subscription.status}
         />
       </Stack>
+
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SubscriptionCard subscription={subscription} invoice={invoice} txt={txt} />
+        </Grid>
+        {canViewInvoice && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <InvoiceCard
+              subscriptionId={subscription.id}
+              invoice={invoice || null}
+              txt={txt}
+              canGenerate={canGenerateInvoice}
+              canEdit={canEditInvoice}
+              onChanged={refetchInvoice}
+            />
+          </Grid>
+        )}
+      </Grid>
     </Box>
   );
 }
