@@ -327,7 +327,11 @@ export default function SubscriptionsPage() {
                 size="small"
                 color="success"
                 variant="outlined"
-                label={txt.discount}
+                label={`${txt.discount} ${
+                  row.coupon.type === "PERCENT"
+                    ? `${Number(row.coupon.value)}%`
+                    : formatMoney(row.coupon.value, row.currency)
+                }`}
                 sx={{ height: 18, fontSize: "0.65rem" }}
               />
             )}
