@@ -5,6 +5,10 @@ import { useTranslation } from "../../../i18n/client.js";
 export const subscriptionsText = {
   ar: {
     pageTitle: "الاشتراكات",
+    view: "عرض",
+    renew: "تجديد",
+    confirmRenewActive: "يوجد اشتراك فعّال لم ينتهِ بعد، هل تريد المتابعة؟",
+    discount: "خصم",
     pageDescriptionAdmin:
       "راجع كل الاشتراكات، ووافق على الطلبات المعلّقة، وأنشئ اشتراكات يدوية.",
     pageDescriptionParent: "اشتراكات أبنائك وحالتها.",
@@ -61,6 +65,10 @@ export const subscriptionsText = {
   },
   en: {
     pageTitle: "Subscriptions",
+    view: "View",
+    renew: "Renew",
+    confirmRenewActive: "There is still an active subscription, continue anyway?",
+    discount: "Discount",
     pageDescriptionAdmin:
       "Review every subscription, approve pending requests, and create manual ones.",
     pageDescriptionParent: "Your children's subscriptions and their status.",

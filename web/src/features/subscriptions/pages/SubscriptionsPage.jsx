@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
-import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit } from "react-icons/md";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { useRouter } from "next/navigation";
+import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew } from "react-icons/md";
+import { PERMISSIONS, USER_ROLES, subscriptionMessagesCodes } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -35,6 +36,7 @@ export default function SubscriptionsPage() {
   const txt = useSubscriptionsText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
+  const router = useRouter();
   const { user } = useAuth();
   const { hasPermission } = usePermission();
   const canList = hasPermission(PERMISSIONS.SUBSCRIPTION.LIST);
@@ -43,10 +45,14 @@ export default function SubscriptionsPage() {
   const canCreate = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE) || isAdmin;
   const canCancel = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL) || isAdmin;
   const canEdit = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT) || isAdmin;
+  const canRenew =
+    hasPermission(PERMISSIONS.SUBSCRIPTION.RENEW) ||
+    hasPermission(PERMISSIONS.SUBSCRIPTION.REQUEST) ||
+    isAdmin;
   const canViewInvoice = hasPermission(PERMISSIONS.INVOICE.VIEW) || isAdmin;
   const canGenerateInvoice = hasPermission(PERMISSIONS.INVOICE.GENERATE) || isAdmin;
   const canEditInvoice = hasPermission(PERMISSIONS.INVOICE.EDIT) || isAdmin;
-  const hasRowActions = canApprove || canCancel || canViewInvoice || canEdit;
+  const hasRowActions = canApprove || canCancel || canViewInvoice || canEdit || canRenew;
   const invoiceTxt = useInvoicesText();
 
   const {
@@ -70,6 +76,14 @@ export default function SubscriptionsPage() {
   const mut = useMultiRequest({
     url: SUBSCRIPTIONS_URL,
     onSuccess: () => triggerRefetch(),
+  });
+
+  const { fetchData: doRenew, isLoading: isRenewing } = useRequest({
+    url: SUBSCRIPTIONS_URL,
+    method: "post",
+    autoFetch: false,
+    shouldAutoToast: true,
+    syncToUrl: false,
   });
 
   const createDialog = useOpen();
@@ -120,6 +134,35 @@ export default function SubscriptionsPage() {
     if (!hoursTarget) return;
     await mut.putRequest(`${hoursTarget.id}`, payload);
     editHoursDialog.close();
+  }
+
+  async function renew(row) {
+    async function doRenewAndNavigate(body) {
+      const res = await doRenew(`${row.id}/renew`, body);
+      if (res?.data?.id) {
+        router.push(localePath(lng, `/dashboard/subscriptions/${res.data.id}`));
+      }
+    }
+    try {
+      await doRenewAndNavigate({});
+    } catch (e) {
+      if (
+        e?.status === 409 &&
+        e?.data?.message === subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE
+      ) {
+        const ok = await confirm({
+          title: txt.confirmRenewActive,
+          intent: "warning",
+        });
+        if (!ok) return;
+        try {
+          await doRenewAndNavigate({ allowWhileActive: true });
+        } catch {
+          // error already toasted by shouldAutoToast
+        }
+      }
+      // other errors already toasted
+    }
   }
 
   const CANCELLABLE = ["PENDING", "UPCOMING", "ACTIVE"];
@@ -272,8 +315,24 @@ export default function SubscriptionsPage() {
       {
         field: "price",
         headerName: txt.price,
-        width: 100,
-        renderCell: ({ row }) => formatMoney(row.priceCharged, row.currency),
+        width: 150,
+        sortable: false,
+        renderCell: ({ row }) => (
+          <Stack spacing={0.25} alignItems="flex-start">
+            <Typography variant="body2" fontWeight={700}>
+              {formatMoney(row.priceCharged, row.currency)}
+            </Typography>
+            {row.coupon && (
+              <Chip
+                size="small"
+                color="success"
+                variant="outlined"
+                label={txt.discount}
+                sx={{ height: 18, fontSize: "0.65rem" }}
+              />
+            )}
+          </Stack>
+        ),
       },
       {
         field: "end",
@@ -297,6 +356,17 @@ export default function SubscriptionsPage() {
                   <RowActionsMenu
                     actions={[
                       {
+                        label: txt.view,
+                        icon: <MdOpenInNew />,
+                        onClick: () =>
+                          router.push(
+                            localePath(
+                              lng,
+                              `/dashboard/subscriptions/${row.id}`,
+                            ),
+                          ),
+                      },
+                      {
                         label: invoiceTxt.invoice,
                         icon: <MdReceiptLong />,
                         onClick: () => openInvoice(row),
@@ -307,6 +377,14 @@ export default function SubscriptionsPage() {
                         icon: <MdEdit />,
                         onClick: () => openEditHours(row),
                         hidden: !canEdit,
+                      },
+                      {
+                        label: txt.renew,
+                        icon: <MdAutorenew />,
+                        color: "primary",
+                        onClick: () => renew(row),
+                        hidden: !canRenew,
+                        disabled: isRenewing,
                       },
                       {
                         label: txt.approve,
@@ -337,7 +415,8 @@ export default function SubscriptionsPage() {
           ]
         : []),
     ],
-    [txt, lng, canApprove, canCancel, canEdit, hasRowActions, canViewInvoice, invoiceTxt],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [txt, lng, canApprove, canCancel, canEdit, canRenew, hasRowActions, canViewInvoice, invoiceTxt, isRenewing],
   );
 
   const filterConfig = useMemo(
