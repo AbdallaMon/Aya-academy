@@ -617,10 +617,28 @@ class SubscriptionUsecase {
     const billingPeriod =
       input.billingPeriod ?? source.billingPeriod ?? BILLING_PERIODS.MONTHLY;
 
-    // 3. Active guard — refuse if the student is currently subscribed unless the
-    //    caller explicitly opts in.
+    // 3. Active guard — refuse if the student is currently subscribed. The
+    //    allowWhileActive bypass is an ADMIN-only override: a parent (who holds
+    //    SUBSCRIPTION.REQUEST) must NOT be able to spam renewals over an active
+    //    subscription by sending the flag, so it is ignored for non-admins.
+    const allowWhileActive =
+      authUser.role === USER_ROLES.ADMIN && input.allowWhileActive === true;
     const activeIds = await this.getCurrentlySubscribedStudentIds([studentId]);
-    if (activeIds.has(studentId) && input.allowWhileActive !== true) {
+    if (activeIds.has(studentId) && !allowWhileActive) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    // Dedup pending renewals — applies to everyone (incl. admin): if the student
+    // already has a PENDING subscription awaiting review, refuse to create a
+    // second one. Reuses SUBSCRIPTION_STILL_ACTIVE (an unfinished subscription
+    // already exists).
+    const hasPending =
+      await subscriptionRepo.hasPendingSubscription(studentId);
+    if (hasPending) {
       throw new AppError({
         statusCode: 409,
         code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,

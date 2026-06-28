@@ -1,5 +1,5 @@
 import { prisma } from "@aya/db/prisma.client.js";
-import { activeSubscriptionWhere } from "@aya/shared";
+import { activeSubscriptionWhere, SUBSCRIPTION_STATUSES } from "@aya/shared";
 import { subscriptionSelect, toSubscription } from "./subscription.dto.js";
 
 class SubscriptionRepo {
@@ -104,6 +104,18 @@ class SubscriptionRepo {
       distinct: ["studentId"],
     });
     return subs.map((s) => s.studentId);
+  }
+
+  /**
+   * True when the student already has a subscription in PENDING status — used to
+   * block duplicate pending renewals (a second renewal while one is awaiting
+   * admin review).
+   */
+  async hasPendingSubscription(studentId) {
+    const count = await prisma.subscription.count({
+      where: { studentId, status: SUBSCRIPTION_STATUSES.PENDING },
+    });
+    return count > 0;
   }
 
   async updateSubscription(id, data) {
