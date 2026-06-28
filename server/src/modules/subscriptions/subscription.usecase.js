@@ -161,11 +161,11 @@ class SubscriptionUsecase {
       limit: params.limit,
     });
     const where = await this.buildListWhere(authUser, params);
-    const { items, total } = await subscriptionRepo.listSubscriptions(
+    const { items, total } = await subscriptionRepo.listLatestPerStudent({
       where,
       skip,
       take,
-    );
+    });
     return paginatedResult(items, total, page, limit);
   }
 
