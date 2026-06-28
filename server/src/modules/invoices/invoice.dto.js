@@ -71,6 +71,7 @@ export const invoiceSelect = {
   billingPeriodLabel: true,
   dueDate: true,
   notes: true,
+  sentAt: true,
   createdById: true,
   createdAt: true,
   updatedAt: true,

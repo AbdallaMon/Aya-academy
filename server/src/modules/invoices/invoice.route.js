@@ -44,4 +44,11 @@ invoiceRoutes.patch(
   asyncHandler(invoiceController.update),
 );
 
+// Send invoice to parent(s) via in-app notification + WhatsApp (admin).
+invoiceRoutes.post(
+  "/:id/send",
+  authMiddleware.requirePermissions([INVOICE_PERMISSIONS.SEND]),
+  asyncHandler(invoiceController.send),
+);
+
 export default invoiceRoutes;

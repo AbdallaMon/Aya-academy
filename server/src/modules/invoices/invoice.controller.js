@@ -54,6 +54,14 @@ class InvoiceController {
       messagesNames.invoiceMessages,
     );
   };
+
+  send = async (req, res) => {
+    const invoice = await invoiceUsecase.send(
+      authUser(req),
+      idParam(req.params.id),
+    );
+    return ok(res, invoice, invoiceMessagesCodes.INVOICE_SENT, messagesNames.invoiceMessages);
+  };
 }
 
 export const invoiceController = new InvoiceController();

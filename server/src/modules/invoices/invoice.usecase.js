@@ -5,7 +5,8 @@ import {
   USER_ROLES,
   messagesNames,
 } from "@aya/shared";
-import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
+import { AppError, badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
+import { messagingService } from "../../infra/messaging/messagingService.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { priceForPeriod, roundMoney } from "../../shared/utility/pricing.js";
 import { userRepo } from "../users/user.repo.js";
@@ -336,6 +337,49 @@ class InvoiceUsecase {
       await this.activateSubscription(existing.subscriptionId);
     }
 
+    return updated;
+  }
+
+  /**
+   * Send the invoice to the student's parents via in-app notification and
+   * (when configured) WhatsApp. Admin-only. Records sentAt on the invoice.
+   * Messaging is best-effort: failures in the messaging layer never fail this
+   * request (handled inside messagingService).
+   */
+  async send(authUser, id) {
+    if (authUser.role !== USER_ROLES.ADMIN) {
+      throw new AppError({
+        statusCode: 403,
+        code: invoiceMessagesCodes.CANNOT_SEND_INVOICE,
+        translationKey: messagesNames.invoiceMessages,
+      });
+    }
+    const invoice = await invoiceRepo.getById(id);
+    if (!invoice) {
+      throw new AppError({
+        statusCode: 404,
+        code: invoiceMessagesCodes.INVOICE_NOT_FOUND,
+        translationKey: messagesNames.invoiceMessages,
+      });
+    }
+
+    const student = invoice.subscription?.student ?? null;
+    const parents = (student?.parents ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      phone: p.phone,
+    }));
+    const link = `/dashboard/subscriptions/${invoice.subscriptionId}`;
+
+    await messagingService.notifyInvoiceSent({
+      parents,
+      student,
+      invoice,
+      subscriptionId: invoice.subscriptionId,
+      link,
+    });
+
+    const updated = await invoiceRepo.update(invoice.id, { sentAt: new Date() });
     return updated;
   }
 
