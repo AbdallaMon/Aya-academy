@@ -55,12 +55,17 @@ class WhatsAppProvider {
     });
 
     if (!res.ok) {
+      // Read the upstream body for server-side diagnostics ONLY — it can carry
+      // Meta/Graph metadata, so it must never reach AppError.details (a future
+      // caller might propagate details to the client). Log it, then throw with
+      // no sensitive payload (only the non-sensitive HTTP status).
       const text = await res.text().catch(() => "");
+      console.error(`[whatsapp] send failed (HTTP ${res.status}):`, text);
       throw new AppError({
         statusCode: 502,
         code: invoiceMessagesCodes.INVOICE_SEND_FAILED,
         translationKey: TK,
-        details: { httpStatus: res.status, response: text },
+        details: { httpStatus: res.status },
       });
     }
 
