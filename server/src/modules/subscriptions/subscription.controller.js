@@ -104,6 +104,20 @@ class SubscriptionController {
       messagesNames.subscriptionMessages,
     );
   };
+
+  changePlan = async (req, res) => {
+    const subscription = await subscriptionUsecase.changePlan(
+      authUser(req),
+      idParam(req.params.id),
+      req.body,
+    );
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.PLAN_CHANGED,
+      messagesNames.subscriptionMessages,
+    );
+  };
 }
 
 export const subscriptionController = new SubscriptionController();

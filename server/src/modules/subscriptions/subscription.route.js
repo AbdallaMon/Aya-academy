@@ -77,6 +77,14 @@ subscriptionRoutes.post(
   asyncHandler(subscriptionController.renew),
 );
 
+// Change the plan of a not-yet-paid subscription → regenerates the invoice.
+subscriptionRoutes.post(
+  "/:id/change-plan",
+  authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.EDIT]),
+  validate(SubscriptionValidation.changePlanSchema),
+  asyncHandler(subscriptionController.changePlan),
+);
+
 subscriptionRoutes.put(
   "/:id",
   authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.EDIT]),

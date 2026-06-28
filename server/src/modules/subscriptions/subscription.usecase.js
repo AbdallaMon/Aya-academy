@@ -1,5 +1,6 @@
 import {
   BILLING_PERIODS,
+  INVOICE_STATUSES,
   NOTIFICATION_TYPES,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
@@ -28,6 +29,7 @@ import { couponUsecase } from "../coupons/coupon.usecase.js";
 import { settingsUsecase } from "../settings/settings.usecase.js";
 import { paymentTemplateUsecase } from "../paymentTemplates/paymentTemplate.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
+import { invoiceRepo } from "../invoices/invoice.repo.js";
 import { subscriptionRepo } from "./subscription.repo.js";
 import { subscriptionMessagesCodes } from "./subscription.messages.js";
 
@@ -702,6 +704,101 @@ class SubscriptionUsecase {
     }
 
     return subscription;
+  }
+
+  /**
+   * Change the plan/period/coupon of a not-yet-paid subscription. Only allowed
+   * while the demand invoice is unpaid (or absent). Recomputes price/hours/dates
+   * for the new plan, then regenerates the invoice so its amounts match.
+   */
+  async changePlan(authUser, id, input) {
+    // 1. Load + scope-check. PARENT may only change their own child's sub, and
+    //    only while it is still PENDING (a non-finalised request).
+    const existing = await subscriptionRepo.getById(id);
+    if (!existing) {
+      throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
+    }
+    await this.assertCanAccess(authUser, existing.studentId);
+    if (
+      authUser.role === USER_ROLES.PARENT &&
+      existing.status !== SUBSCRIPTION_STATUSES.PENDING
+    ) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    // 2. Block the change once the demand invoice has been paid (or voided): the
+    //    charged amounts are then settled and must not silently shift.
+    const invoice = await invoiceRepo.getBySubscriptionId(id);
+    if (invoice && invoice.status !== INVOICE_STATUSES.UNPAID) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    const plan = await planRepo.getByIdWithCoupons(input.planId);
+    if (!plan || !plan.isActive) {
+      throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+    }
+
+    const billingPeriod =
+      input.billingPeriod ?? existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+    const settings = await settingsUsecase.getEffective();
+
+    // 3. Recompute price/hours/dates for the new plan + period + coupon.
+    const { priceCharged, couponId } = await this.computePricing(
+      plan,
+      billingPeriod,
+      input.couponCode,
+      Number(settings.hourlyRate),
+    );
+    const hours =
+      billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
+    const startDate = existing.startDate;
+    const endDate = this.computeEndDate(startDate, billingPeriod);
+
+    const data = {
+      billingPeriod,
+      endDate,
+      totalHours: hours,
+      remainingHours: hours,
+      priceCharged,
+      plan: { connect: { id: plan.id } },
+      coupon: couponId ? { connect: { id: couponId } } : { disconnect: true },
+    };
+
+    // 4. Persist the change.
+    const updated = await subscriptionRepo.updateSubscription(id, data);
+
+    // 5. Regenerate the demand invoice so its amounts match the new plan. The
+    //    invoice usecase is loaded dynamically to avoid the subscription↔invoice
+    //    circular import. Best-effort — admin can regenerate manually.
+    try {
+      const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
+      await invoiceUsecase.generate(authUser, id);
+    } catch {
+      // swallow — invoice regeneration is best-effort
+    }
+
+    // 6. Notify the student the plan changed (best-effort).
+    try {
+      await notificationUsecase.createNotification({
+        userId: updated.studentId,
+        type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
+        titleAr: "تم تغيير خطة اشتراكك",
+        titleEn: "Your subscription plan has been changed",
+        link: "/dashboard",
+      });
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return updated;
   }
 }
 

@@ -80,4 +80,12 @@ export class SubscriptionValidation {
     startDate: z.coerce.date().optional(),
     allowWhileActive: z.boolean().optional(),
   });
+
+  // Change the plan/period/coupon of a not-yet-paid subscription; recomputes
+  // price/hours/dates and regenerates the demand invoice.
+  static changePlanSchema = z.object({
+    planId: z.number().int().positive(subscriptionMessagesCodes.PLAN_REQUIRED),
+    billingPeriod: z.enum(billingPeriods).optional(),
+    couponCode: z.string().trim().min(1).optional(),
+  });
 }
