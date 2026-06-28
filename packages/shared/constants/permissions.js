@@ -41,6 +41,10 @@ export const SUBSCRIPTION_PERMISSIONS = {
   APPROVE: "subscription.approve",
   // Admin cancels a PENDING/UPCOMING/ACTIVE subscription → CANCELLED.
   CANCEL: "subscription.cancel",
+  // Admin renews an ACTIVE/EXPIRED subscription → creates a new subscription.
+  RENEW: "subscription.renew",
+  // Admin activates an UPCOMING subscription immediately → ACTIVE.
+  ACTIVATE: "subscription.activate",
 };
 
 export const GAME_PERMISSIONS = {
@@ -123,12 +127,14 @@ export const BACKUP_PERMISSIONS = {
 };
 
 // Per-subscription invoices. VIEW/LIST are readable by parent/student (scoped);
-// GENERATE/EDIT are admin-only.
+// GENERATE/EDIT/SEND are admin-only.
 export const INVOICE_PERMISSIONS = {
   LIST: "invoice.list",
   VIEW: "invoice.view",
   GENERATE: "invoice.generate",
   EDIT: "invoice.edit",
+  // Admin sends invoice to the parent via WhatsApp/notification.
+  SEND: "invoice.send",
 };
 
 // Global payment-template settings — admin-only management.
