@@ -4,11 +4,14 @@ import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
 
 export const CERTIFICATE_TEMPLATES_URL = "certificate-templates";
 
-// Template purpose. GENERAL = admin-picked for manual certificates; GAME = the
-// single template auto-applied to every game certificate (only one may exist).
+// Template purpose. GENERAL = admin-picked for manual certificates;
+// GAME = auto-applied to game certificates; EXAM = auto-applied to quiz
+// certificates. Multiple GAME/EXAM templates may exist but only one of each is
+// active (in use) at a time.
 export const TEMPLATE_TYPES = [
   CERTIFICATE_TEMPLATE_TYPES.GENERAL,
   CERTIFICATE_TEMPLATE_TYPES.GAME,
+  CERTIFICATE_TEMPLATE_TYPES.EXAM,
 ];
 
 // Style enums offered by the template form (mirror the CertificateCard themeJson

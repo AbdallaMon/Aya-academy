@@ -284,7 +284,8 @@ export default function GamePlayer({ game, demo = false }) {
           style={{
             marginTop: 14, width: "100%", border: "none", borderRadius: 16, padding: "15px 18px",
             fontWeight: 900, fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit",
-            background: "linear-gradient(180deg, #20cf99, #0fa377)",
+            background: "linear-gradient(180deg, #0fa377, #0a7d5e)",
+            textShadow: "0 1px 3px rgba(0,0,0,0.28)",
           }}
         >
           {gd.startAdventure}
@@ -316,7 +317,8 @@ export default function GamePlayer({ game, demo = false }) {
               style={{
                 marginTop: 16, width: "100%", border: "none", borderRadius: 16, padding: "15px 18px",
                 fontWeight: 900, fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit",
-                background: "linear-gradient(180deg, #ffb43d, #f6970a)",
+                background: "linear-gradient(180deg, #d97706, #a8490a)",
+                textShadow: "0 1px 3px rgba(0,0,0,0.3)",
               }}
             >
               {taskIndex + 1 < questions.length ? gd.nextTask : gd.finishTask}

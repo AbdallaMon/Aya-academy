@@ -20,12 +20,14 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { MdCheckCircle } from 'react-icons/md';
 import { currencySymbol } from '@aya/shared';
 import Section from '@/shared/ui/sections/Section.jsx';
 import { brandTextColor } from '@/shared/ui/brandText.js';
+import { iconColor } from '@/shared/ui/iconColor.js';
 import { useRequest } from '../../hooks/request/useRequest.js';
 import { useTranslation } from '../../i18n/client.js';
 import { localePath } from '../../i18n/routing.js';
@@ -79,13 +81,14 @@ function PlanSkeleton() {
 
 export default function PricingSection() {
   const txt = usePricingText();
+  const theme = useTheme();
   const { lng } = useTranslation();
   const isEn = lng === 'en';
   // Explicit price locale (don't depend on the runtime default): GBP in en-GB
   // → "£40", in ar-EG → "٤٠ £".
   const priceLocale = isEn ? 'en-GB' : 'ar-EG';
 
-  const { data, isLoading } = useRequest({
+  const { data, isLoading, error, refetch } = useRequest({
     url: 'plans/public',
     method: 'get',
     isPublic: true,
@@ -95,7 +98,9 @@ export default function PricingSection() {
 
   // data starts null and only becomes an array after the fetch resolves; treat
   // "not loaded yet" as loading so we show skeletons, never a false empty state.
-  const loading = isLoading || data == null;
+  // On a failed fetch `data` stays null forever, so exclude the error case here —
+  // otherwise the section would spin skeletons indefinitely instead of recovering.
+  const loading = (isLoading || data == null) && !error;
   const plans = Array.isArray(data) ? data : [];
   const [billingPeriod, setBillingPeriod] = useState('MONTHLY');
   const isYearly = billingPeriod === 'YEARLY';
@@ -108,7 +113,18 @@ export default function PricingSection() {
       title={txt.title}
       subtitle={txt.subtitle}
     >
-      {!loading && plans.length > 0 && (
+      {!loading && error && plans.length === 0 && (
+        <Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
+          <Typography variant="body1" color="text.secondary" textAlign="center">
+            {txt.errorTitle}
+          </Typography>
+          <Button variant="outlined" onClick={() => refetch()}>
+            {txt.retry}
+          </Button>
+        </Stack>
+      )}
+
+      {!loading && !error && plans.length > 0 && (
         <Stack direction="row" justifyContent="center" sx={{ mb: 4 }}>
           <ToggleButtonGroup
             value={billingPeriod}
@@ -134,7 +150,7 @@ export default function PricingSection() {
             <PlanSkeleton key={i} />
           ))}
         </Grid>
-      ) : plans.length === 0 ? (
+      ) : error ? null : plans.length === 0 ? (
         <Typography variant="body1" color="text.secondary" textAlign="center">
           {txt.empty}
         </Typography>
@@ -261,7 +277,7 @@ export default function PricingSection() {
                     <Stack spacing={1.25} sx={{ flex: 1 }}>
                       {/* The plan's differentiator — emphasized. */}
                       <Stack direction="row" gap={1} alignItems="center">
-                        <MdCheckCircle color="#1ABC9C" />
+                        <MdCheckCircle color={iconColor(theme)} />
                         <Typography variant="body2" fontWeight={800}>
                           {plan.hours} {txt.hours}
                         </Typography>
@@ -274,7 +290,7 @@ export default function PricingSection() {
                           gap={1}
                           alignItems="center"
                         >
-                          <MdCheckCircle color="#1ABC9C" />
+                          <MdCheckCircle color={iconColor(theme)} />
                           <Typography variant="body2" color="text.secondary">
                             {feature}
                           </Typography>

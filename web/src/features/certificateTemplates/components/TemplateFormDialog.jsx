@@ -55,6 +55,7 @@ const BORDER_LABEL_KEY = {
 const TYPE_LABEL_KEY = {
   GENERAL: "typeGeneral",
   GAME: "typeGame",
+  EXAM: "typeExam",
 };
 const DECORATION_LABEL_KEY = {
   elegant: "decoElegant",
@@ -372,6 +373,13 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
               <Grid size={{ xs: 12 }}>
                 <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
                   {txt.typeGameHint}
+                </Alert>
+              </Grid>
+            )}
+            {values.type === CERTIFICATE_TEMPLATE_TYPES.EXAM && (
+              <Grid size={{ xs: 12 }}>
+                <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
+                  {txt.typeExamHint}
                 </Alert>
               </Grid>
             )}

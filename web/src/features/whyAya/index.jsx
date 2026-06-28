@@ -17,7 +17,7 @@ import { IoVideocamOutline } from 'react-icons/io5';
 import { PiHeadphonesLight } from 'react-icons/pi';
 import { SlBadge } from 'react-icons/sl';
 import Section from '@/shared/ui/sections/Section.jsx';
-import { brandTextColor } from '@/shared/ui/brandText.js';
+import Eyebrow from '@/shared/ui/Eyebrow.jsx';
 import { useTranslation } from '@/i18n/client.js';
 
 const DIFF_ICONS = [TbWorld, FiHeart, FiBookOpen];
@@ -99,9 +99,7 @@ export function WhyAya() {
         }}
       >
         <Box>
-          <Typography sx={{ color: brandTextColor, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', fontSize: 13, mb: 1.5 }}>
-            {c.eyebrow}
-          </Typography>
+          <Eyebrow>{c.eyebrow}</Eyebrow>
           <Typography variant="h2" sx={{ mb: 2 }}>
             {c.title}
           </Typography>

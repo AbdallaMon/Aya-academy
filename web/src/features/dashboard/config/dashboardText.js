@@ -85,6 +85,8 @@ export const dashboardText = {
     viewDetails: "التفاصيل",
     noChildren: "لم تتم إضافة أطفال بعد",
     noChildrenSub: "سيظهر هنا تقدّم أطفالك بمجرد إضافتهم.",
+    addFirstChild: "أضف طفلك الأول",
+    choosePlan: "اختر باقة",
     levelProgress: "تقدّم المستوى",
     keepGoing: "واصل التميّز! 🌟",
     continueLearning: "تابع التعلّم",
@@ -113,6 +115,10 @@ export const dashboardText = {
     noCertsYet: "أكمل التحديات لتحصل على شهادتك الأولى 📜",
     noGamesYet: "لا توجد ألعاب مسندة بعد",
     keepLearning: "واصل التعلّم 🌟",
+    // friendly game-status labels (replace the raw DB enum for the child)
+    statusNew: "جديدة",
+    statusInProgress: "نكمّلها",
+    statusCompleted: "تمّت",
   },
   en: {
     appName: "Aya Academy",
@@ -189,6 +195,8 @@ export const dashboardText = {
     viewDetails: "Details",
     noChildren: "No children added yet",
     noChildrenSub: "Your children's progress will appear here once they're added.",
+    addFirstChild: "Add your first child",
+    choosePlan: "Choose a plan",
     levelProgress: "Level progress",
     keepGoing: "Keep up the great work! 🌟",
     continueLearning: "Continue learning",
@@ -217,6 +225,10 @@ export const dashboardText = {
     noCertsYet: "Complete challenges to earn your first certificate 📜",
     noGamesYet: "No games assigned yet",
     keepLearning: "Keep learning 🌟",
+    // friendly game-status labels (replace the raw DB enum for the child)
+    statusNew: "New",
+    statusInProgress: "Keep going",
+    statusCompleted: "Done",
   },
 };
 

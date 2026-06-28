@@ -15,7 +15,7 @@ const HERO = {
     title: 'رحلة مُحبّبة لتعلّم القرآن والأخلاق الجميلة',
     subtitle:
       'دروس ممتعة وآمنة للأطفال من ٥ إلى ١٤ سنة — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
-    primary: 'ابدأ بحصة تجريبية مجانية',
+    primary: 'احجز حصة مجانية',
     secondary: 'جرّب ألعابنا التفاعلية 🎮',
     freeTrial: 'بدون بطاقة دفع · بدون التزام · إلغاء في أي وقت',
     chips: ['معلّم خاص لطفلك', 'تلاوة واضحة', 'متابعة لولي الأمر'],
@@ -26,7 +26,7 @@ const HERO = {
     title: 'A loving journey to learn the Quran and beautiful manners',
     subtitle:
       'Fun, safe lessons for kids aged 5–14 — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
-    primary: 'Start with a free trial session',
+    primary: 'Book a free session',
     secondary: 'Try our interactive games 🎮',
     freeTrial: 'No card · No commitment · Cancel anytime',
     chips: ['Your child’s own teacher', 'Clear recitation', 'Parent tracking'],
@@ -202,7 +202,7 @@ export default function Hero() {
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap', gap: 1, display: { xs: 'none', sm: 'flex' } }}>
+            <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap', gap: 1, display: 'flex' }}>
               {t.chips.map((c) => (
                 <Chip
                   key={c}

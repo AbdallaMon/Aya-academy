@@ -265,6 +265,7 @@ const ar = {
     [invoiceMessagesCodes.INVOICE_GENERATED]: "تم إنشاء الفاتورة",
     [invoiceMessagesCodes.INVOICE_REGENERATED]: "تم إعادة توليد الفاتورة",
     [invoiceMessagesCodes.INVOICE_UPDATED]: "تم تحديث الفاتورة",
+    [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]: "لا يمكن تغيير حالة الفاتورة بهذا الشكل",
   },
   [messagesNames.paymentTemplateMessages]: {
     [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "تم حفظ إعدادات قالب الفاتورة",
@@ -594,6 +595,7 @@ const en = {
     [invoiceMessagesCodes.INVOICE_GENERATED]: "Invoice generated",
     [invoiceMessagesCodes.INVOICE_REGENERATED]: "Invoice regenerated",
     [invoiceMessagesCodes.INVOICE_UPDATED]: "Invoice updated",
+    [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]: "This invoice status change isn't allowed",
   },
   [messagesNames.paymentTemplateMessages]: {
     [paymentTemplateMessagesCodes.PAYMENT_TEMPLATE_UPDATED]: "Invoice template settings saved",

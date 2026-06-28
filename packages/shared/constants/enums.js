@@ -121,17 +121,27 @@ export const CERTIFICATE_TYPES = {
 };
 
 // Reusable-template purpose. GENERAL = admin-picked for manual certificates;
-// GAME = the single template auto-applied to every game certificate (only one
-// GAME template may exist at a time — promoting a new one demotes the old).
+// GAME = auto-applied to every game certificate; EXAM = auto-applied to every
+// quiz/exam-pass certificate. Multiple GAME/EXAM templates may exist, but only
+// ONE of each type is active at a time (the "in-use" one). Activating a new one
+// deactivates the rest of its type.
 export const CERTIFICATE_TEMPLATE_TYPES = {
   GENERAL: "GENERAL",
   GAME: "GAME",
+  EXAM: "EXAM",
 };
+
+// Auto-applied template types — at most one ACTIVE template each (used by games
+// and quizzes respectively). GENERAL templates have no such constraint.
+export const AUTO_CERTIFICATE_TEMPLATE_TYPES = [
+  CERTIFICATE_TEMPLATE_TYPES.GAME,
+  CERTIFICATE_TEMPLATE_TYPES.EXAM,
+];
 
 // Certificate template keys drive the frontend's decorative rendering.
 // GAME certificates use the game's `slug` as their templateKey (one look per
-// game). QUIZ (exam-pass) certificates all share a single unified template,
-// visually distinct from games.
+// game). QUIZ (exam-pass) certificates fall back to this unified key only when
+// no active EXAM template is configured.
 export const CERTIFICATE_TEMPLATE_KEYS = {
   EXAM: "EXAM",
 };

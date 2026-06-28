@@ -27,7 +27,9 @@ import {
 } from 'react-icons/md';
 import { GrAchievement } from 'react-icons/gr';
 import Section from '@/shared/ui/sections/Section.jsx';
-import { brandTextColor } from '@/shared/ui/brandText.js';
+import Eyebrow from '@/shared/ui/Eyebrow.jsx';
+import { heroGradient, HeroStatPill } from '@/shared/ui/hero.jsx';
+import { iconColor } from '@/shared/ui/iconColor.js';
 import { useTranslation } from '@/i18n/client.js';
 import { localePath } from '@/i18n/routing.js';
 
@@ -36,8 +38,8 @@ const CONTENT = {
     eyebrow: 'لوحة الطفل',
     title: 'تابع كل خطوة في رحلتهم',
     intro: 'بعد التسجيل، هذه هي اللوحة التي تراها أنت وطفلك — النقاط، المستوى، الترتيب، الأوسمة ولوحة الصدارة في مكان واحد.',
-    cta: 'ابدأ مجاناً وشاهد لوحتك',
-    badgeOnCard: 'لوحة حيّة',
+    cta: 'احجز حصة مجانية',
+    badgeOnCard: 'معاينة اللوحة',
     card: {
       hi: 'مرحباً',
       name: 'آدم',
@@ -56,8 +58,8 @@ const CONTENT = {
     eyebrow: "Child's dashboard",
     title: 'See every step of their journey',
     intro: 'After signing up, this is the dashboard you and your child see — points, level, rank, badges and the leaderboard, all in one place.',
-    cta: 'Start free & see your dashboard',
-    badgeOnCard: 'Live dashboard',
+    cta: 'Book a free session',
+    badgeOnCard: 'Dashboard preview',
     card: {
       hi: 'Hi',
       name: 'Adam',
@@ -76,19 +78,6 @@ const CONTENT = {
 
 const MotionBox = motion.create(Box);
 const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
-
-function StatPill({ value, label }) {
-  return (
-    <Box sx={{ textAlign: 'center', minWidth: 56 }}>
-      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1 }}>
-        {value}
-      </Typography>
-      <Typography variant="caption" sx={{ opacity: 0.92 }}>
-        {label}
-      </Typography>
-    </Box>
-  );
-}
 
 export function ChildDashboardHome() {
   const theme = useTheme();
@@ -144,7 +133,7 @@ export function ChildDashboardHome() {
                 color: '#fff',
                 position: 'relative',
                 overflow: 'hidden',
-                background: `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.main} 100%)`,
+                background: heroGradient(theme),
                 boxShadow: `0 12px 28px ${alpha(theme.palette.primary.main, 0.4)}`,
                 '&::after': {
                   content: '""',
@@ -177,9 +166,9 @@ export function ChildDashboardHome() {
                     justifyContent: { xs: 'space-around', sm: 'flex-start' },
                   }}
                 >
-                  <StatPill value="640" label={card.points} />
-                  <StatPill value="3" label={card.level} />
-                  <StatPill value="#2" label={card.rank} />
+                  <HeroStatPill filled={false} minWidth={56} value="640" label={card.points} />
+                  <HeroStatPill filled={false} minWidth={56} value="3" label={card.level} />
+                  <HeroStatPill filled={false} minWidth={56} value="#2" label={card.rank} />
                 </Stack>
               </Stack>
             </Box>
@@ -228,7 +217,7 @@ export function ChildDashboardHome() {
 
               <Box sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                 <Stack direction="row" alignItems="center" spacing={0.75}>
-                  <MdEmojiEvents color="#F6C453" size={16} />
+                  <MdEmojiEvents color={iconColor(theme, 'secondary')} size={16} />
                   <Typography variant="caption" fontWeight={800} color="text.secondary">
                     {card.leaderboard}
                   </Typography>
@@ -255,9 +244,7 @@ export function ChildDashboardHome() {
 
         {/* ── Copy + CTA (no feature list — that lives in WhyAya) ───── */}
         <Box sx={{ order: { xs: 1, md: 2 } }}>
-          <Typography sx={{ color: brandTextColor, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', fontSize: 13, mb: 1.5 }}>
-            {c.eyebrow}
-          </Typography>
+          <Eyebrow>{c.eyebrow}</Eyebrow>
           <Typography variant="h2" sx={{ mb: 2 }}>
             {c.title}
           </Typography>

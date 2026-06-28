@@ -6,7 +6,7 @@
 // theme (so light/dark toggling is instant) — never from a static pageTheme prop.
 
 import { Box, Container, Typography } from '@mui/material';
-import { brandTextColor } from '@/shared/ui/brandText.js';
+import Eyebrow from '@/shared/ui/Eyebrow.jsx';
 
 export function SectionHeading({ eyebrow, title, subtitle, align = 'center', sx }) {
   return (
@@ -19,20 +19,7 @@ export function SectionHeading({ eyebrow, title, subtitle, align = 'center', sx 
         ...sx,
       }}
     >
-      {eyebrow && (
-        <Typography
-          sx={{
-            color: brandTextColor,
-            fontWeight: 800,
-            letterSpacing: 1.2,
-            textTransform: 'uppercase',
-            fontSize: 13,
-            mb: 1.5,
-          }}
-        >
-          {eyebrow}
-        </Typography>
-      )}
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       {title && (
         <Typography variant="h2" sx={{ mb: subtitle ? 1.5 : 0 }}>
           {title}

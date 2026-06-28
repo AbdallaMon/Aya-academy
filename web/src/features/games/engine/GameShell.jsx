@@ -10,9 +10,12 @@ import { Box, IconButton, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { jelly, Confetti } from "../animations/index.js";
 
-const GRADIENT = "linear-gradient(90deg, #7c4dff, #ff4f9a)";
-const GOOD = "linear-gradient(90deg, #16b083, #20cf99)";
-const BAD = "linear-gradient(90deg, #ff5fa2, #ff7aa8)";
+// Header gradients are kept DARK so white title/subtitle text always clears
+// WCAG AA contrast (≥4.5:1) on every part of the gradient — the old bright
+// purple→pink / light-green / light-pink failed contrast against white.
+const GRADIENT = "linear-gradient(90deg, #6a32d6, #c42a6a)"; // white ≈ 6.8:1 → 5.4:1
+const GOOD = "linear-gradient(90deg, #0a7d5e, #0a8462)"; // white ≈ 5.1:1 → 4.7:1
+const BAD = "linear-gradient(90deg, #cc2e63, #b8285a)"; // white ≈ 5.1:1 → 6.0:1
 
 function StarRow({ filled, total }) {
   return (
@@ -74,7 +77,9 @@ export default function GameShell({
           borderRadius: "30px",
           overflow: "hidden",
           position: "relative",
-          minHeight: 720,
+          // Fixed 720 on tablet+ keeps the "phone" framing; on small phones let it
+          // grow with content so the advance/finish button is never pushed off-screen.
+          minHeight: { xs: "auto", sm: 720 },
           display: "flex",
           flexDirection: "column",
         }}

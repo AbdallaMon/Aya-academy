@@ -17,9 +17,11 @@ import {
   CardContent,
   Chip,
   Grid,
+  Skeleton,
   Stack,
   Tooltip,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
@@ -36,29 +38,9 @@ import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { useDashboardText } from "../config/dashboardText.js";
 import { localizedField } from "../../notifications/config/notificationsText.js";
+import { iconColor } from "@/shared/ui/iconColor.js";
+import { heroGradient, HeroStatPill } from "@/shared/ui/hero.jsx";
 import LeaderboardWidget from "./LeaderboardWidget.jsx";
-
-function HeroStat({ value, label }) {
-  return (
-    <Box
-      sx={{
-        textAlign: "center",
-        minWidth: 72,
-        px: 1.5,
-        py: 1,
-        borderRadius: 3,
-        bgcolor: "rgba(255,255,255,0.16)",
-      }}
-    >
-      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1 }}>
-        {value}
-      </Typography>
-      <Typography variant="caption" sx={{ fontWeight: 700 }}>
-        {label}
-      </Typography>
-    </Box>
-  );
-}
 
 // Section heading: a colored pill + emoji + title. Bigger & friendlier than the
 // admin SectionCard header so it reads well for a child.
@@ -72,7 +54,7 @@ function SectionTitle({ emoji, title, action }) {
       sx={{ mb: 1.5, mt: 1 }}
     >
       <Stack direction="row" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
-        <Box sx={{ fontSize: 24 }}>{emoji}</Box>
+        <Box aria-hidden sx={{ fontSize: 24 }}>{emoji}</Box>
         <Typography variant="h6" fontWeight={900} noWrap sx={{ color: "text.primary" }}>
           {title}
         </Typography>
@@ -84,17 +66,52 @@ function SectionTitle({ emoji, title, action }) {
 
 const GAME_TONES = ["primary", "secondary", "success", "info"];
 
+// Raw DB statuses (NOT_STARTED / ASSIGNED / IN_PROGRESS / COMPLETED) are jargon
+// to a 5–12-year-old — map them to a friendly, localized label instead.
+const GAME_STATUS_KEY = {
+  COMPLETED: "statusCompleted",
+  IN_PROGRESS: "statusInProgress",
+};
+function gameStatusLabel(txt, status) {
+  return txt[GAME_STATUS_KEY[status] || "statusNew"];
+}
+
+// A badge icon is only safe to print if it's an actual emoji; an icon-NAME or
+// URL string would render as raw garbage, so we fall back to a default medal.
+const isEmojiIcon = (s) =>
+  typeof s === "string" && /\p{Extended_Pictographic}/u.test(s);
+
 export default function StudentOverview() {
   const txt = useDashboardText();
+  const theme = useTheme();
   const { lng } = useTranslation();
   const { user } = useAuth();
 
-  const { data } = useRequest({
+  const { data, isLoading } = useRequest({
     url: "dashboard/student",
     method: "get",
     autoFetch: true,
     syncToUrl: false,
   });
+
+  // Before the first response, never flash "0 points / all done / no games" —
+  // show a skeleton instead (the empty/zero state is demotivating for a child).
+  if (isLoading && !data) {
+    return (
+      <Box>
+        <Skeleton variant="rounded" height={160} sx={{ borderRadius: 5, mb: 2 }} />
+        <Skeleton variant="rounded" height={96} sx={{ borderRadius: 4, mb: 2.5 }} />
+        <Skeleton variant="text" width={140} height={32} sx={{ mb: 1 }} />
+        <Grid container spacing={1.5}>
+          {[0, 1, 2].map((i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Skeleton variant="rounded" height={88} sx={{ borderRadius: 4 }} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
 
   const profile = data?.profile;
   const badges = data?.badges || [];
@@ -114,9 +131,8 @@ export default function StudentOverview() {
           mb: 2,
           border: "none",
           color: "#fff",
-          background: (theme) =>
-            `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.main} 100%)`,
-          boxShadow: (theme) => `0 14px 36px ${alpha(theme.palette.primary.main, 0.4)}`,
+          background: (t) => heroGradient(t),
+          boxShadow: (t) => `0 14px 36px ${alpha(t.palette.primary.main, 0.4)}`,
           position: "relative",
           overflow: "hidden",
           "&::after": {
@@ -142,6 +158,7 @@ export default function StudentOverview() {
         <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
           <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" gap={2}>
             <Avatar
+              aria-hidden
               sx={{
                 width: 84,
                 height: 84,
@@ -154,7 +171,8 @@ export default function StudentOverview() {
             </Avatar>
             <Box sx={{ flex: 1, textAlign: { xs: "center", sm: "start" } }}>
               <Typography variant="h4" fontWeight={900}>
-                {txt.welcome}، {profile?.nickname || profile?.name} 🌟
+                {txt.welcome}{lng === "en" ? "," : "،"} {profile?.nickname || profile?.name}{" "}
+                <Box component="span" aria-hidden>🌟</Box>
               </Typography>
               <Typography variant="body1" sx={{ opacity: 0.92, color: "#fff" }}>
                 {txt.welcomeStudentSub}
@@ -182,9 +200,12 @@ export default function StudentOverview() {
               gap={1.25}
               sx={{ flexWrap: "wrap", justifyContent: "center" }}
             >
-              <HeroStat value={profile?.points ?? 0} label={txt.points2} />
-              <HeroStat value={profile?.level ?? 1} label={txt.level} />
-              <HeroStat value={`#${data?.rank ?? "-"}`} label={txt.rank} />
+              <HeroStatPill value={profile?.points ?? 0} label={txt.points2} />
+              <HeroStatPill value={profile?.level ?? 1} label={txt.level} />
+              <HeroStatPill
+                value={data?.rank != null ? `#${data.rank}` : "—"}
+                label={txt.rank}
+              />
             </Stack>
           </Stack>
         </CardContent>
@@ -211,6 +232,7 @@ export default function StudentOverview() {
               sx={{ color: "#25313F" }}
             >
               <Box
+                aria-hidden
                 sx={{
                   fontSize: 40,
                   width: 64,
@@ -356,14 +378,15 @@ export default function StudentOverview() {
                         {localizedField(g.game, "title", lng)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                        {done ? "🎉" : "▶"} {g.status}
+                        <Box component="span" aria-hidden>{done ? "🎉" : "▶"}</Box>{" "}
+                        {gameStatusLabel(txt, g.status)}
                       </Typography>
                     </Box>
                     {playable && (
                       <Box
                         sx={{
-                          width: 36,
-                          height: 36,
+                          width: 44,
+                          height: 44,
                           borderRadius: "50%",
                           display: "flex",
                           alignItems: "center",
@@ -373,7 +396,7 @@ export default function StudentOverview() {
                           flexShrink: 0,
                         }}
                       >
-                        <MdPlayArrow size={20} />
+                        <MdPlayArrow size={24} />
                       </Box>
                     )}
                   </Stack>
@@ -412,7 +435,7 @@ export default function StudentOverview() {
           <Card sx={{ height: "100%" }}>
             <CardContent>
               <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
-                <MdMilitaryTech color="#F6C453" size={22} />
+                <MdMilitaryTech color={iconColor(theme, "secondary")} size={22} />
                 <Typography variant="subtitle1" fontWeight={800}>
                   {txt.myBadges}
                 </Typography>
@@ -437,7 +460,7 @@ export default function StudentOverview() {
                               fontSize: 28,
                             }}
                           >
-                            {b.icon || <MdMilitaryTech size={28} />}
+                            {isEmojiIcon(b.icon) ? b.icon : <MdMilitaryTech size={28} />}
                           </Avatar>
                           <Typography
                             variant="caption"
@@ -467,7 +490,7 @@ export default function StudentOverview() {
                 sx={{ mb: 1.5 }}
               >
                 <Stack direction="row" alignItems="center" gap={1}>
-                  <MdWorkspacePremium color="#F6C453" size={22} />
+                  <MdWorkspacePremium color={iconColor(theme, "secondary")} size={22} />
                   <Typography variant="subtitle1" fontWeight={800}>
                     {txt.certificates}
                   </Typography>
@@ -503,13 +526,15 @@ export default function StudentOverview() {
                         bgcolor: (t) => alpha(t.palette.warning.main, 0.08),
                       }}
                     >
-                      <MdEmojiEvents color="#F6C453" size={22} />
+                      <MdEmojiEvents color={iconColor(theme, "secondary")} size={22} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="body2" fontWeight={800} noWrap sx={{ color: "text.primary" }}>
                           {localizedField(c, "title", lng)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(c.issuedAt).toLocaleDateString()}
+                          {new Date(c.issuedAt).toLocaleDateString(
+                            lng === "ar" ? "ar-EG" : "en-US",
+                          )}
                         </Typography>
                       </Box>
                     </Stack>

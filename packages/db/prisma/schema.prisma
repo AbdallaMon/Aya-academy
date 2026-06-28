@@ -150,6 +150,7 @@ enum CertificateType {
 enum CertificateTemplateType {
   GENERAL
   GAME
+  EXAM
 }
 
 enum RewardType {
@@ -184,16 +185,6 @@ enum AttachmentOwnerType {
   CERTIFICATE
   GAME
   GENERIC
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
-  LOGIN
-  LOGOUT
-  ASSIGN
-  ISSUE
 }
 
 // ============================================================
@@ -261,7 +252,6 @@ model User {
   pointsLedger        Point[]           @relation("StudentPoints")
   awardedPoints       Point[]           @relation("PointAwardedBy")
   uploads             Attachment[]      @relation("AttachmentUploadedBy")
-  auditLogs           AuditLog[]
   createdInvoices     Invoice[]         @relation("InvoiceCreatedBy")
   paymentTemplates    PaymentTemplate[] @relation("PaymentTemplateUpdatedBy")
   appSettingUpdates   AppSetting[]      @relation("AppSettingUpdatedBy")
@@ -959,20 +949,6 @@ model Attachment {
   createdAt DateTime @default(now())
 
   @@index([uploadedById])
-}
-
-model AuditLog {
-  id        Int         @id @default(autoincrement())
-  action    AuditAction
-  entity    String
-  entityId  Int?
-  userId    Int?
-  user      User?       @relation(fields: [userId], references: [id])
-  dataJson  Json?
-  createdAt DateTime    @default(now())
-
-  @@index([userId])
-  @@index([entity, entityId])
 }
 
 // ============================================================

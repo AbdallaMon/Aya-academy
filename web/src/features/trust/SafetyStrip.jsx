@@ -10,7 +10,7 @@ import { Box, Stack, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { MdVerifiedUser, MdHealthAndSafety, MdFamilyRestroom } from 'react-icons/md';
 import Section from '@/shared/ui/sections/Section.jsx';
-import { brandTextColor } from '@/shared/ui/brandText.js';
+import Eyebrow from '@/shared/ui/Eyebrow.jsx';
 import { useTranslation } from '@/i18n/client.js';
 
 const ICONS = [MdVerifiedUser, MdHealthAndSafety, MdFamilyRestroom];
@@ -44,9 +44,7 @@ export default function SafetyStrip() {
   return (
     <Section id="safety" sx={{ py: { xs: 5, md: 7 } }}>
       <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
-        <Typography sx={{ color: brandTextColor, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', fontSize: 13, mb: 1 }}>
-          {c.eyebrow}
-        </Typography>
+        <Eyebrow sx={{ mb: 1 }}>{c.eyebrow}</Eyebrow>
         <Typography variant="h4" component="h2" fontWeight={800}>
           {c.title}
         </Typography>

@@ -2,8 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { MdAdd, MdEdit, MdDelete, MdCheckCircle } from "react-icons/md";
+import {
+  AUTO_CERTIFICATE_TEMPLATE_TYPES,
+  CERTIFICATE_TEMPLATE_TYPES,
+  PERMISSIONS,
+} from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
@@ -63,6 +67,10 @@ export default function CertificateTemplatesPage() {
     if (!ok) return;
     await mut.deleteRequest(String(row.id));
   }
+  // Make a GAME/EXAM template the active ("in-use") one (deactivates its peers).
+  async function onActivate(row) {
+    await mut.postRequest(`${row.id}/activate`, {});
+  }
 
   async function submit(payload, isEditing) {
     if (isEditing) await mut.patchRequest(String(selected.id), payload);
@@ -89,12 +97,13 @@ export default function CertificateTemplatesPage() {
         field: "type",
         headerName: txt.type,
         width: 140,
-        renderCell: ({ row }) =>
-          row.type === "GAME" ? (
-            <Chip size="small" color="secondary" label={txt.typeGame} />
-          ) : (
-            <Chip size="small" variant="outlined" label={txt.typeGeneral} />
-          ),
+        renderCell: ({ row }) => {
+          if (row.type === CERTIFICATE_TEMPLATE_TYPES.GAME)
+            return <Chip size="small" color="secondary" label={txt.typeGame} />;
+          if (row.type === CERTIFICATE_TEMPLATE_TYPES.EXAM)
+            return <Chip size="small" color="info" label={txt.typeExam} />;
+          return <Chip size="small" variant="outlined" label={txt.typeGeneral} />;
+        },
       },
       {
         field: "isDefault",
@@ -110,15 +119,22 @@ export default function CertificateTemplatesPage() {
       {
         field: "isActive",
         headerName: txt.isActive,
-        width: 120,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={row.isActive ? "success" : "default"}
-            variant={row.isActive ? "filled" : "outlined"}
-            label={row.isActive ? txt.active : txt.inactive}
-          />
-        ),
+        width: 130,
+        renderCell: ({ row }) => {
+          // For auto-applied types (GAME/EXAM) "active" means "in use" — and
+          // exactly one of each type can be in use at a time.
+          const isAuto = AUTO_CERTIFICATE_TEMPLATE_TYPES.includes(row.type);
+          const onLabel = isAuto ? txt.inUse : txt.active;
+          const offLabel = isAuto ? txt.notInUse : txt.inactive;
+          return (
+            <Chip
+              size="small"
+              color={row.isActive ? "success" : "default"}
+              variant={row.isActive ? "filled" : "outlined"}
+              label={row.isActive ? onLabel : offLabel}
+            />
+          );
+        },
       },
       {
         field: "actions",
@@ -128,6 +144,19 @@ export default function CertificateTemplatesPage() {
         renderCell: ({ row }) => (
           <RowActionsMenu
             actions={[
+              // "Use this template" — only for an auto-applied (GAME/EXAM)
+              // template that isn't already the active one.
+              ...(AUTO_CERTIFICATE_TEMPLATE_TYPES.includes(row.type) &&
+              !row.isActive
+                ? [
+                    {
+                      label: txt.useTemplate,
+                      icon: <MdCheckCircle />,
+                      color: "success",
+                      onClick: () => onActivate(row),
+                    },
+                  ]
+                : []),
               {
                 label: txt.edit,
                 icon: <MdEdit />,

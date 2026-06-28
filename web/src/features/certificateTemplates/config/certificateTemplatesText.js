@@ -24,6 +24,10 @@ export const certificateTemplatesText = {
     delete: "حذف",
     deleteConfirm: "هل تريد حذف هذا القالب؟",
     empty: "لا توجد قوالب بعد",
+    // activate ("use this template") action
+    useTemplate: "استخدام هذا القالب",
+    inUse: "قيد الاستخدام",
+    notInUse: "غير مستخدم",
     // form sections
     sectionTexts: "النصوص الثابتة",
     sectionSignature: "التوقيع",
@@ -33,8 +37,11 @@ export const certificateTemplatesText = {
     typeLabel: "نوع القالب",
     typeGeneral: "عام",
     typeGame: "قالب الألعاب",
+    typeExam: "قالب الاختبارات",
     typeGameHint:
-      "قالب الألعاب يُستخدم تلقائيًا مع كل شهادات الألعاب (اسم اللعبة يحلّ محل {reason}). يوجد قالب ألعاب واحد فقط — اختيار قالب جديد كقالب ألعاب يُلغي القديم.",
+      "قالب الألعاب يُستخدم تلقائيًا مع كل شهادات الألعاب (اسم اللعبة يحلّ محل {reason}). يمكنك إنشاء أكثر من قالب، لكن قالب واحد فقط يكون قيد الاستخدام — فعِّل القالب الذي تريده من زر «استخدام هذا القالب».",
+    typeExamHint:
+      "قالب الاختبارات يُستخدم تلقائيًا مع كل شهادات الاختبارات (اسم الاختبار يحلّ محل {reason}). يمكنك إنشاء أكثر من قالب، لكن قالب واحد فقط يكون قيد الاستخدام — فعِّل القالب الذي تريده من زر «استخدام هذا القالب».",
     // form fields
     keyLabel: "المفتاح (معرّف فريد)",
     nameArLabel: "الاسم (عربي)",
@@ -152,6 +159,9 @@ export const certificateTemplatesText = {
     delete: "Delete",
     deleteConfirm: "Delete this template?",
     empty: "No templates yet",
+    useTemplate: "Use this template",
+    inUse: "In use",
+    notInUse: "Not in use",
     sectionTexts: "Fixed texts",
     sectionSignature: "Signature",
     sectionStyle: "Design",
@@ -159,8 +169,11 @@ export const certificateTemplatesText = {
     typeLabel: "Template type",
     typeGeneral: "General",
     typeGame: "Games template",
+    typeExam: "Exams template",
     typeGameHint:
-      "The games template is applied automatically to every game certificate (the game name replaces {reason}). Only one games template exists — choosing a new one replaces the old.",
+      "The games template is applied automatically to every game certificate (the game name replaces {reason}). You can create several, but only one is in use at a time — activate the one you want with the “Use this template” button.",
+    typeExamHint:
+      "The exams template is applied automatically to every quiz certificate (the quiz name replaces {reason}). You can create several, but only one is in use at a time — activate the one you want with the “Use this template” button.",
     keyLabel: "Key (unique id)",
     nameArLabel: "Name (Arabic)",
     nameEnLabel: "Name (English)",

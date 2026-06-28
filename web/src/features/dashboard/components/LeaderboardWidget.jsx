@@ -21,10 +21,12 @@ import {
   Chip,
   Stack,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { MdEmojiEvents, MdArrowForward } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
+import { iconColor } from "@/shared/ui/iconColor.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -96,6 +98,7 @@ function PodiumColumn({ row, txt, highlight }) {
 }
 
 function RankRow({ row, txt, highlight }) {
+  const theme = useTheme();
   return (
     <Stack
       direction="row"
@@ -131,7 +134,7 @@ function RankRow({ row, txt, highlight }) {
           {(row.weeklyPoints ?? row.points ?? 0)} {txt.points3} • {row.badgeCount ?? 0} {txt.badgesShort}
         </Typography>
       </Box>
-      <MdEmojiEvents color="#F6C453" size={18} />
+      <MdEmojiEvents color={iconColor(theme, "secondary")} size={18} />
     </Stack>
   );
 }

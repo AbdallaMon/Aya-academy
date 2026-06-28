@@ -38,6 +38,8 @@ import {
   MdLeaderboard,
   MdReceiptLong,
   MdSettings,
+  MdVerified,
+  MdDescription,
 } from "react-icons/md";
 
 const ICONS = {
@@ -53,8 +55,8 @@ const ICONS = {
   quizBank: MdLibraryBooks,
   invitations: MdMarkEmailRead,
   reports: MdAssessment,
-  certificates: MdWorkspacePremium,
-  certificateTemplates: MdWorkspacePremium,
+  certificates: MdVerified,
+  certificateTemplates: MdDescription,
   backups: MdBackup,
   notifications: MdNotifications,
   children: MdChildCare,
