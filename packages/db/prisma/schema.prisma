@@ -176,6 +176,7 @@ enum NotificationType {
   QUIZ_PASSED
   QUIZ_FAILED
   GIFT_RECEIVED
+  INVOICE_SENT
   GENERIC
 }
 
@@ -431,6 +432,7 @@ model Invoice {
   // Per-invoice copy of the template (editable subset).
   configJson         Json
   issueDate          DateTime  @default(now())
+  sentAt             DateTime?
   billingPeriodLabel String?
   dueDate            DateTime?
   notes              String?   @db.Text
