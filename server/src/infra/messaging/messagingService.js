@@ -23,10 +23,16 @@ class MessagingService {
    *   subscriptionId: number,
    *   link?: string,
    * }} opts
+   * @returns {Promise<number>} count of in-app notifications successfully created
    */
   async notifyInvoiceSent({ parents = [], student, invoice, subscriptionId, link }) {
     const studentName = student?.name ?? "";
     const whatsAppEnabled = ENV.whatsapp.enabled && isWhatsAppConfigured();
+
+    // Count only the in-app notifications that were actually created, so the
+    // caller can tell whether anything was delivered (WhatsApp stays best-effort
+    // and is not counted).
+    let delivered = 0;
 
     await Promise.all(
       parents.map(async (parent) => {
@@ -42,6 +48,7 @@ class MessagingService {
             dataJson: { invoiceId: invoice.id, subscriptionId },
             link,
           });
+          delivered += 1;
         } catch (_err) {
           // Best-effort: swallow notification failure, never surface to caller.
         }
@@ -68,6 +75,8 @@ class MessagingService {
         }
       }),
     );
+
+    return delivered;
   }
 }
 

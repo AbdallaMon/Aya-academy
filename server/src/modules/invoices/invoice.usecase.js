@@ -369,15 +369,37 @@ class InvoiceUsecase {
       name: p.name,
       phone: p.phone,
     }));
+
+    // Nothing to send to: the student has no linked parents. Refuse up-front
+    // rather than stamping sentAt for a delivery that never happened.
+    if (parents.length === 0) {
+      throw new AppError({
+        statusCode: 409,
+        code: invoiceMessagesCodes.INVOICE_SEND_FAILED,
+        translationKey: messagesNames.invoiceMessages,
+      });
+    }
+
     const link = `/dashboard/subscriptions/${invoice.subscriptionId}`;
 
-    await messagingService.notifyInvoiceSent({
+    const delivered = await messagingService.notifyInvoiceSent({
       parents,
       student,
       invoice,
       subscriptionId: invoice.subscriptionId,
       link,
     });
+
+    // Only mark the invoice sent when at least one in-app notification was
+    // actually created. If every creation failed, surface a 502 and leave
+    // sentAt untouched so the admin can retry.
+    if (delivered === 0) {
+      throw new AppError({
+        statusCode: 502,
+        code: invoiceMessagesCodes.INVOICE_SEND_FAILED,
+        translationKey: messagesNames.invoiceMessages,
+      });
+    }
 
     const updated = await invoiceRepo.update(invoice.id, { sentAt: new Date() });
     return updated;
