@@ -88,6 +88,16 @@ export const ENV = {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     prefix: process.env.AWS_S3_PREFIX || "",
   },
+
+  // Meta WhatsApp Cloud API. Default OFF — no-op until enabled + configured.
+  whatsapp: {
+    enabled: process.env.WHATSAPP_ENABLED === "true",
+    token: process.env.WHATSAPP_TOKEN,
+    phoneId: process.env.WHATSAPP_PHONE_ID,
+    templateName: process.env.WHATSAPP_TEMPLATE_INVOICE || "invoice_sent",
+    apiVersion: process.env.WHATSAPP_API_VERSION || "v21.0",
+    apiUrl: process.env.WHATSAPP_API_URL,
+  },
 };
 
 /** Whether AWS S3 is fully configured (lazy client init only when present). */
@@ -95,4 +105,9 @@ export function isAwsConfigured() {
   return Boolean(
     ENV.aws.region && ENV.aws.bucket && ENV.aws.accessKeyId && ENV.aws.secretAccessKey,
   );
+}
+
+/** Whether WhatsApp Cloud API is fully configured (token + phoneId required). */
+export function isWhatsAppConfigured() {
+  return Boolean(ENV.whatsapp.token && ENV.whatsapp.phoneId);
 }
