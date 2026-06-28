@@ -1,19 +1,33 @@
 "use client";
 
 import { Button, Stack } from "@mui/material";
-import { MdAutorenew, MdSwapHoriz } from "react-icons/md";
+import {
+  MdAutorenew,
+  MdSwapHoriz,
+  MdSend,
+  MdPlayCircle,
+  MdPaid,
+} from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useOpen } from "../../../hooks/useOpen.js";
+import { useRequest } from "../../../hooks/request/useRequest.js";
+import { SUBSCRIPTIONS_URL, INVOICES_URL } from "../config/constant.js";
 import RenewDialog from "./RenewDialog.jsx";
 import ChangePlanDialog from "./ChangePlanDialog.jsx";
+import ConfirmWithCheckbox from "./ConfirmWithCheckbox.jsx";
 
 /**
  * Action bar for the subscription detail page.
  *
- * - Renew (RENEW || REQUEST || admin)            → RenewDialog (POST /:id/renew)
+ * - Renew (RENEW || REQUEST || admin)        → RenewDialog (POST /:id/renew)
  * - Change plan (EDIT, disabled if invoice PAID) → ChangePlanDialog (POST /:id/change-plan)
+ * - Send to parent (INVOICE.SEND, admin-only) → POST /invoices/:id/send
+ * - Activate (SUBSCRIPTION.ACTIVATE, admin-only; PENDING/UPCOMING only)
+ *      → ConfirmWithCheckbox(markInvoicePaid) → POST /:id/activate
+ * - Mark invoice paid (INVOICE.EDIT, admin-only; invoice UNPAID only)
+ *      → ConfirmWithCheckbox(activateSubscription) → PATCH /invoices/:id {status:"PAID"}
  *
  * Coupon entry lives inside the renew/change dialogs (CouponControl) so BOTH
  * admin and parent can use it — only the BUTTONS are permission-gated.
@@ -27,16 +41,85 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
 
   const renewDialog = useOpen();
   const changeDialog = useOpen();
+  const activateConfirm = useOpen();
+  const markPaidConfirm = useOpen();
+
+  const subMut = useRequest({
+    url: SUBSCRIPTIONS_URL,
+    method: "post",
+    autoFetch: false,
+    syncToUrl: false,
+    shouldAutoToast: true,
+  });
+  const invSend = useRequest({
+    url: INVOICES_URL,
+    method: "post",
+    autoFetch: false,
+    syncToUrl: false,
+    shouldAutoToast: true,
+  });
+  const invPatch = useRequest({
+    url: INVOICES_URL,
+    method: "patch",
+    autoFetch: false,
+    syncToUrl: false,
+    shouldAutoToast: true,
+  });
 
   const canRenew =
     hasPermission(PERMISSIONS.SUBSCRIPTION.RENEW) ||
     hasPermission(PERMISSIONS.SUBSCRIPTION.REQUEST) ||
     isAdmin;
   const canChangePlan = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
+  const canSend = hasPermission(PERMISSIONS.INVOICE.SEND);
+  const canActivate = hasPermission(PERMISSIONS.SUBSCRIPTION.ACTIVATE);
+  const canMarkPaid = hasPermission(PERMISSIONS.INVOICE.EDIT);
 
   const invoicePaid = invoice?.status === "PAID";
+  const subPendingOrUpcoming =
+    subscription.status === "PENDING" || subscription.status === "UPCOMING";
 
-  if (!canRenew && !canChangePlan) return null;
+  async function sendToParent() {
+    if (!invoice) return;
+    try {
+      await invSend.fetchData(`${invoice.id}/send`, {});
+      onChanged?.();
+    } catch {
+      /* auto-toasted */
+    }
+  }
+
+  async function activate(markInvoicePaid) {
+    activateConfirm.close();
+    try {
+      await subMut.fetchData(`${subscription.id}/activate`, { markInvoicePaid });
+      onChanged?.();
+    } catch {
+      /* auto-toasted */
+    }
+  }
+
+  async function markPaid(activateSubscription) {
+    markPaidConfirm.close();
+    if (!invoice) return;
+    try {
+      await invPatch.fetchData(String(invoice.id), {
+        status: "PAID",
+        activateSubscription,
+      });
+      onChanged?.();
+    } catch {
+      /* auto-toasted */
+    }
+  }
+
+  const busy = subMut.isLoading || invSend.isLoading || invPatch.isLoading;
+
+  const showAny =
+    canRenew ||
+    canChangePlan ||
+    (isAdmin && (canSend || canActivate || canMarkPaid));
+  if (!showAny) return null;
 
   return (
     <>
@@ -46,6 +129,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
             variant="contained"
             startIcon={<MdAutorenew />}
             onClick={renewDialog.open}
+            disabled={busy}
           >
             {txt.renew}
           </Button>
@@ -56,9 +140,44 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
             variant="outlined"
             startIcon={<MdSwapHoriz />}
             onClick={changeDialog.open}
-            disabled={invoicePaid}
+            disabled={busy || invoicePaid}
           >
             {txt.changePlan}
+          </Button>
+        )}
+
+        {canSend && invoice && (
+          <Button
+            variant="outlined"
+            startIcon={<MdSend />}
+            onClick={sendToParent}
+            disabled={busy}
+          >
+            {invoice.sentAt ? txt.resend : txt.sendToParent}
+          </Button>
+        )}
+
+        {canActivate && subPendingOrUpcoming && (
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<MdPlayCircle />}
+            onClick={activateConfirm.open}
+            disabled={busy}
+          >
+            {txt.activate}
+          </Button>
+        )}
+
+        {canMarkPaid && invoice && invoice.status === "UNPAID" && (
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<MdPaid />}
+            onClick={markPaidConfirm.open}
+            disabled={busy}
+          >
+            {txt.markPaid}
           </Button>
         )}
       </Stack>
@@ -76,6 +195,30 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
         subscription={subscription}
         txt={txt}
         onChanged={onChanged}
+      />
+
+      <ConfirmWithCheckbox
+        open={activateConfirm.isOpen}
+        title={txt.activateTitle}
+        checkboxLabel={txt.activateMarkPaid}
+        confirmText={txt.activate}
+        cancelText={txt.cancel}
+        intent="success"
+        loading={subMut.isLoading}
+        onCancel={activateConfirm.close}
+        onConfirm={activate}
+      />
+
+      <ConfirmWithCheckbox
+        open={markPaidConfirm.isOpen}
+        title={txt.markPaidTitle}
+        checkboxLabel={txt.markPaidActivate}
+        confirmText={txt.confirm}
+        cancelText={txt.cancel}
+        intent="success"
+        loading={invPatch.isLoading}
+        onCancel={markPaidConfirm.close}
+        onConfirm={markPaid}
       />
     </>
   );
