@@ -800,6 +800,82 @@ class SubscriptionUsecase {
 
     return updated;
   }
+
+  /**
+   * Admin activates a not-yet-started subscription. Only PENDING/UPCOMING may be
+   * activated; the resulting status is resolved from the date window (ACTIVE if
+   * the window is current, UPCOMING if it starts later). Optionally marks the
+   * demand invoice paid via the invoice usecase's transition-guarded path.
+   *
+   * The reverse direction (paying the invoice activates the subscription) lives
+   * in invoice.usecase and is intentionally left untouched.
+   */
+  async activate(authUser, id, input = {}) {
+    // 1. ADMIN-only — the route's ACTIVATE permission enforces this; we re-assert
+    //    object scope (ADMIN passes for any subscription).
+    const existing = await subscriptionRepo.getById(id);
+    if (!existing) {
+      throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
+    }
+    await this.assertCanAccess(authUser, existing.studentId);
+
+    // 2. Transition guard: only a not-yet-started subscription can be activated.
+    //    Reusing NOT_PENDING here — the same code the approve/reject actions use
+    //    for "the subscription is not in a state this action accepts". There is
+    //    no dedicated invalid-activation code, and minting one would be noise;
+    //    SUBSCRIPTION_ACTIVATED is the success message, so it can't double as the
+    //    error.
+    const activatable = [
+      SUBSCRIPTION_STATUSES.PENDING,
+      SUBSCRIPTION_STATUSES.UPCOMING,
+    ];
+    if (!activatable.includes(existing.status)) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.NOT_PENDING,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    // 3. Resolve the new status from the date window and persist.
+    const status = this.resolveStatus(existing.startDate, existing.endDate);
+    const updated = await subscriptionRepo.updateSubscription(id, { status });
+
+    // 4. Optionally mark the demand invoice paid using the SAME transition-guarded
+    //    path the invoice edit uses (UNPAID → PAID). We do NOT pass
+    //    activateSubscription, since we have already activated here. Dynamic
+    //    import avoids the circular dependency. Best-effort.
+    if (input.markInvoicePaid) {
+      try {
+        const invoice = await invoiceRepo.getBySubscriptionId(id);
+        if (invoice && invoice.status === INVOICE_STATUSES.UNPAID) {
+          const { invoiceUsecase } = await import(
+            "../invoices/invoice.usecase.js"
+          );
+          await invoiceUsecase.update(authUser, invoice.id, {
+            status: INVOICE_STATUSES.PAID,
+          });
+        }
+      } catch {
+        // swallow — invoice payment is best-effort
+      }
+    }
+
+    // 5. Notify the student their subscription is active (best-effort).
+    try {
+      await notificationUsecase.createNotification({
+        userId: updated.studentId,
+        type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
+        titleAr: "تم تفعيل اشتراكك 🎉",
+        titleEn: "Your subscription has been activated 🎉",
+        link: "/dashboard",
+      });
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return updated;
+  }
 }
 
 export const subscriptionUsecase = new SubscriptionUsecase();

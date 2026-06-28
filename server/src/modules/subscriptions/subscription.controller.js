@@ -118,6 +118,20 @@ class SubscriptionController {
       messagesNames.subscriptionMessages,
     );
   };
+
+  activate = async (req, res) => {
+    const subscription = await subscriptionUsecase.activate(
+      authUser(req),
+      idParam(req.params.id),
+      req.body,
+    );
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED,
+      messagesNames.subscriptionMessages,
+    );
+  };
 }
 
 export const subscriptionController = new SubscriptionController();

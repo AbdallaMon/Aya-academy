@@ -88,4 +88,10 @@ export class SubscriptionValidation {
     billingPeriod: z.enum(billingPeriods).optional(),
     couponCode: z.string().trim().min(1).optional(),
   });
+
+  // Admin activates a PENDING/UPCOMING subscription, optionally marking its
+  // demand invoice paid in the same action.
+  static activateSubscriptionSchema = z.object({
+    markInvoicePaid: z.boolean().optional(),
+  });
 }

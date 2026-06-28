@@ -85,6 +85,14 @@ subscriptionRoutes.post(
   asyncHandler(subscriptionController.changePlan),
 );
 
+// Admin activates a PENDING/UPCOMING subscription (optionally marking it paid).
+subscriptionRoutes.post(
+  "/:id/activate",
+  authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.ACTIVATE]),
+  validate(SubscriptionValidation.activateSubscriptionSchema),
+  asyncHandler(subscriptionController.activate),
+);
+
 subscriptionRoutes.put(
   "/:id",
   authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.EDIT]),
