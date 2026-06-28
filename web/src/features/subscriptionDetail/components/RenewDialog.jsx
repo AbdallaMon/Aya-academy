@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { subscriptionMessagesCodes } from "@aya/shared";
 import {
   MenuItem,
   Stack,
@@ -117,7 +118,10 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
     try {
       await doRenew(false);
     } catch (e) {
-      if (e?.status === 409 && e?.data?.message === "SUBSCRIPTION_STILL_ACTIVE") {
+      if (
+        e?.status === 409 &&
+        e?.data?.message === subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE
+      ) {
         const sure = await confirm({
           title: txt.stillActiveConfirm,
           intent: "warning",
