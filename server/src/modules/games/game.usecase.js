@@ -10,11 +10,16 @@ import {
   parseBooleanFilter,
 } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
+import { badgeUsecase } from "../badges/badge.usecase.js";
 import { certificateUsecase } from "../certificates/certificate.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { gameRepo } from "./game.repo.js";
 import { gameMessagesCodes } from "./game.messages.js";
+import {
+  hasActiveSubscription,
+  assertActiveForStudent,
+} from "../../shared/access/subscriptionAccess.js";
 
 // Points awarded per correct answer + a flat bonus for passing.
 const POINTS_PER_CORRECT = 5;
@@ -54,6 +59,11 @@ class GameUsecase {
     };
   }
 
+  // A game is exempt from subscription gating when it is the public free game.
+  isFreeGame(game) {
+    return Boolean(game?.isFree && game?.isPublic);
+  }
+
   // ── public (no auth) ────────────────────────────────────
   async listPublic() {
     return gameRepo.listPublic();
@@ -84,6 +94,19 @@ class GameUsecase {
       await gameRepo.clearAllFreeFlags(tx);
       return gameRepo.markGameFree(game.id, tx);
     });
+  }
+
+  // ── badge linking (admin, GAME.MANAGE) ──────────────────
+  // Link the badge auto-awarded when a student completes (passes) this game, or
+  // unlink it (badgeId=null). Verifies both the game and the target badge exist.
+  async setBadge(authUser, id, badgeId) {
+    const game = await gameRepo.getById(id);
+    if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
+
+    // getById throws notFound(BADGE_NOT_FOUND) if the badge doesn't exist.
+    if (badgeId != null) await badgeUsecase.getById(badgeId);
+
+    return gameRepo.setBadge(game.id, badgeId);
   }
 
   // ── authenticated list ──────────────────────────────────
@@ -143,6 +166,11 @@ class GameUsecase {
 
     if (authUser.role === USER_ROLES.ADMIN) return game;
     if (!game.isActive) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
+
+    // Students need an ACTIVE subscription to play — except the free game.
+    if (authUser.role === USER_ROLES.STUDENT && !this.isFreeGame(game)) {
+      await assertActiveForStudent(authUser.id);
+    }
     return this.stripAnswers(game);
   }
 
@@ -198,7 +226,14 @@ class GameUsecase {
   /** The signed-in student's own game assignments (empty for non-students). */
   async myAssignments(authUser) {
     if (authUser.role !== USER_ROLES.STUDENT) return [];
-    return gameRepo.listAssignmentsForStudent(authUser.id);
+    const assignments = await gameRepo.listAssignmentsForStudent(authUser.id);
+    const active = await hasActiveSubscription(authUser.id);
+    return assignments.map((a) => ({
+      ...a,
+      // Cards stay visible but are locked when the student is inactive,
+      // unless the game itself is the public free game.
+      locked: !active && !this.isFreeGame(a.game),
+    }));
   }
 
   /**
@@ -238,6 +273,11 @@ class GameUsecase {
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
     if (!game.isActive) throw badRequest(gameMessagesCodes.GAME_NOT_ACTIVE);
 
+    // Submitting a result requires an active subscription — except the free game.
+    if (!this.isFreeGame(game)) {
+      await assertActiveForStudent(authUser.id);
+    }
+
     const correctCount = input.correctCount;
     const totalQuestions = input.totalQuestions;
     const passed =
@@ -245,6 +285,18 @@ class GameUsecase {
     const score = correctCount;
 
     const existingAssignment = await gameRepo.getAssignment(game.id, authUser.id);
+
+    // Rewards (points + certificate + badge + gift) are earned ONCE, on the first
+    // successful completion. A student may replay freely afterwards for practice:
+    // every replay still records an attempt, but never re-grants anything and never
+    // mints a second certificate. We use the existing GAME certificate as the
+    // "already completed" marker (and re-surface it so the end-of-game screen can
+    // still show/download it on a replay).
+    const existingCertificate = await certificateUsecase.findEarnedForGame(
+      authUser.id,
+      game.id,
+    );
+    const firstCompletion = passed && !existingCertificate;
 
     // Core writes are atomic: attempt + points + assignment-status + certificate.
     const { attempt, certificate } = await prisma.$transaction(async (tx) => {
@@ -262,9 +314,11 @@ class GameUsecase {
         tx,
       );
 
-      const points = correctCount * POINTS_PER_CORRECT + (passed ? PASS_BONUS : 0);
-      if (points > 0) {
-        await gameRepo.incrementStudentPoints(authUser.id, points, tx);
+      if (firstCompletion) {
+        const points = correctCount * POINTS_PER_CORRECT + PASS_BONUS;
+        if (points > 0) {
+          await gameRepo.incrementStudentPoints(authUser.id, points, tx);
+        }
       }
 
       if (existingAssignment) {
@@ -276,7 +330,7 @@ class GameUsecase {
       }
 
       let issuedCertificate = null;
-      if (passed) {
+      if (firstCompletion) {
         const certConfig = game.configJson?.certificate ?? null;
         issuedCertificate = await certificateUsecase.issueForGameAttempt(
           {
@@ -299,8 +353,8 @@ class GameUsecase {
       return { attempt: createdAttempt, certificate: issuedCertificate };
     });
 
-    // Side-effects on a pass — best-effort (must not fail the request).
-    if (passed) {
+    // First-completion side-effects — best-effort (must not fail the request).
+    if (firstCompletion) {
       try {
         await notificationUsecase.createNotification({
           userId: authUser.id,
@@ -322,9 +376,22 @@ class GameUsecase {
       } catch {
         // swallow — reward is best-effort
       }
+      // Auto-award the linked badge (+ its points). Idempotent + best-effort.
+      if (game.badgeId) {
+        try {
+          await badgeUsecase.awardToStudent({
+            studentId: authUser.id,
+            badgeId: game.badgeId,
+          });
+        } catch {
+          // swallow — badge award is best-effort
+        }
+      }
     }
 
-    return { attempt, passed, certificate };
+    // Always hand back a certificate when one exists (fresh or previously earned),
+    // so replays keep their download link.
+    return { attempt, passed, certificate: certificate ?? existingCertificate };
   }
 
   // ── attempts list ───────────────────────────────────────
