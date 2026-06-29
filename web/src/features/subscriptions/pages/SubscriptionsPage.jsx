@@ -356,6 +356,13 @@ export default function SubscriptionsPage() {
                 const showApprove = canApprove && row.status === "PENDING";
                 const showCancel =
                   canCancel && CANCELLABLE.includes(row.status);
+                // A parent may only renew when there's no in-flight subscription
+                // (EXPIRED/CANCELLED); admins may renew any status.
+                const showRenew =
+                  canRenew &&
+                  (isAdmin ||
+                    row.status === "EXPIRED" ||
+                    row.status === "CANCELLED");
                 return (
                   <RowActionsMenu
                     actions={[
@@ -387,7 +394,7 @@ export default function SubscriptionsPage() {
                         icon: <MdAutorenew />,
                         color: "primary",
                         onClick: () => renew(row),
-                        hidden: !canRenew,
+                        hidden: !showRenew,
                         disabled: isRenewing,
                       },
                       {

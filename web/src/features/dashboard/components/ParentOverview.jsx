@@ -168,56 +168,173 @@ export default function ParentOverview() {
                   </Box>
                 </Stack>
 
-                {/* Stats/achievements are hidden for an inactive child; the
-                    parent still sees identity + status above and a renew CTA. */}
-                {child.isActive === false ? (
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    gap={1}
-                    sx={{ py: 1.5, px: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.warning.main, 0.08) }}
-                  >
-                    <Box aria-hidden sx={{ fontSize: 22 }}>🔒</Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                      {txt.inactiveChildNote}
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <>
+                {/* Branch on the backend-computed subscriptionState so a pending
+                    renewal reads as "awaiting payment", not "expired". Only ACTIVE
+                    shows the stats/achievements; every other state hides them and
+                    surfaces a state-appropriate note + CTA. */}
+                {(() => {
+                  const state = child.subscriptionState;
+                  if (state === "ACTIVE") {
+                    return (
+                      <>
+                        <Stack
+                          direction="row"
+                          divider={<Box sx={{ width: "1px", bgcolor: "divider" }} />}
+                          sx={{ py: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.primary.main, 0.05) }}
+                        >
+                          <ChildMetric value={child.points ?? 0} label={txt.points2} color="primary.main" />
+                          <ChildMetric value={child.level ?? 1} label={txt.level} color="secondary.main" />
+                          <ChildMetric value={`#${child.rank ?? "-"}`} label={txt.rank} color="text.primary" />
+                          <ChildMetric value={child.badgeCount ?? 0} label={txt.badgesLabel} color="warning.main" />
+                        </Stack>
+
+                        {child.activeSubscription?.remainingHours != null && (
+                          <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: "block", mt: 1.5 }}>
+                            ⏳ {child.activeSubscription.remainingHours} {txt.remainingHours}
+                          </Typography>
+                        )}
+                      </>
+                    );
+                  }
+
+                  if (state === "PENDING") {
+                    return (
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        gap={1}
+                        sx={{ py: 1.5, px: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.info.main, 0.08) }}
+                      >
+                        <Box aria-hidden sx={{ fontSize: 22 }}>⏳</Box>
+                        <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                          {txt.pendingChildNote}
+                        </Typography>
+                      </Stack>
+                    );
+                  }
+
+                  if (state === "NONE") {
+                    return (
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        gap={1}
+                        sx={{ py: 1.5, px: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.grey[500], 0.08) }}
+                      >
+                        <Box aria-hidden sx={{ fontSize: 22 }}>📋</Box>
+                        <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                          {txt.noSubscriptionNote}
+                        </Typography>
+                      </Stack>
+                    );
+                  }
+
+                  // EXPIRED (and any unknown/legacy state) → actionable renew note.
+                  return (
                     <Stack
                       direction="row"
-                      divider={<Box sx={{ width: "1px", bgcolor: "divider" }} />}
-                      sx={{ py: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.primary.main, 0.05) }}
+                      alignItems="center"
+                      gap={1}
+                      sx={{ py: 1.5, px: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.warning.main, 0.08) }}
                     >
-                      <ChildMetric value={child.points ?? 0} label={txt.points2} color="primary.main" />
-                      <ChildMetric value={child.level ?? 1} label={txt.level} color="secondary.main" />
-                      <ChildMetric value={`#${child.rank ?? "-"}`} label={txt.rank} color="text.primary" />
-                      <ChildMetric value={child.badgeCount ?? 0} label={txt.badgesLabel} color="warning.main" />
-                    </Stack>
-
-                    {child.activeSubscription?.remainingHours != null && (
-                      <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: "block", mt: 1.5 }}>
-                        ⏳ {child.activeSubscription.remainingHours} {txt.remainingHours}
+                      <Box aria-hidden sx={{ fontSize: 22 }}>🔒</Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                        {txt.inactiveChildNote}
                       </Typography>
-                    )}
-                  </>
-                )}
+                    </Stack>
+                  );
+                })()}
 
-                <Button
-                  fullWidth
-                  size="small"
-                  variant={child.isActive === false ? "contained" : "text"}
-                  component={Link}
-                  href={localePath(lng, "/dashboard/children")}
-                  endIcon={
-                    <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
-                      <MdArrowForward />
-                    </Box>
+                {(() => {
+                  const state = child.subscriptionState;
+                  const subHref =
+                    child.latestSubscriptionId != null
+                      ? localePath(lng, `/dashboard/subscriptions/${child.latestSubscriptionId}`)
+                      : null;
+
+                  // PENDING: view the in-flight subscription — no renew, no "expired".
+                  if (state === "PENDING") {
+                    return (
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="outlined"
+                        component={Link}
+                        href={subHref || localePath(lng, "/dashboard/subscriptions")}
+                        endIcon={
+                          <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                            <MdArrowForward />
+                          </Box>
+                        }
+                        sx={{ mt: 1.5, fontWeight: 700 }}
+                      >
+                        {txt.viewSubscription}
+                      </Button>
+                    );
                   }
-                  sx={{ mt: 1.5, fontWeight: 700 }}
-                >
-                  {child.isActive === false ? txt.renewSubscription : txt.viewDetails}
-                </Button>
+
+                  // EXPIRED: renew. Prefer the latest subscription's detail page
+                  // (where the Renew dialog lives); fall back to children area.
+                  if (state === "EXPIRED") {
+                    return (
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        component={Link}
+                        href={subHref || localePath(lng, "/dashboard/children")}
+                        endIcon={
+                          <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                            <MdArrowForward />
+                          </Box>
+                        }
+                        sx={{ mt: 1.5, fontWeight: 700 }}
+                      >
+                        {txt.renewSubscription}
+                      </Button>
+                    );
+                  }
+
+                  // NONE: choose a plan (reuse the page's existing subscriptions nav).
+                  if (state === "NONE") {
+                    return (
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        component={Link}
+                        href={localePath(lng, "/dashboard/subscriptions")}
+                        endIcon={
+                          <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                            <MdArrowForward />
+                          </Box>
+                        }
+                        sx={{ mt: 1.5, fontWeight: 700 }}
+                      >
+                        {txt.choosePlan}
+                      </Button>
+                    );
+                  }
+
+                  // ACTIVE (and fallback): view child details.
+                  return (
+                    <Button
+                      fullWidth
+                      size="small"
+                      variant="text"
+                      component={Link}
+                      href={localePath(lng, "/dashboard/children")}
+                      endIcon={
+                        <Box sx={{ display: "flex", transform: lng === "en" ? "none" : "scaleX(-1)" }}>
+                          <MdArrowForward />
+                        </Box>
+                      }
+                      sx={{ mt: 1.5, fontWeight: 700 }}
+                    >
+                      {txt.viewDetails}
+                    </Button>
+                  );
+                })()}
               </CardContent>
             </Card>
           </Grid>

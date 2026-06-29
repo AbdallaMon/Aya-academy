@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Stack } from "@mui/material";
+import { Button, Chip, Stack } from "@mui/material";
 import {
   MdAutorenew,
   MdSwapHoriz,
@@ -88,6 +88,17 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const subPendingOrUpcoming =
     subscription.status === "PENDING" || subscription.status === "UPCOMING";
 
+  // Renew is only meaningful when there's no in-flight subscription. A parent
+  // may renew an EXPIRED/CANCELLED subscription; while PENDING/UPCOMING (awaiting
+  // payment & activation) we show an info hint instead. Admins may renew any
+  // status (allowWhileActive handles the still-active case).
+  const showRenew =
+    canRenew &&
+    (isAdmin ||
+      subscription.status === "EXPIRED" ||
+      subscription.status === "CANCELLED");
+  const showAwaitingHint = !isAdmin && subPendingOrUpcoming;
+
   async function sendToParent() {
     if (!invoice) return;
     try {
@@ -125,7 +136,8 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const busy = subMut.isLoading || invSend.isLoading || invPatch.isLoading;
 
   const showAny =
-    canRenew ||
+    showRenew ||
+    showAwaitingHint ||
     canChangePlan ||
     canCoupon ||
     (isAdmin && (canSend || canActivate || canMarkPaid));
@@ -134,7 +146,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   return (
     <>
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-        {canRenew && (
+        {showRenew && (
           <Button
             variant="contained"
             startIcon={<MdAutorenew />}
@@ -143,6 +155,10 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
           >
             {txt.renew}
           </Button>
+        )}
+
+        {showAwaitingHint && (
+          <Chip color="info" variant="outlined" label={txt.awaitingActivationHint} />
         )}
 
         {canChangePlan && (

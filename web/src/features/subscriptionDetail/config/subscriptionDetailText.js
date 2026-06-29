@@ -56,6 +56,7 @@ export const subscriptionDetailText = {
     renew: "تجديد",
     renewTitle: "تجديد الاشتراك",
     renewSubmit: "تجديد",
+    awaitingActivationHint: "في انتظار الدفع والتفعيل",
     stillActiveConfirm: "ما زال هناك اشتراك فعّال لم ينتهِ بعد. هل تريد التجديد على أي حال؟",
     // change plan
     changePlan: "تعديل الخطة",
@@ -128,6 +129,7 @@ export const subscriptionDetailText = {
     renew: "Renew",
     renewTitle: "Renew subscription",
     renewSubmit: "Renew",
+    awaitingActivationHint: "Awaiting payment & activation",
     stillActiveConfirm: "There is still an active subscription that hasn't expired. Renew anyway?",
     // change plan
     changePlan: "Change plan",
