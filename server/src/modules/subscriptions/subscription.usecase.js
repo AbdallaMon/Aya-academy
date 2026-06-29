@@ -795,6 +795,17 @@ class SubscriptionUsecase {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
     await this.assertCanAccess(authUser, existing.studentId);
+
+    // An ACTIVE subscription is settled — its plan/period/coupon must not change
+    // (no admin bypass). Cancel it first, then create a fresh one. This is in
+    // ADDITION to the invoice-UNPAID guard below.
+    if (existing.status === SUBSCRIPTION_STATUSES.ACTIVE) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
     if (
       authUser.role === USER_ROLES.PARENT &&
       existing.status !== SUBSCRIPTION_STATUSES.PENDING
@@ -899,6 +910,16 @@ class SubscriptionUsecase {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
     await this.assertCanAccess(authUser, existing.studentId);
+
+    // An ACTIVE subscription is settled — its coupon must not change (no admin
+    // bypass). This is in ADDITION to the invoice-UNPAID guard below.
+    if (existing.status === SUBSCRIPTION_STATUSES.ACTIVE) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
 
     // 2. Block once the demand invoice is settled (paid/voided): the charged
     //    amounts are fixed and must not silently shift.
