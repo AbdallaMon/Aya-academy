@@ -13,7 +13,6 @@ import {
   buildSearchQuery,
   parseBooleanFilter,
 } from "../../shared/utility/helper.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { badgeUsecase } from "../badges/badge.usecase.js";
 import { certificateUsecase } from "../certificates/certificate.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
@@ -69,8 +68,8 @@ class GameUsecase {
     return gameRepo.listPublic();
   }
 
-  async getPublicBySlug(slug) {
-    const game = await gameRepo.getPublicBySlug(slug);
+  async getPublicBySlug({ slug }) {
+    const game = await gameRepo.getPublicBySlug({ slug });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
     return this.stripAnswers(game);
   }
@@ -86,27 +85,27 @@ class GameUsecase {
   // Make ONE game the public free trial. Atomically clears the flag on every
   // other game so exactly one is ever free, and ensures the chosen game is
   // public + active so it actually shows on the marketing /free-game page.
-  async setFree(authUser, id) {
-    const game = await gameRepo.getById(id);
+  async setFree({ id, authUser }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     return prisma.$transaction(async (tx) => {
-      await gameRepo.clearAllFreeFlags(tx);
-      return gameRepo.markGameFree(game.id, tx);
+      await gameRepo.clearAllFreeFlags({ client: tx });
+      return gameRepo.markGameFree({ id: game.id, client: tx });
     });
   }
 
   // ── badge linking (admin, GAME.MANAGE) ──────────────────
   // Link the badge auto-awarded when a student completes (passes) this game, or
   // unlink it (badgeId=null). Verifies both the game and the target badge exist.
-  async setBadge(authUser, id, badgeId) {
-    const game = await gameRepo.getById(id);
+  async setBadge({ id, badgeId, authUser }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     // getById throws notFound(BADGE_NOT_FOUND) if the badge doesn't exist.
     if (badgeId != null) await badgeUsecase.getById(badgeId);
 
-    return gameRepo.setBadge(game.id, badgeId);
+    return gameRepo.setBadge({ id: game.id, badgeId });
   }
 
   // ── authenticated list ──────────────────────────────────
@@ -135,19 +134,14 @@ class GameUsecase {
     return where;
   }
 
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = this.buildListWhere(authUser, params);
-    const { items, total } = await gameRepo.listGames(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+  async list({ page, limit, filters = {}, authUser }) {
+    const where = this.buildListWhere(authUser, filters);
+    return gameRepo.listGames({ where, page, limit });
   }
 
   // ── single game (full) ──────────────────────────────────
-  async getById(authUser, id) {
-    const game = await gameRepo.getById(id);
+  async getById({ id, authUser }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     // ADMIN sees answers; STUDENT/PARENT do not.
@@ -160,8 +154,8 @@ class GameUsecase {
    * play ANY active game (not just public ones) without exposing the public
    * route. Non-admins never see active=false games or the answer key.
    */
-  async getBySlugAuth(authUser, slug) {
-    const game = await gameRepo.getBySlug(slug);
+  async getBySlugAuth({ slug, authUser }) {
+    const game = await gameRepo.getBySlug({ slug });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     if (authUser.role === USER_ROLES.ADMIN) return game;
@@ -175,8 +169,8 @@ class GameUsecase {
   }
 
   // ── assign (admin-only by permission) ───────────────────
-  async assign(authUser, id, input) {
-    const game = await gameRepo.getById(id);
+  async assign({ id, authUser, ...input }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     const studentIds = [...new Set(input.studentIds)];
@@ -187,15 +181,13 @@ class GameUsecase {
     const assignments = await prisma.$transaction((tx) =>
       Promise.all(
         studentIds.map((studentId) =>
-          gameRepo.upsertAssignment(
-            {
-              gameId: game.id,
-              studentId,
-              assignedById: authUser.id,
-              dueAt: input.dueAt,
-            },
-            tx,
-          ),
+          gameRepo.upsertAssignment({
+            gameId: game.id,
+            studentId,
+            assignedById: authUser.id,
+            dueAt: input.dueAt,
+            client: tx,
+          }),
         ),
       ),
     );
@@ -217,16 +209,18 @@ class GameUsecase {
   }
 
   // ── assignments listing + unassign (admin-only by permission) ───
-  async listAssignments(authUser, gameId) {
-    const game = await gameRepo.getById(gameId);
+  async listAssignments({ id, authUser }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
-    return gameRepo.listAssignments(gameId);
+    return gameRepo.listAssignments({ gameId: game.id });
   }
 
   /** The signed-in student's own game assignments (empty for non-students). */
-  async myAssignments(authUser) {
+  async myAssignments({ authUser }) {
     if (authUser.role !== USER_ROLES.STUDENT) return [];
-    const assignments = await gameRepo.listAssignmentsForStudent(authUser.id);
+    const assignments = await gameRepo.listAssignmentsForStudent({
+      studentId: authUser.id,
+    });
     const active = await hasActiveSubscription(authUser.id);
     // Cards stay visible but are locked when the student is inactive,
     // unless the game itself is the public free game.
@@ -241,8 +235,8 @@ class GameUsecase {
    * student-detail "games" tab (view + add/remove). The route already enforces
    * GAME.ASSIGN; admins manage every student so no extra scope is needed.
    */
-  async studentAssignments(authUser, studentId) {
-    return gameRepo.listAssignmentsForStudent(studentId);
+  async studentAssignments({ studentId, authUser }) {
+    return gameRepo.listAssignmentsForStudent({ studentId });
   }
 
   /**
@@ -253,23 +247,26 @@ class GameUsecase {
     return gameRepo.getFreeCard();
   }
 
-  async unassign(authUser, gameId, studentId) {
-    const game = await gameRepo.getById(gameId);
+  async unassign({ id, studentId, authUser }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
-    const result = await gameRepo.deleteAssignment(gameId, studentId);
+    const result = await gameRepo.deleteAssignment({
+      gameId: id,
+      studentId,
+    });
     if (!result || result.count === 0) {
       throw notFound(gameMessagesCodes.ASSIGNMENT_NOT_FOUND);
     }
-    return { gameId, studentId, removed: result.count };
+    return { gameId: id, studentId, removed: result.count };
   }
 
   // ── attempt (student-only by permission) ────────────────
-  async attempt(authUser, id, input) {
+  async attempt({ id, authUser, ...input }) {
     if (authUser.role !== USER_ROLES.STUDENT) {
       throw forbidden(gameMessagesCodes.ONLY_STUDENT_CAN_ATTEMPT);
     }
 
-    const game = await gameRepo.getById(id);
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
     if (!game.isActive) throw badRequest(gameMessagesCodes.GAME_NOT_ACTIVE);
 
@@ -284,7 +281,10 @@ class GameUsecase {
       game.passThreshold == null ? true : correctCount >= game.passThreshold;
     const score = correctCount;
 
-    const existingAssignment = await gameRepo.getAssignment(game.id, authUser.id);
+    const existingAssignment = await gameRepo.getAssignment({
+      gameId: game.id,
+      studentId: authUser.id,
+    });
 
     // Rewards (points + certificate + badge + gift) are earned ONCE, on the first
     // successful completion. A student may replay freely afterwards for practice:
@@ -300,8 +300,8 @@ class GameUsecase {
 
     // Core writes are atomic: attempt + points + assignment-status + certificate.
     const { attempt, certificate } = await prisma.$transaction(async (tx) => {
-      const createdAttempt = await gameRepo.createAttempt(
-        {
+      const createdAttempt = await gameRepo.createAttempt({
+        data: {
           gameId: game.id,
           studentId: authUser.id,
           score,
@@ -311,22 +311,26 @@ class GameUsecase {
           answersJson: input.answersJson ?? undefined,
           completedAt: new Date(),
         },
-        tx,
-      );
+        client: tx,
+      });
 
       if (firstCompletion) {
         const points = correctCount * POINTS_PER_CORRECT + PASS_BONUS;
         if (points > 0) {
-          await gameRepo.incrementStudentPoints(authUser.id, points, tx);
+          await gameRepo.incrementStudentPoints({
+            studentId: authUser.id,
+            points,
+            client: tx,
+          });
         }
       }
 
       if (existingAssignment) {
-        await gameRepo.updateAssignmentStatus(
-          existingAssignment.id,
-          ASSIGNMENT_STATUSES.COMPLETED,
-          tx,
-        );
+        await gameRepo.updateAssignmentStatus({
+          id: existingAssignment.id,
+          status: ASSIGNMENT_STATUSES.COMPLETED,
+          client: tx,
+        });
       }
 
       let issuedCertificate = null;
@@ -411,14 +415,9 @@ class GameUsecase {
   }
 
   // ── attempts list ───────────────────────────────────────
-  async listAttempts(authUser, id, params) {
-    const game = await gameRepo.getById(id);
+  async listAttempts({ id, page, limit, authUser }) {
+    const game = await gameRepo.getById({ id });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
-
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
 
     const where = { gameId: game.id };
     // ADMIN sees all attempts for the game; everyone else only their own.
@@ -426,9 +425,9 @@ class GameUsecase {
       where.studentId = authUser.id;
     }
 
-    const { items, total } = await gameRepo.listAttempts(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+    return gameRepo.listAttempts({ where, page, limit });
   }
 }
 
 export const gameUsecase = new GameUsecase();
+export { GameUsecase };

@@ -26,8 +26,8 @@ class CouponController {
 
   async update(req, res) {
     const coupon = await couponUsecase.update({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return ok(res, coupon, generalMessagesCodes.UPDATED);

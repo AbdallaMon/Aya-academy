@@ -120,13 +120,14 @@ class SubscriptionUsecase {
     }
 
     // Rule 2 — auto-replace any in-flight (PENDING) subscription(s).
-    const pendings =
-      await subscriptionRepo.findPendingSubscriptionsByStudent(studentId);
+    const pendings = await subscriptionRepo.findPendingSubscriptionsByStudent({
+      studentId,
+    });
     for (const p of pendings) {
       if (p.couponId) {
         await couponRepo.decrementCouponRedemption(p.couponId, tx);
       }
-      await subscriptionRepo.deleteSubscription(p.id, tx);
+      await subscriptionRepo.deleteSubscription({ id: p.id, client: tx });
     }
   }
 
@@ -218,21 +219,18 @@ class SubscriptionUsecase {
     return where;
   }
 
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = await this.buildListWhere(authUser, params);
+  async list({ authUser, page, limit, studentId, status }) {
+    const { skip, take, page: p, limit: l } = paginate({ page, limit });
+    const where = await this.buildListWhere(authUser, { studentId, status });
     const { items, total } = await subscriptionRepo.listLatestPerStudent({
       where,
       skip,
       take,
     });
-    return paginatedResult(items, total, page, limit);
+    return paginatedResult(items, total, p, l);
   }
 
-  async listExpiring(authUser, { page, limit, days }) {
+  async listExpiring({ authUser, page, limit, days }) {
     const { skip, take, page: p, limit: l } = paginate({ page, limit });
 
     // ADMIN only — others get an empty paginated list.
@@ -267,7 +265,7 @@ class SubscriptionUsecase {
     return new Set(ids);
   }
 
-  async getById(authUser, id) {
+  async getById({ authUser, id }) {
     const subscription = await subscriptionRepo.getById(id);
     if (!subscription) {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
@@ -276,7 +274,7 @@ class SubscriptionUsecase {
     return subscription;
   }
 
-  async create(authUser, input) {
+  async create({ authUser, ...input }) {
     if (input.endDate <= input.startDate) {
       throw badRequest(
         subscriptionMessagesCodes.INVALID_DATE_RANGE,
@@ -365,7 +363,7 @@ class SubscriptionUsecase {
     return subscription;
   }
 
-  async update(authUser, id, input) {
+  async update({ authUser, id, ...input }) {
     const existing = await subscriptionRepo.getById(id);
     if (!existing) {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
@@ -420,7 +418,7 @@ class SubscriptionUsecase {
     return subscription;
   }
 
-  async remove(authUser, id) {
+  async remove({ authUser, id }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
     }
@@ -438,7 +436,7 @@ class SubscriptionUsecase {
    * Always creates a PENDING subscription; dates/hours/price are derived from
    * the chosen plan. Admins are notified to review it.
    */
-  async request(authUser, input) {
+  async request({ authUser, ...input }) {
     const studentId = input.studentId;
 
     if (authUser.role === USER_ROLES.PARENT) {
@@ -522,7 +520,7 @@ class SubscriptionUsecase {
   }
 
   /** Admin approves a PENDING subscription → resolves status by date window. */
-  async approve(authUser, id, input = {}) {
+  async approve({ authUser, id, ...input }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
     }
@@ -561,7 +559,7 @@ class SubscriptionUsecase {
   }
 
   /** Admin rejects a PENDING subscription → CANCELLED (with an optional reason). */
-  async reject(authUser, id, input = {}) {
+  async reject({ authUser, id, ...input }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
     }
@@ -613,7 +611,7 @@ class SubscriptionUsecase {
    * Admin cancels a subscription. Only allowed from PENDING / UPCOMING / ACTIVE;
    * already-expired/cancelled subscriptions can't be cancelled.
    */
-  async cancel(authUser, id) {
+  async cancel({ authUser, id }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
     }
@@ -674,7 +672,7 @@ class SubscriptionUsecase {
    * (no bypass — cancel it first), and any in-flight PENDING subscription is
    * AUTO-REPLACED (deleted, invoice cascades, coupon un-redeemed).
    */
-  async renew(authUser, id, input = {}) {
+  async renew({ authUser, id, ...input }) {
     // 1. Load the source subscription and scope-check by its studentId.
     //    ADMIN: any; PARENT: only their own child; STUDENT: only self (and they
     //    lack the RENEW/REQUEST permission, so the route already blocks them).
@@ -787,7 +785,7 @@ class SubscriptionUsecase {
    * while the demand invoice is unpaid (or absent). Recomputes price/hours/dates
    * for the new plan, then regenerates the invoice so its amounts match.
    */
-  async changePlan(authUser, id, input) {
+  async changePlan({ authUser, id, ...input }) {
     // 1. Load + scope-check. PARENT may only change their own child's sub, and
     //    only while it is still PENDING (a non-finalised request).
     const existing = await subscriptionRepo.getById(id);
@@ -903,7 +901,7 @@ class SubscriptionUsecase {
    * accounting atomically (old->new / old->none / none->new), then regenerates
    * the demand invoice so its amounts match.
    */
-  async applyCoupon(authUser, id, input = {}) {
+  async applyCoupon({ authUser, id, ...input }) {
     // 1. Load + object-scope check (ADMIN any, PARENT own child, STUDENT self).
     const existing = await subscriptionRepo.getById(id);
     if (!existing) {
@@ -988,7 +986,7 @@ class SubscriptionUsecase {
    * The reverse direction (paying the invoice activates the subscription) lives
    * in invoice.usecase and is intentionally left untouched.
    */
-  async activate(authUser, id, input = {}) {
+  async activate({ authUser, id, ...input }) {
     // 1. ADMIN-only — the route's ACTIVATE permission enforces this; we re-assert
     //    object scope (ADMIN passes for any subscription).
     const existing = await subscriptionRepo.getById(id);
@@ -1074,3 +1072,4 @@ class SubscriptionUsecase {
 }
 
 export const subscriptionUsecase = new SubscriptionUsecase();
+export { SubscriptionUsecase };

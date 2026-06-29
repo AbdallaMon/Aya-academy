@@ -33,8 +33,8 @@ class ReportController {
 
   async update(req, res) {
     const report = await reportUsecase.update({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return ok(res, report, generalMessagesCodes.UPDATED);

@@ -27,8 +27,8 @@ class BadgeController {
 
   async update(req, res) {
     const badge = await badgeUsecase.update({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return updated(res, badge, generalMessagesCodes.UPDATED);
@@ -52,8 +52,8 @@ class BadgeController {
 
   async award(req, res) {
     const result = await badgeUsecase.award({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return created(
@@ -66,8 +66,8 @@ class BadgeController {
 
   async revoke(req, res) {
     const result = await badgeUsecase.revoke({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return ok(

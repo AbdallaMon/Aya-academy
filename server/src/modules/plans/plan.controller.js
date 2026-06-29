@@ -36,8 +36,8 @@ class PlanController {
 
   async update(req, res) {
     const plan = await planUsecase.update({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return ok(res, plan, generalMessagesCodes.UPDATED);

@@ -24,6 +24,7 @@ class UserUsecase {
     if (authUser.role === USER_ROLES.ADMIN) return;
     if (authUser.id === targetId) return;
     if (authUser.role === USER_ROLES.PARENT) {
+      // FROZEN positional call — cross-module userRepo signature.
       const linked = await userRepo.isStudentOfParent(authUser.id, targetId);
       if (linked) return;
     }
@@ -44,6 +45,7 @@ class UserUsecase {
     if (authUser.role === USER_ROLES.ADMIN) {
       if (role && role !== "ALL") where.role = role;
     } else if (authUser.role === USER_ROLES.PARENT) {
+      // FROZEN positional call — cross-module userRepo signature.
       const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
       where.id = { in: studentIds };
       where.role = USER_ROLES.STUDENT;
@@ -53,13 +55,13 @@ class UserUsecase {
     return where;
   }
 
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
+  async list({ page, limit, filters = {}, authUser }) {
+    const { skip, take, page: currentPage, limit: pageLimit } = paginate({
+      page,
+      limit,
     });
-    const where = await this.buildListWhere(authUser, params);
-    const { items, total } = await userRepo.listUsers(where, skip, take);
+    const where = await this.buildListWhere(authUser, filters);
+    const { items, total } = await userRepo.listUsers({ where, skip, take });
 
     // Batch the "subscribed this month" lookup for the student rows on this
     // page only — one query, no N+1.
@@ -75,25 +77,27 @@ class UserUsecase {
     return paginatedResult(
       items.map((u) => toUserListItem(u, subscribedIds)),
       total,
-      page,
-      limit,
+      currentPage,
+      pageLimit,
     );
   }
 
-  async getById(authUser, id) {
+  async getById({ id, authUser }) {
     await this.assertCanAccess(authUser, id);
+    // FROZEN positional call — cross-module userRepo signature.
     const user = await userRepo.getPublicById(id);
     if (!user) throw notFound(userMessagesCodes.USER_NOT_FOUND);
     return user;
   }
 
-  async listMyStudents(authUser) {
+  async listMyStudents({ authUser }) {
+    // FROZEN positional call — cross-module userRepo signature.
     const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-    const { items } = await userRepo.listUsers(
-      { id: { in: studentIds } },
-      0,
-      1000,
-    );
+    const { items } = await userRepo.listUsers({
+      where: { id: { in: studentIds } },
+      skip: 0,
+      take: 1000,
+    });
     return items.map((u) => toUserListItem(u));
   }
 
@@ -101,7 +105,7 @@ class UserUsecase {
    * Linked students of the parent `parentId`.
    * Scope: ADMIN → any parent; PARENT → only their own id; STUDENT → forbidden.
    */
-  async getChildren(authUser, parentId) {
+  async getChildren({ parentId, authUser }) {
     if (authUser.role === USER_ROLES.PARENT && authUser.id !== parentId) {
       throw forbidden(userMessagesCodes.CANNOT_VIEW_CHILDREN);
     }
@@ -112,6 +116,7 @@ class UserUsecase {
       throw forbidden(userMessagesCodes.CANNOT_VIEW_CHILDREN);
     }
 
+    // FROZEN positional call — cross-module userRepo signature.
     const parentRow = await userRepo.getRoleById(parentId);
     if (!parentRow || parentRow.role !== USER_ROLES.PARENT) {
       throw new AppError({
@@ -122,12 +127,12 @@ class UserUsecase {
       });
     }
 
-    const links = await userRepo.getChildrenOfParent(parentId);
+    const links = await userRepo.getChildrenOfParent({ parentId });
     return links.map(toChildItem);
   }
 
   /** Admin creates any role; PARENT may only create STUDENTs (auto-linked). */
-  async create(authUser, input) {
+  async create({ authUser, ...input }) {
     let role = input.role;
     let parentIds = input.parentIds ?? [];
 
@@ -136,12 +141,14 @@ class UserUsecase {
       parentIds = [authUser.id];
     }
 
+    // FROZEN positional call — cross-module userRepo signature.
     const existing = await userRepo.findByEmail(input.email);
     if (existing) throw conflict(userMessagesCodes.EMAIL_ALREADY_EXISTS);
 
     const passwordHash = await hashPassword(input.password);
 
     return prisma.$transaction(async (tx) => {
+      // FROZEN positional call — cross-module userRepo signature.
       const user = await userRepo.createUser(
         {
           name: input.name,
@@ -159,6 +166,7 @@ class UserUsecase {
       );
       if (role === USER_ROLES.STUDENT) {
         for (const parentId of parentIds) {
+          // FROZEN positional call — cross-module userRepo signature.
           await userRepo.linkParentStudent(
             parentId,
             user.id,
@@ -171,13 +179,15 @@ class UserUsecase {
     });
   }
 
-  async createStudent(authUser, input) {
+  async createStudent({ authUser, ...input }) {
+    // FROZEN positional call — cross-module userRepo signature.
     const existing = await userRepo.findByEmail(input.email);
     if (existing) throw conflict(userMessagesCodes.EMAIL_ALREADY_EXISTS);
     const passwordHash = await hashPassword(input.password);
     const relation = input.relation ?? PARENT_RELATIONS.GUARDIAN;
 
     return prisma.$transaction(async (tx) => {
+      // FROZEN positional call — cross-module userRepo signature.
       const user = await userRepo.createUser(
         {
           name: input.name,
@@ -191,12 +201,13 @@ class UserUsecase {
         },
         tx,
       );
+      // FROZEN positional call — cross-module userRepo signature.
       await userRepo.linkParentStudent(authUser.id, user.id, relation, tx);
       return user;
     });
   }
 
-  async update(authUser, id, input) {
+  async update({ id, authUser, ...input }) {
     await this.assertCanAccess(authUser, id);
     const data = {
       name: input.name,
@@ -214,20 +225,21 @@ class UserUsecase {
       data.passwordHash = await hashPassword(input.password);
       data.sessionVersion = { increment: 1 };
     }
-    return userRepo.updateUser(id, data);
+    return userRepo.updateUser({ id, data });
   }
 
-  async remove(authUser, id) {
+  async remove({ id, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_MODIFY_USER);
     }
-    return userRepo.deactivateUser(id);
+    return userRepo.deactivateUser({ id });
   }
 
-  async linkParent(authUser, studentId, parentId, relation) {
+  async linkParent({ studentId, parentId, relation, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_LINK_STUDENT);
     }
+    // FROZEN positional calls — cross-module userRepo signature.
     const studentRow = await userRepo.getRoleById(studentId);
     const parentRow = await userRepo.getRoleById(parentId);
     if (!studentRow || studentRow.role !== USER_ROLES.STUDENT) {
@@ -246,6 +258,7 @@ class UserUsecase {
         translationKey: messagesNames.userMessages,
       });
     }
+    // FROZEN positional call — cross-module userRepo signature.
     return userRepo.linkParentStudent(
       parentId,
       studentId,
@@ -253,11 +266,11 @@ class UserUsecase {
     );
   }
 
-  async unlinkParent(authUser, studentId, parentId) {
+  async unlinkParent({ studentId, parentId, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_LINK_STUDENT);
     }
-    return userRepo.unlinkParentStudent(parentId, studentId);
+    return userRepo.unlinkParentStudent({ parentId, studentId });
   }
 
   /**
@@ -265,9 +278,9 @@ class UserUsecase {
    * STUDENT → profile + parents + subscriptions + certificates + badges + attempts.
    * PARENT  → contact + children (with quick stats).
    */
-  async overview(authUser, id) {
+  async overview({ id, authUser }) {
     await this.assertCanAccess(authUser, id);
-    const user = await userRepo.getOverviewUser(id);
+    const user = await userRepo.getOverviewUser({ id });
     if (!user) throw notFound(userMessagesCodes.USER_NOT_FOUND);
 
     if (user.role === USER_ROLES.STUDENT) {
@@ -280,12 +293,12 @@ class UserUsecase {
         quizAttempts,
         subscribedIds,
       ] = await Promise.all([
-        userRepo.getStudentParents(id),
+        userRepo.getStudentParents({ studentId: id }),
         subscriptionRepo.listSubscriptions({ studentId: id }, 0, 100),
-        userRepo.countCertificates(id),
-        userRepo.getStudentBadges(id),
-        userRepo.getRecentGameAttempts(id),
-        userRepo.getRecentQuizAttempts(id),
+        userRepo.countCertificates({ studentId: id }),
+        userRepo.getStudentBadges({ studentId: id }),
+        userRepo.getRecentGameAttempts({ studentId: id }),
+        userRepo.getRecentQuizAttempts({ studentId: id }),
         subscriptionRepo.getCurrentlySubscribedStudentIds([id]),
       ]);
 
@@ -366,7 +379,7 @@ class UserUsecase {
     }
 
     if (user.role === USER_ROLES.PARENT) {
-      const links = await userRepo.getParentChildrenDetailed(id);
+      const links = await userRepo.getParentChildrenDetailed({ parentId: id });
       const childIds = links.map((l) => l.student.id);
 
       const [subscribedIds, certCounts] = await Promise.all([
@@ -374,7 +387,7 @@ class UserUsecase {
           ? subscriptionRepo.getCurrentlySubscribedStudentIds(childIds)
           : Promise.resolve([]),
         childIds.length
-          ? userRepo.countCertificatesForStudents(childIds)
+          ? userRepo.countCertificatesForStudents({ studentIds: childIds })
           : Promise.resolve([]),
       ]);
       const subscribedSet = new Set(subscribedIds);
@@ -402,7 +415,7 @@ class UserUsecase {
   }
 
   /** Admin sets a STUDENT's level. */
-  async setLevel(authUser, id, studentLevel) {
+  async setLevel({ id, studentLevel, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_MODIFY_USER);
     }
@@ -412,6 +425,7 @@ class UserUsecase {
         messagesNames.userMessages,
       );
     }
+    // FROZEN positional call — cross-module userRepo signature.
     const target = await userRepo.getRoleById(id);
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
     if (target.role !== USER_ROLES.STUDENT) {
@@ -420,11 +434,11 @@ class UserUsecase {
         messagesNames.userMessages,
       );
     }
-    return userRepo.setStudentLevel(id, studentLevel);
+    return userRepo.setStudentLevel({ id, studentLevel });
   }
 
   /** Admin bans a user (cannot ban self or another admin). Invalidates tokens. */
-  async ban(authUser, id, reason) {
+  async ban({ id, reason, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_MODIFY_USER);
     }
@@ -434,6 +448,7 @@ class UserUsecase {
         messagesNames.userMessages,
       );
     }
+    // FROZEN positional call — cross-module userRepo signature.
     const target = await userRepo.getRoleById(id);
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
     if (target.role === USER_ROLES.ADMIN) {
@@ -442,17 +457,18 @@ class UserUsecase {
         messagesNames.userMessages,
       );
     }
-    return userRepo.banUser(id, reason);
+    return userRepo.banUser({ id, reason });
   }
 
   /** Admin unbans a user. */
-  async unban(authUser, id) {
+  async unban({ id, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_MODIFY_USER);
     }
+    // FROZEN positional call — cross-module userRepo signature.
     const target = await userRepo.getRoleById(id);
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
-    return userRepo.unbanUser(id);
+    return userRepo.unbanUser({ id });
   }
 
   /**
@@ -463,6 +479,7 @@ class UserUsecase {
     if (authUser.role === USER_ROLES.ADMIN) return;
     if (authUser.id === targetId) return;
     if (authUser.role === USER_ROLES.PARENT) {
+      // FROZEN positional call — cross-module userRepo signature.
       const linked = await userRepo.isStudentOfParent(authUser.id, targetId);
       if (linked) return;
     }
@@ -470,9 +487,10 @@ class UserUsecase {
   }
 
   /** Set a user's avatar to an existing uploaded attachment (scoped). */
-  async setAvatar(authUser, id, attachmentId) {
+  async setAvatar({ id, attachmentId, authUser }) {
     await this.assertCanSetAvatar(authUser, id);
 
+    // FROZEN positional call — cross-module userRepo signature.
     const target = await userRepo.getRoleById(id);
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
 
@@ -481,19 +499,20 @@ class UserUsecase {
       throw notFound(attachmentMessagesCodes.ATTACHMENT_NOT_FOUND);
     }
 
-    return userRepo.setAvatar(id, attachmentId);
+    return userRepo.setAvatar({ id, attachmentId });
   }
 
   /** Clear a user's avatar (scoped) and remove the now-orphaned upload. */
-  async removeAvatar(authUser, id) {
+  async removeAvatar({ id, authUser }) {
     await this.assertCanSetAvatar(authUser, id);
 
+    // FROZEN positional call — cross-module userRepo signature.
     const target = await userRepo.getRoleById(id);
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
 
     const { avatarId: previousAvatarId } =
-      (await userRepo.getAvatarId(id)) || {};
-    const result = await userRepo.clearAvatar(id);
+      (await userRepo.getAvatarId({ id })) || {};
+    const result = await userRepo.clearAvatar({ id });
     // Drop the upload (row + file) if nothing else points at it.
     if (previousAvatarId) {
       await attachmentUsecase.deleteIfOrphaned(previousAvatarId);
@@ -503,3 +522,4 @@ class UserUsecase {
 }
 
 export const userUsecase = new UserUsecase();
+export { UserUsecase };

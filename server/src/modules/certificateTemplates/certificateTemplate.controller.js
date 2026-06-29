@@ -38,8 +38,8 @@ class CertificateTemplateController {
 
   async update(req, res) {
     const template = await certificateTemplateUsecase.update({
-      id: idParam(req.params.id),
       ...req.body,
+      id: idParam(req.params.id),
       authUser: req.auth,
     });
     return ok(res, template, generalMessagesCodes.UPDATED);

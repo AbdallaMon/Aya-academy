@@ -1,151 +1,156 @@
 import { generalMessagesCodes, messagesNames } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
-import { subscriptionMessagesCodes } from "./subscription.messages.js";
-import { idParam, optionalIntQuery, authUser } from "../../shared/http/params.js";
+import { idParam, optionalIntQuery } from "../../shared/http/params.js";
 import { subscriptionUsecase } from "./subscription.usecase.js";
+import { subscriptionMessagesCodes } from "./subscription.messages.js";
 
 class SubscriptionController {
-  list = async (req, res) => {
-    const result = await subscriptionUsecase.list(authUser(req), {
-      page: req.query.page,
-      limit: req.query.limit,
-      studentId: optionalIntQuery(req.query.studentId),
-      status: req.query.status,
+  async list(req, res) {
+    const { page, limit, studentId, status } = req.query;
+    const result = await subscriptionUsecase.list({
+      authUser: req.auth,
+      page,
+      limit,
+      studentId: optionalIntQuery(studentId),
+      status,
     });
     return ok(res, result);
-  };
+  }
 
-  expiring = async (req, res) => {
-    const result = await subscriptionUsecase.listExpiring(authUser(req), {
-      page: req.query.page,
-      limit: req.query.limit,
-      days: optionalIntQuery(req.query.days),
+  async expiring(req, res) {
+    const { page, limit, days } = req.query;
+    const result = await subscriptionUsecase.listExpiring({
+      authUser: req.auth,
+      page,
+      limit,
+      days: optionalIntQuery(days),
     });
     return ok(res, result);
-  };
+  }
 
-  getOne = async (req, res) => {
-    const subscription = await subscriptionUsecase.getById(
-      authUser(req),
-      idParam(req.params.id),
-    );
+  async getOne(req, res) {
+    const subscription = await subscriptionUsecase.getById({
+      authUser: req.auth,
+      id: idParam(req.params.id),
+    });
     return ok(res, subscription);
-  };
+  }
 
-  create = async (req, res) => {
-    const subscription = await subscriptionUsecase.create(
-      authUser(req),
-      req.body,
-    );
+  async create(req, res) {
+    const subscription = await subscriptionUsecase.create({
+      ...req.body,
+      authUser: req.auth,
+    });
     return created(res, subscription, generalMessagesCodes.CREATED);
-  };
+  }
 
-  update = async (req, res) => {
-    const subscription = await subscriptionUsecase.update(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async update(req, res) {
+    const subscription = await subscriptionUsecase.update({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, subscription, generalMessagesCodes.UPDATED);
-  };
+  }
 
-  remove = async (req, res) => {
-    const subscription = await subscriptionUsecase.remove(
-      authUser(req),
-      idParam(req.params.id),
-    );
+  async remove(req, res) {
+    const subscription = await subscriptionUsecase.remove({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, subscription, generalMessagesCodes.DELETED);
-  };
+  }
 
-  request = async (req, res) => {
-    const subscription = await subscriptionUsecase.request(
-      authUser(req),
-      req.body,
-    );
+  async request(req, res) {
+    const subscription = await subscriptionUsecase.request({
+      ...req.body,
+      authUser: req.auth,
+    });
     return created(res, subscription, generalMessagesCodes.CREATED);
-  };
+  }
 
-  approve = async (req, res) => {
-    const subscription = await subscriptionUsecase.approve(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async approve(req, res) {
+    const subscription = await subscriptionUsecase.approve({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, subscription, generalMessagesCodes.UPDATED);
-  };
+  }
 
-  reject = async (req, res) => {
-    const subscription = await subscriptionUsecase.reject(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async reject(req, res) {
+    const subscription = await subscriptionUsecase.reject({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, subscription, generalMessagesCodes.UPDATED);
-  };
+  }
 
-  cancel = async (req, res) => {
-    const subscription = await subscriptionUsecase.cancel(
-      authUser(req),
-      idParam(req.params.id),
-    );
+  async cancel(req, res) {
+    const subscription = await subscriptionUsecase.cancel({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, subscription, generalMessagesCodes.UPDATED);
-  };
+  }
 
-  renew = async (req, res) => {
-    const subscription = await subscriptionUsecase.renew(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async renew(req, res) {
+    const subscription = await subscriptionUsecase.renew({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return created(
       res,
       subscription,
       subscriptionMessagesCodes.SUBSCRIPTION_RENEWED,
       messagesNames.subscriptionMessages,
     );
-  };
+  }
 
-  changePlan = async (req, res) => {
-    const subscription = await subscriptionUsecase.changePlan(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async changePlan(req, res) {
+    const subscription = await subscriptionUsecase.changePlan({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(
       res,
       subscription,
       subscriptionMessagesCodes.PLAN_CHANGED,
       messagesNames.subscriptionMessages,
     );
-  };
+  }
 
-  applyCoupon = async (req, res) => {
-    const subscription = await subscriptionUsecase.applyCoupon(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async applyCoupon(req, res) {
+    const subscription = await subscriptionUsecase.applyCoupon({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(
       res,
       subscription,
       subscriptionMessagesCodes.PLAN_CHANGED,
       messagesNames.subscriptionMessages,
     );
-  };
+  }
 
-  activate = async (req, res) => {
-    const subscription = await subscriptionUsecase.activate(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async activate(req, res) {
+    const subscription = await subscriptionUsecase.activate({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(
       res,
       subscription,
       subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED,
       messagesNames.subscriptionMessages,
     );
-  };
+  }
 }
 
 export const subscriptionController = new SubscriptionController();
+export { SubscriptionController };

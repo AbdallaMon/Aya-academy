@@ -14,7 +14,6 @@ import {
   forbidden,
   notFound,
 } from "../../shared/errors/AppError.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import {
   buildSearchQuery,
   parseBooleanFilter,
@@ -40,37 +39,44 @@ class QuizUsecase {
   }
 
   async getCategoryOrThrow(id) {
-    const category = await quizRepo.getCategoryById(id);
+    const category = await quizRepo.getCategoryById({ id });
     if (!category) throw notFound(quizMessagesCodes.CATEGORY_NOT_FOUND);
     return category;
   }
 
-  async createCategory(authUser, input) {
+  async createCategory({ authUser, ...input }) {
     return quizRepo.createCategory({
-      nameAr: input.nameAr,
-      nameEn: input.nameEn,
-      createdById: authUser.id,
+      data: {
+        nameAr: input.nameAr,
+        nameEn: input.nameEn,
+        createdById: authUser.id,
+      },
     });
   }
 
-  async updateCategory(id, input) {
+  async updateCategory({ id, ...input }) {
     await this.getCategoryOrThrow(id);
-    return quizRepo.updateCategory(id, {
-      nameAr: input.nameAr,
-      nameEn: input.nameEn,
+    return quizRepo.updateCategory({
+      id,
+      data: {
+        nameAr: input.nameAr,
+        nameEn: input.nameEn,
+      },
     });
   }
 
-  async removeCategory(id) {
+  async removeCategory({ id }) {
     await this.getCategoryOrThrow(id);
-    const questionCount = await quizRepo.countQuestionsInCategory(id);
+    const questionCount = await quizRepo.countQuestionsInCategory({
+      categoryId: id,
+    });
     if (questionCount > 0) {
       throw conflict(
         quizMessagesCodes.CATEGORY_HAS_QUESTIONS,
         messagesNames.quizMessages,
       );
     }
-    return quizRepo.deleteCategory(id);
+    return quizRepo.deleteCategory({ id });
   }
 
   // ════════════════════════════════════════════════════════
@@ -89,23 +95,18 @@ class QuizUsecase {
     return where;
   }
 
-  async listBank(params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = this.buildBankWhere(params);
-    const { items, total } = await quizRepo.listBankQuestions(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+  async listBank({ page, limit, filters = {} }) {
+    const where = this.buildBankWhere(filters);
+    return quizRepo.listBankQuestions({ where, page, limit });
   }
 
-  async getBankQuestion(id) {
-    const question = await quizRepo.getBankQuestionById(id);
+  async getBankQuestion({ id }) {
+    const question = await quizRepo.getBankQuestionById({ id });
     if (!question) throw notFound(quizMessagesCodes.QUESTION_NOT_FOUND);
     return question;
   }
 
-  async createBankQuestion(authUser, input) {
+  async createBankQuestion({ authUser, ...input }) {
     if (input.categoryId) await this.getCategoryOrThrow(input.categoryId);
     return quizRepo.createBankQuestion({
       categoryId: input.categoryId,
@@ -117,8 +118,8 @@ class QuizUsecase {
     });
   }
 
-  async updateBankQuestion(id, input) {
-    await this.getBankQuestion(id);
+  async updateBankQuestion({ id, ...input }) {
+    await this.getBankQuestion({ id });
     if (input.categoryId) await this.getCategoryOrThrow(input.categoryId);
 
     const data = {
@@ -128,20 +129,20 @@ class QuizUsecase {
     };
     if (input.categoryId !== undefined) data.categoryId = input.categoryId;
 
-    return quizRepo.updateBankQuestion(id, { data, options: input.options });
+    return quizRepo.updateBankQuestion({ id, data, options: input.options });
   }
 
-  async removeBankQuestion(id) {
-    await this.getBankQuestion(id);
-    return quizRepo.deactivateBankQuestion(id);
+  async removeBankQuestion({ id }) {
+    await this.getBankQuestion({ id });
+    return quizRepo.deactivateBankQuestion({ id });
   }
 
   // ════════════════════════════════════════════════════════
   // INVITES
   // ════════════════════════════════════════════════════════
-  async createInvite(authUser, input) {
+  async createInvite({ authUser, ...input }) {
     // Validate the target is an existing PARENT.
-    const parent = await quizRepo.getUserRole(input.parentId);
+    const parent = await quizRepo.getUserRole({ id: input.parentId });
     if (!parent || parent.role !== USER_ROLES.PARENT) {
       throw badRequest(
         quizMessagesCodes.INVITE_PARENT_INVALID,
@@ -150,9 +151,9 @@ class QuizUsecase {
     }
 
     // Validate every questionId belongs to the bank AND is active.
-    const activeRows = await quizRepo.findActiveBankQuestionIds(
-      input.questionIds,
-    );
+    const activeRows = await quizRepo.findActiveBankQuestionIds({
+      ids: input.questionIds,
+    });
     const activeIds = new Set(activeRows.map((r) => r.id));
     if (input.questionIds.some((id) => !activeIds.has(id))) {
       throw badRequest(
@@ -208,14 +209,9 @@ class QuizUsecase {
     return { parentId: authUser.id };
   }
 
-  async listInvites(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
+  async listInvites({ page, limit, authUser }) {
     const where = this.buildInviteListWhere(authUser);
-    const { items, total } = await quizRepo.listInvites(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+    return quizRepo.listInvites({ where, page, limit });
   }
 
   /** Scope: ADMIN or the invite's parent only. */
@@ -227,20 +223,22 @@ class QuizUsecase {
     throw forbidden(quizMessagesCodes.CANNOT_ACCESS_INVITE);
   }
 
-  async getInviteByToken(authUser, token) {
-    const invite = await quizRepo.getInviteByToken(token);
+  async getInviteByToken({ authUser, token }) {
+    const invite = await quizRepo.getInviteByToken({ token });
     if (!invite) throw notFound(quizMessagesCodes.INVITE_NOT_FOUND);
     this.assertCanAccessInvite(authUser, invite);
 
-    const questions = await quizRepo.getExposedQuestionsForInvite(invite.id);
+    const questions = await quizRepo.getExposedQuestionsForInvite({
+      inviteId: invite.id,
+    });
 
     // Best-effort: PENDING → OPENED on first open.
     if (invite.status === QUIZ_INVITE_STATUSES.PENDING) {
       try {
-        await quizRepo.updateInviteStatus(
-          invite.id,
-          QUIZ_INVITE_STATUSES.OPENED,
-        );
+        await quizRepo.updateInviteStatus({
+          id: invite.id,
+          status: QUIZ_INVITE_STATUSES.OPENED,
+        });
         invite.status = QUIZ_INVITE_STATUSES.OPENED;
       } catch {
         // swallow — status bump is best-effort
@@ -253,8 +251,8 @@ class QuizUsecase {
   // ════════════════════════════════════════════════════════
   // QUIZ BUILD (parent)
   // ════════════════════════════════════════════════════════
-  async buildQuiz(authUser, token, input) {
-    const invite = await quizRepo.getInviteWithQuestionIdsByToken(token);
+  async buildQuiz({ authUser, token, ...input }) {
+    const invite = await quizRepo.getInviteWithQuestionIdsByToken({ token });
     if (!invite) throw notFound(quizMessagesCodes.INVITE_NOT_FOUND);
 
     // Scope: invite must belong to this parent.
@@ -305,7 +303,9 @@ class QuizUsecase {
 
     // Snapshot bank questions (text + options) for cloning.
     const snapshots = bankSourceIds.length
-      ? await quizRepo.getBankQuestionsForSnapshot([...new Set(bankSourceIds)])
+      ? await quizRepo.getBankQuestionsForSnapshot({
+          ids: [...new Set(bankSourceIds)],
+        })
       : [];
     const snapshotById = new Map(snapshots.map((q) => [q.id, q]));
 
@@ -349,10 +349,10 @@ class QuizUsecase {
 
     // Participants: must be linked students of this parent AND active-subscribed.
     const uniqueParticipantIds = [...new Set(input.participantStudentIds)];
-    const eligibleIds = await quizRepo.getActiveSubscribedStudentIds(
-      authUser.id,
-      uniqueParticipantIds,
-    );
+    const eligibleIds = await quizRepo.getActiveSubscribedStudentIds({
+      parentId: authUser.id,
+      studentIds: uniqueParticipantIds,
+    });
     const eligibleSet = new Set(eligibleIds);
     if (uniqueParticipantIds.some((id) => !eligibleSet.has(id))) {
       throw badRequest(
@@ -453,7 +453,7 @@ class QuizUsecase {
       } else {
         const parentId =
           authUser.role === USER_ROLES.PARENT ? authUser.id : null;
-        const doneIds = await quizRepo.getFullyCompletedQuizIds(parentId);
+        const doneIds = await quizRepo.getFullyCompletedQuizIds({ parentId });
         ands.push(
           normalized === "done"
             ? { id: { in: doneIds } }
@@ -515,26 +515,28 @@ class QuizUsecase {
     return { ...row, participantsCount, completedCount, status };
   }
 
-  async listQuizzes(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = await this.buildQuizListWhere(authUser, params);
-    const focusStudentId = this.resolveFocusStudentId(authUser, params.studentId);
+  async listQuizzes({ page, limit, filters = {}, authUser }) {
+    const where = await this.buildQuizListWhere(authUser, filters);
+    const focusStudentId = this.resolveFocusStudentId(
+      authUser,
+      filters.studentId,
+    );
     // Scope the embedded attempts to whichever child we're rendering for.
     const attemptStudentId =
       authUser.role === USER_ROLES.STUDENT ? authUser.id : focusStudentId;
     const select = attemptStudentId
       ? quizListSelect({ studentId: attemptStudentId })
       : quizListSelect();
-    const { items, total } = await quizRepo.listQuizzes(where, skip, take, {
-      select,
-    });
+    const {
+      items,
+      total,
+      page: currentPage,
+      pageSize,
+    } = await quizRepo.listQuizzes({ where, page, limit, select });
     const shaped = items.map((row) =>
       this.shapeQuizListRow(row, authUser, focusStudentId),
     );
-    return paginatedResult(shaped, total, page, limit);
+    return { items: shaped, total, page: currentPage, pageSize };
   }
 
   /** Scope: ADMIN, owning parent, or a participant student. */
@@ -555,8 +557,8 @@ class QuizUsecase {
     throw forbidden(quizMessagesCodes.CANNOT_ACCESS_QUIZ);
   }
 
-  async getQuizById(authUser, id) {
-    const quiz = await quizRepo.getQuizById(id);
+  async getQuizById({ authUser, id }) {
+    const quiz = await quizRepo.getQuizById({ id });
     if (!quiz) throw notFound(quizMessagesCodes.QUIZ_NOT_FOUND);
     await this.assertCanAccessQuiz(authUser, quiz);
 
@@ -581,12 +583,15 @@ class QuizUsecase {
     return { correctCount, totalQuestions: items.length };
   }
 
-  async attempt(authUser, quizId, input) {
-    const quiz = await quizRepo.getQuizForGrading(quizId);
+  async attempt({ authUser, quizId, ...input }) {
+    const quiz = await quizRepo.getQuizForGrading({ id: quizId });
     if (!quiz) throw notFound(quizMessagesCodes.QUIZ_NOT_FOUND);
 
     // Scope: only a participant student may attempt.
-    const isParticipant = await quizRepo.isParticipant(quizId, authUser.id);
+    const isParticipant = await quizRepo.isParticipant({
+      quizId,
+      studentId: authUser.id,
+    });
     if (!isParticipant) {
       throw forbidden(quizMessagesCodes.QUIZ_NOT_PARTICIPANT);
     }
@@ -601,8 +606,8 @@ class QuizUsecase {
 
     // Atomic: record the attempt + bump the student's points.
     const attempt = await prisma.$transaction(async (tx) => {
-      const created = await quizRepo.createAttempt(
-        {
+      const created = await quizRepo.createAttempt({
+        data: {
           quizId,
           studentId: authUser.id,
           score: correctCount,
@@ -612,9 +617,13 @@ class QuizUsecase {
           answersJson: input.answersJson ?? undefined,
           completedAt: new Date(),
         },
-        tx,
-      );
-      await quizRepo.incrementStudentPoints(authUser.id, points, tx);
+        client: tx,
+      });
+      await quizRepo.incrementStudentPoints({
+        studentId: authUser.id,
+        points,
+        client: tx,
+      });
       return created;
     });
 
@@ -712,3 +721,4 @@ class QuizUsecase {
 }
 
 export const quizUsecase = new QuizUsecase();
+export { QuizUsecase };

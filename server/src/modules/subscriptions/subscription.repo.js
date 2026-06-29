@@ -111,8 +111,8 @@ class SubscriptionRepo {
    * shape needed to auto-replace them when a new subscription is created:
    * `{ id, couponId }` so the caller can un-redeem the coupon then delete the row.
    */
-  findPendingSubscriptionsByStudent(studentId) {
-    return prisma.subscription.findMany({
+  findPendingSubscriptionsByStudent({ studentId, client } = {}) {
+    return (client ?? prisma).subscription.findMany({
       where: { studentId, status: SUBSCRIPTION_STATUSES.PENDING },
       select: { id: true, couponId: true },
     });
@@ -123,7 +123,7 @@ class SubscriptionRepo {
    * the demand invoice is removed with it. Coupon redemption is NOT touched here
    * — the caller un-redeems before deleting, in the same tx.
    */
-  deleteSubscription(id, client) {
+  deleteSubscription({ id, client } = {}) {
     return (client ?? prisma).subscription.delete({ where: { id } });
   }
 
@@ -138,3 +138,4 @@ class SubscriptionRepo {
 }
 
 export const subscriptionRepo = new SubscriptionRepo();
+export { SubscriptionRepo };
