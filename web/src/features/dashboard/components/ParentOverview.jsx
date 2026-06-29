@@ -168,26 +168,45 @@ export default function ParentOverview() {
                   </Box>
                 </Stack>
 
-                <Stack
-                  direction="row"
-                  divider={<Box sx={{ width: "1px", bgcolor: "divider" }} />}
-                  sx={{ py: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.primary.main, 0.05) }}
-                >
-                  <ChildMetric value={child.points ?? 0} label={txt.points2} color="primary.main" />
-                  <ChildMetric value={child.level ?? 1} label={txt.level} color="secondary.main" />
-                  <ChildMetric value={`#${child.rank ?? "-"}`} label={txt.rank} color="text.primary" />
-                  <ChildMetric value={child.badgeCount ?? 0} label={txt.badgesLabel} color="warning.main" />
-                </Stack>
+                {/* Stats/achievements are hidden for an inactive child; the
+                    parent still sees identity + status above and a renew CTA. */}
+                {child.isActive === false ? (
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    gap={1}
+                    sx={{ py: 1.5, px: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.warning.main, 0.08) }}
+                  >
+                    <Box aria-hidden sx={{ fontSize: 22 }}>🔒</Box>
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      {txt.inactiveChildNote}
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <>
+                    <Stack
+                      direction="row"
+                      divider={<Box sx={{ width: "1px", bgcolor: "divider" }} />}
+                      sx={{ py: 1.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.primary.main, 0.05) }}
+                    >
+                      <ChildMetric value={child.points ?? 0} label={txt.points2} color="primary.main" />
+                      <ChildMetric value={child.level ?? 1} label={txt.level} color="secondary.main" />
+                      <ChildMetric value={`#${child.rank ?? "-"}`} label={txt.rank} color="text.primary" />
+                      <ChildMetric value={child.badgeCount ?? 0} label={txt.badgesLabel} color="warning.main" />
+                    </Stack>
 
-                {child.activeSubscription?.remainingHours != null && (
-                  <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: "block", mt: 1.5 }}>
-                    ⏳ {child.activeSubscription.remainingHours} {txt.remainingHours}
-                  </Typography>
+                    {child.activeSubscription?.remainingHours != null && (
+                      <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: "block", mt: 1.5 }}>
+                        ⏳ {child.activeSubscription.remainingHours} {txt.remainingHours}
+                      </Typography>
+                    )}
+                  </>
                 )}
 
                 <Button
                   fullWidth
                   size="small"
+                  variant={child.isActive === false ? "contained" : "text"}
                   component={Link}
                   href={localePath(lng, "/dashboard/children")}
                   endIcon={
@@ -197,7 +216,7 @@ export default function ParentOverview() {
                   }
                   sx={{ mt: 1.5, fontWeight: 700 }}
                 >
-                  {txt.viewDetails}
+                  {child.isActive === false ? txt.renewSubscription : txt.viewDetails}
                 </Button>
               </CardContent>
             </Card>

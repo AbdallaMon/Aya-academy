@@ -66,6 +66,8 @@ export const dashboardText = {
     // parent / student
     activeSubscription: "اشتراك نشط",
     noActiveSubscription: "لا يوجد اشتراك نشط",
+    renewSubscription: "تجديد الاشتراك",
+    inactiveChildNote: "اشتراك الطفل منتهي — جدّد ليشاهد تقدّمه ويلعب.",
     remainingHours: "ساعة متبقية",
     recentReports: "أحدث التقارير",
     assignedGames: "الألعاب المسندة",
@@ -176,6 +178,8 @@ export const dashboardText = {
     rank: "Rank",
     activeSubscription: "Active subscription",
     noActiveSubscription: "No active subscription",
+    renewSubscription: "Renew subscription",
+    inactiveChildNote: "This child's subscription has expired — renew to see progress and play.",
     remainingHours: "hrs left",
     recentReports: "Recent reports",
     assignedGames: "Assigned games",

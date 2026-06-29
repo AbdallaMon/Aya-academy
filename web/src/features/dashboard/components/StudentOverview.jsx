@@ -84,8 +84,12 @@ const isEmojiIcon = (s) =>
 export default function StudentOverview() {
   const txt = useDashboardText();
   const theme = useTheme();
-  const { lng } = useTranslation();
+  const { t, lng } = useTranslation();
   const { user } = useAuth();
+  // Inactive students don't see the leaderboard or their badges (gentle, no
+  // billing nag — the actionable renew message goes to the parent).
+  const subActive = user?.hasActiveSubscription !== false;
+  const lock = t("subscriptionLock", { returnObjects: true }) || {};
 
   const { data, isLoading } = useRequest({
     url: "dashboard/student",
@@ -422,11 +426,15 @@ export default function StudentOverview() {
         </Grid>
       )}
 
-      {/* ── 4. Competition — elevated leaderboard ───────────────── */}
-      <SectionTitle emoji="🏆" title={txt.competition} />
-      <Box sx={{ mb: 1.5 }}>
-        <LeaderboardWidget highlightId={user?.id} title={txt.weeklyChampions} />
-      </Box>
+      {/* ── 4. Competition — elevated leaderboard (hidden when inactive) ── */}
+      {subActive && (
+        <>
+          <SectionTitle emoji="🏆" title={txt.competition} />
+          <Box sx={{ mb: 1.5 }}>
+            <LeaderboardWidget highlightId={user?.id} title={txt.weeklyChampions} />
+          </Box>
+        </>
+      )}
 
       {/* ── 5. My achievements — badges + certificates together ─── */}
       <SectionTitle emoji="🌟" title={txt.myAchievements} />
@@ -440,7 +448,14 @@ export default function StudentOverview() {
                   {txt.myBadges}
                 </Typography>
               </Stack>
-              {badges.length === 0 ? (
+              {!subActive ? (
+                <Stack direction="row" alignItems="center" gap={1} sx={{ py: 1 }}>
+                  <Box aria-hidden sx={{ fontSize: 22 }}>🔒</Box>
+                  <Typography variant="body2" color="text.secondary" fontWeight={700}>
+                    {lock.studentTitle}
+                  </Typography>
+                </Stack>
+              ) : badges.length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
                   {txt.noBadgesYet}
                 </Typography>

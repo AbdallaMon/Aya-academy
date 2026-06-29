@@ -5,10 +5,11 @@ import { Box, CircularProgress, Stack } from "@mui/material";
 import { usePathname, useSearchParams } from "next/navigation";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
+import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
-import { useConfirm, EmptyState } from "../../../shared/components/index.js";
+import { useConfirm, EmptyState, SubscriptionLockedState } from "../../../shared/components/index.js";
 import { USERS_URL } from "../config/constant.js";
 import { useUserDetailText } from "../config/userDetailText.js";
 import UserDetailHeader from "../components/UserDetailHeader.jsx";
@@ -32,6 +33,7 @@ export default function UserDetailPage({ userId }) {
   const txt = useUserDetailText();
   const confirm = useConfirm();
   const { hasPermission } = usePermission();
+  const { user: viewer } = useAuth();
 
   const canView = hasPermission(PERMISSIONS.USER.VIEW);
   const canSetLevel = hasPermission(PERMISSIONS.USER.SET_LEVEL);
@@ -63,6 +65,14 @@ export default function UserDetailPage({ userId }) {
   const role = user?.role;
   const isStudent = role === USER_ROLES.STUDENT;
   const isParent = role === USER_ROLES.PARENT;
+
+  // A parent viewing an INACTIVE child sees identity + certificates + reports +
+  // subscriptions, but not the child's stats/achievements (overview/badges/
+  // games tabs). Admin is never subscription-gated.
+  const lockChildAchievements =
+    viewer?.role === USER_ROLES.PARENT &&
+    isStudent &&
+    overview?.isActive === false;
 
   // Unban goes through a simple confirm; ban uses a reason dialog.
   const unbanMut = useMultiRequest({
@@ -142,6 +152,15 @@ export default function UserDetailPage({ userId }) {
   }
 
   function renderActive() {
+    // Parent viewing an inactive child: stats/achievements tabs are locked.
+    if (lockChildAchievements && ["overview", "badges", "games"].includes(activeTab)) {
+      return (
+        <SubscriptionLockedState
+          variant="parent"
+          childName={user.nickname || user.name}
+        />
+      );
+    }
     switch (activeTab) {
       case "overview":
         if (isStudent) {

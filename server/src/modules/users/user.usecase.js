@@ -277,6 +277,7 @@ class UserUsecase {
         badgeRows,
         gameAttempts,
         quizAttempts,
+        subscribedIds,
       ] = await Promise.all([
         userRepo.getStudentParents(id),
         subscriptionRepo.listSubscriptions({ studentId: id }, 0, 100),
@@ -284,10 +285,15 @@ class UserUsecase {
         userRepo.getStudentBadges(id),
         userRepo.getRecentGameAttempts(id),
         userRepo.getRecentQuizAttempts(id),
+        subscriptionRepo.getCurrentlySubscribedStudentIds([id]),
       ]);
 
       return {
         user,
+        // Whether the student currently has an ACTIVE subscription — lets the
+        // client lock achievement views for an inactive child (single source of
+        // truth: subscriptionRepo.getCurrentlySubscribedStudentIds).
+        isActive: subscribedIds.includes(id),
         parents: toOverviewParents(parentLinks),
         subscriptions: subs.items,
         certificatesCount,
