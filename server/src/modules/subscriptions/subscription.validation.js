@@ -72,13 +72,13 @@ export class SubscriptionValidation {
 
   // Renew a subscription → creates a NEW PENDING subscription for the same
   // student. Plan/period/coupon default from the source sub and may be
-  // overridden. `allowWhileActive` bypasses the still-active guard.
+  // overridden. A new subscription is BLOCKED while an active one exists, and
+  // AUTO-REPLACES any in-flight PENDING one (handled in the usecase).
   static renewSubscriptionSchema = z.object({
     planId: z.number().int().positive().optional(),
     billingPeriod: z.enum(billingPeriods).optional(),
     couponCode: z.string().trim().min(1).optional(),
     startDate: z.coerce.date().optional(),
-    allowWhileActive: z.boolean().optional(),
   });
 
   // Change the plan/period/coupon of a not-yet-paid subscription; recomputes

@@ -93,6 +93,43 @@ class SubscriptionUsecase {
     }
   }
 
+  /**
+   * Gate + cleanup run at the START of every creation tx (renew/request/create)
+   * before a new subscription row is inserted. Enforces the two business rules:
+   *
+   *   1. ONE active at a time — if the student has a currently-ACTIVE
+   *      subscription, refuse (no admin bypass). The teacher must CANCEL it first
+   *      (ACTIVE → CANCELLED via cancel()).
+   *   2. ONE in-flight at a time — auto-replace: any PENDING subscription(s) are
+   *      deleted entirely (their invoice cascades; their coupon redemption is
+   *      returned first). No error — the new request simply replaces the old one.
+   *
+   * Must run INSIDE the enclosing `tx` so the deletes/coupon-decrements are atomic
+   * with the subsequent createSubscription.
+   */
+  async prepareForNewSubscription(studentId, tx) {
+    // Rule 1 — block while a currently-active subscription exists.
+    // getCurrentlySubscribedStudentIds (usecase wrapper) returns a Set<number>.
+    const activeIds = await this.getCurrentlySubscribedStudentIds([studentId]);
+    if (activeIds.has(studentId)) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    // Rule 2 — auto-replace any in-flight (PENDING) subscription(s).
+    const pendings =
+      await subscriptionRepo.findPendingSubscriptionsByStudent(studentId);
+    for (const p of pendings) {
+      if (p.couponId) {
+        await couponRepo.decrementCouponRedemption(p.couponId, tx);
+      }
+      await subscriptionRepo.deleteSubscription(p.id, tx);
+    }
+  }
+
   /** Resolve a subscription status from the date window when not provided. */
   resolveStatus(startDate, endDate, now = new Date()) {
     if (now < startDate) return SUBSCRIPTION_STATUSES.UPCOMING;
@@ -300,6 +337,8 @@ class SubscriptionUsecase {
     }
 
     const subscription = await prisma.$transaction(async (tx) => {
+      // Block a 2nd active + clear any in-flight PENDING before creating.
+      await this.prepareForNewSubscription(input.studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
       if (couponIdToConsume) {
         await couponRepo.incrementCouponRedemption(couponIdToConsume, tx);
@@ -452,6 +491,8 @@ class SubscriptionUsecase {
 
     // Create the subscription and consume any coupon atomically.
     const subscription = await prisma.$transaction(async (tx) => {
+      // Block while active + auto-replace any in-flight PENDING before creating.
+      await this.prepareForNewSubscription(studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
       if (couponId) {
         await couponRepo.incrementCouponRedemption(couponId, tx);
@@ -628,9 +669,10 @@ class SubscriptionUsecase {
    * Mirrors request()/create(): coupon validation + atomic redemption bump in a
    * tx, best-effort demand invoice, best-effort notification.
    *
-   * Active guard: if the student already has a currently-active subscription
-   * (status ACTIVE and now within its window), renewal is refused unless the
-   * caller explicitly passes allowWhileActive.
+   * One-active / one-in-flight rules (via prepareForNewSubscription inside the
+   * creation tx): renewal is REFUSED while a currently-active subscription exists
+   * (no bypass — cancel it first), and any in-flight PENDING subscription is
+   * AUTO-REPLACED (deleted, invoice cascades, coupon un-redeemed).
    */
   async renew(authUser, id, input = {}) {
     // 1. Load the source subscription and scope-check by its studentId.
@@ -654,34 +696,11 @@ class SubscriptionUsecase {
     const billingPeriod =
       input.billingPeriod ?? source.billingPeriod ?? BILLING_PERIODS.MONTHLY;
 
-    // 3. Active guard — refuse if the student is currently subscribed. The
-    //    allowWhileActive bypass is an ADMIN-only override: a parent (who holds
-    //    SUBSCRIPTION.REQUEST) must NOT be able to spam renewals over an active
-    //    subscription by sending the flag, so it is ignored for non-admins.
-    const allowWhileActive =
-      authUser.role === USER_ROLES.ADMIN && input.allowWhileActive === true;
-    const activeIds = await this.getCurrentlySubscribedStudentIds([studentId]);
-    if (activeIds.has(studentId) && !allowWhileActive) {
-      throw new AppError({
-        statusCode: 409,
-        code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
-        translationKey: messagesNames.subscriptionMessages,
-      });
-    }
-
-    // Dedup pending renewals — applies to everyone (incl. admin): if the student
-    // already has a PENDING subscription awaiting review, refuse to create a
-    // second one. Reuses SUBSCRIPTION_STILL_ACTIVE (an unfinished subscription
-    // already exists).
-    const hasPending =
-      await subscriptionRepo.hasPendingSubscription(studentId);
-    if (hasPending) {
-      throw new AppError({
-        statusCode: 409,
-        code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
-        translationKey: messagesNames.subscriptionMessages,
-      });
-    }
+    // 3. Active/in-flight handling now lives in prepareForNewSubscription, run
+    //    inside the creation tx below: it BLOCKS while a currently-active
+    //    subscription exists (no admin bypass — the teacher must cancel it first)
+    //    and AUTO-REPLACES any PENDING subscription (deletes it, invoice cascades,
+    //    coupon un-redeemed). No allowWhileActive override anymore.
 
     const plan = await planRepo.getByIdWithCoupons(planId);
     if (!plan || !plan.isActive) {
@@ -722,6 +741,8 @@ class SubscriptionUsecase {
 
     // Create the new subscription and consume any coupon atomically.
     const subscription = await prisma.$transaction(async (tx) => {
+      // Block while active + auto-replace any in-flight PENDING before creating.
+      await this.prepareForNewSubscription(studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
       if (couponId) {
         await couponRepo.incrementCouponRedemption(couponId, tx);

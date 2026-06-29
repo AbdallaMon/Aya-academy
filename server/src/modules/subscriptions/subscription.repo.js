@@ -107,15 +107,24 @@ class SubscriptionRepo {
   }
 
   /**
-   * True when the student already has a subscription in PENDING status — used to
-   * block duplicate pending renewals (a second renewal while one is awaiting
-   * admin review).
+   * All PENDING (in-flight) subscriptions for a student. Returns the minimal
+   * shape needed to auto-replace them when a new subscription is created:
+   * `{ id, couponId }` so the caller can un-redeem the coupon then delete the row.
    */
-  async hasPendingSubscription(studentId) {
-    const count = await prisma.subscription.count({
+  findPendingSubscriptionsByStudent(studentId) {
+    return prisma.subscription.findMany({
       where: { studentId, status: SUBSCRIPTION_STATUSES.PENDING },
+      select: { id: true, couponId: true },
     });
-    return count > 0;
+  }
+
+  /**
+   * Hard-delete a subscription. The invoice FK cascades (onDelete: Cascade), so
+   * the demand invoice is removed with it. Coupon redemption is NOT touched here
+   * — the caller un-redeems before deleting, in the same tx.
+   */
+  deleteSubscription(id, client) {
+    return (client ?? prisma).subscription.delete({ where: { id } });
   }
 
   async updateSubscription(id, data, client) {
