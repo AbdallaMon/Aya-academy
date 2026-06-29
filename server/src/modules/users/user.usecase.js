@@ -288,21 +288,33 @@ class UserUsecase {
         subscriptionRepo.getCurrentlySubscribedStudentIds([id]),
       ]);
 
+      const isActive = subscribedIds.includes(id);
+      // Backend enforces the gate (not just the UI): for a non-admin viewer
+      // (a parent) of an INACTIVE child, withhold the stats/achievements
+      // (badges, points, attempts). Identity + subscriptions + certificates
+      // count remain so renewal stays possible. ADMIN always sees everything.
+      const hideAchievements =
+        !isActive && authUser.role !== USER_ROLES.ADMIN;
+
       return {
         user,
         // Whether the student currently has an ACTIVE subscription — lets the
         // client lock achievement views for an inactive child (single source of
         // truth: subscriptionRepo.getCurrentlySubscribedStudentIds).
-        isActive: subscribedIds.includes(id),
+        isActive,
         parents: toOverviewParents(parentLinks),
         subscriptions: subs.items,
         certificatesCount,
-        badges: badgeRows.map((row) => ({
-          ...row.badge,
-          awardedAt: row.awardedAt,
-        })),
-        attempts: { games: gameAttempts, quizzes: quizAttempts },
-        pointsTotal: user.points,
+        badges: hideAchievements
+          ? []
+          : badgeRows.map((row) => ({
+              ...row.badge,
+              awardedAt: row.awardedAt,
+            })),
+        attempts: hideAchievements
+          ? { games: [], quizzes: [] }
+          : { games: gameAttempts, quizzes: quizAttempts },
+        pointsTotal: hideAchievements ? null : user.points,
       };
     }
 

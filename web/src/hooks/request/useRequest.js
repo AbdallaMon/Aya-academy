@@ -284,6 +284,10 @@ export function useRequest({
       // anonymous 401 is expected and must stay silent. A "please log in" toast
       // should only ever appear via the pages that actually require auth.
       if (err?.status === 401) return;
+      // Never toast subscription-inactive: it is always surfaced in place
+      // (gentle student lock / actionable parent panel), never as a billing
+      // toast — least of all to a child.
+      if (err?.data?.code === "SUBSCRIPTION_INACTIVE") return;
       showToast({
         message,
         severity: "error",
