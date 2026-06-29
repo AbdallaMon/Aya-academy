@@ -2,6 +2,7 @@ import { prisma } from "@aya/db/prisma.client.js";
 import {
   PARENT_RELATIONS,
   STUDENT_LEVELS,
+  SUBSCRIPTION_STATUSES,
   USER_ROLES,
   attachmentMessagesCodes,
   messagesNames,
@@ -289,6 +290,47 @@ class UserUsecase {
       ]);
 
       const isActive = subscribedIds.includes(id);
+
+      // Derive the subscription state visible to the frontend so it can
+      // distinguish "pending renewal" from "truly expired/cancelled".
+      // Pick the newest subscription defensively by max id (subs.items is
+      // already newest-first per listSubscriptions, but max-by-id is safe
+      // even if the ordering contract ever changes).
+      const newest =
+        subs.items.length > 0
+          ? subs.items.reduce((a, b) => (b.id > a.id ? b : a))
+          : null;
+      const latestSubscriptionId = newest?.id ?? null;
+
+      let subscriptionState;
+      if (isActive) {
+        subscriptionState = SUBSCRIPTION_STATUSES.ACTIVE;
+      } else if (
+        newest &&
+        (newest.status === SUBSCRIPTION_STATUSES.PENDING ||
+          newest.status === SUBSCRIPTION_STATUSES.UPCOMING)
+      ) {
+        subscriptionState = SUBSCRIPTION_STATUSES.PENDING;
+      } else if (newest) {
+        // EXPIRED or CANCELLED — treat both as expired from the viewer's
+        // perspective (renewal CTA is the same either way).
+        subscriptionState = SUBSCRIPTION_STATUSES.EXPIRED;
+      } else {
+        subscriptionState = "NONE";
+      }
+
+      // Non-admin viewers (parents) only see ACTIVATED subscriptions
+      // (ACTIVE or EXPIRED). PENDING / UPCOMING / CANCELLED are internal
+      // workflow states that parents have no UI for.
+      const visibleSubs =
+        authUser.role === USER_ROLES.ADMIN
+          ? subs.items
+          : subs.items.filter(
+              (s) =>
+                s.status === SUBSCRIPTION_STATUSES.ACTIVE ||
+                s.status === SUBSCRIPTION_STATUSES.EXPIRED,
+            );
+
       // Backend enforces the gate (not just the UI): for a non-admin viewer
       // (a parent) of an INACTIVE child, withhold the stats/achievements
       // (badges, points, attempts). Identity + subscriptions + certificates
@@ -302,8 +344,13 @@ class UserUsecase {
         // client lock achievement views for an inactive child (single source of
         // truth: subscriptionRepo.getCurrentlySubscribedStudentIds).
         isActive,
+        // Richer state for the renewal UX: ACTIVE | PENDING | EXPIRED | NONE
+        subscriptionState,
+        // Id of the newest subscription (by id) — lets the frontend deep-link
+        // directly to it for renewal without a separate fetch.
+        latestSubscriptionId,
         parents: toOverviewParents(parentLinks),
-        subscriptions: subs.items,
+        subscriptions: visibleSubs,
         certificatesCount,
         badges: hideAchievements
           ? []
