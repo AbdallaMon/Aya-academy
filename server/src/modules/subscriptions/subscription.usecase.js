@@ -539,9 +539,18 @@ class SubscriptionUsecase {
       ? `${existing.notes ? `${existing.notes} | ` : ""}مرفوض: ${input.reason}`
       : existing.notes;
 
-    const updated = await subscriptionRepo.updateSubscription(id, {
-      status: SUBSCRIPTION_STATUSES.CANCELLED,
-      notes,
+    // Release the coupon: a rejected request never materialised, so its
+    // redemption must be returned. Atomic with the status update.
+    const updated = await prisma.$transaction(async (tx) => {
+      const sub = await subscriptionRepo.updateSubscription(
+        id,
+        { status: SUBSCRIPTION_STATUSES.CANCELLED, notes },
+        tx,
+      );
+      if (existing.couponId) {
+        await couponRepo.decrementCouponRedemption(existing.couponId, tx);
+      }
+      return sub;
     });
 
     try {
@@ -584,8 +593,18 @@ class SubscriptionUsecase {
       );
     }
 
-    const updated = await subscriptionRepo.updateSubscription(id, {
-      status: SUBSCRIPTION_STATUSES.CANCELLED,
+    // Release the coupon when cancelling — the consumed redemption is returned.
+    // Atomic with the status update.
+    const updated = await prisma.$transaction(async (tx) => {
+      const sub = await subscriptionRepo.updateSubscription(
+        id,
+        { status: SUBSCRIPTION_STATUSES.CANCELLED },
+        tx,
+      );
+      if (existing.couponId) {
+        await couponRepo.decrementCouponRedemption(existing.couponId, tx);
+      }
+      return sub;
     });
 
     try {
