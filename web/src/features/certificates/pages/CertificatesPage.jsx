@@ -10,13 +10,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { MdAdd, MdClose, MdPrint, MdDownload, MdPictureAsPdf } from "react-icons/md";
+import { MdClose, MdPrint, MdDownload, MdPictureAsPdf } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { DataTable } from "../../../shared/components/index.js";
+import { DataTable, PageHeader } from "../../../shared/components/index.js";
 import { CERTIFICATES_URL } from "../config/constant.js";
 import { buildCertificateColumns } from "../config/certificatesColumns.js";
 import { useCertificatesText } from "../config/certificatesText.js";
@@ -112,28 +112,12 @@ export default function CertificatesPage() {
 
   return (
     <>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={createDialog.open}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? createDialog.open : undefined}
+      />
 
       <DataTable
         initialRows={data || []}

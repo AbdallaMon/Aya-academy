@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
-import { DataTable } from "../../../shared/components/index.js";
+import { DataTable, PageHeader } from "../../../shared/components/index.js";
 import { QUIZZES_URL, MY_STUDENTS_URL } from "../config/constant.js";
 import { buildQuizzesColumns } from "../config/quizzesColumns.js";
 import { buildQuizzesFilters } from "../config/quizzesFilters.js";
@@ -86,14 +86,7 @@ export default function QuizzesPage() {
 
   return (
     <Box>
-      <Stack sx={{ mb: 3 }} gap={0.5}>
-        <Typography variant="h4" fontWeight={800}>
-          {txt.pageTitle}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </Stack>
+      <PageHeader title={txt.pageTitle} description={description} />
 
       <DataTable
         initialRows={data || []}

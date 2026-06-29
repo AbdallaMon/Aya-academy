@@ -2,8 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { MdAdd } from "react-icons/md";
+import { Box } from "@mui/material";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -12,7 +11,7 @@ import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
 import { localePath } from "../../../i18n/routing.js";
-import { DataTable } from "../../../shared/components/index.js";
+import { DataTable, PageHeader } from "../../../shared/components/index.js";
 import { INVITES_URL, buildLinkForToken } from "../config/constant.js";
 import { useQuizInvitesText } from "../config/quizInvitesText.js";
 import { buildInvitesColumns } from "../config/quizInvitesColumns.js";
@@ -83,28 +82,14 @@ export default function QuizInvitesPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {isParent ? txt.pageTitleParent : txt.pageTitleAdmin}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {isParent ? txt.pageDescriptionParent : txt.pageDescriptionAdmin}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={createDialog.open}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={isParent ? txt.pageTitleParent : txt.pageTitleAdmin}
+        description={
+          isParent ? txt.pageDescriptionParent : txt.pageDescriptionAdmin
+        }
+        createLabel={txt.create}
+        onCreate={canCreate ? createDialog.open : undefined}
+      />
 
       <DataTable
         initialRows={data || []}

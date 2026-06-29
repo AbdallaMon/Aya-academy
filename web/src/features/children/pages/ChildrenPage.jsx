@@ -13,14 +13,14 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { MdAdd, MdChildCare, MdInfoOutline, MdWorkspacePremium } from "react-icons/md";
+import { MdChildCare, MdInfoOutline, MdWorkspacePremium } from "react-icons/md";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
-import { EmptyState } from "../../../shared/components/index.js";
+import { EmptyState, PageHeader } from "../../../shared/components/index.js";
 import { useChildrenText } from "../config/childrenText.js";
 import {
   MY_STUDENTS_URL,
@@ -99,26 +99,12 @@ export default function ChildrenPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<MdAdd />} onClick={addDialog.open}>
-          {txt.addChild}
-        </Button>
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.addChild}
+        onCreate={addDialog.open}
+      />
 
       {!childrenReq.isLoading && children.length === 0 && (
         <EmptyState title={txt.empty} actionLabel={txt.addChild} onAction={addDialog.open} />

@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
+import { Box, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew } from "react-icons/md";
+import { MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -16,6 +16,7 @@ import { localePath } from "../../../i18n/routing.js";
 import {
   DataTable,
   FormDialog,
+  PageHeader,
   RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
@@ -430,32 +431,12 @@ export default function SubscriptionsPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button
-            variant="contained"
-            startIcon={<MdAdd />}
-            onClick={createDialog.open}
-          >
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={description}
+        createLabel={txt.create}
+        onCreate={canCreate ? createDialog.open : undefined}
+      />
 
       <DataTable
         initialRows={data || []}

@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useTranslation } from "../../../i18n/client.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
+import { PageHeader } from "../../../shared/components/index.js";
 import GameCard from "../components/GameCard.jsx";
 
 export default function MyGamesPage() {
@@ -57,14 +58,7 @@ export default function MyGamesPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 900 }}>
-          {gd.myGamesTitle}
-        </Typography>
-        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-          {gd.myGamesSubtitle}
-        </Typography>
-      </Box>
+      <PageHeader title={gd.myGamesTitle} description={gd.myGamesSubtitle} />
 
       {loading ? (
         <Box sx={{ display: "grid", placeItems: "center", py: 8, gap: 2 }}>
