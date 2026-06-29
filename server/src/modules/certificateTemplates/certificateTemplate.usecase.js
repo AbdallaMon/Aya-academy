@@ -6,7 +6,6 @@ import {
 } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { conflict, notFound } from "../../shared/errors/AppError.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { certificateTemplateRepo } from "./certificateTemplate.repo.js";
 import { certificateMessagesCodes } from "./certificateTemplate.messages.js";
 
@@ -20,21 +19,25 @@ function isAutoType(type) {
 }
 
 class CertificateTemplateUsecase {
-  /** Admins see all templates; everyone else only active ones. */
-  buildListWhere(authUser) {
-    if (authUser.role === USER_ROLES.ADMIN) return {};
-    return { isActive: true };
+  /**
+   * Admins see all templates; everyone else only active ones. Returns the
+   * `isActive` value to push down to the repo (undefined ⇒ no filter).
+   */
+  listActiveFilter(authUser) {
+    if (authUser.role === USER_ROLES.ADMIN) return undefined;
+    return true;
   }
 
-  async list(authUser, { page, limit }) {
-    const { skip, take, page: p, limit: l } = paginate({ page, limit });
-    const where = this.buildListWhere(authUser);
-    const { items, total } = await certificateTemplateRepo.list(where, skip, take);
-    return paginatedResult(items, total, p, l);
+  async list({ page, limit, authUser }) {
+    return certificateTemplateRepo.list({
+      page,
+      limit,
+      isActive: this.listActiveFilter(authUser),
+    });
   }
 
   async getById(id) {
-    const template = await certificateTemplateRepo.getById(id);
+    const template = await certificateTemplateRepo.getById({ id });
     if (!template) {
       throw notFound(certificateMessagesCodes.TEMPLATE_NOT_FOUND);
     }
@@ -43,12 +46,12 @@ class CertificateTemplateUsecase {
 
   /** The active GAME template (auto-applied to game certificates). */
   getActiveGameTemplate(tx) {
-    return certificateTemplateRepo.getActiveGameTemplate(tx);
+    return certificateTemplateRepo.getActiveGameTemplate({ client: tx });
   }
 
   /** The active EXAM template (auto-applied to quiz/exam certificates). */
   getActiveExamTemplate(tx) {
-    return certificateTemplateRepo.getActiveExamTemplate(tx);
+    return certificateTemplateRepo.getActiveExamTemplate({ client: tx });
   }
 
   /**
@@ -78,7 +81,7 @@ class CertificateTemplateUsecase {
     };
   }
 
-  async create(_authUser, input) {
+  async create({ authUser, ...input }) {
     const data = {
       key: input.key,
       type: input.type ?? CERTIFICATE_TEMPLATE_TYPES.GENERAL,
@@ -109,13 +112,17 @@ class CertificateTemplateUsecase {
       const stealsActiveSlot = isAutoType(data.type) && data.isActive;
       if (data.isDefault || stealsActiveSlot) {
         return await prisma.$transaction(async (tx) => {
-          if (data.isDefault) await certificateTemplateRepo.unsetDefaults(null, tx);
+          if (data.isDefault)
+            await certificateTemplateRepo.unsetDefaults({ client: tx });
           if (stealsActiveSlot)
-            await certificateTemplateRepo.deactivateOthersOfType(data.type, null, tx);
-          return certificateTemplateRepo.create(data, tx);
+            await certificateTemplateRepo.deactivateOthersOfType({
+              type: data.type,
+              client: tx,
+            });
+          return certificateTemplateRepo.create({ data, client: tx });
         });
       }
-      return await certificateTemplateRepo.create(data);
+      return await certificateTemplateRepo.create({ data });
     } catch (err) {
       if (isUniqueViolation(err)) {
         throw conflict(
@@ -127,8 +134,8 @@ class CertificateTemplateUsecase {
     }
   }
 
-  async update(_authUser, id, input) {
-    const existing = await certificateTemplateRepo.getById(id);
+  async update({ id, authUser, ...input }) {
+    const existing = await certificateTemplateRepo.getById({ id });
     if (!existing) {
       throw notFound(certificateMessagesCodes.TEMPLATE_NOT_FOUND);
     }
@@ -162,13 +169,18 @@ class CertificateTemplateUsecase {
       const stealsActiveSlot = isAutoType(effectiveType) && data.isActive === true;
       if (data.isDefault === true || stealsActiveSlot) {
         return await prisma.$transaction(async (tx) => {
-          if (data.isDefault === true) await certificateTemplateRepo.unsetDefaults(id, tx);
+          if (data.isDefault === true)
+            await certificateTemplateRepo.unsetDefaults({ exceptId: id, client: tx });
           if (stealsActiveSlot)
-            await certificateTemplateRepo.deactivateOthersOfType(effectiveType, id, tx);
-          return certificateTemplateRepo.update(id, data, tx);
+            await certificateTemplateRepo.deactivateOthersOfType({
+              type: effectiveType,
+              exceptId: id,
+              client: tx,
+            });
+          return certificateTemplateRepo.update({ id, data, client: tx });
         });
       }
-      return await certificateTemplateRepo.update(id, data);
+      return await certificateTemplateRepo.update({ id, data });
     } catch (err) {
       if (isUniqueViolation(err)) {
         throw conflict(
@@ -185,27 +197,36 @@ class CertificateTemplateUsecase {
    * (GAME / EXAM) this atomically deactivates the other templates of the same
    * type, so exactly one is in use. For GENERAL it just flips isActive on.
    */
-  async activate(_authUser, id) {
-    const existing = await certificateTemplateRepo.getById(id);
+  async activate({ id, authUser }) {
+    const existing = await certificateTemplateRepo.getById({ id });
     if (!existing) {
       throw notFound(certificateMessagesCodes.TEMPLATE_NOT_FOUND);
     }
     if (!isAutoType(existing.type)) {
-      return certificateTemplateRepo.update(id, { isActive: true });
+      return certificateTemplateRepo.update({ id, data: { isActive: true } });
     }
     return prisma.$transaction(async (tx) => {
-      await certificateTemplateRepo.deactivateOthersOfType(existing.type, id, tx);
-      return certificateTemplateRepo.update(id, { isActive: true }, tx);
+      await certificateTemplateRepo.deactivateOthersOfType({
+        type: existing.type,
+        exceptId: id,
+        client: tx,
+      });
+      return certificateTemplateRepo.update({
+        id,
+        data: { isActive: true },
+        client: tx,
+      });
     });
   }
 
-  async remove(_authUser, id) {
-    const existing = await certificateTemplateRepo.getById(id);
+  async remove({ id, authUser }) {
+    const existing = await certificateTemplateRepo.getById({ id });
     if (!existing) {
       throw notFound(certificateMessagesCodes.TEMPLATE_NOT_FOUND);
     }
-    return certificateTemplateRepo.remove(id);
+    return certificateTemplateRepo.remove({ id });
   }
 }
 
 export const certificateTemplateUsecase = new CertificateTemplateUsecase();
+export { CertificateTemplateUsecase };

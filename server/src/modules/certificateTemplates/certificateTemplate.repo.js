@@ -1,32 +1,47 @@
+// ===========================================================================
+// certificateTemplate.repo — Prisma I/O only on CertificateTemplate. (Reference
+// idiom: single object args with optional `client`, list owns filtering +
+// pagination and returns { items, total, page, pageSize }.)
+// ===========================================================================
+
 import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
+import { paginate } from "../../shared/utility/pagination.js";
+import { buildIsActiveFilter } from "../../shared/utility/helper.js";
 import { certificateTemplateSelect } from "./certificateTemplate.dto.js";
 
 class CertificateTemplateRepo {
-  async list(where, skip, take) {
+  async list({ page, limit, isActive, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+
+    const where = {};
+    const activeFilter = buildIsActiveFilter({ isActive });
+    if (activeFilter !== undefined) where.isActive = activeFilter;
+
     const [items, total] = await Promise.all([
-      prisma.certificateTemplate.findMany({
+      db.certificateTemplate.findMany({
         where,
         skip,
         take,
         orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
         select: certificateTemplateSelect,
       }),
-      prisma.certificateTemplate.count({ where }),
+      db.certificateTemplate.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  getById(id) {
-    return prisma.certificateTemplate.findUnique({
+  getById({ id, client } = {}) {
+    return (client ?? prisma).certificateTemplate.findUnique({
       where: { id },
       select: certificateTemplateSelect,
     });
   }
 
   /** The active template of an auto-applied type (GAME / EXAM), if any. */
-  getActiveTemplateOfType(type, tx) {
-    return (tx ?? prisma).certificateTemplate.findFirst({
+  getActiveTemplateOfType({ type, client } = {}) {
+    return (client ?? prisma).certificateTemplate.findFirst({
       where: { type, isActive: true },
       orderBy: { updatedAt: "desc" },
       select: certificateTemplateSelect,
@@ -34,42 +49,48 @@ class CertificateTemplateRepo {
   }
 
   /** The active GAME template auto-applied to game certificates (if any). */
-  getActiveGameTemplate(tx) {
-    return this.getActiveTemplateOfType(CERTIFICATE_TEMPLATE_TYPES.GAME, tx);
+  getActiveGameTemplate({ client } = {}) {
+    return this.getActiveTemplateOfType({
+      type: CERTIFICATE_TEMPLATE_TYPES.GAME,
+      client,
+    });
   }
 
   /** The active EXAM template auto-applied to quiz certificates (if any). */
-  getActiveExamTemplate(tx) {
-    return this.getActiveTemplateOfType(CERTIFICATE_TEMPLATE_TYPES.EXAM, tx);
+  getActiveExamTemplate({ client } = {}) {
+    return this.getActiveTemplateOfType({
+      type: CERTIFICATE_TEMPLATE_TYPES.EXAM,
+      client,
+    });
   }
 
-  create(data, tx) {
-    return (tx ?? prisma).certificateTemplate.create({
+  create({ data, client } = {}) {
+    return (client ?? prisma).certificateTemplate.create({
       data,
       select: certificateTemplateSelect,
     });
   }
 
-  update(id, data, tx) {
-    return (tx ?? prisma).certificateTemplate.update({
+  update({ id, data, client } = {}) {
+    return (client ?? prisma).certificateTemplate.update({
       where: { id },
       data,
       select: certificateTemplateSelect,
     });
   }
 
-  remove(id) {
-    return prisma.certificateTemplate.delete({
+  remove({ id, client } = {}) {
+    return (client ?? prisma).certificateTemplate.delete({
       where: { id },
       select: certificateTemplateSelect,
     });
   }
 
   /** Clear isDefault on every other template (used when promoting a new default). */
-  unsetDefaults(exceptId, tx) {
+  unsetDefaults({ exceptId, client } = {}) {
     const where = { isDefault: true };
     if (exceptId) where.id = { not: exceptId };
-    return (tx ?? prisma).certificateTemplate.updateMany({
+    return (client ?? prisma).certificateTemplate.updateMany({
       where,
       data: { isDefault: false },
     });
@@ -80,10 +101,10 @@ class CertificateTemplateRepo {
    * (GAME / EXAM) — only one of each type may be "in use" at a time. Other
    * templates keep their type; they just stop being the active one.
    */
-  deactivateOthersOfType(type, exceptId, tx) {
+  deactivateOthersOfType({ type, exceptId, client } = {}) {
     const where = { type, isActive: true };
     if (exceptId) where.id = { not: exceptId };
-    return (tx ?? prisma).certificateTemplate.updateMany({
+    return (client ?? prisma).certificateTemplate.updateMany({
       where,
       data: { isActive: false },
     });
@@ -91,3 +112,4 @@ class CertificateTemplateRepo {
 }
 
 export const certificateTemplateRepo = new CertificateTemplateRepo();
+export { CertificateTemplateRepo };

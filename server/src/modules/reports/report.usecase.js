@@ -1,6 +1,5 @@
 import { NOTIFICATION_TYPES, USER_ROLES } from "@aya/shared";
 import { forbidden, notFound } from "../../shared/errors/AppError.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { userRepo } from "../users/user.repo.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
@@ -23,11 +22,12 @@ class ReportUsecase {
 
   async buildListWhere(authUser, { search, studentId }) {
     const where = {};
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["title"],
+    const term = typeof search === "string" ? search.trim() : "";
+    const searchWhere = buildSearchQuery({
+      searchType: "multiKeySearch",
+      keysValues: [{ key: "title", value: term || undefined }],
     });
-    if (or) where.OR = or;
+    if (searchWhere.OR) where.OR = searchWhere.OR;
 
     if (authUser.role === USER_ROLES.ADMIN) {
       if (studentId) where.students = { some: { studentId } };
@@ -42,24 +42,22 @@ class ReportUsecase {
     return where;
   }
 
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
+  async list({ page, limit, filters = {}, authUser }) {
+    const where = await this.buildListWhere(authUser, {
+      search: filters.search,
+      studentId: filters.studentId,
     });
-    const where = await this.buildListWhere(authUser, params);
-    const { items, total } = await reportRepo.listReports(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+    return reportRepo.listReports({ where, page, limit });
   }
 
-  async getById(authUser, id) {
-    const report = await reportRepo.getById(id);
+  async getById({ id, authUser }) {
+    const report = await reportRepo.getById({ id });
     if (!report) throw notFound(reportMessagesCodes.REPORT_NOT_FOUND);
     await this.assertCanAccess(authUser, report);
     return report;
   }
 
-  async create(authUser, input) {
+  async create({ authUser, ...input }) {
     const report = await reportRepo.createReport({
       title: input.title,
       body: input.body,
@@ -77,7 +75,7 @@ class ReportUsecase {
   /** Notify target students + their parents that a report was received. */
   async notifyRecipients(report, studentIds) {
     try {
-      const parentIds = await reportRepo.getParentIdsForStudents(studentIds);
+      const parentIds = await reportRepo.getParentIdsForStudents({ studentIds });
       const recipientIds = [...new Set([...studentIds, ...parentIds])];
       if (!recipientIds.length) return;
       await notificationUsecase.createManyForUsers(recipientIds, {
@@ -91,8 +89,8 @@ class ReportUsecase {
     }
   }
 
-  async update(_authUser, id, input) {
-    const existing = await reportRepo.getById(id);
+  async update({ id, authUser, ...input }) {
+    const existing = await reportRepo.getById({ id });
     if (!existing) throw notFound(reportMessagesCodes.REPORT_NOT_FOUND);
 
     const data = {
@@ -101,18 +99,20 @@ class ReportUsecase {
       reportDate: input.reportDate,
     };
 
-    return reportRepo.updateReport(id, {
+    return reportRepo.updateReport({
+      id,
       data,
       studentIds: input.studentIds,
       attachmentIds: input.attachmentIds,
     });
   }
 
-  async remove(_authUser, id) {
-    const existing = await reportRepo.getById(id);
+  async remove({ id, authUser }) {
+    const existing = await reportRepo.getById({ id });
     if (!existing) throw notFound(reportMessagesCodes.REPORT_NOT_FOUND);
-    return reportRepo.deleteReport(id);
+    return reportRepo.deleteReport({ id });
   }
 }
 
 export const reportUsecase = new ReportUsecase();
+export { ReportUsecase };
