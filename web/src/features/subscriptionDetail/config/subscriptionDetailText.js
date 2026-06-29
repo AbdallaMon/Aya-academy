@@ -61,6 +61,11 @@ export const subscriptionDetailText = {
     changePlan: "تعديل الخطة",
     changePlanTitle: "تعديل خطة الاشتراك",
     changePlanSubmit: "حفظ التغيير",
+    // coupon (add / change / remove on an existing subscription)
+    couponTitle: "إضافة أو تغيير الكوبون",
+    couponSubmit: "حفظ الكوبون",
+    couponHint: "أضف كود خصم أو غيّره أو أزله. لن يُطبّق إلا قبل دفع الفاتورة.",
+    removeCoupon: "إزالة الكوبون",
     // send to parent
     sendToParent: "إرسال لولي الأمر",
     resend: "إعادة الإرسال",
@@ -128,6 +133,11 @@ export const subscriptionDetailText = {
     changePlan: "Change plan",
     changePlanTitle: "Change subscription plan",
     changePlanSubmit: "Save change",
+    // coupon (add / change / remove on an existing subscription)
+    couponTitle: "Add or change coupon",
+    couponSubmit: "Save coupon",
+    couponHint: "Add, replace, or remove a coupon code. Only applies while the invoice is unpaid.",
+    removeCoupon: "Remove coupon",
     // send to parent
     sendToParent: "Send to parent",
     resend: "Resend",

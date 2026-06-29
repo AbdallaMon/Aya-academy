@@ -7,6 +7,7 @@ import {
   MdSend,
   MdPlayCircle,
   MdPaid,
+  MdLocalOffer,
 } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
@@ -16,6 +17,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { SUBSCRIPTIONS_URL, INVOICES_URL } from "../config/constant.js";
 import RenewDialog from "./RenewDialog.jsx";
 import ChangePlanDialog from "./ChangePlanDialog.jsx";
+import CouponDialog from "./CouponDialog.jsx";
 import ConfirmWithCheckbox from "./ConfirmWithCheckbox.jsx";
 
 /**
@@ -41,6 +43,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
 
   const renewDialog = useOpen();
   const changeDialog = useOpen();
+  const couponDialog = useOpen();
   const activateConfirm = useOpen();
   const markPaidConfirm = useOpen();
 
@@ -71,6 +74,12 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
     hasPermission(PERMISSIONS.SUBSCRIPTION.REQUEST) ||
     isAdmin;
   const canChangePlan = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
+  // Admin (EDIT) or parent (REQUEST, scoped to own child by the backend) can
+  // add/change/remove the coupon — same gate the backend enforces.
+  const canCoupon =
+    hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT) ||
+    hasPermission(PERMISSIONS.SUBSCRIPTION.REQUEST) ||
+    isAdmin;
   const canSend = hasPermission(PERMISSIONS.INVOICE.SEND);
   const canActivate = hasPermission(PERMISSIONS.SUBSCRIPTION.ACTIVATE);
   const canMarkPaid = hasPermission(PERMISSIONS.INVOICE.EDIT);
@@ -118,6 +127,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const showAny =
     canRenew ||
     canChangePlan ||
+    canCoupon ||
     (isAdmin && (canSend || canActivate || canMarkPaid));
   if (!showAny) return null;
 
@@ -143,6 +153,17 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
             disabled={busy || invoicePaid}
           >
             {txt.changePlan}
+          </Button>
+        )}
+
+        {canCoupon && (
+          <Button
+            variant="outlined"
+            startIcon={<MdLocalOffer />}
+            onClick={couponDialog.open}
+            disabled={busy || invoicePaid}
+          >
+            {txt.coupon}
           </Button>
         )}
 
@@ -192,6 +213,14 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
       <ChangePlanDialog
         open={changeDialog.isOpen}
         onClose={changeDialog.close}
+        subscription={subscription}
+        txt={txt}
+        onChanged={onChanged}
+      />
+
+      <CouponDialog
+        open={couponDialog.isOpen}
+        onClose={couponDialog.close}
         subscription={subscription}
         txt={txt}
         onChanged={onChanged}
