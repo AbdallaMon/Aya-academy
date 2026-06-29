@@ -88,14 +88,13 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const subPendingOrUpcoming =
     subscription.status === "PENDING" || subscription.status === "UPCOMING";
 
-  // Renew is only meaningful when there's no in-flight subscription. A parent
-  // may renew an EXPIRED/CANCELLED subscription; while PENDING/UPCOMING (awaiting
-  // payment & activation) we show an info hint instead. Admins may renew any
-  // status (allowWhileActive handles the still-active case).
+  // Renew only applies to an ended subscription (EXPIRED/CANCELLED). The backend
+  // blocks renewing an ACTIVE/PENDING sub (SUBSCRIPTION_STILL_ACTIVE) — even for
+  // admins — so we never offer the action there. While PENDING/UPCOMING (awaiting
+  // payment & activation) a parent sees an info hint instead.
   const showRenew =
     canRenew &&
-    (isAdmin ||
-      subscription.status === "EXPIRED" ||
+    (subscription.status === "EXPIRED" ||
       subscription.status === "CANCELLED");
   const showAwaitingHint = !isAdmin && subPendingOrUpcoming;
 

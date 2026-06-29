@@ -9,6 +9,10 @@ export const subscriptionLock = {
     parentTitle: "اشتراك {name} منتهي",
     parentBody: "جدّد الاشتراك عشان يرجع يشوف نقاطه وأوسمته ويلعب الألعاب.",
     renewCta: "تجديد الاشتراك",
+    parentPendingTitle: "اشتراك {name} قيد المراجعة",
+    parentPendingBody:
+      "الاشتراك في انتظار الدفع والتفعيل من المعلمة. هيتفعّل تلقائياً بعد التأكيد.",
+    viewCta: "عرض الاشتراك",
   },
   en: {
     studentTitle: "This section is locked right now 🔒",
@@ -16,5 +20,9 @@ export const subscriptionLock = {
     parentTitle: "{name}'s subscription has expired",
     parentBody: "Renew the subscription so they can see their points and badges and play games again.",
     renewCta: "Renew subscription",
+    parentPendingTitle: "{name}'s subscription is pending",
+    parentPendingBody:
+      "The subscription is awaiting payment & activation by the teacher. It will activate once confirmed.",
+    viewCta: "View subscription",
   },
 };

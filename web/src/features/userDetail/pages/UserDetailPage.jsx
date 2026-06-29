@@ -154,10 +154,21 @@ export default function UserDetailPage({ userId }) {
   function renderActive() {
     // Parent viewing an inactive child: stats/achievements tabs are locked.
     if (lockChildAchievements && ["overview", "badges", "games"].includes(activeTab)) {
+      const childPending = overview?.subscriptionState === "PENDING";
+      const subHref = overview?.latestSubscriptionId
+        ? `/dashboard/subscriptions/${overview.latestSubscriptionId}`
+        : null;
       return (
         <SubscriptionLockedState
           variant="parent"
           childName={user.nickname || user.name}
+          pending={childPending}
+          subscriptionHref={subHref}
+          renewHref={
+            overview?.latestSubscriptionId
+              ? `/dashboard/subscriptions/${overview.latestSubscriptionId}`
+              : "/dashboard/children"
+          }
         />
       );
     }

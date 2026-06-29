@@ -13,15 +13,30 @@ export default function SubscriptionLockedState({
   variant = "student",
   childName = "",
   renewHref = "/dashboard/children",
+  pending = false,
+  subscriptionHref = null,
 }) {
   const { t, lng } = useTranslation();
   const c = t("subscriptionLock", { returnObjects: true }) || {};
   const isParent = variant === "parent";
+  const isPending = isParent && pending;
 
   const title = isParent
-    ? (c.parentTitle || "").replace("{name}", childName || "")
+    ? ((isPending ? c.parentPendingTitle : c.parentTitle) || "").replace(
+        "{name}",
+        childName || "",
+      )
     : c.studentTitle;
-  const body = isParent ? c.parentBody : c.studentBody;
+  const body = isParent
+    ? isPending
+      ? c.parentPendingBody
+      : c.parentBody
+    : c.studentBody;
+
+  // Pending → "View subscription" (only if we have a link). Otherwise → renew CTA.
+  const ctaHref = isPending ? subscriptionHref : renewHref;
+  const ctaLabel = isPending ? c.viewCta : c.renewCta;
+  const showCta = isParent && (!isPending || Boolean(subscriptionHref));
 
   return (
     <Box
@@ -50,15 +65,15 @@ export default function SubscriptionLockedState({
           {title}
         </Typography>
         <Typography color="text.secondary">{body}</Typography>
-        {isParent && (
+        {showCta && (
           <Button
             component={Link}
-            href={localePath(lng, renewHref)}
+            href={localePath(lng, ctaHref)}
             variant="contained"
             size="large"
             sx={{ borderRadius: 999, px: 4, fontWeight: 800, mt: 1 }}
           >
-            {c.renewCta}
+            {ctaLabel}
           </Button>
         )}
       </Stack>

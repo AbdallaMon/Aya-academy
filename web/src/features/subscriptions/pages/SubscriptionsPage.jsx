@@ -5,7 +5,7 @@ import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew } from "react-icons/md";
-import { PERMISSIONS, USER_ROLES, subscriptionMessagesCodes } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -137,31 +137,13 @@ export default function SubscriptionsPage() {
   }
 
   async function renew(row) {
-    async function doRenewAndNavigate(body) {
-      const res = await doRenew(`${row.id}/renew`, body);
+    try {
+      const res = await doRenew(`${row.id}/renew`, {});
       if (res?.data?.id) {
         router.push(localePath(lng, `/dashboard/subscriptions/${res.data.id}`));
       }
-    }
-    try {
-      await doRenewAndNavigate({});
-    } catch (e) {
-      if (
-        e?.status === 409 &&
-        e?.data?.message === subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE
-      ) {
-        const ok = await confirm({
-          title: txt.confirmRenewActive,
-          intent: "warning",
-        });
-        if (!ok) return;
-        try {
-          await doRenewAndNavigate({ allowWhileActive: true });
-        } catch {
-          // error already toasted by shouldAutoToast
-        }
-      }
-      // other errors already toasted
+    } catch {
+      // errors (e.g. SUBSCRIPTION_STILL_ACTIVE) already toasted by shouldAutoToast
     }
   }
 
@@ -356,13 +338,12 @@ export default function SubscriptionsPage() {
                 const showApprove = canApprove && row.status === "PENDING";
                 const showCancel =
                   canCancel && CANCELLABLE.includes(row.status);
-                // A parent may only renew when there's no in-flight subscription
-                // (EXPIRED/CANCELLED); admins may renew any status.
+                // Renew only applies to an ended subscription (EXPIRED/CANCELLED).
+                // The backend blocks renewing an ACTIVE/PENDING sub for everyone,
+                // admins included.
                 const showRenew =
                   canRenew &&
-                  (isAdmin ||
-                    row.status === "EXPIRED" ||
-                    row.status === "CANCELLED");
+                  (row.status === "EXPIRED" || row.status === "CANCELLED");
                 return (
                   <RowActionsMenu
                     actions={[

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { subscriptionMessagesCodes } from "@aya/shared";
 import {
   MenuItem,
   Stack,
@@ -10,7 +9,7 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { FormDialog, CouponControl, useConfirm } from "../../../shared/components/index.js";
+import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
@@ -24,18 +23,17 @@ function today() {
 }
 
 /**
- * Renew an ACTIVE/EXPIRED subscription → creates a NEW subscription.
+ * Renew an EXPIRED/CANCELLED subscription → creates a NEW subscription.
  * Prefilled from the current subscription (same plan + billing period); plan,
- * billing period and coupon are editable (CouponControl, reused). On the 409
- * SUBSCRIPTION_STILL_ACTIVE response we confirm and retry with
- * allowWhileActive:true. On success we navigate to the new subscription.
+ * billing period and coupon are editable (CouponControl, reused). The backend
+ * blocks renewing while an ACTIVE/PENDING sub exists (SUBSCRIPTION_STILL_ACTIVE),
+ * which auto-toasts. On success we navigate to the new subscription.
  *
  * Props: open, onClose, subscription, txt.
  */
 export default function RenewDialog({ open, onClose, subscription, txt }) {
   const { lng } = useTranslation();
   const router = useRouter();
-  const confirm = useConfirm();
 
   const [planId, setPlanId] = useState("");
   const [billingPeriod, setBillingPeriod] = useState("MONTHLY");
@@ -50,8 +48,8 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
     syncToUrl: false,
   });
 
-  // Renew posts to /subscriptions/:id/renew. We control the toast manually so a
-  // 409 SUBSCRIPTION_STILL_ACTIVE can be intercepted as a confirm→retry.
+  // Renew posts to /subscriptions/:id/renew. Errors (e.g. SUBSCRIPTION_STILL_ACTIVE)
+  // auto-toast — the message explains the active-block.
   const renewReq = useRequest({
     url: SUBSCRIPTIONS_URL,
     method: "post",
@@ -98,43 +96,22 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
 
   const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
 
-  async function doRenew(allowWhileActive) {
+  async function submit() {
     const body = {
       ...(planId ? { planId: Number(planId) } : {}),
       billingPeriod,
       ...(startDate ? { startDate } : {}),
       ...(codeToSend ? { couponCode: codeToSend } : {}),
-      ...(allowWhileActive ? { allowWhileActive: true } : {}),
     };
-    const res = await renewReq.fetchData(`${subscription.id}/renew`, body);
-    const newId = res?.data?.id;
-    onClose();
-    if (newId) {
-      router.push(localePath(lng, `/dashboard/subscriptions/${newId}`));
-    }
-  }
-
-  async function submit() {
     try {
-      await doRenew(false);
-    } catch (e) {
-      if (
-        e?.status === 409 &&
-        e?.data?.message === subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE
-      ) {
-        const sure = await confirm({
-          title: txt.stillActiveConfirm,
-          intent: "warning",
-          confirmText: txt.renewSubmit,
-        });
-        if (!sure) return;
-        try {
-          await doRenew(true);
-        } catch {
-          /* the retry auto-toasts its own error */
-        }
+      const res = await renewReq.fetchData(`${subscription.id}/renew`, body);
+      const newId = res?.data?.id;
+      onClose();
+      if (newId) {
+        router.push(localePath(lng, `/dashboard/subscriptions/${newId}`));
       }
-      // other errors already auto-toasted by useRequest
+    } catch {
+      // errors (e.g. SUBSCRIPTION_STILL_ACTIVE) already auto-toasted by useRequest
     }
   }
 

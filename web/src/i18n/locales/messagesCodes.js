@@ -144,7 +144,8 @@ const ar = {
     [subscriptionMessagesCodes.COUPON_INVALID]: "كوبون غير صالح",
     [subscriptionMessagesCodes.CANNOT_CANCEL]: "لا يمكن إلغاء هذا الاشتراك",
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: "تم إلغاء الاشتراك",
-    [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]: "يوجد اشتراك فعّال لم ينتهِ بعد",
+    [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]:
+      "يوجد اشتراك مفعّل حالياً — يجب إلغاء تفعيله أولاً قبل إنشاء اشتراك جديد",
     [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: "تم تجديد الاشتراك",
     [subscriptionMessagesCodes.PLAN_CHANGED]: "تم تغيير الخطة",
     [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: "تم تفعيل الاشتراك",
@@ -505,7 +506,8 @@ const en = {
     [subscriptionMessagesCodes.COUPON_INVALID]: "Invalid coupon",
     [subscriptionMessagesCodes.CANNOT_CANCEL]: "This subscription cannot be cancelled",
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: "Subscription cancelled",
-    [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]: "There is still an active subscription",
+    [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]:
+      "There is an active subscription — cancel it first before creating a new one",
     [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: "Subscription renewed",
     [subscriptionMessagesCodes.PLAN_CHANGED]: "Plan changed",
     [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: "Subscription activated",
