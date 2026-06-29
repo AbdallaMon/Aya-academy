@@ -23,6 +23,19 @@ class CertificateRepo {
     });
   }
 
+  /**
+   * The student's earliest GAME certificate for a given game (via the attempt
+   * link), or null. Used to tell whether the game was already completed so a
+   * replay doesn't re-issue, and to re-surface the existing certificate.
+   */
+  findForGame(studentId, gameId) {
+    return prisma.certificate.findFirst({
+      where: { studentId, gameAttempt: { gameId } },
+      orderBy: { issuedAt: "asc" },
+      select: certificateSelect,
+    });
+  }
+
   create(data, tx) {
     const client = tx ?? prisma;
     return client.certificate.create({ data, select: certificateSelect });

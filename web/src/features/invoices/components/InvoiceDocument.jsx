@@ -94,6 +94,8 @@ export default function InvoiceDocument({ invoice, printable = false }) {
   const headerTextColor = theme.headerTextColor || "#FFFFFF";
   const accent = theme.accentColor || "#C9A84C";
   const textColor = theme.textColor || "#25313F";
+  const notesColor = theme.notesColor || "#25313F";
+  const paymentInstructionsColor = theme.paymentInstructionsColor || "#25313F";
 
   const sub = invoice.subscription || {};
   const student = sub.student || {};
@@ -315,7 +317,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
                 const line = (isEn ? n.en : n.ar) || n.ar || n.en;
                 if (!line) return null;
                 return (
-                  <Typography key={i} component="li" sx={{ fontSize: 12, color: textColor }}>
+                  <Typography key={i} component="li" sx={{ fontSize: 12, color: notesColor }}>
                     {line}
                   </Typography>
                 );
@@ -337,7 +339,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
             <Typography sx={{ fontWeight: 900, fontSize: 13, color: headerColor, mb: 0.5 }}>
               {txt.paymentInstructionsTitle}
             </Typography>
-            <Typography sx={{ fontSize: 12, color: textColor, whiteSpace: "pre-line" }}>
+            <Typography sx={{ fontSize: 12, color: paymentInstructionsColor, whiteSpace: "pre-line" }}>
               {paymentInstructions}
             </Typography>
           </Box>

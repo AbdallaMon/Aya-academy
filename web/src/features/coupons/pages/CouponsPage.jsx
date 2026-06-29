@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
@@ -10,21 +10,33 @@ import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
 import {
-  AppForm,
   DataTable,
-  FormDialog,
   RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
-import {
-  COUPONS_URL,
-  COUPON_SOURCES,
-  BILLING_SCOPES,
-  toDateInput,
-} from "../config/constant.js";
+import { COUPONS_URL, COUPON_SOURCES } from "../config/constant.js";
 import { formatMoney } from "../../../shared/lib/money.js";
 import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
 import { useCouponsText } from "../config/couponsText.js";
+import CouponFormDialog from "../components/CouponFormDialog.jsx";
+
+/**
+ * Derive a coupon's lifecycle state for the table (mirror of the server's
+ * `couponStatusConditions`): disabled (isActive:false) → consumed (expired by
+ * date OR usage cap reached) → otherwise active.
+ */
+function couponState(row) {
+  if (!row.isActive) return "disabled";
+  const now = Date.now();
+  if (row.endsAt && new Date(row.endsAt).getTime() < now) return "consumed";
+  if (
+    row.maxRedemptions != null &&
+    (row.redemptionsCount ?? 0) >= row.maxRedemptions
+  ) {
+    return "consumed";
+  }
+  return "active";
+}
 
 export default function CouponsPage() {
   const txt = useCouponsText();
@@ -55,6 +67,18 @@ export default function CouponsPage() {
     autoFetch: canList,
   });
 
+  // Default the list to the ACTIVE coupons (the "normal" view). Seed once so the
+  // user can still switch to All/Disabled/Consumed (or deep-link a status).
+  const didSeedStatus = useRef(false);
+  useEffect(() => {
+    if (didSeedStatus.current) return;
+    didSeedStatus.current = true;
+    if (filters.status === undefined) {
+      setFilters((prev) => ({ ...prev, status: "active" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const form = useOpen();
   const [selected, setSelected] = useState(null);
 
@@ -77,30 +101,6 @@ export default function CouponsPage() {
     await mut.deleteRequest(String(row.id));
   }
 
-  async function submit(values) {
-    const payload = {
-      code: values.code?.trim() || undefined,
-      type: values.type,
-      value: Number(values.value),
-      source: values.source || undefined,
-      // "ALL" sentinel → null (applies to both cycles); omit when ALL.
-      billingPeriod:
-        values.billingPeriod && values.billingPeriod !== "ALL"
-          ? values.billingPeriod
-          : undefined,
-      maxRedemptions: values.maxRedemptions
-        ? Number(values.maxRedemptions)
-        : undefined,
-      startsAt: values.startsAt || undefined,
-      endsAt: values.endsAt || undefined,
-      isActive:
-        values.isActive === undefined ? true : Boolean(values.isActive),
-    };
-    if (selected?.id) await mut.putRequest(String(selected.id), payload);
-    else await mut.postRequest(null, payload);
-    form.close();
-  }
-
   const sourceOptions = useMemo(
     () =>
       COUPON_SOURCES.reduce((acc, s) => {
@@ -109,91 +109,6 @@ export default function CouponsPage() {
       }, {}),
     [txt],
   );
-
-  const scopeOptions = useMemo(
-    () =>
-      BILLING_SCOPES.reduce((acc, s) => {
-        acc[s] = s === "MONTHLY" ? txt.monthly : s === "YEARLY" ? txt.yearly : txt.both;
-        return acc;
-      }, {}),
-    [txt],
-  );
-
-  const fields = useMemo(
-    () => [
-      {
-        name: "code",
-        label: txt.codeLabel,
-        type: "text",
-      },
-      {
-        name: "type",
-        label: txt.typeLabel,
-        type: "select",
-        options: { PERCENT: txt.percent, FIXED: txt.fixed },
-        rules: { required: txt.required },
-      },
-      {
-        name: "value",
-        label: txt.valueLabel,
-        type: "number",
-        rules: { required: txt.required },
-      },
-      {
-        name: "billingPeriod",
-        label: txt.scopeLabel,
-        type: "select",
-        options: scopeOptions,
-      },
-      {
-        name: "source",
-        label: txt.sourceLabel,
-        type: "select",
-        options: sourceOptions,
-      },
-      { name: "maxRedemptions", label: txt.maxRedemptions, type: "number" },
-      {
-        name: "startsAt",
-        label: txt.startsAt,
-        type: "date",
-        InputLabelProps: { shrink: true },
-      },
-      {
-        name: "endsAt",
-        label: txt.endsAt,
-        type: "date",
-        InputLabelProps: { shrink: true },
-      },
-      { name: "isActive", label: txt.isActive, type: "switch" },
-    ],
-    [txt, sourceOptions, scopeOptions],
-  );
-
-  const defaultValues = useMemo(() => {
-    if (selected) {
-      return {
-        code: selected.code ?? "",
-        type: selected.type ?? "PERCENT",
-        value: selected.value ?? "",
-        billingPeriod: selected.billingPeriod ?? "ALL",
-        source: selected.source ?? "MANUAL",
-        maxRedemptions: selected.maxRedemptions ?? "",
-        startsAt: toDateInput(selected.startsAt),
-        endsAt: toDateInput(selected.endsAt),
-        isActive: selected.isActive ?? true,
-      };
-    }
-    return {
-      type: "PERCENT",
-      billingPeriod: "ALL",
-      source: "MANUAL",
-      isActive: true,
-      value: "",
-      maxRedemptions: "",
-      startsAt: "",
-      endsAt: "",
-    };
-  }, [selected]);
 
   const columns = useMemo(
     () => [
@@ -301,17 +216,26 @@ export default function CouponsPage() {
         },
       },
       {
-        field: "isActive",
+        field: "status",
         headerName: txt.status,
-        width: 110,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={row.isActive ? "success" : "default"}
-            variant={row.isActive ? "filled" : "outlined"}
-            label={row.isActive ? txt.enabled : txt.disabled}
-          />
-        ),
+        width: 120,
+        renderCell: ({ row }) => {
+          const state = couponState(row);
+          const map = {
+            active: { color: "success", variant: "filled", label: txt.enabled },
+            consumed: { color: "warning", variant: "outlined", label: txt.consumed },
+            disabled: { color: "default", variant: "outlined", label: txt.disabled },
+          };
+          const cfg = map[state];
+          return (
+            <Chip
+              size="small"
+              color={cfg.color}
+              variant={cfg.variant}
+              label={cfg.label}
+            />
+          );
+        },
       },
       {
         field: "actions",
@@ -353,9 +277,14 @@ export default function CouponsPage() {
       },
       {
         type: "enum",
-        key: "isActive",
+        key: "status",
         label: txt.status,
-        options: { ALL: txt.all, true: txt.enabled, false: txt.disabled },
+        options: {
+          ALL: txt.all,
+          active: txt.enabled,
+          disabled: txt.disabled,
+          consumed: txt.consumed,
+        },
       },
     ],
     [txt, sourceOptions],
@@ -403,23 +332,12 @@ export default function CouponsPage() {
         noContainer
       />
 
-      <FormDialog
+      <CouponFormDialog
         open={form.isOpen}
         onClose={form.close}
-        title={selected ? txt.editTitle : txt.createTitle}
-        maxWidth="md"
-        loading={mut.isPostRequestLoading || mut.isPutRequestLoading}
-        submitText={txt.save}
-        cancelText={txt.cancel}
-        onSubmit={() => document.getElementById("coupon-form")?.requestSubmit()}
-      >
-        <AppForm
-          id="coupon-form"
-          fields={fields}
-          defaultValues={defaultValues}
-          onSubmit={submit}
-        />
-      </FormDialog>
+        coupon={selected}
+        onSaved={triggerRefetch}
+      />
     </Box>
   );
 }

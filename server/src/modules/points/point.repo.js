@@ -1,6 +1,6 @@
 import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
-import { pointSelect } from "./point.dto.js";
+import { pointSelect, leaderboardStudentSelect } from "./point.dto.js";
 
 class PointRepo {
   /** Ledger rows for a student, newest first. */
@@ -39,7 +39,7 @@ class PointRepo {
       where: { role: USER_ROLES.STUDENT, isActive: true },
       orderBy: { points: "desc" },
       take,
-      select: { id: true, name: true, nickname: true, points: true },
+      select: leaderboardStudentSelect,
     });
   }
 
@@ -83,7 +83,7 @@ class PointRepo {
   getStudentsByIds(studentIds) {
     return prisma.user.findMany({
       where: { id: { in: studentIds } },
-      select: { id: true, name: true, nickname: true, points: true },
+      select: leaderboardStudentSelect,
     });
   }
 }

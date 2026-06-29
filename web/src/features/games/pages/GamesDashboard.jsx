@@ -1,8 +1,8 @@
 "use client";
 
 // Role-aware games dashboard switch. ADMIN (the teacher) sees the games
-// manager; everyone else (students) sees their own "ألعابي" list. Keeps the
-// student experience (MyGamesPage) untouched.
+// manager; STUDENT sees their own "ألعابي" list. Parents have no games surface,
+// so they get nothing (the route has no parent nav link).
 
 import { USER_ROLES } from "@aya/shared";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -11,5 +11,7 @@ import MyGamesPage from "./MyGamesPage.jsx";
 
 export default function GamesDashboard() {
   const { user } = useAuth();
-  return user?.role === USER_ROLES.ADMIN ? <GamesAdminPage /> : <MyGamesPage />;
+  if (user?.role === USER_ROLES.ADMIN) return <GamesAdminPage />;
+  if (user?.role === USER_ROLES.STUDENT) return <MyGamesPage />;
+  return null;
 }

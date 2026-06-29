@@ -25,6 +25,7 @@ import { useCertificatesText } from "../config/certificatesText.js";
 import {
   CERTIFICATES_URL,
   CERTIFICATE_TEMPLATES_URL,
+  BADGES_URL,
   STUDENTS_PICKER_URL,
   STUDENTS_PICKER_PARAMS,
   TEMPLATE_KEYS,
@@ -49,11 +50,15 @@ import {
   WATERMARK_OPACITY_MAX,
 } from "../config/constant.js";
 import CertificateCard from "./CertificateCard.jsx";
+import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 
 const FORM_ID = "create-certificate-form";
 
 const EMPTY_VALUES = {
   studentId: "",
+  // optional badge-award capability (toggle + picker)
+  awardBadge: false,
+  badgeId: "",
   // template path
   templateId: "", // "" = custom / no template
   reasonAr: "",
@@ -217,6 +222,18 @@ export default function CreateCertificateDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, templates]);
 
+  // Active-badge picker — only used when the admin toggles "Award a badge?".
+  // Fetched lazily when the dialog opens (mirrors AwardBadgeDialog).
+  const badgesReq = useRequest({
+    url: BADGES_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: open,
+    syncToUrl: false,
+    initialParams: { limit: 100, isActive: true },
+  });
+  const badges = useMemo(() => badgesReq.data || [], [badgesReq.data]);
+
   const createMut = useMultiRequest({
     url: CERTIFICATES_URL,
     onSuccess: () => {
@@ -242,6 +259,10 @@ export default function CreateCertificateDialog({
     [templates, values.templateId],
   );
   const usingTemplate = Boolean(selectedTemplate);
+  const selectedBadge = useMemo(
+    () => badges.find((b) => String(b.id) === String(values.badgeId)),
+    [badges, values.badgeId],
+  );
 
   // The certificate always uses the student's own saved photo (avatar) — it is
   // pulled automatically, never uploaded into the certificate.
@@ -259,6 +280,8 @@ export default function CreateCertificateDialog({
         templateId: selectedTemplate.id,
         reasonAr: values.reasonAr,
         reasonEn: values.reasonEn,
+        titleAr: values.titleAr,
+        titleEn: values.titleEn,
         photo: previewPhoto?.url ? { url: previewPhoto.url } : undefined,
         student: selectedStudent?.avatar ? { avatar: selectedStudent.avatar } : undefined,
         template: {
@@ -291,12 +314,20 @@ export default function CreateCertificateDialog({
   }, [values, selectedStudent, selectedTemplate, usingTemplate, previewPhoto, txt.studentPlaceholder]);
 
   async function submit(v) {
+    // Only grant a badge when the toggle is on AND a badge is picked.
+    const badgeId =
+      v.awardBadge && v.badgeId ? Number(v.badgeId) : undefined;
     if (usingTemplate) {
       const payload = {
         studentId: Number(v.studentId),
         templateId: Number(v.templateId),
         reasonAr: v.reasonAr || undefined,
         reasonEn: v.reasonEn || undefined,
+        // Optional title override shown on the certificate alongside the
+        // template heading.
+        titleAr: v.titleAr || undefined,
+        titleEn: v.titleEn || undefined,
+        badgeId,
       };
       await createMut.postRequest(null, payload);
       return;
@@ -309,6 +340,7 @@ export default function CreateCertificateDialog({
       bodyEn: v.bodyEn || undefined,
       templateKey: v.templateKey,
       themeJson: buildThemeJson(v),
+      badgeId,
     };
     await createMut.postRequest(null, payload);
   }
@@ -400,6 +432,71 @@ export default function CreateCertificateDialog({
                 />
               </Grid>
 
+              {/* ── Optional: award a badge with this certificate ── */}
+              <Grid size={{ xs: 12 }}>
+                <Controller
+                  name="awardBadge"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.checked);
+                            // Clear any picked badge when turning the toggle off.
+                            if (!e.target.checked) setValue("badgeId", "");
+                          }}
+                        />
+                      }
+                      label={txt.awardBadgeToggle}
+                    />
+                  )}
+                />
+              </Grid>
+              {values.awardBadge && (
+                <Grid size={{ xs: 12 }}>
+                  <Controller
+                    name="badgeId"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        select
+                        fullWidth
+                        label={txt.selectBadge}
+                        helperText={txt.awardBadgeHint}
+                        slotProps={{
+                          select: {
+                            displayEmpty: true,
+                            renderValue: () =>
+                              selectedBadge ? (
+                                <BadgeChip badge={selectedBadge} lng={lng} size="sm" />
+                              ) : (
+                                <Typography component="span" color="text.secondary">
+                                  {txt.selectBadge}
+                                </Typography>
+                              ),
+                          },
+                        }}
+                      >
+                        {badges.length === 0 ? (
+                          <MenuItem value="" disabled>
+                            {txt.noBadges}
+                          </MenuItem>
+                        ) : (
+                          badges.map((b) => (
+                            <MenuItem key={b.id} value={String(b.id)}>
+                              <BadgeChip badge={b} lng={lng} size="sm" />
+                            </MenuItem>
+                          ))
+                        )}
+                      </TextField>
+                    )}
+                  />
+                </Grid>
+              )}
+
               {/* ── Template path: dynamic reason + photo ── */}
               {usingTemplate && (
                 <>
@@ -437,7 +534,9 @@ export default function CreateCertificateDialog({
                 </>
               )}
 
-              {!usingTemplate && (
+              {/* Certificate title (ar/en). Always available — required only for
+                  the free-form path; optional override when a template supplies
+                  the heading. */}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="titleAr"
@@ -447,15 +546,18 @@ export default function CreateCertificateDialog({
                     <TextField
                       {...field}
                       fullWidth
-                      label={txt.titleArLabel}
+                      label={
+                        usingTemplate ? txt.titleArOptionalLabel : txt.titleArLabel
+                      }
                       error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
+                      helperText={
+                        fieldState.error?.message ||
+                        (usingTemplate ? txt.titleOptionalHint : undefined)
+                      }
                     />
                   )}
                 />
               </Grid>
-              )}
-              {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="titleEn"
@@ -465,14 +567,15 @@ export default function CreateCertificateDialog({
                     <TextField
                       {...field}
                       fullWidth
-                      label={txt.titleEnLabel}
+                      label={
+                        usingTemplate ? txt.titleEnOptionalLabel : txt.titleEnLabel
+                      }
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
                     />
                   )}
                 />
               </Grid>
-              )}
 
               {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>

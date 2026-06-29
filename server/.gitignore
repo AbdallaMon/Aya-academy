@@ -5,3 +5,7 @@ node_modules
 /generated/prisma
 secrets/*
 /backups/
+
+# Runtime uploaded files (keep the directory, ignore its contents)
+/uploads/*
+!/uploads/.gitkeep

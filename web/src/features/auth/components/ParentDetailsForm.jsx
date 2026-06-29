@@ -1,10 +1,24 @@
 "use client";
 
-import { Grid, TextField } from "@mui/material";
+import { Grid, InputAdornment, TextField } from "@mui/material";
+import { MdPerson, MdEmail } from "react-icons/md";
+import { MuiTelInput } from "mui-tel-input";
 import { PasswordField } from "../../../shared/components/index.js";
+import { useBrowserCountry } from "../../../shared/lib/browserCountry.js";
 
 export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }) {
   const setField = (key) => (e) => onChange({ [key]: e.target.value });
+  const country = useBrowserCountry();
+
+  const adorn = (icon) => ({
+    input: {
+      startAdornment: (
+        <InputAdornment position="start" sx={{ color: "text.disabled" }}>
+          {icon}
+        </InputAdornment>
+      ),
+    },
+  });
 
   return (
     <Grid container spacing={2}>
@@ -17,13 +31,16 @@ export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }
           helperText={errors.name}
           fullWidth
           size="small"
+          slotProps={adorn(<MdPerson size={18} />)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
+        <MuiTelInput
+          key={country ?? "pending"}
           label={txt.phone}
-          value={parent.phone}
-          onChange={setField("phone")}
+          value={parent.phone || ""}
+          onChange={(value) => onChange({ phone: value })}
+          defaultCountry={country}
           error={Boolean(errors.phone)}
           helperText={errors.phone}
           fullWidth
@@ -40,6 +57,7 @@ export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }
           helperText={errors.email}
           fullWidth
           size="small"
+          slotProps={adorn(<MdEmail size={18} />)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>

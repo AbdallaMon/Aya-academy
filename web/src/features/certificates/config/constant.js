@@ -1,6 +1,9 @@
 export const CERTIFICATES_URL = "certificates";
 export const CERTIFICATE_TEMPLATES_URL = "certificate-templates";
 
+// Active-badge picker in the create dialog (optional "award a badge" capability).
+export const BADGES_URL = "badges";
+
 // Endpoint for the admin student picker in the create dialog.
 export const STUDENTS_PICKER_URL = "users";
 export const STUDENTS_PICKER_PARAMS = { role: "STUDENT", limit: 100 };

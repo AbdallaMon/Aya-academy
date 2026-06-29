@@ -65,6 +65,16 @@ class GameRepo {
     return client.game.updateMany({ data: { isFree: false } });
   }
 
+  // Link (or unlink, badgeId=null) the badge auto-awarded on completing this game.
+  setBadge(id, badgeId, tx) {
+    const client = tx ?? prisma;
+    return client.game.update({
+      where: { id },
+      data: { badgeId },
+      select: gameListSelect,
+    });
+  }
+
   // Mark ONE game as the free trial. It must be publicly playable, so we also
   // ensure it is public + active.
   markGameFree(id, tx) {
@@ -134,8 +144,10 @@ class GameRepo {
   // A student's assignments WITH full game-card data (list fields + configJson
   // for the theme/hero on the card). Used by the student's "My Games" grid and
   // by the admin's student-detail games tab. configJson carries no answer key.
-  listAssignmentsForStudent(studentId) {
-    return prisma.gameAssignment.findMany({
+  // Each row is enriched with `certificateId` — the student's earned GAME
+  // certificate for that game (or null) — so a completed card can link to it.
+  async listAssignmentsForStudent(studentId) {
+    const assignments = await prisma.gameAssignment.findMany({
       where: { studentId },
       orderBy: { createdAt: "desc" },
       select: {
@@ -147,6 +159,26 @@ class GameRepo {
         game: { select: { ...gameListSelect, configJson: true } },
       },
     });
+
+    const gameIds = assignments.map((a) => a.gameId);
+    if (gameIds.length === 0) return assignments;
+
+    // One earned certificate per game (earliest), mapped by gameId.
+    const certs = await prisma.certificate.findMany({
+      where: { studentId, gameAttempt: { gameId: { in: gameIds } } },
+      orderBy: { issuedAt: "asc" },
+      select: { id: true, gameAttempt: { select: { gameId: true } } },
+    });
+    const certByGame = new Map();
+    for (const c of certs) {
+      const gid = c.gameAttempt?.gameId;
+      if (gid != null && !certByGame.has(gid)) certByGame.set(gid, c.id);
+    }
+
+    return assignments.map((a) => ({
+      ...a,
+      certificateId: certByGame.get(a.gameId) ?? null,
+    }));
   }
 
   updateAssignmentStatus(id, status, tx) {

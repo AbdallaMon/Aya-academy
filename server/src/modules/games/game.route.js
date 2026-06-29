@@ -74,6 +74,15 @@ gameRoutes.post(
   asyncHandler(gameController.setFree),
 );
 
+// Admin: link (or unlink, badgeId=null) the badge auto-awarded on completion.
+gameRoutes.post(
+  "/:id/badge",
+  authMiddleware.requireAuth,
+  authMiddleware.requirePermissions([PERMISSIONS.GAME.MANAGE]),
+  validate(GameValidation.setBadgeSchema),
+  asyncHandler(gameController.setBadge),
+);
+
 gameRoutes.post(
   "/:id/assign",
   authMiddleware.requireAuth,

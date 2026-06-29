@@ -1052,6 +1052,23 @@ class SubscriptionUsecase {
       // swallow — notification is best-effort
     }
 
+    // 6. Notify the student's parent(s) too — they manage the subscription and
+    //    should know it is now active (best-effort).
+    try {
+      const parentIds = await userRepo.getParentIdsForStudent(updated.studentId);
+      if (parentIds.length) {
+        await notificationUsecase.createManyForUsers(parentIds, {
+          type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
+          titleAr: "تم تفعيل اشتراك ابنك/ابنتك 🎉",
+          titleEn: "Your child's subscription has been activated 🎉",
+          link: "/dashboard",
+          dataJson: { subscriptionId: updated.id, studentId: updated.studentId },
+        });
+      }
+    } catch {
+      // swallow — notification is best-effort
+    }
+
     return updated;
   }
 }

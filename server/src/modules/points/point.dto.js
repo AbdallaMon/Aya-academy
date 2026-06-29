@@ -26,10 +26,28 @@ export const pointSelect = {
 };
 
 /**
- * Shape a leaderboard row. Deliberately exposes ONLY name/nickname/points —
- * never email or other PII.
+ * Student projection used to hydrate leaderboard rows. PII-safe: exposes only
+ * the fields the public board needs (name/nickname/points/level/avatar) — never
+ * email, phone or birthDate.
  */
-export function toLeaderboardItem({ studentId, name, nickname, points, weeklyPoints, badgeCount }, rank) {
+export const leaderboardStudentSelect = {
+  id: true,
+  name: true,
+  nickname: true,
+  points: true,
+  level: true,
+  studentLevel: true,
+  avatar: { select: { id: true, url: true } },
+};
+
+/**
+ * Shape a leaderboard row. Deliberately exposes ONLY non-PII fields:
+ * name/nickname/points/level/studentLevel and the avatar image.
+ */
+export function toLeaderboardItem(
+  { studentId, name, nickname, points, weeklyPoints, badgeCount, level, studentLevel, avatar },
+  rank,
+) {
   return {
     studentId,
     name,
@@ -37,6 +55,9 @@ export function toLeaderboardItem({ studentId, name, nickname, points, weeklyPoi
     points: points ?? 0,
     weeklyPoints: weeklyPoints ?? 0,
     badgeCount: badgeCount ?? 0,
+    level: level ?? 1,
+    studentLevel: studentLevel ?? null,
+    avatar: avatar ? { id: avatar.id, url: avatar.url } : null,
     rank,
   };
 }

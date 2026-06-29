@@ -1,12 +1,15 @@
 import {
   CERTIFICATE_TEMPLATE_KEYS,
   CERTIFICATE_TYPES,
+  NOTIFICATION_TYPES,
   USER_ROLES,
   messagesNames,
 } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { userRepo } from "../users/user.repo.js";
+import { badgeUsecase } from "../badges/badge.usecase.js";
+import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { certificateTemplateUsecase } from "../certificateTemplates/certificateTemplate.usecase.js";
 import { certificateRepo } from "./certificate.repo.js";
 import { certificateMessagesCodes } from "./certificate.messages.js";
@@ -69,7 +72,22 @@ class CertificateUsecase {
       );
     }
 
-    return certificateRepo.create({
+    // Optional badge the admin chose to grant alongside this certificate.
+    // Validate up-front so an invalid pick fails the request (rather than the
+    // award silently no-opping after the certificate is created).
+    let badgeId;
+    if (input.badgeId) {
+      const badge = await badgeUsecase.getById(input.badgeId).catch(() => null);
+      if (!badge) {
+        throw badRequest(
+          certificateMessagesCodes.CERTIFICATE_BADGE_NOT_FOUND,
+          messagesNames.certificateMessages,
+        );
+      }
+      badgeId = badge.id;
+    }
+
+    const cert = await certificateRepo.create({
       type: CERTIFICATE_TYPES.MANUAL,
       studentId: student.id,
       studentName: input.studentName ?? student.name,
@@ -85,11 +103,61 @@ class CertificateUsecase {
       reasonEn: input.reasonEn ?? undefined,
       photoId: input.photoId ?? undefined,
       themeJson: input.themeJson ?? undefined,
+      badgeId: badgeId ?? undefined,
       createdById: authUser.id,
     });
+
+    // Grant the badge to the student, linked to this certificate (best-effort:
+    // idempotent, no-ops if the student already owns it).
+    if (badgeId) {
+      try {
+        await badgeUsecase.awardToStudent({
+          studentId: student.id,
+          badgeId,
+          awardedById: authUser.id,
+          certificateId: cert.id,
+        });
+      } catch {
+        // swallow — badge award is best-effort, certificate already issued
+      }
+    }
+
+    await this.notifyParentsOfCertificate(cert);
+    return cert;
+  }
+
+  /**
+   * Notify the student's parent(s) that a new certificate was issued.
+   * Best-effort: never throws, so it can't break certificate issuance.
+   */
+  async notifyParentsOfCertificate(cert) {
+    try {
+      const parentIds = await userRepo.getParentIdsForStudent(cert.studentId);
+      if (!parentIds.length) return;
+      const name = cert.studentName;
+      await notificationUsecase.createManyForUsers(parentIds, {
+        type: NOTIFICATION_TYPES.CERTIFICATE_ISSUED,
+        titleAr: `حصل ${name} على شهادة جديدة 🎓`,
+        titleEn: `${name} earned a new certificate 🎓`,
+        bodyAr: cert.reasonAr || cert.titleAr || undefined,
+        bodyEn: cert.reasonEn || cert.titleEn || undefined,
+        link: "/dashboard",
+        dataJson: { certificateId: cert.id },
+      });
+    } catch {
+      // swallow — parent notification is best-effort
+    }
   }
 
   // ── reusable services (importable by games / quizzes) ──────────
+  /**
+   * The student's existing GAME certificate for a game (or null) — internal
+   * lookup (no auth) so the games module can avoid re-issuing on a replay.
+   */
+  findEarnedForGame(studentId, gameId) {
+    return certificateRepo.findForGame(studentId, gameId);
+  }
+
   /**
    * Issue a GAME certificate for a completed game attempt.
    *
@@ -111,6 +179,7 @@ class CertificateUsecase {
       bodyEn,
       templateKey,
       themeJson,
+      badgeId,
     },
     tx,
   ) {
@@ -126,6 +195,7 @@ class CertificateUsecase {
           // The game's title is the dynamic purpose ({reason}) on the template.
           reasonAr: titleAr ?? undefined,
           reasonEn: titleEn ?? undefined,
+          badgeId: badgeId ?? undefined,
         },
         tx,
       );
@@ -139,10 +209,15 @@ class CertificateUsecase {
         gameAttemptId,
         titleAr,
         titleEn,
+        // Always record the purpose so the certificate is self-describing even
+        // without a template (e.g. "completing the game <title>").
+        reasonAr: titleAr ?? undefined,
+        reasonEn: titleEn ?? undefined,
         bodyAr: bodyAr ?? undefined,
         bodyEn: bodyEn ?? undefined,
         templateKey: templateKey ?? undefined,
         themeJson: themeJson ?? undefined,
+        badgeId: badgeId ?? undefined,
       },
       tx,
     );
@@ -169,6 +244,7 @@ class CertificateUsecase {
       bodyEn,
       templateKey,
       themeJson,
+      badgeId,
     },
     tx,
   ) {
@@ -184,6 +260,7 @@ class CertificateUsecase {
           // The quiz's title is the dynamic purpose ({reason}) on the template.
           reasonAr: titleAr ?? undefined,
           reasonEn: titleEn ?? undefined,
+          badgeId: badgeId ?? undefined,
         },
         tx,
       );
@@ -197,10 +274,14 @@ class CertificateUsecase {
         quizAttemptId,
         titleAr,
         titleEn,
+        // Always record the purpose so the certificate is self-describing.
+        reasonAr: titleAr ?? undefined,
+        reasonEn: titleEn ?? undefined,
         bodyAr: bodyAr ?? undefined,
         bodyEn: bodyEn ?? undefined,
         templateKey: templateKey ?? CERTIFICATE_TEMPLATE_KEYS.EXAM,
         themeJson: themeJson ?? undefined,
+        badgeId: badgeId ?? undefined,
       },
       tx,
     );

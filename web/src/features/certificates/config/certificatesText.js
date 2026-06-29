@@ -44,6 +44,9 @@ export const certificatesText = {
     studentPlaceholder: "اختر طالبًا",
     titleArLabel: "العنوان (بالعربية)",
     titleEnLabel: "العنوان (بالإنجليزية)",
+    titleArOptionalLabel: "العنوان (بالعربية) — اختياري",
+    titleEnOptionalLabel: "العنوان (بالإنجليزية) — اختياري",
+    titleOptionalHint: "يظهر على الشهادة بجانب عنوان القالب (اختياري).",
     bodyArLabel: "نص الشهادة (بالعربية)",
     bodyEnLabel: "نص الشهادة (بالإنجليزية)",
     subtitleArLabel: "سطر فرعي (بالعربية)",
@@ -57,6 +60,11 @@ export const certificatesText = {
     signatureFieldLabel: "اسم الموقِّع",
     sealToggleLabel: "إظهار خاتم الاعتماد",
     previewLabel: "معاينة مباشرة",
+    // optional badge-award capability
+    awardBadgeToggle: "هل تريد منح وسام؟",
+    awardBadgeHint: "عند التفعيل، يُمنح الطالب الوسام المختار مع هذه الشهادة.",
+    selectBadge: "اختر الوسام",
+    noBadges: "لا توجد أوسمة نشطة",
     // template picker + dynamic fields
     template: "القالب",
     chooseTemplate: "اختر قالبًا",
@@ -166,6 +174,9 @@ export const certificatesText = {
     studentPlaceholder: "Select a student",
     titleArLabel: "Title (Arabic)",
     titleEnLabel: "Title (English)",
+    titleArOptionalLabel: "Title (Arabic) — optional",
+    titleEnOptionalLabel: "Title (English) — optional",
+    titleOptionalHint: "Shown on the certificate alongside the template heading (optional).",
     bodyArLabel: "Body text (Arabic)",
     bodyEnLabel: "Body text (English)",
     subtitleArLabel: "Subtitle (Arabic)",
@@ -179,6 +190,11 @@ export const certificatesText = {
     signatureFieldLabel: "Signed by",
     sealToggleLabel: "Show official seal",
     previewLabel: "Live preview",
+    // optional badge-award capability
+    awardBadgeToggle: "Award a badge?",
+    awardBadgeHint: "When enabled, the selected badge is granted to the student with this certificate.",
+    selectBadge: "Select a badge",
+    noBadges: "No active badges",
     // template picker + dynamic fields
     template: "Template",
     chooseTemplate: "Choose a template",

@@ -50,6 +50,20 @@ class GameController {
     return ok(res, game, gameMessagesCodes.FREE_GAME_UPDATED, TK);
   };
 
+  setBadge = async (req, res) => {
+    const badgeId = req.body.badgeId ?? null;
+    const game = await gameUsecase.setBadge(
+      req.auth,
+      idParam(req.params.id),
+      badgeId,
+    );
+    const code =
+      badgeId == null
+        ? gameMessagesCodes.GAME_BADGE_UNLINKED
+        : gameMessagesCodes.GAME_BADGE_LINKED;
+    return ok(res, game, code, TK);
+  };
+
   assign = async (req, res) => {
     const result = await gameUsecase.assign(
       req.auth,

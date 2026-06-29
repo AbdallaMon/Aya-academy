@@ -20,22 +20,16 @@ import { localePath } from "../../../i18n/routing.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
-import {
-  AppForm,
-  EmptyState,
-  FormDialog,
-} from "../../../shared/components/index.js";
+import { EmptyState } from "../../../shared/components/index.js";
 import { useChildrenText } from "../config/childrenText.js";
 import {
   MY_STUDENTS_URL,
-  CREATE_STUDENT_URL,
   SUBSCRIPTIONS_URL,
   SUBSCRIPTION_REQUEST_URL,
   STATUS_COLOR,
 } from "../config/constant.js";
 import PlanPickerDialog from "../components/PlanPickerDialog.jsx";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import AddChildDialog from "../components/AddChildDialog.jsx";
 
 export default function ChildrenPage() {
   const txt = useChildrenText();
@@ -77,24 +71,10 @@ export default function ChildrenPage() {
   const pickerDialog = useOpen();
   const [pickerChild, setPickerChild] = useState(null);
 
-  const createChildMut = useMultiRequest({
-    url: CREATE_STUDENT_URL,
-    onSuccess: () => childrenReq.fetchData(),
-  });
   const requestMut = useMultiRequest({
     url: SUBSCRIPTION_REQUEST_URL,
     onSuccess: () => subsReq.triggerRefetch(),
   });
-
-  async function addChild(values) {
-    await createChildMut.postRequest(null, {
-      name: values.name,
-      email: values.email,
-      password: values.password,
-      nickname: values.nickname || undefined,
-    });
-    addDialog.close();
-  }
 
   function openPicker(child) {
     setPickerChild(child);
@@ -116,31 +96,6 @@ export default function ChildrenPage() {
       // keep the dialog open so the user can adjust or cancel.
     }
   }
-
-  const addFields = useMemo(
-    () => [
-      { name: "name", label: txt.name, type: "text", rules: { required: txt.required }, gridSize: { xs: 12 } },
-      {
-        name: "email",
-        label: txt.email,
-        type: "email",
-        rules: {
-          required: txt.required,
-          pattern: { value: EMAIL_RE, message: txt.invalidEmail },
-        },
-        gridSize: { xs: 12 },
-      },
-      {
-        name: "password",
-        label: txt.password,
-        type: "password",
-        rules: { required: txt.required, minLength: { value: 6, message: txt.minPassword } },
-        gridSize: { xs: 12, sm: 6 },
-      },
-      { name: "nickname", label: txt.nicknameField, type: "text", gridSize: { xs: 12, sm: 6 } },
-    ],
-    [txt],
-  );
 
   return (
     <Box>
@@ -263,18 +218,16 @@ export default function ChildrenPage() {
         })}
       </Grid>
 
-      <FormDialog
+      <AddChildDialog
         open={addDialog.isOpen}
         onClose={addDialog.close}
-        title={txt.addChildTitle}
-        maxWidth="sm"
-        loading={createChildMut.isPostRequestLoading}
-        submitText={txt.save}
-        cancelText={txt.cancel}
-        onSubmit={() => document.getElementById("add-child-form")?.requestSubmit()}
-      >
-        <AppForm id="add-child-form" fields={addFields} onSubmit={addChild} />
-      </FormDialog>
+        lng={lng}
+        txt={txt}
+        onCreated={() => {
+          childrenReq.fetchData();
+          subsReq.triggerRefetch();
+        }}
+      />
 
       <PlanPickerDialog
         open={pickerDialog.isOpen}

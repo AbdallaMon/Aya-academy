@@ -24,6 +24,8 @@ export class CertificateValidation {
       // {reason} token at render time).
       reasonAr: z.string().trim().optional(),
       reasonEn: z.string().trim().optional(),
+      // Optional badge granted to the student together with this certificate.
+      badgeId: z.number().int().positive().optional(),
       // Optional student photo (Attachment) shown on the certificate.
       photoId: z.number().int().positive().optional(),
       // Decoration / color choices — opaque JSON persisted on the certificate.
@@ -37,7 +39,10 @@ export class CertificateValidation {
         .passthrough()
         .optional(),
     })
-    .refine((data) => Boolean(data.titleAr || data.titleEn), {
+    // A title is required ONLY for free-form certificates. When a reusable
+    // template is selected, the heading/copy comes from the template, so the
+    // title is optional (this was rejecting valid template-driven requests).
+    .refine((data) => Boolean(data.titleAr || data.titleEn || data.templateId), {
       message: certificateMessagesCodes.CERTIFICATE_TITLE_REQUIRED,
       path: ["titleAr"],
     });

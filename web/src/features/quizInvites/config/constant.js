@@ -2,6 +2,7 @@
 export const INVITES_URL = "quizzes/invites";
 export const BANK_URL = "quizzes/bank";
 export const USERS_URL = "users";
+export const BADGES_URL = "badges";
 
 /** Invite status values surfaced by the backend. */
 export const INVITE_STATUS = {

@@ -9,11 +9,10 @@ import {
   Container,
   Paper,
   Stack,
-  Step,
-  StepLabel,
-  Stepper,
   Typography,
+  alpha,
 } from "@mui/material";
+import { MdCheck, MdAdd } from "react-icons/md";
 import ChildEnrollCard from "./ChildEnrollCard.jsx";
 import EnrollSummaryTable from "./EnrollSummaryTable.jsx";
 import ParentDetailsForm from "./ParentDetailsForm.jsx";
@@ -23,6 +22,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { resolveCoupon } from "../../../shared/lib/couponPricing.js";
+import { matchIsValidTel } from "mui-tel-input";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -117,6 +117,7 @@ export default function RegisterWizard() {
     if (!EMAIL_RE.test(parent.email.trim())) e.email = txt.invalidEmail;
     if ((parent.password || "").length < 6) e.password = txt.passwordShort;
     if (!parent.phone.trim()) e.phone = txt.required;
+    else if (!matchIsValidTel(parent.phone)) e.phone = txt.invalidPhone;
     setParentErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -168,38 +169,118 @@ export default function RegisterWizard() {
     }
   };
 
+  const steps = [txt.stepChildren, txt.stepReview];
+
   return (
-    <Box sx={{ py: { xs: 4, md: 6 } }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        py: { xs: 4, md: 7 },
+        background: (th) =>
+          `radial-gradient(1100px 480px at 50% -8%, ${alpha(
+            th.palette.primary.main,
+            0.16,
+          )} 0%, transparent 60%), linear-gradient(180deg, ${alpha(
+            th.palette.secondary.main,
+            0.06,
+          )} 0%, ${th.palette.background.default} 40%)`,
+      }}
+    >
       <Container maxWidth="md">
-        <Stack spacing={1} alignItems="center" sx={{ mb: 3 }}>
+        <Stack spacing={1.5} alignItems="center" sx={{ mb: 4 }}>
           <Box
             component={Link}
             href={localePath(lng, "/")}
             aria-label="Aya Academy"
+            sx={{
+              display: "inline-flex",
+              p: 1.5,
+              borderRadius: "50%",
+              bgcolor: "background.paper",
+              boxShadow: (th) => `0 10px 30px ${alpha(th.palette.primary.main, 0.18)}`,
+            }}
           >
             <Box
               component="img"
               src="/logos/logo.png"
               alt="Aya Academy"
-              sx={{ height: 56 }}
+              sx={{ height: 64, display: "block" }}
             />
           </Box>
-          <Typography variant="h4" fontWeight={800} textAlign="center">
+          <Typography variant="h4" fontWeight={900} textAlign="center">
             {txt.wizardTitle}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign="center">
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            textAlign="center"
+            sx={{ maxWidth: 460 }}
+          >
             {txt.wizardSubtitle}
           </Typography>
         </Stack>
 
-        <Stepper activeStep={step} alternativeLabel sx={{ mb: 4 }}>
-          <Step>
-            <StepLabel>{txt.stepChildren}</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>{txt.stepReview}</StepLabel>
-          </Step>
-        </Stepper>
+        {/* ── Modern segmented progress ──────────────────────────────────── */}
+        <Stack
+          direction="row"
+          spacing={{ xs: 1.5, sm: 2.5 }}
+          justifyContent="center"
+          sx={{ mb: 4 }}
+        >
+          {steps.map((label, i) => {
+            const active = i === step;
+            const done = i < step;
+            return (
+              <Stack
+                key={label}
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ opacity: active || done ? 1 : 0.55 }}
+              >
+                <Box
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                    fontWeight: 900,
+                    fontSize: 14,
+                    color: active || done ? "primary.contrastText" : "text.secondary",
+                    bgcolor: (th) =>
+                      active || done ? "primary.main" : alpha(th.palette.text.primary, 0.08),
+                    boxShadow: (th) =>
+                      active ? `0 0 0 5px ${alpha(th.palette.primary.main, 0.18)}` : "none",
+                    transition: "all .2s ease",
+                  }}
+                >
+                  {done ? <MdCheck size={18} /> : i + 1}
+                </Box>
+                <Typography
+                  variant="body2"
+                  fontWeight={active ? 800 : 600}
+                  sx={{ display: { xs: "none", sm: "block" } }}
+                >
+                  {label}
+                </Typography>
+                {i < steps.length - 1 && (
+                  <Box
+                    sx={{
+                      width: { xs: 24, sm: 48 },
+                      height: 3,
+                      borderRadius: 2,
+                      ml: { xs: 0.5, sm: 1 },
+                      bgcolor: (th) =>
+                        done ? "primary.main" : alpha(th.palette.text.primary, 0.12),
+                    }}
+                  />
+                )}
+              </Stack>
+            );
+          })}
+        </Stack>
 
         {step === 0 && (
           <Stack spacing={3}>
@@ -220,7 +301,15 @@ export default function RegisterWizard() {
             <Button
               variant="outlined"
               onClick={addChild}
-              sx={{ width: { xs: "100%", sm: "auto" }, alignSelf: "flex-start" }}
+              startIcon={<MdAdd />}
+              fullWidth
+              sx={{
+                borderStyle: "dashed",
+                borderWidth: 2,
+                py: 1.5,
+                fontWeight: 700,
+                "&:hover": { borderStyle: "dashed", borderWidth: 2 },
+              }}
             >
               {txt.addChild}
             </Button>

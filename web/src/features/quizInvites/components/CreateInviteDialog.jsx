@@ -31,8 +31,10 @@ import {
   INVITES_URL,
   BANK_URL,
   USERS_URL,
+  BADGES_URL,
   buildLinkForToken,
 } from "../config/constant.js";
+import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 
 /**
  * Admin: create an invitation.
@@ -45,6 +47,7 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
 
   const [parentId, setParentId] = useState("");
   const [questionIds, setQuestionIds] = useState([]);
+  const [badgeId, setBadgeId] = useState("");
   const [expiresAt, setExpiresAt] = useState(null);
   const [search, setSearch] = useState("");
   const [formError, setFormError] = useState("");
@@ -68,6 +71,15 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
     initialParams: { limit: 100, isActive: true },
   });
 
+  const badgesReq = useRequest({
+    url: BADGES_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: false,
+    syncToUrl: false,
+    initialParams: { limit: 100, isActive: true },
+  });
+
   const createReq = useRequest({
     url: INVITES_URL,
     method: "post",
@@ -84,18 +96,22 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
     if (open) {
       setParentId("");
       setQuestionIds([]);
+      setBadgeId("");
       setExpiresAt(null);
       setSearch("");
       setFormError("");
       setCreatedInvite(null);
       parentsReq.fetchData();
       questionsReq.fetchData();
+      badgesReq.fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const parents = (parentsReq.data || []).filter((u) => u.role === "PARENT");
   const questions = questionsReq.data || [];
+  const badges = badgesReq.data || [];
+  const selectedBadge = badges.find((b) => String(b.id) === String(badgeId)) || null;
 
   const filteredQuestions = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -127,6 +143,7 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
       parentId: Number(parentId),
       questionIds: questionIds.map(Number),
     };
+    if (badgeId) payload.badgeId = Number(badgeId);
     if (expiresAt) payload.expiresAt = dayjs(expiresAt).toISOString();
     createReq.fetchData(null, payload);
   }
@@ -215,6 +232,32 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
             </MenuItem>
           ))}
         </TextField>
+
+        <Box>
+          <TextField
+            select
+            label={txt.badgeLabel}
+            value={badgeId}
+            onChange={(e) => setBadgeId(e.target.value)}
+            fullWidth
+            helperText={badges.length === 0 ? txt.noBadges : txt.badgeHint}
+          >
+            <MenuItem value="">
+              <em>{txt.noBadge}</em>
+            </MenuItem>
+            {badges.map((b) => (
+              <MenuItem key={b.id} value={String(b.id)}>
+                {b.emoji ? `${b.emoji} ` : ""}
+                {lng === "en" ? b.nameEn || b.nameAr : b.nameAr || b.nameEn}
+              </MenuItem>
+            ))}
+          </TextField>
+          {selectedBadge && (
+            <Box sx={{ mt: 1.5 }}>
+              <BadgeChip badge={selectedBadge} lng={lng} />
+            </Box>
+          )}
+        </Box>
 
         <DatePicker
           label={txt.expiresLabel}

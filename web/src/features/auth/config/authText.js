@@ -68,7 +68,7 @@ export const authText = {
     giftBanner: "🎁 أول حصة مجانية لكل ابن",
     paymentNotice:
       "الاشتراك لا يتطلب دفعاً الآن — الدفع يكون بعد أول حصة. الاختيار للتسجيل فقط.",
-    addChild: "➕ إضافة ابن آخر",
+    addChild: "إضافة ابن آخر",
     removeChild: "حذف هذا الابن",
     next: "التالي",
     back: "السابق",
@@ -143,7 +143,7 @@ export const authText = {
     giftBanner: "🎁 First session free for every child",
     paymentNotice:
       "No payment is required now — you pay after the first session. The selection is for registration only.",
-    addChild: "➕ Add another child",
+    addChild: "Add another child",
     removeChild: "Remove this child",
     next: "Next",
     back: "Back",

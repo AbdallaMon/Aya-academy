@@ -7,6 +7,7 @@ import RHFTextField from "./rhf/RHFTextField.jsx";
 import RHFTextArea from "./rhf/RHFTextArea.jsx";
 import RHFSelect from "./rhf/RHFSelect.jsx";
 import RHFSwitch from "./rhf/RHFSwitch.jsx";
+import RHFPhoneField from "./rhf/RHFPhoneField.jsx";
 import { useTranslation } from "../../../i18n/client.js";
 
 /**
@@ -14,7 +15,7 @@ import { useTranslation } from "../../../i18n/client.js";
  *
  * fields: Array<{
  *   name, label, rules?, gridSize?,
- *   type: "text" | "textarea" | "select" | "switch" | "number" | "email" | "password" | "custom",
+ *   type: "text" | "textarea" | "select" | "switch" | "number" | "email" | "password" | "phone" | "custom",
  *   // select only: options, translatePath
  *   // custom only: component({ control, name, label, rules, ...rest })
  *   ...rest  // forwarded to the underlying input
@@ -66,6 +67,8 @@ export default function AppForm({
         );
       case "switch":
         return <RHFSwitch name={name} control={control} label={label} rules={rules} {...rest} />;
+      case "phone":
+        return <RHFPhoneField name={name} control={control} label={label} rules={rules} {...rest} />;
       case "custom":
         return field.component({ control, name, label, rules, setValue, getValues, watch, ...rest });
       default:

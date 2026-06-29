@@ -34,6 +34,7 @@ const CONTENT = {
       { t: 'المعنى لا الحفظ فقط', d: 'يفهمون ما يتلونه، لا أن يحفظوه فقط.' },
     ],
     howTitle: 'كيف نتعلّم في آية؟',
+    howSub: 'أربع خطوات بسيطة من التسجيل إلى أول وسام 🌟',
     steps: [
       { t: 'سجّل واختر المستوى', d: 'أخبرنا بعمر طفلك ونضعه في المستوى المناسب.' },
       { t: 'دروس مباشرة أو موجّهة', d: 'جلسات مباشرة أو دروس قصيرة بشرح واضح.' },
@@ -58,6 +59,7 @@ const CONTENT = {
       { t: 'Meaning, not just memorizing', d: 'They understand what they recite, not just memorize.' },
     ],
     howTitle: 'How Aya Academy works',
+    howSub: 'Four simple steps from sign-up to the first badge 🌟',
     steps: [
       { t: 'Sign up & pick a level', d: "Tell us your child's age — we match the right level." },
       { t: 'Live or guided lessons', d: 'Live sessions or short lessons with clear explanations.' },
@@ -156,12 +158,19 @@ export function WhyAya() {
           borderColor: alpha(theme.palette.primary.main, 0.12),
         }}
       >
-        <Typography variant="h4" component="h3" fontWeight={800} sx={{ textAlign: 'center', mb: { xs: 4, md: 5 } }}>
+        <Typography variant="h4" component="h3" fontWeight={800} sx={{ textAlign: 'center', mb: 1 }}>
           {c.howTitle}
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: { xs: 3, md: 2 } }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 400, color: 'text.secondary', textAlign: 'center', mb: { xs: 4, md: 5 } }}
+        >
+          {c.howSub}
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: { xs: 4, md: 3 }, mt: 2 }}>
           {c.steps.map((s, i) => {
             const Icon = STEP_ICONS[i];
+            const accent = accents[i % accents.length];
             return (
               <MotionBox
                 key={s.t}
@@ -169,42 +178,70 @@ export function WhyAya() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                sx={{ position: 'relative', textAlign: 'center', px: 1 }}
+                whileHover={{ y: -6 }}
+                sx={{
+                  position: 'relative',
+                  textAlign: 'center',
+                  px: 2,
+                  pt: 4.5,
+                  pb: 3,
+                  borderRadius: 5,
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow: `0 12px 28px ${alpha(accent, 0.12)}`,
+                  height: '100%',
+                }}
               >
-                {/* connector to previous node (md+ only, RTL-safe) */}
-                {i > 0 && (
-                  <Box
-                    aria-hidden
-                    sx={{ display: { xs: 'none', md: 'block' }, position: 'absolute', top: 28, insetInlineEnd: '50%', width: '100%', height: 2, bgcolor: 'divider', zIndex: 0 }}
-                  />
-                )}
+                {/* playful step number sitting on the card's top edge (RTL-safe
+                    centering: inset-inline 0 + auto margins, no translateX which
+                    the RTL plugin would flip) */}
+                <Box
+                  aria-hidden
+                  sx={{
+                    position: 'absolute',
+                    top: -16,
+                    insetInline: 0,
+                    mx: 'auto',
+                    width: 'fit-content',
+                    minWidth: 32,
+                    height: 32,
+                    px: 1,
+                    borderRadius: 999,
+                    bgcolor: accent,
+                    color: '#fff',
+                    fontSize: 15,
+                    fontWeight: 900,
+                    display: 'grid',
+                    placeItems: 'center',
+                    boxShadow: `0 6px 14px ${alpha(accent, 0.4)}`,
+                    border: '3px solid',
+                    borderColor: 'background.paper',
+                  }}
+                >
+                  {i + 1}
+                </Box>
+                {/* soft pastel icon bubble — friendlier than the repeated teal
+                    gradient, and a different cheerful colour per step */}
                 <Box
                   sx={{
-                    position: 'relative',
-                    zIndex: 1,
-                    width: 56,
-                    height: 56,
+                    width: 72,
+                    height: 72,
                     mx: 'auto',
-                    mb: 1.5,
+                    mb: 2,
                     borderRadius: '50%',
                     display: 'grid',
                     placeItems: 'center',
-                    color: '#fff',
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.success.main})`,
-                    boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    color: accent,
+                    bgcolor: alpha(accent, 0.14),
                   }}
                 >
-                  <Icon size={26} />
-                  <Box
-                    sx={{ position: 'absolute', top: -6, insetInlineEnd: -6, width: 22, height: 22, borderRadius: '50%', bgcolor: 'secondary.main', color: '#3a2d00', fontSize: 12, fontWeight: 900, display: 'grid', placeItems: 'center', border: '2px solid', borderColor: 'background.default' }}
-                  >
-                    {i + 1}
-                  </Box>
+                  <Icon size={32} />
                 </Box>
                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 0.5 }}>
                   {s.t}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                   {s.d}
                 </Typography>
               </MotionBox>

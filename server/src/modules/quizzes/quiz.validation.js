@@ -81,6 +81,8 @@ export class QuizValidation {
       .array(positiveInt)
       .min(1, quizMessagesCodes.INVITE_QUESTIONS_REQUIRED),
     expiresAt: z.coerce.date().optional(),
+    // Optional badge granted to the student when they pass the built quiz.
+    badgeId: positiveInt.optional(),
   });
 
   // ── quiz build ──────────────────────────────────────────

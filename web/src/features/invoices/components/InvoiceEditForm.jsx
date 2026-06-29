@@ -64,6 +64,8 @@ export function buildInvoiceDefaults(invoice) {
     headerTextColor: theme.headerTextColor ?? "#FFFFFF",
     accentColor: theme.accentColor ?? "#C9A84C",
     textColor: theme.textColor ?? "#25313F",
+    notesColor: theme.notesColor ?? "#25313F",
+    paymentInstructionsColor: theme.paymentInstructionsColor ?? "#25313F",
     transferFeePercent: fees.transferFeePercent ?? 0,
     transferFeeFixed: fees.transferFeeFixed ?? 0,
     previousCredit: invoice?.previousCredit ?? 0,
@@ -95,6 +97,8 @@ export function buildInvoicePayload(values, invoice) {
       headerTextColor: values.headerTextColor,
       accentColor: values.accentColor,
       textColor: values.textColor,
+      notesColor: values.notesColor,
+      paymentInstructionsColor: values.paymentInstructionsColor,
     },
     fees: {
       ...(base.fees || {}),
@@ -149,6 +153,20 @@ export default function InvoiceEditForm({ id, invoice, txt, onSubmit }) {
       {
         name: "textColor",
         label: txt.textColor,
+        type: "custom",
+        gridSize: { xs: 12, sm: 3 },
+        component: (p) => <ColorField {...p} />,
+      },
+      {
+        name: "notesColor",
+        label: txt.notesColor,
+        type: "custom",
+        gridSize: { xs: 12, sm: 3 },
+        component: (p) => <ColorField {...p} />,
+      },
+      {
+        name: "paymentInstructionsColor",
+        label: txt.paymentInstructionsColor,
         type: "custom",
         gridSize: { xs: 12, sm: 3 },
         component: (p) => <ColorField {...p} />,

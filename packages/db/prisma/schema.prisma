@@ -177,6 +177,7 @@ enum NotificationType {
   QUIZ_FAILED
   GIFT_RECEIVED
   INVOICE_SENT
+  CERTIFICATE_ISSUED
   GENERIC
 }
 
@@ -226,8 +227,8 @@ model User {
   parentLinks  ParentStudent[] @relation("ParentToStudent")
   studentLinks ParentStudent[] @relation("StudentToParent")
 
-  subscriptions        Subscription[]  @relation("StudentSubscriptions")
-  createdSubscriptions Subscription[]  @relation("SubscriptionCreatedBy")
+  subscriptions        Subscription[] @relation("StudentSubscriptions")
+  createdSubscriptions Subscription[] @relation("SubscriptionCreatedBy")
 
   gameAssignments GameAssignment[] @relation("StudentGameAssignments")
   assignedGames   GameAssignment[] @relation("GameAssignedBy")
@@ -468,6 +469,11 @@ model Game {
   coverImage    Attachment? @relation("GameCover", fields: [coverImageId], references: [id])
   configJson    Json?
 
+  // Optional badge auto-awarded to a student when they complete (pass) the game.
+  // SetNull so deleting a badge simply unlinks it without dropping games.
+  badgeId Int?
+  badge   Badge? @relation(fields: [badgeId], references: [id], onDelete: SetNull)
+
   questions   GameQuestion[]
   assignments GameAssignment[]
   attempts    GameAttempt[]
@@ -478,6 +484,7 @@ model Game {
   @@index([isActive])
   @@index([isPublic])
   @@index([isFree])
+  @@index([badgeId])
 }
 
 model GameQuestion {
@@ -656,6 +663,11 @@ model QuizInvite {
   status      QuizInviteStatus @default(PENDING)
   expiresAt   DateTime?
 
+  // Optional badge tied to this exam invitation. Propagated to the built Quiz
+  // and awarded to the student (linked to their certificate) when they pass.
+  badgeId Int?
+  badge   Badge? @relation(fields: [badgeId], references: [id], onDelete: SetNull)
+
   questions QuizInviteQuestion[]
   quiz      Quiz?
 
@@ -664,6 +676,7 @@ model QuizInvite {
 
   @@index([parentId])
   @@index([status])
+  @@index([badgeId])
 }
 
 model QuizInviteQuestion {
@@ -687,6 +700,12 @@ model Quiz {
   giftName          String?
   giftThemeJson     Json?
 
+  // Optional badge auto-awarded to the student when they pass the quiz.
+  // Propagated from the originating QuizInvite at build time when present.
+  // SetNull so deleting a badge simply unlinks it without dropping quizzes.
+  badgeId Int?
+  badge   Badge? @relation(fields: [badgeId], references: [id], onDelete: SetNull)
+
   items        QuizItem[]
   participants QuizParticipant[]
   attempts     QuizAttempt[]
@@ -695,6 +714,7 @@ model Quiz {
   updatedAt DateTime @updatedAt
 
   @@index([createdByParentId])
+  @@index([badgeId])
 }
 
 model QuizItem {
@@ -814,6 +834,13 @@ model Certificate {
   templateId Int?
   template   CertificateTemplate? @relation(fields: [templateId], references: [id])
 
+  // Optional badge granted together with this certificate. The actual award row
+  // lives in StudentBadge (back-relation `studentBadge`); this FK records which
+  // badge the certificate represents (manual pick, game.badgeId, or quiz.badgeId).
+  badgeId      Int?
+  badge        Badge?        @relation("CertificateBadge", fields: [badgeId], references: [id], onDelete: SetNull)
+  studentBadge StudentBadge?
+
   titleAr     String?
   titleEn     String?
   studentName String
@@ -842,6 +869,7 @@ model Certificate {
   @@index([studentId])
   @@index([createdById])
   @@index([templateId])
+  @@index([badgeId])
 }
 
 model Reward {
@@ -894,19 +922,28 @@ model Badge {
   score         Int     @default(0) // points granted when awarded
   isActive      Boolean @default(true)
 
-  students StudentBadge[]
+  students     StudentBadge[]
+  games        Game[]
+  quizzes      Quiz[]
+  quizInvites  QuizInvite[]
+  certificates Certificate[]  @relation("CertificateBadge")
 
   createdAt DateTime @default(now())
 }
 
 model StudentBadge {
-  id          Int      @id @default(autoincrement())
-  studentId   Int
-  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  badgeId     Int
-  badge       Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  awardedById Int?
-  awardedAt   DateTime @default(now())
+  id            Int          @id @default(autoincrement())
+  studentId     Int
+  student       User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  badgeId       Int
+  badge         Badge        @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  // The certificate this badge was awarded alongside, when the award originated
+  // from a certificate (manual issue, game pass, or quiz pass). Null for direct
+  // admin awards. Unique: a certificate grants at most one badge award.
+  certificateId Int?         @unique
+  certificate   Certificate? @relation(fields: [certificateId], references: [id], onDelete: SetNull)
+  awardedById   Int?
+  awardedAt     DateTime     @default(now())
 
   @@unique([studentId, badgeId])
   @@index([studentId])

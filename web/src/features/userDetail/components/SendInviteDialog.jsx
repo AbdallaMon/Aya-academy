@@ -11,6 +11,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -20,8 +21,10 @@ import { FormDialog } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { INVITES_URL } from "../config/constant.js";
+import BadgeChip from "./BadgeChip.jsx";
 
 const BANK_URL = "quizzes/bank";
+const BADGES_URL = "badges";
 
 /**
  * Send a quiz invite to a preselected PARENT.
@@ -33,9 +36,19 @@ export default function SendInviteDialog({ open, onClose, parentId, parentName, 
   const [questionIds, setQuestionIds] = useState([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
+  const [badgeId, setBadgeId] = useState("");
 
   const questionsReq = useRequest({
     url: BANK_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: false,
+    syncToUrl: false,
+    initialParams: { limit: 100, isActive: true },
+  });
+
+  const badgesReq = useRequest({
+    url: BADGES_URL,
     method: "get",
     isPaginated: true,
     autoFetch: false,
@@ -60,12 +73,19 @@ export default function SendInviteDialog({ open, onClose, parentId, parentName, 
       setQuestionIds([]);
       setSearch("");
       setError("");
+      setBadgeId("");
       questionsReq.fetchData();
+      badgesReq.fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const questions = questionsReq.data || [];
+  const badges = badgesReq.data || [];
+  const selectedBadge = useMemo(
+    () => badges.find((b) => String(b.id) === String(badgeId)) || null,
+    [badges, badgeId],
+  );
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return questions;
@@ -87,10 +107,12 @@ export default function SendInviteDialog({ open, onClose, parentId, parentName, 
       setError(txt.required);
       return;
     }
-    createReq.fetchData(null, {
+    const payload = {
       parentId: Number(parentId),
       questionIds: questionIds.map(Number),
-    });
+    };
+    if (badgeId) payload.badgeId = Number(badgeId);
+    createReq.fetchData(null, payload);
   }
 
   return (
@@ -161,6 +183,45 @@ export default function SendInviteDialog({ open, onClose, parentId, parentName, 
               );
             })}
           </List>
+        </Box>
+
+        <Divider />
+        <Box>
+          <TextField
+            select
+            fullWidth
+            size="small"
+            label={txt.inviteBadgeLabel}
+            helperText={txt.inviteBadgeHint}
+            value={badgeId}
+            onChange={(e) => setBadgeId(e.target.value)}
+            SelectProps={{ displayEmpty: true }}
+          >
+            <MenuItem value="">
+              <em>{txt.inviteNoBadge}</em>
+            </MenuItem>
+            {badges.length === 0 && (
+              <MenuItem value="" disabled>
+                {txt.inviteNoBadges}
+              </MenuItem>
+            )}
+            {badges.map((b) => {
+              const name = lng === "en" ? b.nameEn || b.nameAr : b.nameAr || b.nameEn;
+              return (
+                <MenuItem key={b.id} value={String(b.id)}>
+                  <Box component="span" sx={{ mr: 1 }}>
+                    {b.emoji || "🏅"}
+                  </Box>
+                  {name}
+                </MenuItem>
+              );
+            })}
+          </TextField>
+          {selectedBadge && (
+            <Box sx={{ mt: 1.5 }}>
+              <BadgeChip badge={selectedBadge} lng={lng} size="sm" />
+            </Box>
+          )}
         </Box>
       </Stack>
     </FormDialog>

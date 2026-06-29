@@ -9,6 +9,15 @@ export class GameValidation {
     dueAt: z.coerce.date().optional(),
   });
 
+  // Link a badge (badgeId) or unlink it (badgeId: null).
+  static setBadgeSchema = z.object({
+    badgeId: z
+      .number()
+      .int()
+      .positive(gameMessagesCodes.BADGE_ID_INVALID)
+      .nullable(),
+  });
+
   static attemptSchema = z.object({
     answersJson: z.any(),
     correctCount: z

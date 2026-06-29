@@ -87,6 +87,15 @@ class UserRepo {
     return links.map((l) => l.studentId);
   }
 
+  /** The parent (guardian) user ids linked to a given student. */
+  async getParentIdsForStudent(studentId) {
+    const links = await prisma.parentStudent.findMany({
+      where: { studentId },
+      select: { parentId: true },
+    });
+    return links.map((l) => l.parentId);
+  }
+
   async isStudentOfParent(parentId, studentId) {
     const link = await prisma.parentStudent.findUnique({
       where: { parentId_studentId: { parentId, studentId } },

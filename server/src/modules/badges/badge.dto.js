@@ -20,6 +20,7 @@ export const studentBadgeSelect = {
   id: true,
   studentId: true,
   badgeId: true,
+  certificateId: true,
   awardedById: true,
   awardedAt: true,
   badge: { select: badgeSelect },
@@ -30,6 +31,7 @@ export function toAwardedBadgeItem(row) {
   return {
     ...row.badge,
     studentBadgeId: row.id,
+    certificateId: row.certificateId ?? null,
     awardedById: row.awardedById,
     awardedAt: row.awardedAt,
   };

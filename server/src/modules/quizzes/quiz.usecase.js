@@ -21,6 +21,7 @@ import {
 } from "../../shared/utility/helper.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { certificateUsecase } from "../certificates/certificate.usecase.js";
+import { badgeUsecase } from "../badges/badge.usecase.js";
 import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { quizRepo } from "./quiz.repo.js";
 import { quizMessagesCodes } from "./quiz.messages.js";
@@ -160,6 +161,20 @@ class QuizUsecase {
       );
     }
 
+    // Optional badge tied to the invitation — validate up-front so an invalid
+    // pick fails the request.
+    let badgeId;
+    if (input.badgeId) {
+      const badge = await badgeUsecase.getById(input.badgeId).catch(() => null);
+      if (!badge) {
+        throw badRequest(
+          quizMessagesCodes.INVITE_BADGE_INVALID,
+          messagesNames.quizMessages,
+        );
+      }
+      badgeId = badge.id;
+    }
+
     const token = uuidv4();
     const invite = await quizRepo.createInvite({
       token,
@@ -167,6 +182,7 @@ class QuizUsecase {
       createdById: authUser.id,
       expiresAt: input.expiresAt,
       questionIds: [...new Set(input.questionIds)],
+      badgeId: badgeId ?? null,
     });
 
     // Best-effort notify the parent that a quiz invite is ready.
@@ -352,6 +368,9 @@ class QuizUsecase {
         passThreshold: input.passThreshold,
         giftName: input.giftName,
         giftThemeJson: input.giftThemeJson,
+        // Carry the admin-chosen badge from the invitation onto the built quiz,
+        // so it is auto-awarded (and linked to the certificate) on a pass.
+        badgeId: invite.badgeId ?? null,
       },
       items,
       participantStudentIds: uniqueParticipantIds,
@@ -600,6 +619,7 @@ class QuizUsecase {
     });
 
     let certificate = null;
+    let awardedBadge = null;
     if (passed) {
       // Certificate issuance is part of the success payload (not best-effort).
       certificate = await certificateUsecase.issueForQuizAttempt({
@@ -611,6 +631,8 @@ class QuizUsecase {
         // Unified exam-pass template, shared by all quiz certificates.
         templateKey: CERTIFICATE_TEMPLATE_KEYS.EXAM,
         themeJson: quiz.giftThemeJson,
+        // Record the linked badge (from the originating invite) on the cert.
+        badgeId: quiz.badgeId ?? undefined,
       });
 
       // Best-effort: badge + pass/gift notifications.
@@ -622,6 +644,23 @@ class QuizUsecase {
         });
       } catch {
         // swallow — badge is best-effort
+      }
+      // Auto-award the invite's linked badge (+ its points), linked to the
+      // certificate just issued. Idempotent + best-effort.
+      if (quiz.badgeId) {
+        try {
+          awardedBadge = await badgeUsecase.awardToStudent({
+            studentId: authUser.id,
+            badgeId: quiz.badgeId,
+            certificateId: certificate?.id ?? null,
+          });
+        } catch {
+          // swallow — badge award is best-effort
+        }
+      }
+      // Notify the student's parent(s) about the new certificate.
+      if (certificate) {
+        await certificateUsecase.notifyParentsOfCertificate(certificate);
       }
       try {
         await notificationUsecase.createNotification({
@@ -668,7 +707,7 @@ class QuizUsecase {
       }
     }
 
-    return { attempt, passed, certificate };
+    return { attempt, passed, certificate, badge: awardedBadge };
   }
 }
 

@@ -7,4 +7,6 @@ export const couponMessagesCodes = {
   COUPON_EXPIRED: "COUPON_EXPIRED",
   COUPON_NOT_APPLICABLE: "COUPON_NOT_APPLICABLE",
   COUPON_CODE_TAKEN: "COUPON_CODE_TAKEN",
+  // maxRedemptions can't be lowered below the times it was already redeemed.
+  COUPON_MAX_BELOW_USAGE: "COUPON_MAX_BELOW_USAGE",
 };

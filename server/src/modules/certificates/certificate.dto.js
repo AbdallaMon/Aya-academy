@@ -20,6 +20,20 @@ export const certificateSelect = {
   reasonAr: true,
   reasonEn: true,
   photoId: true,
+  // optional badge granted alongside this certificate
+  badgeId: true,
+  badge: {
+    select: {
+      id: true,
+      code: true,
+      nameAr: true,
+      nameEn: true,
+      emoji: true,
+      icon: true,
+      bgColor: true,
+      textColor: true,
+    },
+  },
   template: {
     select: {
       headingAr: true,

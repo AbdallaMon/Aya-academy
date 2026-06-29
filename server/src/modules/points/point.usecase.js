@@ -34,7 +34,8 @@ class PointUsecase {
 
   /**
    * Leaderboard (range=week|all). Returns up to 50 rows ordered by the relevant
-   * metric. Exposes only name/nickname/points — never email/PII.
+   * metric. Exposes only non-PII fields (name/nickname/points/level/avatar) —
+   * never email/phone/birthDate.
    */
   async leaderboard(authUser, { range }) {
     // Students must have an ACTIVE subscription to view the leaderboard.
@@ -68,6 +69,9 @@ class PointUsecase {
             points: s.points,
             weeklyPoints: w.weeklyPoints,
             badgeCount: badgeById.get(w.studentId) ?? 0,
+            level: s.level,
+            studentLevel: s.studentLevel,
+            avatar: s.avatar,
           },
           i + 1,
         );
@@ -99,6 +103,9 @@ class PointUsecase {
           points: s.points,
           weeklyPoints: weeklyById.get(s.id) ?? 0,
           badgeCount: badgeById.get(s.id) ?? 0,
+          level: s.level,
+          studentLevel: s.studentLevel,
+          avatar: s.avatar,
         },
         i + 1,
       ),

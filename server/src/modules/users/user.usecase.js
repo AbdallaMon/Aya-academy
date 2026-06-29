@@ -94,7 +94,7 @@ class UserUsecase {
       0,
       1000,
     );
-    return items.map(toUserListItem);
+    return items.map((u) => toUserListItem(u));
   }
 
   /**

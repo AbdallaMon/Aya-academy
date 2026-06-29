@@ -4,12 +4,17 @@
 // REAL, unified CertificateCard so a game certificate looks EXACTLY like the
 // admin-designed GAME template (heading, body, colors, frame, seal, signature…):
 //
-//   - REAL game (auth student): the attempt round-trip returns a server
-//     certificate already linked to the active GAME template → render it as-is.
-//   - DEMO (public free-game): no backend, so we fetch the active GAME template
-//     (public, render fields only) and build a synthetic certificate around the
-//     child's typed name + the game title (the template's {reason}). If no GAME
-//     template is configured we fall back to the game's own certificate config.
+//   - REAL game (auth student): once the attempt round-trip returns, it carries a
+//     server certificate already linked to the active GAME template → render it
+//     as-is. Until then (and for games that aren't passed, which issue no server
+//     certificate) we render the active GAME template fetched on the client, so
+//     the card NEVER falls back to a hardcoded look while the admin has a
+//     template configured.
+//   - DEMO (public free-game): no backend, so the active GAME template fetched on
+//     the client IS the source.
+//   In both cases we build a synthetic certificate around the child's name + the
+//     game title (the template's {reason}). Only when NO GAME template is
+//     configured do we fall back to the game's own certificate config.
 //
 // From here the child/parent can PRINT, or DOWNLOAD a PDF / image — the download
 // path is what makes this work on mobile, where printing is often unavailable.
@@ -21,6 +26,7 @@ import { useTranslation } from "../../../i18n/client.js";
 import { SparkleTrail } from "../animations/index.js";
 import { pickText } from "./helpers.js";
 import CertificateCard from "../../certificates/components/CertificateCard.jsx";
+import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 
 // Parse a themeJson value (object or JSON string) into a plain object.
 function parseTheme(themeJson) {
@@ -47,6 +53,7 @@ export default function Certificate({
   open,
   certificateConfig,
   serverCertificate,
+  badge,
   gameTemplate,
   heroEmoji,
   childName,
@@ -185,6 +192,23 @@ export default function Certificate({
               {gd.certCongrats}
             </Typography>
           </Box>
+
+          {/* A newly-granted badge (first completion only) — a celebratory line
+              under the congrats, with the localized name + emoji as a chip. */}
+          {badge ? (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.15 }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 0.75, mb: 0.75 }}>
+                <Typography sx={{ color: "#6536e0", fontWeight: 800, fontSize: { xs: 13, sm: 15 } }}>
+                  {gd.badgeEarnedPrefix}
+                </Typography>
+                <BadgeChip badge={badge} lng={lng} />
+              </Box>
+            </motion.div>
+          ) : null}
 
           {/* Demo: let the child type their name (updates the certificate live) */}
           {demo && (

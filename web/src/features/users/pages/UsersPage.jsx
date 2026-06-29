@@ -201,7 +201,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     }
 
     base.push(
-      { name: "phone", label: txt.phoneLabel, type: "text" },
+      { name: "phone", label: txt.phoneLabel, type: "phone" },
       { name: "nickname", label: txt.nicknameLabel, type: "text" },
       {
         name: "locale",

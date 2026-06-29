@@ -928,6 +928,9 @@ export default function CertificateCard({ certificate, printable = false }) {
     intro = pick(tpl.introAr, tpl.introEn) || "";
     congrats = pick(tpl.congratsAr, tpl.congratsEn) || "";
     thanks = pick(tpl.thanksAr, tpl.thanksEn) || "";
+    // Optional per-certificate title override (e.g. an admin-entered title on a
+    // manually issued, template-based certificate). Rendered as the "For …" line.
+    title = (en ? certificate.titleEn : certificate.titleAr) || "";
     // Body: substitute the {reason} token; if the token is absent, append the
     // reason on its own line.
     const rawBody = pick(tpl.bodyAr, tpl.bodyEn) || "";

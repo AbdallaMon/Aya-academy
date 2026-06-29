@@ -51,6 +51,19 @@ export const inviteListSelect = {
   expiresAt: true,
   createdAt: true,
   updatedAt: true,
+  badgeId: true,
+  badge: {
+    select: {
+      id: true,
+      code: true,
+      nameAr: true,
+      nameEn: true,
+      emoji: true,
+      icon: true,
+      bgColor: true,
+      textColor: true,
+    },
+  },
   _count: { select: { questions: true } },
   quiz: { select: { id: true, title: true } },
 };

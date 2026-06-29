@@ -4,7 +4,8 @@
 //
 // configJson = {
 //   company:  { nameAr, nameEn, addressAr, addressEn, phone, email },
-//   theme:    { headerColor, headerTextColor, accentColor, textColor },
+//   theme:    { headerColor, headerTextColor, accentColor, textColor,
+//              notesColor, paymentInstructionsColor },
 //   fees:     { transferFeePercent, transferFeeFixed },
 //   notes:    [ { ar, en } ],                 // customer-facing notices
 //   footerAr, footerEn,
@@ -29,6 +30,8 @@ export const DEFAULT_PAYMENT_TEMPLATE = {
     headerTextColor: "#FFFFFF",
     accentColor: "#C9A84C",
     textColor: "#25313F",
+    notesColor: "#25313F",
+    paymentInstructionsColor: "#25313F",
   },
   fees: {
     transferFeePercent: 0,

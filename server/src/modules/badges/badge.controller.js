@@ -9,6 +9,7 @@ class BadgeController {
     const result = await badgeUsecase.list(authUser(req), {
       page: req.query.page,
       limit: req.query.limit,
+      search: req.query.search,
     });
     return ok(res, result);
   };

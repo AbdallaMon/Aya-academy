@@ -52,10 +52,6 @@ CREATE TABLE `Plan` (
     `descriptionAr` TEXT NULL,
     `descriptionEn` TEXT NULL,
     `hours` INTEGER NOT NULL,
-    `hourlyRate` DECIMAL(10, 2) NOT NULL,
-    `monthlyPrice` DECIMAL(10, 2) NULL,
-    `yearlyPrice` DECIMAL(10, 2) NULL,
-    `currency` VARCHAR(191) NOT NULL DEFAULT 'GBP',
     `isActive` BOOLEAN NOT NULL DEFAULT true,
     `isFeatured` BOOLEAN NOT NULL DEFAULT false,
     `sortOrder` INTEGER NOT NULL DEFAULT 0,
@@ -135,22 +131,34 @@ CREATE TABLE `PaymentTemplate` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `AppSetting` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hourlyRate` DECIMAL(10, 2) NOT NULL DEFAULT 8,
+    `currency` VARCHAR(191) NOT NULL DEFAULT 'USD',
+    `updatedById` INTEGER NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Invoice` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `subscriptionId` INTEGER NOT NULL,
     `invoiceNumber` VARCHAR(191) NOT NULL,
     `status` ENUM('UNPAID', 'PAID', 'VOID') NOT NULL DEFAULT 'UNPAID',
-    `currency` VARCHAR(191) NOT NULL DEFAULT 'GBP',
+    `currency` VARCHAR(191) NOT NULL DEFAULT 'USD',
     `hours` DECIMAL(8, 2) NULL,
     `hourlyRate` DECIMAL(10, 2) NULL,
     `subtotal` DECIMAL(10, 2) NOT NULL DEFAULT 0,
     `transferFee` DECIMAL(10, 2) NOT NULL DEFAULT 0,
     `total` DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    `freeHours` DECIMAL(8, 2) NOT NULL DEFAULT 0,
     `previousCredit` DECIMAL(10, 2) NOT NULL DEFAULT 0,
     `previousDebt` DECIMAL(10, 2) NOT NULL DEFAULT 0,
     `configJson` JSON NOT NULL,
     `issueDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `sentAt` DATETIME(3) NULL,
     `billingPeriodLabel` VARCHAR(191) NULL,
     `dueDate` DATETIME(3) NULL,
     `notes` TEXT NULL,
@@ -179,6 +187,7 @@ CREATE TABLE `Game` (
     `passThreshold` INTEGER NULL,
     `coverImageId` INTEGER NULL,
     `configJson` JSON NULL,
+    `badgeId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -186,6 +195,7 @@ CREATE TABLE `Game` (
     INDEX `Game_isActive_idx`(`isActive`),
     INDEX `Game_isPublic_idx`(`isPublic`),
     INDEX `Game_isFree_idx`(`isFree`),
+    INDEX `Game_badgeId_idx`(`badgeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -341,12 +351,14 @@ CREATE TABLE `QuizInvite` (
     `parentId` INTEGER NOT NULL,
     `status` ENUM('PENDING', 'OPENED', 'BUILT', 'COMPLETED', 'EXPIRED') NOT NULL DEFAULT 'PENDING',
     `expiresAt` DATETIME(3) NULL,
+    `badgeId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `QuizInvite_token_key`(`token`),
     INDEX `QuizInvite_parentId_idx`(`parentId`),
     INDEX `QuizInvite_status_idx`(`status`),
+    INDEX `QuizInvite_badgeId_idx`(`badgeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -369,11 +381,13 @@ CREATE TABLE `Quiz` (
     `passThreshold` INTEGER NOT NULL DEFAULT 1,
     `giftName` VARCHAR(191) NULL,
     `giftThemeJson` JSON NULL,
+    `badgeId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Quiz_inviteId_key`(`inviteId`),
     INDEX `Quiz_createdByParentId_idx`(`createdByParentId`),
+    INDEX `Quiz_badgeId_idx`(`badgeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -439,6 +453,7 @@ CREATE TABLE `QuizAttempt` (
 CREATE TABLE `CertificateTemplate` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `key` VARCHAR(191) NOT NULL,
+    `type` ENUM('GENERAL', 'GAME', 'EXAM') NOT NULL DEFAULT 'GENERAL',
     `nameAr` VARCHAR(191) NOT NULL,
     `nameEn` VARCHAR(191) NOT NULL,
     `headingAr` VARCHAR(191) NULL,
@@ -472,6 +487,7 @@ CREATE TABLE `Certificate` (
     `gameAttemptId` INTEGER NULL,
     `quizAttemptId` INTEGER NULL,
     `templateId` INTEGER NULL,
+    `badgeId` INTEGER NULL,
     `titleAr` VARCHAR(191) NULL,
     `titleEn` VARCHAR(191) NULL,
     `studentName` VARCHAR(191) NOT NULL,
@@ -493,6 +509,7 @@ CREATE TABLE `Certificate` (
     INDEX `Certificate_studentId_idx`(`studentId`),
     INDEX `Certificate_createdById_idx`(`createdById`),
     INDEX `Certificate_templateId_idx`(`templateId`),
+    INDEX `Certificate_badgeId_idx`(`badgeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -517,7 +534,7 @@ CREATE TABLE `Reward` (
 CREATE TABLE `Notification` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
-    `type` ENUM('SUBSCRIPTION_CREATED', 'SUBSCRIPTION_EXPIRING', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_EXPIRED', 'REPORT_RECEIVED', 'GAME_ASSIGNED', 'QUIZ_INVITE', 'QUIZ_PASSED', 'QUIZ_FAILED', 'GIFT_RECEIVED', 'GENERIC') NOT NULL,
+    `type` ENUM('SUBSCRIPTION_CREATED', 'SUBSCRIPTION_EXPIRING', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_EXPIRED', 'REPORT_RECEIVED', 'GAME_ASSIGNED', 'QUIZ_INVITE', 'QUIZ_PASSED', 'QUIZ_FAILED', 'GIFT_RECEIVED', 'INVOICE_SENT', 'CERTIFICATE_ISSUED', 'GENERIC') NOT NULL,
     `titleAr` VARCHAR(191) NULL,
     `titleEn` VARCHAR(191) NULL,
     `bodyAr` TEXT NULL,
@@ -558,9 +575,11 @@ CREATE TABLE `StudentBadge` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `studentId` INTEGER NOT NULL,
     `badgeId` INTEGER NOT NULL,
+    `certificateId` INTEGER NULL,
     `awardedById` INTEGER NULL,
     `awardedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    UNIQUE INDEX `StudentBadge_certificateId_key`(`certificateId`),
     INDEX `StudentBadge_studentId_idx`(`studentId`),
     UNIQUE INDEX `StudentBadge_studentId_badgeId_key`(`studentId`, `badgeId`),
     PRIMARY KEY (`id`)
@@ -596,21 +615,6 @@ CREATE TABLE `Attachment` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `Attachment_uploadedById_idx`(`uploadedById`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `AuditLog` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `action` ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'ASSIGN', 'ISSUE') NOT NULL,
-    `entity` VARCHAR(191) NOT NULL,
-    `entityId` INTEGER NULL,
-    `userId` INTEGER NULL,
-    `dataJson` JSON NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `AuditLog_userId_idx`(`userId`),
-    INDEX `AuditLog_entity_entityId_idx`(`entity`, `entityId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -711,6 +715,9 @@ ALTER TABLE `Subscription` ADD CONSTRAINT `Subscription_createdById_fkey` FOREIG
 ALTER TABLE `PaymentTemplate` ADD CONSTRAINT `PaymentTemplate_updatedById_fkey` FOREIGN KEY (`updatedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `AppSetting` ADD CONSTRAINT `AppSetting_updatedById_fkey` FOREIGN KEY (`updatedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Invoice` ADD CONSTRAINT `Invoice_subscriptionId_fkey` FOREIGN KEY (`subscriptionId`) REFERENCES `Subscription`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -718,6 +725,9 @@ ALTER TABLE `Invoice` ADD CONSTRAINT `Invoice_createdById_fkey` FOREIGN KEY (`cr
 
 -- AddForeignKey
 ALTER TABLE `Game` ADD CONSTRAINT `Game_coverImageId_fkey` FOREIGN KEY (`coverImageId`) REFERENCES `Attachment`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Game` ADD CONSTRAINT `Game_badgeId_fkey` FOREIGN KEY (`badgeId`) REFERENCES `Badge`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `GameQuestion` ADD CONSTRAINT `GameQuestion_gameId_fkey` FOREIGN KEY (`gameId`) REFERENCES `Game`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -774,6 +784,9 @@ ALTER TABLE `QuizInvite` ADD CONSTRAINT `QuizInvite_createdById_fkey` FOREIGN KE
 ALTER TABLE `QuizInvite` ADD CONSTRAINT `QuizInvite_parentId_fkey` FOREIGN KEY (`parentId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `QuizInvite` ADD CONSTRAINT `QuizInvite_badgeId_fkey` FOREIGN KEY (`badgeId`) REFERENCES `Badge`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `QuizInviteQuestion` ADD CONSTRAINT `QuizInviteQuestion_inviteId_fkey` FOREIGN KEY (`inviteId`) REFERENCES `QuizInvite`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -784,6 +797,9 @@ ALTER TABLE `Quiz` ADD CONSTRAINT `Quiz_inviteId_fkey` FOREIGN KEY (`inviteId`) 
 
 -- AddForeignKey
 ALTER TABLE `Quiz` ADD CONSTRAINT `Quiz_createdByParentId_fkey` FOREIGN KEY (`createdByParentId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Quiz` ADD CONSTRAINT `Quiz_badgeId_fkey` FOREIGN KEY (`badgeId`) REFERENCES `Badge`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `QuizItem` ADD CONSTRAINT `QuizItem_quizId_fkey` FOREIGN KEY (`quizId`) REFERENCES `Quiz`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -822,6 +838,9 @@ ALTER TABLE `Certificate` ADD CONSTRAINT `Certificate_quizAttemptId_fkey` FOREIG
 ALTER TABLE `Certificate` ADD CONSTRAINT `Certificate_templateId_fkey` FOREIGN KEY (`templateId`) REFERENCES `CertificateTemplate`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Certificate` ADD CONSTRAINT `Certificate_badgeId_fkey` FOREIGN KEY (`badgeId`) REFERENCES `Badge`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Certificate` ADD CONSTRAINT `Certificate_photoId_fkey` FOREIGN KEY (`photoId`) REFERENCES `Attachment`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -846,6 +865,9 @@ ALTER TABLE `StudentBadge` ADD CONSTRAINT `StudentBadge_studentId_fkey` FOREIGN 
 ALTER TABLE `StudentBadge` ADD CONSTRAINT `StudentBadge_badgeId_fkey` FOREIGN KEY (`badgeId`) REFERENCES `Badge`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `StudentBadge` ADD CONSTRAINT `StudentBadge_certificateId_fkey` FOREIGN KEY (`certificateId`) REFERENCES `Certificate`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Point` ADD CONSTRAINT `Point_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -853,9 +875,6 @@ ALTER TABLE `Point` ADD CONSTRAINT `Point_awardedById_fkey` FOREIGN KEY (`awarde
 
 -- AddForeignKey
 ALTER TABLE `Attachment` ADD CONSTRAINT `Attachment_uploadedById_fkey` FOREIGN KEY (`uploadedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `AuditLog` ADD CONSTRAINT `AuditLog_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Backup` ADD CONSTRAINT `Backup_driveAccountId_fkey` FOREIGN KEY (`driveAccountId`) REFERENCES `DriveAccount`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

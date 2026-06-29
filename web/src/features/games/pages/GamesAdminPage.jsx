@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdGroupAdd, MdBarChart, MdPlayArrow, MdStar } from "react-icons/md";
+import {
+  MdGroupAdd,
+  MdBarChart,
+  MdPlayArrow,
+  MdStar,
+  MdMilitaryTech,
+} from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -13,6 +19,7 @@ import { localePath } from "../../../i18n/routing.js";
 import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
 import { useGamesAdminText } from "../config/gamesAdminText.js";
 import GameAssignDialog from "../components/GameAssignDialog.jsx";
+import GameBadgeDialog from "../components/GameBadgeDialog.jsx";
 
 const GAME_TYPES = ["INTERACTIVE", "QUIZ", "STORY"];
 
@@ -52,11 +59,17 @@ export default function GamesAdminPage() {
   });
 
   const assignDialog = useOpen();
+  const badgeDialog = useOpen();
   const [selected, setSelected] = useState(null);
 
   function onAssign(row) {
     setSelected(row);
     assignDialog.open();
+  }
+
+  function onLinkBadge(row) {
+    setSelected(row);
+    badgeDialog.open();
   }
 
   async function onSetFree(row) {
@@ -151,6 +164,37 @@ export default function GamesAdminPage() {
           row.passThreshold != null ? `${row.passThreshold} ✓` : "—",
       },
       {
+        field: "badge",
+        headerName: txt.badge,
+        width: 170,
+        renderCell: ({ row }) =>
+          row.badge ? (
+            <Chip
+              size="small"
+              color="warning"
+              variant="outlined"
+              icon={<MdMilitaryTech />}
+              label={`${row.badge.emoji ? `${row.badge.emoji} ` : ""}${
+                lng === "en" ? row.badge.nameEn : row.badge.nameAr
+              }`}
+            />
+          ) : canManage ? (
+            <Button
+              size="small"
+              variant="text"
+              color="warning"
+              startIcon={<MdMilitaryTech />}
+              onClick={() => onLinkBadge(row)}
+            >
+              {txt.linkBadge}
+            </Button>
+          ) : (
+            <Typography variant="caption" color="text.secondary">
+              {txt.noBadge}
+            </Typography>
+          ),
+      },
+      {
         field: "actions",
         type: "actions",
         headerName: txt.actions,
@@ -163,6 +207,12 @@ export default function GamesAdminPage() {
                 icon: <MdGroupAdd />,
                 onClick: () => onAssign(row),
                 hidden: !canAssign,
+              },
+              {
+                label: txt.linkBadge,
+                icon: <MdMilitaryTech />,
+                onClick: () => onLinkBadge(row),
+                hidden: !canManage,
               },
               {
                 label: txt.results,
@@ -249,6 +299,17 @@ export default function GamesAdminPage() {
           onClose={assignDialog.close}
           game={selected}
           txt={txt}
+        />
+      )}
+
+      {badgeDialog.isOpen && selected && (
+        <GameBadgeDialog
+          key={selected.id}
+          open={badgeDialog.isOpen}
+          onClose={badgeDialog.close}
+          game={selected}
+          txt={txt}
+          onChanged={triggerRefetch}
         />
       )}
     </Box>

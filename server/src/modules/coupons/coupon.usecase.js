@@ -1,30 +1,44 @@
 import { randomBytes } from "node:crypto";
-import { conflict, notFound } from "../../shared/errors/AppError.js";
+import { badRequest, conflict, notFound } from "../../shared/errors/AppError.js";
+import { messagesNames } from "@aya/shared";
 import {
   buildSearchQuery,
   parseBooleanFilter,
 } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { couponAppliesToPeriod } from "../../shared/utility/pricing.js";
-import { couponRepo } from "./coupon.repo.js";
+import { couponRepo, couponStatusConditions } from "./coupon.repo.js";
 import { couponMessagesCodes } from "./coupon.messages.js";
 
+const COUPON_STATUSES = ["active", "disabled", "consumed"];
+
 class CouponUsecase {
-  buildListWhere({ search, isActive, source, planId }) {
+  buildListWhere({ search, isActive, status, source, planId }) {
     const where = {};
+    const and = [];
+
     const or = buildSearchQuery({
       search: typeof search === "string" ? search : undefined,
       keys: ["code"],
     });
-    if (or) where.OR = or;
-
-    const active = parseBooleanFilter(isActive);
-    if (active !== undefined) where.isActive = active;
+    if (or) and.push({ OR: or });
 
     if (source && source !== "ALL") where.source = source;
 
     // Scope to a single plan's discounts (the per-plan discounts dialog).
     if (planId) where.plans = { some: { planId: Number(planId) } };
+
+    // Lifecycle filter (active | disabled | consumed). Takes precedence over the
+    // legacy isActive boolean filter; falls back to it when no status is given.
+    if (status && COUPON_STATUSES.includes(status)) {
+      where.isActive = status !== "disabled";
+      and.push(...couponStatusConditions(status));
+    } else {
+      const active = parseBooleanFilter(isActive);
+      if (active !== undefined) where.isActive = active;
+    }
+
+    if (and.length) where.AND = and;
 
     return where;
   }
@@ -79,13 +93,25 @@ class CouponUsecase {
   }
 
   async update(id, input) {
-    await this.getById(id);
+    const coupon = await this.getById(id);
 
     if (input.code) {
       const existing = await couponRepo.getByCode(input.code);
       if (existing && existing.id !== id) {
         throw conflict(couponMessagesCodes.COUPON_CODE_TAKEN);
       }
+    }
+
+    // A coupon's usage cap can't be set below the times it was already redeemed.
+    if (
+      input.maxRedemptions !== undefined &&
+      input.maxRedemptions !== null &&
+      input.maxRedemptions < coupon.redemptionsCount
+    ) {
+      throw badRequest(
+        couponMessagesCodes.COUPON_MAX_BELOW_USAGE,
+        messagesNames.couponMessages,
+      );
     }
 
     const data = {

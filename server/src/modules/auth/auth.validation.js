@@ -12,7 +12,7 @@ export class AuthValidation {
       .string()
       .trim()
       .min(1, authMessagesCodes.PHONE_REQUIRED)
-      .regex(/^\+?[0-9\s\-()]{6,20}$/, authMessagesCodes.INVALID_PHONE),
+      .regex(/^\+?[0-9\s\-()]{6,25}$/, authMessagesCodes.INVALID_PHONE),
     locale: z.enum(["ar", "en"]).optional(),
   });
 
@@ -43,7 +43,7 @@ export class AuthValidation {
         .string()
         .trim()
         .min(1, authMessagesCodes.PHONE_REQUIRED)
-        .regex(/^\+?[0-9\s\-()]{6,20}$/, authMessagesCodes.INVALID_PHONE),
+        .regex(/^\+?[0-9\s\-()]{6,25}$/, authMessagesCodes.INVALID_PHONE),
       locale: z.enum(["ar", "en"]).optional(),
     }),
     children: z

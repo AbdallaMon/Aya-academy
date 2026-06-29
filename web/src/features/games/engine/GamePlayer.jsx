@@ -73,6 +73,9 @@ export default function GamePlayer({ game, demo = false }) {
   const [showAdvance, setShowAdvance] = useState(false);
   const [certOpen, setCertOpen] = useState(false);
   const [serverCertificate, setServerCertificate] = useState(null);
+  // Non-null ONLY on the first completion when a newly-owned badge was granted
+  // (the attempt response carries it alongside the certificate).
+  const [earnedBadge, setEarnedBadge] = useState(null);
   const [burst, setBurst] = useState(0); // bump → confetti celebration in the shell
 
   // grading accumulators
@@ -98,17 +101,25 @@ export default function GamePlayer({ game, demo = false }) {
     autoFetch: false,
     onSuccess: (res) => {
       if (res?.data?.certificate) setServerCertificate(res.data.certificate);
+      if (res?.data?.badge) setEarnedBadge(res.data.badge);
     },
   });
 
-  // DEMO (anonymous free-game): no attempt → no server certificate. Pull the
-  // single active GAME template (public, render fields only) so the free-game
-  // certificate matches the admin-designed look instead of a hardcoded card.
+  // Pull the single ACTIVE GAME template (public, render fields only) so EVERY
+  // game certificate inherits the admin-designed look (body + {reason}, congrats,
+  // signature, theme…) instead of a hardcoded card. Fetched in BOTH modes:
+  //   - DEMO (anonymous free-game): there's no attempt round-trip, so this IS the
+  //     certificate source.
+  //   - REAL game: the cert modal opens immediately while the attempt POST is
+  //     still in flight, and the server only issues a certificate when the game
+  //     is passed — so without this the real card would fall back to the
+  //     hardcoded look. The active template renders instantly and the server
+  //     certificate (same template, real student name) takes over once it lands.
   const { data: gameTemplate } = useRequest({
     url: "certificate-templates/public/active-game",
     method: "get",
     isPublic: true,
-    autoFetch: demo,
+    autoFetch: true,
     syncToUrl: false,
     shouldAutoToast: false,
   });
@@ -230,6 +241,7 @@ export default function GamePlayer({ game, demo = false }) {
     setShowAdvance(false);
     setCertOpen(false);
     setServerCertificate(null);
+    setEarnedBadge(null);
     setPhase(avatars.length > 0 ? "avatar" : "task");
   }, [avatars.length]);
 
@@ -380,6 +392,7 @@ export default function GamePlayer({ game, demo = false }) {
         open={certOpen}
         certificateConfig={config.certificate}
         serverCertificate={serverCertificate}
+        badge={earnedBadge}
         gameTemplate={gameTemplate}
         heroEmoji={heroEmoji}
         childName={childName}

@@ -47,6 +47,8 @@ function buildDefaults(cfg) {
     headerTextColor: theme.headerTextColor ?? "#FFFFFF",
     accentColor: theme.accentColor ?? "#C9A84C",
     textColor: theme.textColor ?? "#25313F",
+    notesColor: theme.notesColor ?? "#25313F",
+    paymentInstructionsColor: theme.paymentInstructionsColor ?? "#25313F",
     transferFeePercent: fees.transferFeePercent ?? 0,
     transferFeeFixed: fees.transferFeeFixed ?? 0,
     dueDays: c.dueDays ?? 7,
@@ -76,6 +78,8 @@ function valuesToConfig(values) {
       headerTextColor: values.headerTextColor,
       accentColor: values.accentColor,
       textColor: values.textColor,
+      notesColor: values.notesColor,
+      paymentInstructionsColor: values.paymentInstructionsColor,
     },
     fees: {
       transferFeePercent: Number(values.transferFeePercent) || 0,
@@ -189,7 +193,7 @@ export default function PaymentTemplateSettingsPage() {
       { name: "companyNameEn", label: txt.companyNameEn, type: "text" },
       { name: "addressAr", label: txt.addressAr, type: "text" },
       { name: "addressEn", label: txt.addressEn, type: "text" },
-      { name: "phone", label: txt.phone, type: "text" },
+      { name: "phone", label: txt.phone, type: "phone" },
       { name: "email", label: txt.email, type: "text" },
       {
         name: "headerColor",
@@ -215,6 +219,20 @@ export default function PaymentTemplateSettingsPage() {
       {
         name: "textColor",
         label: txt.textColor,
+        type: "custom",
+        gridSize: { xs: 12, sm: 3 },
+        component: (p) => <ColorField {...p} />,
+      },
+      {
+        name: "notesColor",
+        label: txt.notesColor,
+        type: "custom",
+        gridSize: { xs: 12, sm: 3 },
+        component: (p) => <ColorField {...p} />,
+      },
+      {
+        name: "paymentInstructionsColor",
+        label: txt.paymentInstructionsColor,
         type: "custom",
         gridSize: { xs: 12, sm: 3 },
         component: (p) => <ColorField {...p} />,

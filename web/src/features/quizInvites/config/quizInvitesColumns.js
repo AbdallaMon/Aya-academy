@@ -1,6 +1,7 @@
 import { Chip, Stack, Typography } from "@mui/material";
 import { MdContentCopy, MdBuild } from "react-icons/md";
 import { RowActionsMenu } from "../../../shared/components/index.js";
+import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 import { INVITE_STATUS_COLOR, formatDate } from "./constant.js";
 
 /**
@@ -45,6 +46,13 @@ export function buildInvitesColumns({ txt, lng, onCopyLink, onBuild }) {
       renderCell: ({ row }) => (
         <Chip size="small" label={row._count?.questions ?? row.questionIds?.length ?? 0} />
       ),
+    },
+    {
+      field: "badge",
+      headerName: txt.badge,
+      width: 160,
+      renderCell: ({ row }) =>
+        row.badge ? <BadgeChip badge={row.badge} lng={lng} size="sm" /> : "—",
     },
     {
       field: "createdAt",

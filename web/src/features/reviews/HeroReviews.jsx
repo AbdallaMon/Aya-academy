@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, Container, Stack, Typography } from '@mui/material';
+import { Box, ButtonBase, Container, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { FaStar } from 'react-icons/fa';
 import { useTranslation } from '@/i18n/client.js';
 import { reviewScreenshots } from '@/features/reviews/reviewScreenshots.js';
@@ -52,13 +53,29 @@ export default function HeroReviews() {
                 </Typography>
               ))}
             </Stack>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              role="img"
-              aria-label={c.ratingLabel(reviewCountText)}
-              sx={{ bgcolor: 'background.default', px: 2, py: 1, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+            {/* The rating is a button → jumps to the real reviews (#proof) so a
+                skeptical parent can verify the 4.9 instead of taking it on faith. */}
+            <ButtonBase
+              component="a"
+              href="#proof"
+              aria-label={`${c.ratingLabel(reviewCountText)} — ${lng === 'en' ? 'see reviews' : 'عرض الآراء'}`}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                bgcolor: 'background.default',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: (th) => `0 6px 18px ${alpha(th.palette.primary.main, 0.18)}`,
+                  transform: 'translateY(-1px)',
+                },
+              }}
             >
               <FaStar color="#FFC107" size={18} aria-hidden />
               <Typography variant="h5" component="span" fontWeight={800}>
@@ -67,7 +84,7 @@ export default function HeroReviews() {
               <Typography variant="body2" component="span" color="text.secondary">
                 {c.reviews(reviewCountText)}
               </Typography>
-            </Stack>
+            </ButtonBase>
           </Stack>
         </Box>
       </Container>

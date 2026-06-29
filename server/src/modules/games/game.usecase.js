@@ -14,6 +14,7 @@ import {
   parseBooleanFilter,
 } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
+import { badgeUsecase } from "../badges/badge.usecase.js";
 import { certificateUsecase } from "../certificates/certificate.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { rewardUsecase } from "../rewards/reward.usecase.js";
@@ -93,6 +94,19 @@ class GameUsecase {
       await gameRepo.clearAllFreeFlags(tx);
       return gameRepo.markGameFree(game.id, tx);
     });
+  }
+
+  // ── badge linking (admin, GAME.MANAGE) ──────────────────
+  // Link the badge auto-awarded when a student completes (passes) this game, or
+  // unlink it (badgeId=null). Verifies both the game and the target badge exist.
+  async setBadge(authUser, id, badgeId) {
+    const game = await gameRepo.getById(id);
+    if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
+
+    // getById throws notFound(BADGE_NOT_FOUND) if the badge doesn't exist.
+    if (badgeId != null) await badgeUsecase.getById(badgeId);
+
+    return gameRepo.setBadge(game.id, badgeId);
   }
 
   // ── authenticated list ──────────────────────────────────
@@ -272,6 +286,18 @@ class GameUsecase {
 
     const existingAssignment = await gameRepo.getAssignment(game.id, authUser.id);
 
+    // Rewards (points + certificate + badge + gift) are earned ONCE, on the first
+    // successful completion. A student may replay freely afterwards for practice:
+    // every replay still records an attempt, but never re-grants anything and never
+    // mints a second certificate. We use the existing GAME certificate as the
+    // "already completed" marker (and re-surface it so the end-of-game screen can
+    // still show/download it on a replay).
+    const existingCertificate = await certificateUsecase.findEarnedForGame(
+      authUser.id,
+      game.id,
+    );
+    const firstCompletion = passed && !existingCertificate;
+
     // Core writes are atomic: attempt + points + assignment-status + certificate.
     const { attempt, certificate } = await prisma.$transaction(async (tx) => {
       const createdAttempt = await gameRepo.createAttempt(
@@ -288,9 +314,11 @@ class GameUsecase {
         tx,
       );
 
-      const points = correctCount * POINTS_PER_CORRECT + (passed ? PASS_BONUS : 0);
-      if (points > 0) {
-        await gameRepo.incrementStudentPoints(authUser.id, points, tx);
+      if (firstCompletion) {
+        const points = correctCount * POINTS_PER_CORRECT + PASS_BONUS;
+        if (points > 0) {
+          await gameRepo.incrementStudentPoints(authUser.id, points, tx);
+        }
       }
 
       if (existingAssignment) {
@@ -302,7 +330,7 @@ class GameUsecase {
       }
 
       let issuedCertificate = null;
-      if (passed) {
+      if (firstCompletion) {
         const certConfig = game.configJson?.certificate ?? null;
         issuedCertificate = await certificateUsecase.issueForGameAttempt(
           {
@@ -317,6 +345,8 @@ class GameUsecase {
             // look, keyed off the (stable, unique) game slug.
             templateKey: game.slug,
             themeJson: certConfig,
+            // Record the linked badge on the certificate itself.
+            badgeId: game.badgeId ?? undefined,
           },
           tx,
         );
@@ -325,8 +355,9 @@ class GameUsecase {
       return { attempt: createdAttempt, certificate: issuedCertificate };
     });
 
-    // Side-effects on a pass — best-effort (must not fail the request).
-    if (passed) {
+    // First-completion side-effects — best-effort (must not fail the request).
+    let awardedBadge = null;
+    if (firstCompletion) {
       try {
         await notificationUsecase.createNotification({
           userId: authUser.id,
@@ -348,9 +379,35 @@ class GameUsecase {
       } catch {
         // swallow — reward is best-effort
       }
+      // Auto-award the linked badge (+ its points), linked to the certificate
+      // that was just issued. Idempotent + best-effort. The awarded badge is
+      // returned so the end-of-game screen can celebrate it.
+      if (game.badgeId) {
+        try {
+          awardedBadge = await badgeUsecase.awardToStudent({
+            studentId: authUser.id,
+            badgeId: game.badgeId,
+            certificateId: certificate?.id ?? null,
+          });
+        } catch {
+          // swallow — badge award is best-effort
+        }
+      }
+      // Notify the student's parent(s) about the new certificate.
+      if (certificate) {
+        await certificateUsecase.notifyParentsOfCertificate(certificate);
+      }
     }
 
-    return { attempt, passed, certificate };
+    // Always hand back a certificate when one exists (fresh or previously earned),
+    // so replays keep their download link. `badge` is set only on the first
+    // completion that actually granted a (newly-owned) linked badge.
+    return {
+      attempt,
+      passed,
+      certificate: certificate ?? existingCertificate,
+      badge: awardedBadge,
+    };
   }
 
   // ── attempts list ───────────────────────────────────────

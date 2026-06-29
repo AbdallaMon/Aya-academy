@@ -1,5 +1,19 @@
 // Output projections for the games module.
 
+// Minimal badge identity carried on a game card so the dashboard (and kids' "earn
+// this badge!" hint) can render the linked reward without a second request.
+export const gameBadgeSelect = {
+  id: true,
+  code: true,
+  nameAr: true,
+  nameEn: true,
+  emoji: true,
+  icon: true,
+  bgColor: true,
+  textColor: true,
+  score: true,
+};
+
 // Thin list projection — safe for public landing + authenticated lists.
 export const gameListSelect = {
   id: true,
@@ -14,6 +28,8 @@ export const gameListSelect = {
   isFree: true,
   passThreshold: true,
   coverImageId: true,
+  badgeId: true,
+  badge: { select: gameBadgeSelect },
   createdAt: true,
 };
 

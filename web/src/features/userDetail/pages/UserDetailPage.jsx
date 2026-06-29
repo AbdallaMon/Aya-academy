@@ -65,6 +65,9 @@ export default function UserDetailPage({ userId }) {
   const role = user?.role;
   const isStudent = role === USER_ROLES.STUDENT;
   const isParent = role === USER_ROLES.PARENT;
+  // The games tab is an admin-only surface (assign/remove games). A parent
+  // viewing their child should never see it.
+  const viewerIsParent = viewer?.role === USER_ROLES.PARENT;
 
   // A parent viewing an INACTIVE child sees identity + certificates + reports +
   // subscriptions, but not the child's stats/achievements (overview/badges/
@@ -97,15 +100,16 @@ export default function UserDetailPage({ userId }) {
   // ── Tabs (role-adaptive) ──────────────────────────────────────────────────
   const validTabs = useMemo(() => {
     if (isStudent) {
-      return ["overview", "badges", "certificates", "games", "evaluations", "subscriptions"];
+      const tabs = ["overview", "badges", "certificates", "games", "evaluations", "subscriptions"];
+      return viewerIsParent ? tabs.filter((t) => t !== "games") : tabs;
     }
     if (isParent) return ["overview", "children"];
     return ["overview"];
-  }, [isStudent, isParent]);
+  }, [isStudent, isParent, viewerIsParent]);
 
   const sections = useMemo(() => {
     if (isStudent) {
-      return [
+      const tabs = [
         { key: "overview", label: txt.tabOverview },
         { key: "badges", label: txt.tabBadges, count: overview?.badges?.length ?? 0 },
         { key: "certificates", label: txt.tabCertificates },
@@ -113,6 +117,7 @@ export default function UserDetailPage({ userId }) {
         { key: "evaluations", label: txt.tabEvaluations },
         { key: "subscriptions", label: txt.tabSubscriptions },
       ];
+      return viewerIsParent ? tabs.filter((t) => t.key !== "games") : tabs;
     }
     if (isParent) {
       return [
@@ -121,7 +126,7 @@ export default function UserDetailPage({ userId }) {
       ];
     }
     return [{ key: "overview", label: txt.tabOverview }];
-  }, [isStudent, isParent, overview, txt]);
+  }, [isStudent, isParent, viewerIsParent, overview, txt]);
 
   const pathname = usePathname();
   const sp = useSearchParams();

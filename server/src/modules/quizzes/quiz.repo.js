@@ -169,6 +169,7 @@ class QuizRepo {
         parentId: true,
         status: true,
         expiresAt: true,
+        badgeId: true,
         questions: { select: { questionId: true } },
         quiz: { select: { id: true } },
       },
@@ -184,13 +185,14 @@ class QuizRepo {
     });
   }
 
-  createInvite({ token, parentId, createdById, expiresAt, questionIds }) {
+  createInvite({ token, parentId, createdById, expiresAt, questionIds, badgeId }) {
     return prisma.quizInvite.create({
       data: {
         token,
         parentId,
         createdById,
         expiresAt: expiresAt ?? null,
+        badgeId: badgeId ?? null,
         questions: {
           create: questionIds.map((questionId) => ({ questionId })),
         },
@@ -241,6 +243,7 @@ class QuizRepo {
           passThreshold: quizData.passThreshold,
           giftName: quizData.giftName ?? null,
           giftThemeJson: quizData.giftThemeJson ?? undefined,
+          badgeId: quizData.badgeId ?? null,
         },
         select: { id: true },
       });
@@ -344,6 +347,7 @@ class QuizRepo {
         giftName: true,
         giftThemeJson: true,
         createdByParentId: true,
+        badgeId: true,
         items: { select: quizItemSelect, orderBy: { order: "asc" } },
       },
     });

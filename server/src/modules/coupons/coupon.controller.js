@@ -10,6 +10,7 @@ class CouponController {
       limit: req.query.limit,
       search: req.query.search,
       isActive: req.query.isActive,
+      status: req.query.status,
       source: req.query.source,
       planId: req.query.planId,
     });

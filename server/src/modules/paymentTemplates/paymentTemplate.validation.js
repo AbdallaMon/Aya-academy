@@ -27,6 +27,8 @@ export const paymentTemplateConfigSchema = z
         headerTextColor: z.string().optional(),
         accentColor: z.string().optional(),
         textColor: z.string().optional(),
+        notesColor: z.string().optional(),
+        paymentInstructionsColor: z.string().optional(),
       })
       .partial()
       .optional(),
