@@ -5,3 +5,4 @@
 export { messagesCodes } from "./messagesCodes.js";
 export { tableData, dialogs, common } from "./common.js";
 export { gamesData } from "./gamesData.js";
+export { subscriptionLock } from "./subscriptionLock.js";

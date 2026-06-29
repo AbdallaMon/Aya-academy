@@ -32,3 +32,6 @@ export { default as ColorPicker } from "./ColorPicker.jsx";
 
 // ── Feedback ─────────────────────────────────────────────────────────────────
 export { default as LoadingOverlay } from "./feedback/LoadingOverlay.jsx";
+
+// ── Subscription ──────────────────────────────────────────────────────────────
+export { default as SubscriptionLockedState } from "./SubscriptionLockedState.jsx";

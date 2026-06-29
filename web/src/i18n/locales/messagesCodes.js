@@ -128,6 +128,8 @@ const ar = {
     [couponMessagesCodes.COUPON_EXPIRED]: "انتهت صلاحية الكوبون",
     [couponMessagesCodes.COUPON_NOT_APPLICABLE]: "لا يمكن تطبيق هذا الكوبون",
     [couponMessagesCodes.COUPON_CODE_TAKEN]: "كود الكوبون مستخدم بالفعل",
+    [couponMessagesCodes.COUPON_MAX_BELOW_USAGE]:
+      "أقصى عدد للاستخدامات لا يمكن أن يقل عن عدد مرات الاستخدام الحالية",
   },
   // ── subscription-messages ─────────────────────────────────────────────────
   [messagesNames.subscriptionMessages]: {
@@ -147,6 +149,7 @@ const ar = {
     [subscriptionMessagesCodes.PLAN_CHANGED]: "تم تغيير الخطة",
     [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: "تم تفعيل الاشتراك",
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]: "لا يمكن تغيير الخطة بعد دفع الفاتورة",
+    [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]: "انتهى الاشتراك أو غير مفعّل",
   },
   // ── game-messages ─────────────────────────────────────────────────────────
   [messagesNames.gameMessages]: {
@@ -162,6 +165,9 @@ const ar = {
     [gameMessagesCodes.ATTEMPT_TOTAL_QUESTIONS_INVALID]: "إجمالي عدد الأسئلة غير صالح",
     [gameMessagesCodes.ONLY_STUDENT_CAN_ATTEMPT]: "الطالب فقط يمكنه اللعب",
     [gameMessagesCodes.ASSIGNMENT_NOT_FOUND]: "التكليف غير موجود",
+    [gameMessagesCodes.BADGE_ID_INVALID]: "معرّف الوسام غير صالح",
+    [gameMessagesCodes.GAME_BADGE_LINKED]: "تم ربط الوسام باللعبة",
+    [gameMessagesCodes.GAME_BADGE_UNLINKED]: "تم إلغاء ربط الوسام باللعبة",
   },
   // ── report-messages ───────────────────────────────────────────────────────
   [messagesNames.reportMessages]: {
@@ -484,6 +490,8 @@ const en = {
     [couponMessagesCodes.COUPON_EXPIRED]: "Coupon has expired",
     [couponMessagesCodes.COUPON_NOT_APPLICABLE]: "Coupon is not applicable",
     [couponMessagesCodes.COUPON_CODE_TAKEN]: "Coupon code already in use",
+    [couponMessagesCodes.COUPON_MAX_BELOW_USAGE]:
+      "Max redemptions can't be lower than the number of times already used",
   },
   [messagesNames.subscriptionMessages]: {
     [subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND]: "Subscription not found",
@@ -502,6 +510,7 @@ const en = {
     [subscriptionMessagesCodes.PLAN_CHANGED]: "Plan changed",
     [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: "Subscription activated",
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]: "Cannot change the plan after the invoice is paid",
+    [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]: "Subscription expired or inactive",
   },
   [messagesNames.gameMessages]: {
     [gameMessagesCodes.GAME_NOT_FOUND]: "Game not found",
@@ -516,6 +525,9 @@ const en = {
     [gameMessagesCodes.ATTEMPT_TOTAL_QUESTIONS_INVALID]: "Invalid total questions count",
     [gameMessagesCodes.ONLY_STUDENT_CAN_ATTEMPT]: "Only a student can play",
     [gameMessagesCodes.ASSIGNMENT_NOT_FOUND]: "Assignment not found",
+    [gameMessagesCodes.BADGE_ID_INVALID]: "Invalid badge ID",
+    [gameMessagesCodes.GAME_BADGE_LINKED]: "Badge linked to the game",
+    [gameMessagesCodes.GAME_BADGE_UNLINKED]: "Badge unlinked from the game",
   },
   [messagesNames.reportMessages]: {
     [reportMessagesCodes.REPORT_NOT_FOUND]: "Report not found",
