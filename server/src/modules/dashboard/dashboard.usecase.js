@@ -3,6 +3,10 @@ import { forbidden } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
 import { dashboardRepo } from "./dashboard.repo.js";
 import { dashboardMessagesCodes } from "./dashboard.messages.js";
+import {
+  hasActiveSubscription,
+  filterActiveStudentIds,
+} from "../../shared/access/subscriptionAccess.js";
 
 const LEADERBOARD_DEFAULT_LIMIT = 10;
 const LEADERBOARD_MAX_LIMIT = 50;
@@ -90,22 +94,26 @@ class DashboardUsecase {
       dashboardRepo.recentReports(studentIds, RECENT_LIMIT),
     ]);
 
+    const activeIds = new Set(await filterActiveStudentIds(studentIds));
+
     const childrenWithSubscription = await Promise.all(
       children.map(async (child) => {
-        // Per-child subscription + leaderboard rank so the parent sees the full
-        // picture for each of their kids at a glance.
+        const isActive = activeIds.has(child.id);
         const [sub, rank] = await Promise.all([
           dashboardRepo.activeSubscriptionForStudent(child.id),
-          dashboardRepo.studentRank(child.points ?? 0),
+          isActive ? dashboardRepo.studentRank(child.points ?? 0) : Promise.resolve(null),
         ]);
         return {
           id: child.id,
           name: child.name,
           nickname: child.nickname,
-          points: child.points,
-          level: child.level,
+          isActive,
+          // Stats/achievements hidden for an inactive child; identity +
+          // subscription state remain so the parent can renew.
+          points: isActive ? child.points : null,
+          level: isActive ? child.level : null,
           rank,
-          badgeCount: child._count?.studentBadges ?? 0,
+          badgeCount: isActive ? child._count?.studentBadges ?? 0 : null,
           activeSubscription: sub
             ? {
                 id: sub.id,
@@ -154,6 +162,8 @@ class DashboardUsecase {
         dashboardRepo.studentAssignedGames(studentId),
       ]);
 
+    const active = await hasActiveSubscription(studentId);
+
     return {
       profile: profile
         ? {
@@ -164,7 +174,7 @@ class DashboardUsecase {
             level: profile.level,
           }
         : null,
-      rank,
+      rank: active ? rank : null,
       activeSubscription: activeSubscription
         ? {
             id: activeSubscription.id,
@@ -173,14 +183,16 @@ class DashboardUsecase {
             remainingHours: activeSubscription.remainingHours,
           }
         : null,
-      badges: badges.map((b) => ({
-        id: b.badge.id,
-        code: b.badge.code,
-        nameAr: b.badge.nameAr,
-        nameEn: b.badge.nameEn,
-        icon: b.badge.icon,
-        awardedAt: b.awardedAt,
-      })),
+      badges: active
+        ? badges.map((b) => ({
+            id: b.badge.id,
+            code: b.badge.code,
+            nameAr: b.badge.nameAr,
+            nameEn: b.badge.nameEn,
+            icon: b.badge.icon,
+            awardedAt: b.awardedAt,
+          }))
+        : [],
       certificates: certificates.map((c) => ({
         id: c.id,
         type: c.type,
