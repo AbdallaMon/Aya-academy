@@ -1,7 +1,6 @@
 import { POINT_SOURCES, USER_ROLES, messagesNames } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { badRequest, forbidden } from "../../shared/errors/AppError.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { userRepo } from "../users/user.repo.js";
 import { pointRepo } from "./point.repo.js";
 import { toLeaderboardItem } from "./point.dto.js";
@@ -25,11 +24,9 @@ class PointUsecase {
   }
 
   /** Ledger rows for a student (scoped), newest first. */
-  async list(authUser, { studentId, page, limit }) {
+  async list({ authUser, studentId, page, limit }) {
     await this.assertCanAccess(authUser, studentId);
-    const { skip, take, page: p, limit: l } = paginate({ page, limit });
-    const { items, total } = await pointRepo.listForStudent(studentId, skip, take);
-    return paginatedResult(items, total, p, l);
+    return pointRepo.listForStudent({ studentId, page, limit });
   }
 
   /**
@@ -37,7 +34,7 @@ class PointUsecase {
    * metric. Exposes only non-PII fields (name/nickname/points/level/avatar) —
    * never email/phone/birthDate.
    */
-  async leaderboard(authUser, { range }) {
+  async leaderboard({ authUser, range }) {
     // Students must have an ACTIVE subscription to view the leaderboard.
     // Admins/parents are unaffected.
     if (authUser?.role === USER_ROLES.STUDENT) {
@@ -46,13 +43,16 @@ class PointUsecase {
     const since = new Date(Date.now() - WEEK_MS);
 
     if (range === "week") {
-      const weekly = await pointRepo.topStudentsByWeekly(since, LEADERBOARD_LIMIT);
+      const weekly = await pointRepo.topStudentsByWeekly({
+        since,
+        take: LEADERBOARD_LIMIT,
+      });
       const ids = weekly.map((w) => w.studentId);
       if (!ids.length) return [];
 
       const [students, badges] = await Promise.all([
-        pointRepo.getStudentsByIds(ids),
-        pointRepo.badgeCountByStudent(ids),
+        pointRepo.getStudentsByIds({ studentIds: ids }),
+        pointRepo.badgeCountByStudent({ studentIds: ids }),
       ]);
       const studentById = new Map(students.map((s) => [s.id, s]));
       const badgeById = new Map(
@@ -79,13 +79,15 @@ class PointUsecase {
     }
 
     // range=all → order by cached all-time points.
-    const students = await pointRepo.topStudentsByPoints(LEADERBOARD_LIMIT);
+    const students = await pointRepo.topStudentsByPoints({
+      take: LEADERBOARD_LIMIT,
+    });
     const ids = students.map((s) => s.id);
     if (!ids.length) return [];
 
     const [weekly, badges] = await Promise.all([
-      pointRepo.weeklyPointsByStudent(since),
-      pointRepo.badgeCountByStudent(ids),
+      pointRepo.weeklyPointsByStudent({ since }),
+      pointRepo.badgeCountByStudent({ studentIds: ids }),
     ]);
     const weeklyById = new Map(
       weekly.map((w) => [w.studentId, w._sum?.amount ?? 0]),
@@ -116,7 +118,7 @@ class PointUsecase {
    * Admin manually awards (or adjusts) a student's points. Positive → MANUAL,
    * negative → ADJUSTMENT. Writes the ledger row + bumps the cached total atomically.
    */
-  async award(authUser, { studentId, amount, reason }) {
+  async award({ authUser, studentId, amount, reason }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(pointMessagesCodes.CANNOT_ACCESS_POINTS);
     }
@@ -139,17 +141,17 @@ class PointUsecase {
       amount < 0 ? POINT_SOURCES.ADJUSTMENT : POINT_SOURCES.MANUAL;
 
     return prisma.$transaction(async (tx) => {
-      const point = await pointRepo.create(
-        {
+      const point = await pointRepo.create({
+        data: {
           studentId,
           amount,
           source,
           reason: reason ?? null,
           awardedById: authUser.id,
         },
-        tx,
-      );
-      await pointRepo.incrementUserPoints(studentId, amount, tx);
+        client: tx,
+      });
+      await pointRepo.incrementUserPoints({ studentId, delta: amount, client: tx });
       return point;
     });
   }
@@ -158,10 +160,12 @@ class PointUsecase {
   /**
    * Insert a BADGE-sourced ledger row + bump the cached total. MUST be called
    * with the caller's `tx` so it joins the same transaction.
+   *
+   * Positional `tx` + object arg — also called cross-module (badges).
    */
   async awardForBadge(tx, { studentId, badgeId, amount, awardedById, sourceId }) {
-    const point = await pointRepo.create(
-      {
+    const point = await pointRepo.create({
+      data: {
         studentId,
         amount,
         source: POINT_SOURCES.BADGE,
@@ -169,10 +173,10 @@ class PointUsecase {
         sourceId: sourceId ?? null,
         awardedById: awardedById ?? null,
       },
-      tx,
-    );
+      client: tx,
+    });
     if (amount) {
-      await pointRepo.incrementUserPoints(studentId, amount, tx);
+      await pointRepo.incrementUserPoints({ studentId, delta: amount, client: tx });
     }
     return point;
   }
@@ -180,24 +184,27 @@ class PointUsecase {
   /**
    * Reverse a previously awarded badge: insert a negative ADJUSTMENT row +
    * decrement the cached total. MUST be called with the caller's `tx`.
+   *
+   * Positional `tx` + object arg — also called cross-module (badges).
    */
   async reverseForBadge(tx, { studentId, badgeId, amount, awardedById }) {
     const delta = -Math.abs(amount ?? 0);
-    const point = await pointRepo.create(
-      {
+    const point = await pointRepo.create({
+      data: {
         studentId,
         amount: delta,
         source: POINT_SOURCES.ADJUSTMENT,
         badgeId,
         awardedById: awardedById ?? null,
       },
-      tx,
-    );
+      client: tx,
+    });
     if (delta) {
-      await pointRepo.incrementUserPoints(studentId, delta, tx);
+      await pointRepo.incrementUserPoints({ studentId, delta, client: tx });
     }
     return point;
   }
 }
 
 export const pointUsecase = new PointUsecase();
+export { PointUsecase };

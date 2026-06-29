@@ -1,6 +1,5 @@
 import { forbidden, notFound } from "../../shared/errors/AppError.js";
-import { parseBooleanFilter } from "../../shared/utility/helper.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
+import { paginatedResult } from "../../shared/utility/pagination.js";
 import { notificationMessagesCodes } from "./notification.messages.js";
 import { notificationRepo } from "./notification.repo.js";
 
@@ -19,53 +18,53 @@ function toCreateData(input) {
 }
 
 class NotificationUsecase {
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
+  async list({ authUser, page, limit, filters = {} }) {
+    // Per-user scope depends on req.auth, so it is threaded into the repo here.
+    const { items, total, page: currentPage, pageSize } = await notificationRepo.list({
+      userId: authUser.id,
+      page,
+      limit,
+      isRead: filters.isRead,
     });
-    const where = { userId: authUser.id };
-    const isRead = parseBooleanFilter(params.isRead);
-    if (isRead !== undefined) where.isRead = isRead;
-
-    const { items, total } = await notificationRepo.list(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+    return paginatedResult(items, total, currentPage, pageSize);
   }
 
-  async unreadCount(authUser) {
+  async unreadCount({ authUser }) {
     const count = await notificationRepo.count({
-      userId: authUser.id,
-      isRead: false,
+      where: { userId: authUser.id, isRead: false },
     });
     return { count };
   }
 
-  async markRead(authUser, id) {
-    const notification = await notificationRepo.getById(id);
+  async markRead({ authUser, id }) {
+    const notification = await notificationRepo.getById({ id });
     if (!notification) {
       throw notFound(notificationMessagesCodes.NOTIFICATION_NOT_FOUND);
     }
     if (notification.userId !== authUser.id) {
       throw forbidden(notificationMessagesCodes.CANNOT_ACCESS_NOTIFICATION);
     }
-    return notificationRepo.markRead(id);
+    return notificationRepo.markRead({ id });
   }
 
-  async markAllRead(authUser) {
-    return notificationRepo.markAllRead(authUser.id);
+  async markAllRead({ authUser }) {
+    return notificationRepo.markAllRead({ userId: authUser.id });
   }
 
   // ── reusable service (importable by other modules) ──────────
+  // FROZEN signatures — called cross-module (badges / games / quizzes /
+  // subscriptions / certificates / invoices / auth / reports / messaging).
   /** Create a single notification for one user. */
   createNotification(input, tx) {
-    return notificationRepo.create(toCreateData(input), tx);
+    return notificationRepo.create({ data: toCreateData(input), client: tx });
   }
 
   /** Create one notification per user from a shared payload. */
   createManyForUsers(userIds, input, tx) {
     const data = userIds.map((userId) => toCreateData({ ...input, userId }));
-    return notificationRepo.createMany(data, tx);
+    return notificationRepo.createMany({ data, client: tx });
   }
 }
 
 export const notificationUsecase = new NotificationUsecase();
+export { NotificationUsecase };

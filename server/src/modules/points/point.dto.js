@@ -61,3 +61,5 @@ export function toLeaderboardItem(
     rank,
   };
 }
+
+export const pointDto = { toLeaderboardItem };

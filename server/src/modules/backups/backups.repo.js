@@ -1,21 +1,24 @@
 // ===========================================================================
 // backups.repo — Prisma I/O only for the Backup table. No business logic, no
 // AppError. (DriveAccount lives in the separate driveAccounts.repo.js.)
+//
+// Reference idiom: single object args with optional `client` (`client ?? prisma`),
+// and `list` owns pagination and returns { items, total, page, pageSize }.
 // ===========================================================================
 
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
 
 class BackupsRepo {
-  create({ data, client }) {
+  create({ data, client } = {}) {
     return (client ?? prisma).backup.create({ data });
   }
 
-  update({ id, data, client }) {
+  update({ id, data, client } = {}) {
     return (client ?? prisma).backup.update({ where: { id }, data });
   }
 
-  findById({ id, client }) {
+  findById({ id, client } = {}) {
     return (client ?? prisma).backup.findUnique({
       where: { id },
       include: { encryptionKey: { include: { keyAccount: true } } },
@@ -23,15 +26,16 @@ class BackupsRepo {
   }
 
   /** Delete a backup row (after best-effort file deletion in the usecase). */
-  delete({ id, client }) {
+  delete({ id, client } = {}) {
     return (client ?? prisma).backup.delete({ where: { id } });
   }
 
   /** Paginated list. `where` is optional (built in the usecase from account/dates/status). */
-  async list({ page, limit, where = {} }) {
-    const { skip, take, page: p, limit: l } = paginate({ page, limit });
-    const [rows, total] = await Promise.all([
-      prisma.backup.findMany({
+  async list({ page, limit, where = {}, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+    const [items, total] = await Promise.all([
+      db.backup.findMany({
         where,
         skip,
         take,
@@ -40,9 +44,9 @@ class BackupsRepo {
         // (which needs both accounts' connection state).
         include: { encryptionKey: { include: { keyAccount: true } } },
       }),
-      prisma.backup.count({ where }),
+      db.backup.count({ where }),
     ]);
-    return { rows, total, page: p, limit: l };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
   /** All backup rows (snapshot before restore). No filter. */
@@ -51,12 +55,12 @@ class BackupsRepo {
   }
 
   /** A backup row by fileName (to check survival after restore). */
-  findByFileName({ fileName, client }) {
+  findByFileName({ fileName, client } = {}) {
     return (client ?? prisma).backup.findFirst({ where: { fileName } });
   }
 
   /** Re-insert backup rows dropped by the restore — one at a time to isolate failures. */
-  async reinsertMany({ rows, client }) {
+  async reinsertMany({ rows, client } = {}) {
     const db = client ?? prisma;
     let restored = 0;
     for (const r of rows) {
@@ -71,16 +75,16 @@ class BackupsRepo {
   }
 
   /** The last successful backup (to display its time in the status panel). */
-  lastSuccessful() {
-    return prisma.backup.findFirst({
+  lastSuccessful({ client } = {}) {
+    return (client ?? prisma).backup.findFirst({
       where: { status: "SUCCESS" },
       orderBy: { createdAt: "desc" },
     });
   }
 
   /** Successful backups beyond the local retention limit (oldest) whose file is not yet deleted. */
-  findStaleLocal({ keep }) {
-    return prisma.backup.findMany({
+  findStaleLocal({ keep, client } = {}) {
+    return (client ?? prisma).backup.findMany({
       where: { status: "SUCCESS", localDeletedAt: null },
       orderBy: { createdAt: "desc" },
       skip: keep,
@@ -88,8 +92,8 @@ class BackupsRepo {
   }
 
   /** Successful backups beyond the Drive retention limit that still have a file not yet deleted. */
-  findStaleDrive({ keep }) {
-    return prisma.backup.findMany({
+  findStaleDrive({ keep, client } = {}) {
+    return (client ?? prisma).backup.findMany({
       where: { status: "SUCCESS", driveFileId: { not: null }, driveDeletedAt: null },
       orderBy: { createdAt: "desc" },
       skip: keep,
@@ -97,7 +101,7 @@ class BackupsRepo {
   }
 
   /** Count of backups linked to a given Drive account (to block deleting an account with backups). */
-  countByAccount({ accountId, client }) {
+  countByAccount({ accountId, client } = {}) {
     return (client ?? prisma).backup.count({ where: { driveAccountId: accountId } });
   }
 
@@ -107,8 +111,8 @@ class BackupsRepo {
    * Excludes `_prisma_migrations` to match extractSchemaFromSql.
    * @returns {Promise<Map<string, Set<string>>>}
    */
-  async getCurrentSchema() {
-    const rows = await prisma.$queryRaw`
+  async getCurrentSchema({ client } = {}) {
+    const rows = await (client ?? prisma).$queryRaw`
       SELECT TABLE_NAME AS tableName, COLUMN_NAME AS columnName
       FROM information_schema.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()

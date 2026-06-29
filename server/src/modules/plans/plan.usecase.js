@@ -1,11 +1,6 @@
 import { BILLING_PERIODS } from "@aya/shared";
 import { notFound } from "../../shared/errors/AppError.js";
 import {
-  buildSearchQuery,
-  parseBooleanFilter,
-} from "../../shared/utility/helper.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
-import {
   applyDiscount,
   couponAppliesToPeriod,
   effectiveMonthlyPrice,
@@ -20,28 +15,13 @@ import { planRepo } from "./plan.repo.js";
 import { planMessagesCodes } from "./plan.messages.js";
 
 class PlanUsecase {
-  buildListWhere({ search, isActive }) {
-    const where = {};
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["titleAr", "titleEn"],
+  async list({ page, limit, filters = {} }) {
+    return planRepo.listPlans({
+      page,
+      limit,
+      search: filters.search,
+      isActive: filters.isActive,
     });
-    if (or) where.OR = or;
-
-    const active = parseBooleanFilter(isActive);
-    if (active !== undefined) where.isActive = active;
-
-    return where;
-  }
-
-  async list(params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = this.buildListWhere(params);
-    const { items, total } = await planRepo.listPlans(where, skip, take);
-    return paginatedResult(items, total, page, limit);
   }
 
   async getById(id) {
@@ -50,7 +30,7 @@ class PlanUsecase {
     return plan;
   }
 
-  async create(input) {
+  async create({ authUser, ...input }) {
     const data = {
       titleAr: input.titleAr,
       titleEn: input.titleEn,
@@ -61,10 +41,10 @@ class PlanUsecase {
       isFeatured: input.isFeatured,
       sortOrder: input.sortOrder,
     };
-    return planRepo.createPlan(data);
+    return planRepo.createPlan({ data });
   }
 
-  async update(id, input) {
+  async update({ id, authUser, ...input }) {
     await this.getById(id);
     const data = {
       titleAr: input.titleAr,
@@ -76,12 +56,12 @@ class PlanUsecase {
       isFeatured: input.isFeatured,
       sortOrder: input.sortOrder,
     };
-    return planRepo.updatePlan(id, data);
+    return planRepo.updatePlan({ id, data });
   }
 
-  async remove(id) {
+  async remove({ id, authUser }) {
     await this.getById(id);
-    return planRepo.deactivatePlan(id);
+    return planRepo.deactivatePlan({ id });
   }
 
   // ── public pricing ──────────────────────────────────────
@@ -217,3 +197,4 @@ class PlanUsecase {
 }
 
 export const planUsecase = new PlanUsecase();
+export { PlanUsecase };
