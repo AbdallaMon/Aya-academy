@@ -1,11 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { Controller } from "react-hook-form";
-import { IconButton, InputAdornment, TextField } from "@mui/material";
+import { useEffect, useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Grid, IconButton, InputAdornment, TextField } from "@mui/material";
 import { MdAutorenew } from "react-icons/md";
-import { AppForm, FormDialog } from "../../../shared/components/index.js";
-import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
+import {
+  FormDialog,
+  RHFTextField,
+  RHFSelect,
+  RHFSwitch,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
+import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import {
   COUPONS_URL,
   BILLING_SCOPES,
@@ -14,10 +21,39 @@ import {
 } from "../config/constant.js";
 import { useCouponsText } from "../config/couponsText.js";
 
+const FORM_ID = "coupon-form";
+
 /** Random AYA-XXXXXX coupon-code suggestion (6 hex chars). */
 function generateCode() {
   const hex = Math.random().toString(16).slice(2, 8).toUpperCase().padEnd(6, "0");
   return `AYA-${hex}`;
+}
+
+function makeDefaults(coupon) {
+  if (coupon) {
+    return {
+      code: coupon.code ?? "",
+      type: coupon.type ?? "PERCENT",
+      value: coupon.value ?? "",
+      billingPeriod: coupon.billingPeriod ?? "ALL",
+      source: coupon.source ?? "MANUAL",
+      maxRedemptions: coupon.maxRedemptions ?? "",
+      startsAt: toDateInput(coupon.startsAt),
+      endsAt: toDateInput(coupon.endsAt),
+      isActive: coupon.isActive ?? true,
+    };
+  }
+  return {
+    code: generateCode(),
+    type: "PERCENT",
+    billingPeriod: "ALL",
+    source: "MANUAL",
+    isActive: true,
+    value: "",
+    maxRedemptions: "",
+    startsAt: "",
+    endsAt: "",
+  };
 }
 
 /**
@@ -40,10 +76,20 @@ export default function CouponFormDialog({
   onSaved,
 }) {
   const txt = useCouponsText();
+  const { showToast } = useToast();
   const isEdit = Boolean(coupon?.id);
   const usedCount = coupon?.redemptionsCount ?? 0;
 
-  const mut = useMultiRequest({ url: COUPONS_URL });
+  const { control, handleSubmit, reset, setValue, setError } = useForm({
+    defaultValues: makeDefaults(coupon),
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    // `open` re-seeds a fresh code each time the create dialog is opened.
+    reset(makeDefaults(coupon));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, coupon, reset]);
 
   const scopeOptions = useMemo(
     () =>
@@ -63,137 +109,32 @@ export default function CouponFormDialog({
     [txt],
   );
 
-  const fields = useMemo(() => {
-    const list = [
-      {
-        name: "code",
-        label: txt.codeLabel,
-        type: "custom",
-        component: ({ control, name, label, setValue }) => (
-          <Controller
-            name={name}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                value={field.value ?? ""}
-                label={label}
-                fullWidth
-                helperText={txt.codeHint}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={() => setValue(name, generateCode())}
-                        aria-label={txt.generate}
-                        title={txt.generate}
-                      >
-                        <MdAutorenew />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-          />
-        ),
-      },
-      {
-        name: "type",
-        label: txt.typeLabel,
-        type: "select",
-        options: { PERCENT: txt.percent, FIXED: txt.fixed },
-        rules: { required: txt.required },
-      },
-      {
-        name: "value",
-        label: txt.valueLabel,
-        type: "number",
-        rules: { required: txt.required },
-      },
-      {
-        name: "billingPeriod",
-        label: txt.scopeLabel,
-        type: "select",
-        options: scopeOptions,
-      },
-      {
-        // Editing keeps the usage count visible right on the field so the cap
-        // can't be lowered below it (also enforced server-side).
-        name: "maxRedemptions",
-        label: isEdit
-          ? `${txt.maxRedemptions} (${txt.used}: ${usedCount})`
-          : txt.maxRedemptions,
-        type: "number",
-        rules: {
-          validate: (v) =>
-            v === "" ||
-            v === null ||
-            v === undefined ||
-            Number(v) >= usedCount ||
-            `${txt.maxBelowUsage} (${usedCount})`,
+  const { fetchData, isLoading } = useRequest({
+    url: COUPONS_URL,
+    method: isEdit ? "put" : "post",
+    shouldAutoToast: true,
+    onSuccess: () => {
+      onSaved?.();
+      onClose?.();
+    },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          code: txt.codeLabel,
+          type: txt.typeLabel,
+          value: txt.valueLabel,
+          billingPeriod: txt.scopeLabel,
+          maxRedemptions: txt.maxRedemptions,
+          startsAt: txt.startsAt,
+          endsAt: txt.endsAt,
+          source: txt.sourceLabel,
         },
-      },
-      {
-        name: "startsAt",
-        label: txt.startsAt,
-        type: "date",
-        InputLabelProps: { shrink: true },
-      },
-      {
-        name: "endsAt",
-        label: txt.endsAt,
-        type: "date",
-        InputLabelProps: { shrink: true },
-      },
-    ];
+        showToast,
+        suppressFallbackToast: true,
+      }),
+  });
 
-    // The standalone Coupons page exposes source + active; the per-plan flow
-    // forces MANUAL / active, so those controls are hidden there.
-    if (!lockedPlanId) {
-      list.push({
-        name: "source",
-        label: txt.sourceLabel,
-        type: "select",
-        options: sourceOptions,
-      });
-      list.push({ name: "isActive", label: txt.isActive, type: "switch" });
-    }
-
-    return list;
-  }, [txt, scopeOptions, sourceOptions, lockedPlanId, isEdit, usedCount]);
-
-  const defaultValues = useMemo(() => {
-    if (coupon) {
-      return {
-        code: coupon.code ?? "",
-        type: coupon.type ?? "PERCENT",
-        value: coupon.value ?? "",
-        billingPeriod: coupon.billingPeriod ?? "ALL",
-        source: coupon.source ?? "MANUAL",
-        maxRedemptions: coupon.maxRedemptions ?? "",
-        startsAt: toDateInput(coupon.startsAt),
-        endsAt: toDateInput(coupon.endsAt),
-        isActive: coupon.isActive ?? true,
-      };
-    }
-    return {
-      code: generateCode(),
-      type: "PERCENT",
-      billingPeriod: "ALL",
-      source: "MANUAL",
-      isActive: true,
-      value: "",
-      maxRedemptions: "",
-      startsAt: "",
-      endsAt: "",
-    };
-    // `open` re-seeds a fresh code each time the dialog is opened to create.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coupon, open]);
-
-  async function submit(values) {
+  function submit(values) {
     const payload = {
       code: values.code?.trim() || undefined,
       type: values.type,
@@ -218,15 +159,7 @@ export default function CouponFormDialog({
       payload.isActive =
         values.isActive === undefined ? true : Boolean(values.isActive);
     }
-
-    try {
-      if (isEdit) await mut.putRequest(String(coupon.id), payload);
-      else await mut.postRequest(null, payload);
-      onSaved?.();
-      onClose?.();
-    } catch {
-      // The mutation auto-toasts the error; keep the dialog open to retry.
-    }
+    fetchData(isEdit ? String(coupon.id) : null, payload);
   }
 
   return (
@@ -235,17 +168,131 @@ export default function CouponFormDialog({
       onClose={onClose}
       title={isEdit ? txt.editTitle : txt.createTitle}
       maxWidth="md"
-      loading={mut.isPostRequestLoading || mut.isPutRequestLoading}
+      loading={isLoading}
       submitText={txt.save}
       cancelText={txt.cancel}
-      onSubmit={() => document.getElementById("coupon-form")?.requestSubmit()}
+      onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
     >
-      <AppForm
-        id="coupon-form"
-        fields={fields}
-        defaultValues={defaultValues}
-        onSubmit={submit}
-      />
+      <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name="code"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  value={field.value ?? ""}
+                  label={txt.codeLabel}
+                  fullWidth
+                  helperText={txt.codeHint}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setValue("code", generateCode())}
+                          aria-label={txt.generate}
+                          title={txt.generate}
+                        >
+                          <MdAutorenew />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFSelect
+              name="type"
+              control={control}
+              label={txt.typeLabel}
+              options={{ PERCENT: txt.percent, FIXED: txt.fixed }}
+              rules={{ required: txt.required }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFTextField
+              name="value"
+              control={control}
+              label={txt.valueLabel}
+              type="number"
+              rules={{ required: txt.required }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFSelect
+              name="billingPeriod"
+              control={control}
+              label={txt.scopeLabel}
+              options={scopeOptions}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFTextField
+              name="maxRedemptions"
+              control={control}
+              label={
+                isEdit
+                  ? `${txt.maxRedemptions} (${txt.used}: ${usedCount})`
+                  : txt.maxRedemptions
+              }
+              type="number"
+              rules={{
+                validate: (v) =>
+                  v === "" ||
+                  v === null ||
+                  v === undefined ||
+                  Number(v) >= usedCount ||
+                  `${txt.maxBelowUsage} (${usedCount})`,
+              }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFTextField
+              name="startsAt"
+              control={control}
+              label={txt.startsAt}
+              type="date"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFTextField
+              name="endsAt"
+              control={control}
+              label={txt.endsAt}
+              type="date"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          {!lockedPlanId && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFSelect
+                name="source"
+                control={control}
+                label={txt.sourceLabel}
+                options={sourceOptions}
+              />
+            </Grid>
+          )}
+
+          {!lockedPlanId && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFSwitch name="isActive" control={control} label={txt.isActive} />
+            </Grid>
+          )}
+        </Grid>
+      </form>
     </FormDialog>
   );
 }

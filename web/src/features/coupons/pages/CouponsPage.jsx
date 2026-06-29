@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import { Box, Chip, Stack, Typography } from "@mui/material";
+import { MdEdit, MdDelete } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -11,6 +11,7 @@ import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
 import {
   DataTable,
+  PageHeader,
   RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
@@ -294,28 +295,12 @@ export default function CouponsPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? onCreate : undefined}
+      />
 
       <DataTable
         initialRows={data || []}
