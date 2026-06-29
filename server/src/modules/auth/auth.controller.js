@@ -2,7 +2,9 @@ import {
   authMessagesCodes,
   getPermissionsForRole,
   messagesNames,
+  USER_ROLES,
 } from "@aya/shared";
+import { hasActiveSubscription } from "../../shared/access/subscriptionAccess.js";
 import { created, ok } from "../../shared/http/response.js";
 import {
   ACCESS_MAX_AGE,
@@ -28,6 +30,15 @@ function setAuthCookies(res, payload) {
 }
 
 class AuthController {
+  // Students are gated by subscription; everyone else is always "active".
+  async withSubscriptionFlag(user) {
+    const hasActive =
+      user.role === USER_ROLES.STUDENT
+        ? await hasActiveSubscription(user.id)
+        : true;
+    return { ...user, hasActiveSubscription: hasActive };
+  }
+
   register = async (req, res) => {
     const user = await authUsecase.register(req.body);
     return created(
@@ -56,17 +67,11 @@ class AuthController {
       sessionVersion: user.sessionVersion,
     });
     const { passwordHash: _drop, ...safe } = user;
-    return ok(
-      res,
-      {
-        user: {
-          ...safe,
-          permissions: getPermissionsForRole(user.role),
-        },
-      },
-      authMessagesCodes.LOGIN_SUCCESS,
-      messagesNames.authMessages,
-    );
+    const payload = await this.withSubscriptionFlag({
+      ...safe,
+      permissions: getPermissionsForRole(user.role),
+    });
+    return ok(res, { user: payload }, authMessagesCodes.LOGIN_SUCCESS, messagesNames.authMessages);
   };
 
   logout = async (_req, res) => {
@@ -81,7 +86,8 @@ class AuthController {
   };
 
   me = async (req, res) => {
-    return ok(res, { user: req.auth });
+    const user = await this.withSubscriptionFlag(req.auth);
+    return ok(res, { user });
   };
 
   refresh = async (req, res) => {
