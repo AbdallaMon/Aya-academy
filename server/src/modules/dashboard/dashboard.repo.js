@@ -143,6 +143,16 @@ class DashboardRepo {
     });
   }
 
+  // Returns the newest subscription for the student regardless of status,
+  // so the parent dashboard can distinguish pending-renewal from expired/none.
+  latestSubscriptionForStudent(studentId) {
+    return prisma.subscription.findFirst({
+      where: { studentId },
+      orderBy: { id: "desc" },
+      select: { id: true, status: true },
+    });
+  }
+
   recentReports(studentIds, limit) {
     return prisma.report.findMany({
       where: { students: { some: { studentId: { in: studentIds } } } },

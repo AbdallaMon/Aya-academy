@@ -1,4 +1,4 @@
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES, SUBSCRIPTION_STATUSES } from "@aya/shared";
 import { forbidden } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
 import { dashboardRepo } from "./dashboard.repo.js";
@@ -99,10 +99,28 @@ class DashboardUsecase {
     const childrenWithSubscription = await Promise.all(
       children.map(async (child) => {
         const isActive = activeIds.has(child.id);
-        const [sub, rank] = await Promise.all([
+        const [sub, rank, latest] = await Promise.all([
           dashboardRepo.activeSubscriptionForStudent(child.id),
           isActive ? dashboardRepo.studentRank(child.points ?? 0) : Promise.resolve(null),
+          dashboardRepo.latestSubscriptionForStudent(child.id),
         ]);
+
+        let subscriptionState;
+        if (isActive) {
+          subscriptionState = SUBSCRIPTION_STATUSES.ACTIVE;
+        } else if (
+          latest &&
+          (latest.status === SUBSCRIPTION_STATUSES.PENDING ||
+            latest.status === SUBSCRIPTION_STATUSES.UPCOMING)
+        ) {
+          subscriptionState = SUBSCRIPTION_STATUSES.PENDING;
+        } else if (latest) {
+          // EXPIRED or CANCELLED — parent needs to renew
+          subscriptionState = SUBSCRIPTION_STATUSES.EXPIRED;
+        } else {
+          subscriptionState = "NONE";
+        }
+
         return {
           id: child.id,
           name: child.name,
@@ -122,6 +140,8 @@ class DashboardUsecase {
                 remainingHours: sub.remainingHours,
               }
             : null,
+          subscriptionState,
+          latestSubscriptionId: latest?.id ?? null,
         };
       }),
     );
