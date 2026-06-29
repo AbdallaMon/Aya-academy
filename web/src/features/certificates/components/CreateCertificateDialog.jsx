@@ -17,9 +17,12 @@ import {
   Typography,
 } from "@mui/material";
 import { MdCheck, MdInfoOutline } from "react-icons/md";
-import { FormDialog } from "../../../shared/components/index.js";
+import {
+  FormDialog,
+  RHFTextField,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { useCertificatesText } from "../config/certificatesText.js";
 import {
@@ -165,7 +168,7 @@ export default function CreateCertificateDialog({
   const txt = useCertificatesText();
   const { lng } = useTranslation();
 
-  const { control, handleSubmit, reset, watch, setValue } = useForm({
+  const { control, handleSubmit, reset, watch, setValue, setError } = useForm({
     defaultValues: EMPTY_VALUES,
     mode: "onTouched",
   });
@@ -234,12 +237,27 @@ export default function CreateCertificateDialog({
   });
   const badges = useMemo(() => badgesReq.data || [], [badgesReq.data]);
 
-  const createMut = useMultiRequest({
+  const { fetchData: createCertificate, isLoading: isCreating } = useRequest({
     url: CERTIFICATES_URL,
+    method: "post",
+    shouldAutoToast: true,
     onSuccess: () => {
       onSuccess?.();
       onClose?.();
     },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          studentId: txt.studentLabel,
+          titleAr: txt.titleArLabel,
+          titleEn: txt.titleEnLabel,
+          bodyAr: txt.bodyArLabel,
+          bodyEn: txt.bodyEnLabel,
+          reasonAr: txt.reasonAr,
+          reasonEn: txt.reasonEn,
+          badgeId: txt.selectBadge,
+        },
+      }),
   });
 
   const values = watch();
@@ -329,7 +347,7 @@ export default function CreateCertificateDialog({
         titleEn: v.titleEn || undefined,
         badgeId,
       };
-      await createMut.postRequest(null, payload);
+      await createCertificate(null, payload);
       return;
     }
     const payload = {
@@ -342,7 +360,7 @@ export default function CreateCertificateDialog({
       themeJson: buildThemeJson(v),
       badgeId,
     };
-    await createMut.postRequest(null, payload);
+    await createCertificate(null, payload);
   }
 
   // At least one title (ar OR en) is required for the free-form (no-template)
@@ -361,7 +379,7 @@ export default function CreateCertificateDialog({
       onClose={onClose}
       title={txt.createTitle}
       maxWidth="lg"
-      loading={createMut.isPostRequestLoading}
+      loading={isCreating}
       submitText={txt.save}
       cancelText={txt.cancel}
       onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
@@ -506,22 +524,10 @@ export default function CreateCertificateDialog({
                     </Alert>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                      name="reasonAr"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth label={txt.reasonAr} />
-                      )}
-                    />
+                    <RHFTextField name="reasonAr" control={control} label={txt.reasonAr} />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Controller
-                      name="reasonEn"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth label={txt.reasonEn} />
-                      )}
-                    />
+                    <RHFTextField name="reasonEn" control={control} label={txt.reasonEn} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
@@ -579,24 +585,12 @@ export default function CreateCertificateDialog({
 
               {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  name="subtitleAr"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={txt.subtitleArLabel} />
-                  )}
-                />
+                <RHFTextField name="subtitleAr" control={control} label={txt.subtitleArLabel} />
               </Grid>
               )}
               {!usingTemplate && (
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  name="subtitleEn"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={txt.subtitleEnLabel} />
-                  )}
-                />
+                <RHFTextField name="subtitleEn" control={control} label={txt.subtitleEnLabel} />
               </Grid>
               )}
 
@@ -625,17 +619,11 @@ export default function CreateCertificateDialog({
 
               {!usingTemplate && (
               <Grid size={{ xs: 12 }}>
-                <Controller
+                <RHFTextField
                   name="signature"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={txt.signatureFieldLabel}
-                      placeholder={txt.defaultSignature}
-                    />
-                  )}
+                  label={txt.signatureFieldLabel}
+                  placeholder={txt.defaultSignature}
                 />
               </Grid>
               )}
@@ -759,18 +747,12 @@ export default function CreateCertificateDialog({
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
+                <RHFTextField
                   name="emoji"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={txt.emojiLabel}
-                      placeholder="🌟 🏆 🌙 🎈"
-                      slotProps={{ htmlInput: { maxLength: 4 } }}
-                    />
-                  )}
+                  label={txt.emojiLabel}
+                  placeholder="🌟 🏆 🌙 🎈"
+                  slotProps={{ htmlInput: { maxLength: 4 } }}
                 />
               </Grid>
             </Grid>
@@ -993,33 +975,21 @@ export default function CreateCertificateDialog({
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
+                <RHFTextField
                   name="sealText"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={txt.sealTextLabel}
-                      placeholder={txt.sealText}
-                      disabled={!values.showSeal}
-                      slotProps={{ htmlInput: { maxLength: 16 } }}
-                    />
-                  )}
+                  label={txt.sealTextLabel}
+                  placeholder={txt.sealText}
+                  disabled={!values.showSeal}
+                  slotProps={{ htmlInput: { maxLength: 16 } }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
+                <RHFTextField
                   name="signatureTitle"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={txt.signatureTitleLabel}
-                      placeholder={txt.signatureLabel}
-                    />
-                  )}
+                  label={txt.signatureTitleLabel}
+                  placeholder={txt.signatureLabel}
                 />
               </Grid>
             </Grid>
