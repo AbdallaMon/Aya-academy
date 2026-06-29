@@ -72,12 +72,6 @@ export default function BadgesAdminPage() {
     await mut.deleteRequest(String(row.id));
   }
 
-  async function submit(payload, isEditing) {
-    if (isEditing) await mut.patchRequest(String(selected.id), payload);
-    else await mut.postRequest(null, payload);
-    form.close();
-  }
-
   const columns = useMemo(
     () => [
       {
@@ -184,8 +178,7 @@ export default function BadgesAdminPage() {
         onClose={form.close}
         badge={selected}
         txt={txt}
-        loading={mut.isPostRequestLoading || mut.isPatchRequestLoading}
-        onSubmit={submit}
+        onSaved={triggerRefetch}
       />
     </Box>
   );

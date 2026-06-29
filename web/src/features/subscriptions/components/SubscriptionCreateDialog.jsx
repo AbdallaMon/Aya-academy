@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   MenuItem,
   Stack,
@@ -15,6 +16,7 @@ import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
 import { USERS_URL, PLANS_URL } from "../config/constant.js";
 
+const FORM_ID = "subscription-create-form";
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
 function addPeriod(dateStr, billingPeriod) {
@@ -46,20 +48,33 @@ function deriveFromPlan(plan, billingPeriod, hourlyRate) {
   };
 }
 
+function makeDefaults(today) {
+  return {
+    studentId: "",
+    planId: "",
+    billingPeriod: "MONTHLY",
+    startDate: today,
+    endDate: addPeriod(today, "MONTHLY"),
+    priceCharged: "",
+    totalHours: "",
+    remainingHours: "",
+  };
+}
+
 /** Admin-only: create an ACTIVE subscription for a student directly. */
 export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt, loading }) {
   const { lng } = useTranslation();
   const { hourlyRate } = useAppSettings({ enabled: open });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  const [studentId, setStudentId] = useState("");
-  const [planId, setPlanId] = useState("");
-  const [billingPeriod, setBillingPeriod] = useState("MONTHLY");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(addPeriod(today, "MONTHLY"));
-  const [priceCharged, setPriceCharged] = useState("");
-  const [totalHours, setTotalHours] = useState("");
-  const [remainingHours, setRemainingHours] = useState("");
+  const { control, handleSubmit, reset, getValues, setValue } = useForm({
+    defaultValues: makeDefaults(today),
+  });
+
+  // The coupon is a complex async sub-state object ({ status, code, quote, reason })
+  // owned by CouponControl, not a posted form field — only the derived `codeToSend`
+  // ever reaches the payload. Kept as local state (mirrors CouponFormDialog keeping
+  // non-field concerns out of RHF).
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
 
   const studentsReq = useRequest({
@@ -92,14 +107,7 @@ export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt,
       studentsReq.fetchData();
       plansReq.fetchData();
       publicPlansReq.fetchData();
-      setStudentId("");
-      setPlanId("");
-      setBillingPeriod("MONTHLY");
-      setStartDate(today);
-      setEndDate(addPeriod(today, "MONTHLY"));
-      setPriceCharged("");
-      setTotalHours("");
-      setRemainingHours("");
+      reset(makeDefaults(today));
       setCoupon(EMPTY_COUPON);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,6 +116,11 @@ export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt,
   const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
   const plans = plansReq.data || [];
   const publicPlans = publicPlansReq.data || [];
+
+  // useWatch on planId/billingPeriod drives the cascading "selected public plan"
+  // lookup that gates the CouponControl and the coupon→price resolution below.
+  const planId = useWatch({ control, name: "planId" });
+  const billingPeriod = useWatch({ control, name: "billingPeriod" });
   const selectedPublicPlan =
     publicPlans.find((p) => String(p.id) === String(planId)) || null;
 
@@ -115,68 +128,80 @@ export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt,
   // removable default discount is reflected); plans missing from the public list
   // (e.g. inactive) fall back to hours × global hourly rate.
   function applyPlanSuggestions({ id, period, start, couponState }) {
-    setEndDate(addPeriod(start, period));
+    setValue("endDate", addPeriod(start, period));
     const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
     if (publicPlan) {
       const { net } = resolveCoupon(publicPlan, period, couponState);
       const hrs =
         period === "YEARLY" ? Number(publicPlan.hours) * 12 : Number(publicPlan.hours);
-      setPriceCharged(String(net));
-      setTotalHours(String(hrs));
-      setRemainingHours(String(hrs));
+      setValue("priceCharged", String(net));
+      setValue("totalHours", String(hrs));
+      setValue("remainingHours", String(hrs));
       return;
     }
     const adminPlan = plans.find((p) => String(p.id) === String(id)) || null;
     const { price, hours } = deriveFromPlan(adminPlan, period, hourlyRate);
-    setPriceCharged(price);
-    setTotalHours(hours);
-    setRemainingHours(hours);
+    setValue("priceCharged", price);
+    setValue("totalHours", hours);
+    setValue("remainingHours", hours);
   }
 
   function onPlanChange(id) {
-    setPlanId(id);
+    setValue("planId", id);
     const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
     const c = initialCoupon(publicPlan, billingPeriod);
     setCoupon(c);
-    applyPlanSuggestions({ id, period: billingPeriod, start: startDate, couponState: c });
+    applyPlanSuggestions({
+      id,
+      period: billingPeriod,
+      start: getValues("startDate"),
+      couponState: c,
+    });
   }
 
   function onPeriodChange(period) {
-    setBillingPeriod(period);
+    setValue("billingPeriod", period);
     const publicPlan = publicPlans.find((p) => String(p.id) === String(planId)) || null;
     const c = initialCoupon(publicPlan, period);
     setCoupon(c);
-    applyPlanSuggestions({ id: planId, period, start: startDate, couponState: c });
+    applyPlanSuggestions({
+      id: planId,
+      period,
+      start: getValues("startDate"),
+      couponState: c,
+    });
   }
 
   function onStartChange(v) {
-    setStartDate(v);
-    setEndDate(addPeriod(v, billingPeriod));
+    setValue("startDate", v);
+    setValue("endDate", addPeriod(v, getValues("billingPeriod")));
   }
 
   function onCouponChange(c) {
     setCoupon(c);
     if (selectedPublicPlan) {
       const { net } = resolveCoupon(selectedPublicPlan, billingPeriod, c);
-      setPriceCharged(String(net));
+      setValue("priceCharged", String(net));
     }
   }
 
   const { codeToSend } = resolveCoupon(selectedPublicPlan, billingPeriod, coupon);
 
-  function submit() {
-    if (!studentId || !startDate || !endDate) return;
+  function submit(values) {
+    if (!values.studentId || !values.startDate || !values.endDate) return;
     onCreate({
-      studentId: Number(studentId),
-      planId: planId ? Number(planId) : undefined,
-      billingPeriod,
-      startDate,
-      endDate,
+      studentId: Number(values.studentId),
+      planId: values.planId ? Number(values.planId) : undefined,
+      billingPeriod: values.billingPeriod,
+      startDate: values.startDate,
+      endDate: values.endDate,
       status: "ACTIVE",
       ...(codeToSend ? { couponCode: codeToSend } : {}),
-      ...(priceCharged !== "" ? { priceCharged: Number(priceCharged) } : {}),
-      ...(totalHours !== "" ? { totalHours: Number(totalHours) } : {}),
-      ...(remainingHours !== "" ? { remainingHours: Number(remainingHours) } : {}),
+      ...(values.priceCharged !== "" ? { priceCharged: Number(values.priceCharged) } : {}),
+      ...(values.totalHours !== "" ? { totalHours: Number(values.totalHours) } : {}),
+      ...(values.remainingHours !== ""
+        ? { remainingHours: Number(values.remainingHours) }
+        : {}),
     });
   }
 
@@ -189,105 +214,145 @@ export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt,
       loading={loading}
       submitText={txt.save}
       cancelText={txt.cancel}
-      onSubmit={submit}
+      onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
     >
-      <Stack spacing={2.5} sx={{ pt: 1 }}>
-        <TextField
-          select
-          label={txt.selectStudent}
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          fullWidth
-          required
-        >
-          {students.map((s) => (
-            <MenuItem key={s.id} value={s.id}>
-              {s.name} {s.nickname ? `(${s.nickname})` : ""}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          select
-          label={txt.selectPlan}
-          value={planId}
-          onChange={(e) => onPlanChange(e.target.value)}
-          fullWidth
-        >
-          {plans.map((p) => (
-            <MenuItem key={p.id} value={p.id}>
-              {lng === "en" ? p.titleEn : p.titleAr}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <ToggleButtonGroup
-          value={billingPeriod}
-          exclusive
-          color="primary"
-          size="small"
-          fullWidth
-          onChange={(_e, v) => v && onPeriodChange(v)}
-          aria-label={txt.billingPeriod}
-        >
-          <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
-          <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
-        </ToggleButtonGroup>
-
-        <Stack direction="row" spacing={2}>
-          <TextField
-            type="date"
-            label={txt.startDate}
-            value={startDate}
-            onChange={(e) => onStartChange(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
+      <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <Controller
+            name="studentId"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label={txt.selectStudent}
+                fullWidth
+                required
+              >
+                {students.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.name} {s.nickname ? `(${s.nickname})` : ""}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           />
-          <TextField
-            type="date"
-            label={txt.endDate}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
+
+          <Controller
+            name="planId"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label={txt.selectPlan}
+                onChange={(e) => onPlanChange(e.target.value)}
+                fullWidth
+              >
+                {plans.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {lng === "en" ? p.titleEn : p.titleAr}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           />
+
+          <Controller
+            name="billingPeriod"
+            control={control}
+            render={({ field }) => (
+              <ToggleButtonGroup
+                value={field.value}
+                exclusive
+                color="primary"
+                size="small"
+                fullWidth
+                onChange={(_e, v) => v && onPeriodChange(v)}
+                aria-label={txt.billingPeriod}
+              >
+                <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
+                <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
+              </ToggleButtonGroup>
+            )}
+          />
+
+          <Stack direction="row" spacing={2}>
+            <Controller
+              name="startDate"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="date"
+                  label={txt.startDate}
+                  onChange={(e) => onStartChange(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name="endDate"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="date"
+                  label={txt.endDate}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+              )}
+            />
+          </Stack>
+
+          {selectedPublicPlan && (
+            <CouponControl
+              plan={selectedPublicPlan}
+              billingPeriod={billingPeriod}
+              coupon={coupon}
+              onCoupon={onCouponChange}
+            />
+          )}
+
+          <Controller
+            name="priceCharged"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                label={txt.priceCharged}
+                fullWidth
+                helperText={codeToSend ? txt.priceCouponNote : undefined}
+              />
+            )}
+          />
+
+          <Stack direction="row" spacing={2}>
+            <Controller
+              name="totalHours"
+              control={control}
+              render={({ field }) => (
+                <TextField {...field} type="number" label={txt.totalHours} fullWidth />
+              )}
+            />
+            <Controller
+              name="remainingHours"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label={txt.remainingHours}
+                  fullWidth
+                />
+              )}
+            />
+          </Stack>
         </Stack>
-
-        {selectedPublicPlan && (
-          <CouponControl
-            plan={selectedPublicPlan}
-            billingPeriod={billingPeriod}
-            coupon={coupon}
-            onCoupon={onCouponChange}
-          />
-        )}
-
-        <TextField
-          type="number"
-          label={txt.priceCharged}
-          value={priceCharged}
-          onChange={(e) => setPriceCharged(e.target.value)}
-          fullWidth
-          helperText={codeToSend ? txt.priceCouponNote : undefined}
-        />
-
-        <Stack direction="row" spacing={2}>
-          <TextField
-            type="number"
-            label={txt.totalHours}
-            value={totalHours}
-            onChange={(e) => setTotalHours(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            type="number"
-            label={txt.remainingHours}
-            value={remainingHours}
-            onChange={(e) => setRemainingHours(e.target.value)}
-            fullWidth
-          />
-        </Stack>
-      </Stack>
+      </form>
     </FormDialog>
   );
 }

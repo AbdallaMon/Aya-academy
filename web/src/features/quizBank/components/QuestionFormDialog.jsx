@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { Grid } from "@mui/material";
+import { useForm } from "react-hook-form";
 import {
-  Grid,
-  MenuItem,
-  TextField,
-} from "@mui/material";
-import { useForm, Controller } from "react-hook-form";
-import { FormDialog } from "../../../shared/components/index.js";
-import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
+  FormDialog,
+  RHFTextField,
+  RHFSelect,
+  RHFSwitch,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
+import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import { BANK_URL } from "../config/constant.js";
 import OptionsEditor from "./OptionsEditor.jsx";
 
@@ -27,6 +30,24 @@ function emptyDefaults() {
   };
 }
 
+function makeDefaults(question) {
+  if (question?.id) {
+    return {
+      textAr: question.textAr ?? "",
+      textEn: question.textEn ?? "",
+      categoryId: question.categoryId ? String(question.categoryId) : "",
+      isActive: question.isActive ?? true,
+      options:
+        (question.options || []).map((o) => ({
+          labelAr: o.labelAr ?? "",
+          labelEn: o.labelEn ?? "",
+          isCorrect: !!o.isCorrect,
+        })) || [],
+    };
+  }
+  return emptyDefaults();
+}
+
 /**
  * Create / edit a bank question.
  *   POST quizzes/bank        (create)
@@ -40,6 +61,7 @@ export default function QuestionFormDialog({
   txt,
   onSuccess,
 }) {
+  const { showToast } = useToast();
   const isEditing = Boolean(question?.id);
 
   const {
@@ -49,35 +71,41 @@ export default function QuestionFormDialog({
     setError,
     clearErrors,
     formState: { errors },
-  } = useForm({ defaultValues: emptyDefaults() });
+  } = useForm({ defaultValues: makeDefaults(question) });
 
   useEffect(() => {
     if (!open) return;
-    if (question?.id) {
-      reset({
-        textAr: question.textAr ?? "",
-        textEn: question.textEn ?? "",
-        categoryId: question.categoryId ? String(question.categoryId) : "",
-        isActive: question.isActive ?? true,
-        options:
-          (question.options || []).map((o) => ({
-            labelAr: o.labelAr ?? "",
-            labelEn: o.labelEn ?? "",
-            isCorrect: !!o.isCorrect,
-          })) || [],
-      });
-    } else {
-      reset(emptyDefaults());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, question]);
+    reset(makeDefaults(question));
+  }, [open, question, reset]);
 
-  const mut = useMultiRequest({
+  // Category options as a value→label map: a "No category" empty sentinel first,
+  // then each category labelled the way the old select rendered it.
+  const categoryOptions = useMemo(() => {
+    const map = { "": txt.noCategory };
+    (categories || []).forEach((c) => {
+      map[String(c.id)] = c.nameAr || c.nameEn || `#${c.id}`;
+    });
+    return map;
+  }, [categories, txt.noCategory]);
+
+  const { fetchData, isLoading } = useRequest({
     url: BANK_URL,
+    method: isEditing ? "put" : "post",
+    shouldAutoToast: true,
     onSuccess: () => {
       onSuccess?.();
       onClose();
     },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          textAr: txt.textArLabel,
+          textEn: txt.textEnLabel,
+          categoryId: txt.categoryLabel,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
   });
 
   function submit(values) {
@@ -105,8 +133,7 @@ export default function QuestionFormDialog({
       })),
     };
 
-    if (isEditing) mut.putRequest(String(question.id), payload);
-    else mut.postRequest(null, payload);
+    fetchData(isEditing ? String(question.id) : null, payload);
   }
 
   return (
@@ -115,7 +142,7 @@ export default function QuestionFormDialog({
       onClose={onClose}
       title={isEditing ? txt.editTitle : txt.createTitle}
       maxWidth="md"
-      loading={mut.isPostRequestLoading || mut.isPutRequestLoading}
+      loading={isLoading}
       submitText={txt.save}
       cancelText={txt.cancel}
       onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
@@ -123,79 +150,34 @@ export default function QuestionFormDialog({
       <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12 }}>
-            <Controller
+            <RHFTextField
               name="textAr"
               control={control}
+              label={txt.textArLabel}
               rules={{ required: txt.required }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  value={field.value ?? ""}
-                  fullWidth
-                  label={txt.textArLabel}
-                  required
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <Controller
+            <RHFTextField
               name="textEn"
               control={control}
+              label={txt.textEnLabel}
               rules={{ required: txt.required }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  value={field.value ?? ""}
-                  fullWidth
-                  label={txt.textEnLabel}
-                  required
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Controller
+            <RHFSelect
               name="categoryId"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  value={field.value ?? ""}
-                  select
-                  fullWidth
-                  label={txt.categoryLabel}
-                >
-                  <MenuItem value="">{txt.noCategory}</MenuItem>
-                  {(categories || []).map((c) => (
-                    <MenuItem key={c.id} value={String(c.id)}>
-                      {c.nameAr || c.nameEn || `#${c.id}`}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
+              label={txt.categoryLabel}
+              options={categoryOptions}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Controller
+            <RHFSwitch
               name="isActive"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  fullWidth
-                  label={txt.isActiveLabel}
-                  value={field.value ? "true" : "false"}
-                  onChange={(e) => field.onChange(e.target.value === "true")}
-                >
-                  <MenuItem value="true">{txt.active}</MenuItem>
-                  <MenuItem value="false">{txt.inactive}</MenuItem>
-                </TextField>
-              )}
+              label={txt.isActiveLabel}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
