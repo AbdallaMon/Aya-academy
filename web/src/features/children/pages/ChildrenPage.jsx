@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { MdAdd, MdChildCare, MdWorkspacePremium } from "react-icons/md";
+import { MdAdd, MdChildCare, MdInfoOutline, MdWorkspacePremium } from "react-icons/md";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
@@ -103,13 +103,18 @@ export default function ChildrenPage() {
 
   async function requestPlan(plan, options = {}) {
     if (!pickerChild) return;
-    await requestMut.postRequest(null, {
-      studentId: pickerChild.id,
-      planId: plan.id,
-      billingPeriod: options.billingPeriod || "MONTHLY",
-      ...(options.couponCode ? { couponCode: options.couponCode } : {}),
-    });
-    pickerDialog.close();
+    try {
+      await requestMut.postRequest(null, {
+        studentId: pickerChild.id,
+        planId: plan.id,
+        billingPeriod: options.billingPeriod || "MONTHLY",
+        ...(options.couponCode ? { couponCode: options.couponCode } : {}),
+      });
+      pickerDialog.close();
+    } catch {
+      // Error is auto-toasted (e.g. an active subscription blocks the change);
+      // keep the dialog open so the user can adjust or cancel.
+    }
   }
 
   const addFields = useMemo(
@@ -180,8 +185,13 @@ export default function ChildrenPage() {
                         {child.name}
                       </Typography>
                       {child.nickname && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" display="block">
                           {txt.nickname}: {child.nickname}
+                        </Typography>
+                      )}
+                      {child.email && (
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: "break-all" }}>
+                          {txt.emailLabel}: {child.email}
                         </Typography>
                       )}
                     </Box>
@@ -220,6 +230,18 @@ export default function ChildrenPage() {
                     onClick={() => openPicker(child)}
                   >
                     {sub ? txt.changePlan : txt.choosePlan}
+                  </Button>
+
+                  <Button
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    startIcon={<MdInfoOutline />}
+                    component={Link}
+                    href={localePath(lng, `/dashboard/users/${child.id}`)}
+                    sx={{ mt: 1 }}
+                  >
+                    {txt.viewDetails}
                   </Button>
 
                   <Button

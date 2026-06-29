@@ -50,8 +50,11 @@ export function errorHandler(err, req, res, next) {
 
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
+      // `message` must be the language-neutral CODE (the client localises it via
+      // translationKey). AppError.message defaults to INTERNAL_SERVER_ERROR when
+      // a throw passes only `code`, so always surface `code` here, not `message`.
       success: false,
-      message: err.message,
+      message: err.code,
       code: err.code,
       translationKey: err.translationKey,
       details: err.details,
