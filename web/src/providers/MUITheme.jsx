@@ -3,28 +3,7 @@
 import { getCurrentColorScheme } from '@/shared/utlis/constants';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { createTheme, alpha, darken, lighten } from '@mui/material/styles';
-import { PageTheme } from '@/shared/types/general';
-
-// Extend MUI theme types
-declare module '@mui/material/styles' {
-  interface TypeBackground {
-    white: string;
-  }
-}
-
-declare module '@mui/material/Button' {
-  interface ButtonPropsVariantOverrides {
-    outlinedYellow: true;
-  }
-}
-
-export function buildTheme({
-  direction = 'ltr',
-  mode = 'light',
-}: {
-  direction?: 'ltr' | 'rtl';
-  mode?: 'light' | 'dark';
-}): ReturnType<typeof createTheme> {
+export function buildTheme({ direction = 'ltr', mode = 'light' }) {
   const base = getCurrentColorScheme(mode);
   const primaryMain = base.primary;
   const primaryLight = lighten(primaryMain, 0.15);
@@ -402,15 +381,7 @@ export function buildTheme({
   });
 }
 
-export function MUIThemeProvider({
-  children,
-  locale = 'en',
-  pageTheme,
-}: {
-  children: React.ReactNode;
-  locale?: 'en' | 'ar';
-  pageTheme?: PageTheme;
-}) {
+export function MUIThemeProvider({ children, locale = 'en', pageTheme }) {
   const direction = locale === 'ar' ? 'rtl' : 'ltr';
   const theme = buildTheme({ direction, mode: pageTheme });
 
