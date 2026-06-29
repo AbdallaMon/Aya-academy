@@ -864,6 +864,80 @@ class SubscriptionUsecase {
   }
 
   /**
+   * Apply, replace, or remove the SINGLE coupon on a not-yet-paid subscription
+   * without changing its plan/period. An empty/absent couponCode REMOVES the
+   * coupon (charges the base price). Recomputes the charged price for the SAME
+   * plan + billing period with the new code, swaps the coupon redemption
+   * accounting atomically (old->new / old->none / none->new), then regenerates
+   * the demand invoice so its amounts match.
+   */
+  async applyCoupon(authUser, id, input = {}) {
+    // 1. Load + object-scope check (ADMIN any, PARENT own child, STUDENT self).
+    const existing = await subscriptionRepo.getById(id);
+    if (!existing) {
+      throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
+    }
+    await this.assertCanAccess(authUser, existing.studentId);
+
+    // 2. Block once the demand invoice is settled (paid/voided): the charged
+    //    amounts are fixed and must not silently shift.
+    const invoice = await invoiceRepo.getBySubscriptionId(id);
+    if (invoice && invoice.status !== INVOICE_STATUSES.UNPAID) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
+    // 3. Recompute the price for the SAME plan + period with the new code. A
+    //    falsy code (empty/null/absent) yields couponId null = coupon removed.
+    if (!existing.planId) {
+      throw badRequest(
+        subscriptionMessagesCodes.PLAN_REQUIRED,
+        messagesNames.subscriptionMessages,
+      );
+    }
+    const plan = await planRepo.getByIdWithCoupons(existing.planId);
+    if (!plan) throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+
+    const billingPeriod = existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+    const settings = await settingsUsecase.getEffective();
+    const { priceCharged, couponId } = await this.computePricing(
+      plan,
+      billingPeriod,
+      input.couponCode,
+      Number(settings.hourlyRate),
+    );
+
+    // 4. Persist price + coupon link and correct redemption accounting atomically.
+    const updated = await prisma.$transaction(async (tx) => {
+      await this.swapCouponRedemption(existing.couponId, couponId, tx);
+      return subscriptionRepo.updateSubscription(
+        id,
+        {
+          priceCharged,
+          coupon: couponId
+            ? { connect: { id: couponId } }
+            : { disconnect: true },
+        },
+        tx,
+      );
+    });
+
+    // 5. Regenerate the demand invoice so its amounts match. Dynamic import
+    //    avoids the subscription<->invoice circular dependency. Best-effort.
+    try {
+      const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
+      await invoiceUsecase.generate(authUser, id);
+    } catch {
+      // swallow — invoice regeneration is best-effort
+    }
+
+    return updated;
+  }
+
+  /**
    * Admin activates a not-yet-started subscription. Only PENDING/UPCOMING may be
    * activated; the resulting status is resolved from the date window (ACTIVE if
    * the window is current, UPCOMING if it starts later). Optionally marks the

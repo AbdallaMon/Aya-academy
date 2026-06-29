@@ -119,6 +119,20 @@ class SubscriptionController {
     );
   };
 
+  applyCoupon = async (req, res) => {
+    const subscription = await subscriptionUsecase.applyCoupon(
+      authUser(req),
+      idParam(req.params.id),
+      req.body,
+    );
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.PLAN_CHANGED,
+      messagesNames.subscriptionMessages,
+    );
+  };
+
   activate = async (req, res) => {
     const subscription = await subscriptionUsecase.activate(
       authUser(req),

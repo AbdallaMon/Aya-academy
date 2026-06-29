@@ -94,4 +94,10 @@ export class SubscriptionValidation {
   static activateSubscriptionSchema = z.object({
     markInvoicePaid: z.boolean().optional(),
   });
+
+  // Apply / replace / remove the single coupon on a not-yet-paid subscription.
+  // couponCode is OPTIONAL — empty/absent/null removes the coupon (base price).
+  static applyCouponSchema = z.object({
+    couponCode: z.string().trim().optional().nullable(),
+  });
 }

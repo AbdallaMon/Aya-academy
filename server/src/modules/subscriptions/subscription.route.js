@@ -85,6 +85,18 @@ subscriptionRoutes.post(
   asyncHandler(subscriptionController.changePlan),
 );
 
+// Apply / replace / remove the single coupon on a not-yet-paid subscription.
+// Admin (EDIT) or parent (REQUEST); object scope is enforced in the usecase.
+subscriptionRoutes.post(
+  "/:id/apply-coupon",
+  authMiddleware.requireAnyPermission([
+    SUBSCRIPTION_PERMISSIONS.EDIT,
+    SUBSCRIPTION_PERMISSIONS.REQUEST,
+  ]),
+  validate(SubscriptionValidation.applyCouponSchema),
+  asyncHandler(subscriptionController.applyCoupon),
+);
+
 // Admin activates a PENDING/UPCOMING subscription (optionally marking it paid).
 subscriptionRoutes.post(
   "/:id/activate",
