@@ -118,8 +118,8 @@ class SubscriptionRepo {
     return count > 0;
   }
 
-  async updateSubscription(id, data) {
-    const row = await prisma.subscription.update({
+  async updateSubscription(id, data, client) {
+    const row = await (client ?? prisma).subscription.update({
       where: { id },
       data,
       select: subscriptionSelect,

@@ -75,6 +75,24 @@ class SubscriptionUsecase {
     }
   }
 
+  /**
+   * Adjust coupon redemption counters when a subscription's coupon changes from
+   * `oldCouponId` to `newCouponId`. Atomic when given the enclosing `tx`:
+   *   - same id (incl. both null)        → no-op
+   *   - had a coupon (oldCouponId)       → release one redemption (floored at 0)
+   *   - now has a coupon (newCouponId)   → consume one redemption
+   * Covers all transitions: old→new, old→none, none→new.
+   */
+  async swapCouponRedemption(oldCouponId, newCouponId, tx) {
+    if (oldCouponId === newCouponId) return;
+    if (oldCouponId) {
+      await couponRepo.decrementCouponRedemption(oldCouponId, tx);
+    }
+    if (newCouponId) {
+      await couponRepo.incrementCouponRedemption(newCouponId, tx);
+    }
+  }
+
   /** Resolve a subscription status from the date window when not provided. */
   resolveStatus(startDate, endDate, now = new Date()) {
     if (now < startDate) return SUBSCRIPTION_STATUSES.UPCOMING;
