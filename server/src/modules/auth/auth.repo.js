@@ -2,20 +2,23 @@ import { prisma } from "@aya/db/prisma.client.js";
 import { publicUserSelect } from "./auth.dto.js";
 
 class AuthRepo {
-  findByEmail(email) {
-    return prisma.user.findUnique({ where: { email } });
+  findByEmail({ email, client } = {}) {
+    return (client ?? prisma).user.findUnique({ where: { email } });
   }
 
-  findPublicById(id) {
-    return prisma.user.findUnique({ where: { id }, select: publicUserSelect });
+  findPublicById({ id, client } = {}) {
+    return (client ?? prisma).user.findUnique({
+      where: { id },
+      select: publicUserSelect,
+    });
   }
 
-  createUser(data) {
-    return prisma.user.create({ data, select: publicUserSelect });
+  createUser({ data, client } = {}) {
+    return (client ?? prisma).user.create({ data, select: publicUserSelect });
   }
 
-  updateLastLogin(id) {
-    return prisma.user.update({
+  updateLastLogin({ id, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: { lastLoginAt: new Date() },
     });
@@ -23,3 +26,4 @@ class AuthRepo {
 }
 
 export const authRepo = new AuthRepo();
+export { AuthRepo };

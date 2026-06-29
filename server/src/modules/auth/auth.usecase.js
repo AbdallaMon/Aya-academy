@@ -25,7 +25,7 @@ import { authRepo } from "./auth.repo.js";
 class AuthUsecase {
   /** Public self-registration — always creates a PARENT account. */
   async register({ name, email, password, phone, locale }) {
-    const existing = await authRepo.findByEmail(email);
+    const existing = await authRepo.findByEmail({ email });
     if (existing) {
       throw new AppError({
         statusCode: 409,
@@ -36,12 +36,14 @@ class AuthUsecase {
     }
     const passwordHash = await hashPassword(password);
     return authRepo.createUser({
-      name,
-      email,
-      passwordHash,
-      phone,
-      locale: locale ?? "ar",
-      role: USER_ROLES.PARENT,
+      data: {
+        name,
+        email,
+        passwordHash,
+        phone,
+        locale: locale ?? "ar",
+        role: USER_ROLES.PARENT,
+      },
     });
   }
 
@@ -65,7 +67,7 @@ class AuthUsecase {
     }
 
     // 2. Reject already-registered emails (parent first, then each child).
-    if (await authRepo.findByEmail(parent.email)) {
+    if (await authRepo.findByEmail({ email: parent.email })) {
       throw new AppError({
         statusCode: 409,
         code: authMessagesCodes.EMAIL_ALREADY_EXISTS,
@@ -219,7 +221,7 @@ class AuthUsecase {
   }
 
   async login({ email, password }) {
-    const user = await authRepo.findByEmail(email);
+    const user = await authRepo.findByEmail({ email });
     if (!user) {
       throw new AppError({
         statusCode: 401,
@@ -247,13 +249,14 @@ class AuthUsecase {
         redirectText: authMessagesCodes.BACK_TO_LOGIN,
       });
     }
-    await authRepo.updateLastLogin(user.id);
+    await authRepo.updateLastLogin({ id: user.id });
     return user;
   }
 
   getById(id) {
-    return authRepo.findPublicById(id);
+    return authRepo.findPublicById({ id });
   }
 }
 
 export const authUsecase = new AuthUsecase();
+export { AuthUsecase };

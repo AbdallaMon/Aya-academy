@@ -7,7 +7,6 @@ import {
 } from "@aya/shared";
 import { AppError, badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { messagingService } from "../../infra/messaging/messagingService.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { priceForPeriod, roundMoney } from "../../shared/utility/pricing.js";
 import { userRepo } from "../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
@@ -148,26 +147,31 @@ class InvoiceUsecase {
     const issueDate = new Date();
 
     if (existing) {
-      const updated = await invoiceRepo.update(existing.id, {
-        ...amounts,
-        configJson,
-        issueDate,
-        dueDate: this.computeDueDate(issueDate, template),
-        // Clear any manual label so the period derives from the subscription.
-        billingPeriodLabel: null,
+      const updated = await invoiceRepo.update({
+        id: existing.id,
+        data: {
+          ...amounts,
+          configJson,
+          issueDate,
+          dueDate: this.computeDueDate(issueDate, template),
+          // Clear any manual label so the period derives from the subscription.
+          billingPeriodLabel: null,
+        },
       });
       return { invoice: updated, regenerated: true };
     }
 
     const created = await invoiceRepo.create({
-      subscriptionId,
-      invoiceNumber: this.invoiceNumberFor(subscriptionId),
-      status: INVOICE_STATUSES.UNPAID,
-      ...amounts,
-      configJson,
-      issueDate,
-      dueDate: this.computeDueDate(issueDate, template),
-      createdById: authUser.id,
+      data: {
+        subscriptionId,
+        invoiceNumber: this.invoiceNumberFor(subscriptionId),
+        status: INVOICE_STATUSES.UNPAID,
+        ...amounts,
+        configJson,
+        issueDate,
+        dueDate: this.computeDueDate(issueDate, template),
+        createdById: authUser.id,
+      },
     });
     return { invoice: created, regenerated: false };
   }
@@ -205,8 +209,8 @@ class InvoiceUsecase {
     const configJson = { ...template.configJson, discount };
     const issueDate = new Date();
 
-    return invoiceRepo.create(
-      {
+    return invoiceRepo.create({
+      data: {
         subscriptionId: subscription.id,
         invoiceNumber: this.invoiceNumberFor(subscription.id),
         status: INVOICE_STATUSES.UNPAID,
@@ -216,12 +220,12 @@ class InvoiceUsecase {
         dueDate: this.computeDueDate(issueDate, template),
         createdById,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 
-  async getById(authUser, id) {
-    const invoice = await invoiceRepo.getById(id);
+  async getById({ id, authUser }) {
+    const invoice = await invoiceRepo.getById({ id });
     if (!invoice) throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
     await subscriptionUsecase.assertCanAccess(
       authUser,
@@ -231,7 +235,7 @@ class InvoiceUsecase {
   }
 
   /** Invoice for a subscription (scoped). Returns null when none exists yet. */
-  async getBySubscription(authUser, subscriptionId) {
+  async getBySubscription({ subscriptionId, authUser }) {
     const subscription = await subscriptionRepo.getById(subscriptionId);
     if (!subscription) {
       throw notFound(invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND);
@@ -240,11 +244,14 @@ class InvoiceUsecase {
     return invoiceRepo.getBySubscriptionId(subscriptionId);
   }
 
-  async list(authUser, { page, limit, status }) {
-    const { skip, take, page: p, limit: l } = paginate({ page, limit });
-
+  /**
+   * Paginated invoice list. The auth-scoped `where` (parent → their students,
+   * student → self, admin → all) is built here; generic pagination lives in the
+   * repo.
+   */
+  async list({ page, limit, filters = {}, authUser }) {
     const where = {};
-    if (status) where.status = status;
+    if (filters.status) where.status = filters.status;
 
     if (authUser.role === USER_ROLES.PARENT) {
       const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
@@ -253,8 +260,7 @@ class InvoiceUsecase {
       where.subscription = { studentId: authUser.id };
     }
 
-    const { items, total } = await invoiceRepo.listInvoices(where, skip, take);
-    return paginatedResult(items, total, p, l);
+    return invoiceRepo.list({ page, limit, where });
   }
 
   /**
@@ -269,7 +275,7 @@ class InvoiceUsecase {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(invoiceMessagesCodes.CANNOT_ACCESS_INVOICE);
     }
-    const existing = await invoiceRepo.getById(id);
+    const existing = await invoiceRepo.getById({ id });
     if (!existing) throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
 
     const data = {};
@@ -330,7 +336,7 @@ class InvoiceUsecase {
       input.status === INVOICE_STATUSES.PAID &&
       existing.status !== INVOICE_STATUSES.PAID;
 
-    const updated = await invoiceRepo.update(id, data);
+    const updated = await invoiceRepo.update({ id, data });
 
     // Demand-invoice flow: paying the invoice can activate the subscription.
     if (becomingPaid && input.activateSubscription) {
@@ -346,7 +352,7 @@ class InvoiceUsecase {
    * Messaging is best-effort: failures in the messaging layer never fail this
    * request (handled inside messagingService).
    */
-  async send(authUser, id) {
+  async send({ id, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw new AppError({
         statusCode: 403,
@@ -354,7 +360,7 @@ class InvoiceUsecase {
         translationKey: messagesNames.invoiceMessages,
       });
     }
-    const invoice = await invoiceRepo.getById(id);
+    const invoice = await invoiceRepo.getById({ id });
     if (!invoice) {
       throw new AppError({
         statusCode: 404,
@@ -401,7 +407,10 @@ class InvoiceUsecase {
       });
     }
 
-    const updated = await invoiceRepo.update(invoice.id, { sentAt: new Date() });
+    const updated = await invoiceRepo.update({
+      id: invoice.id,
+      data: { sentAt: new Date() },
+    });
     return updated;
   }
 
@@ -443,3 +452,4 @@ class InvoiceUsecase {
 }
 
 export const invoiceUsecase = new InvoiceUsecase();
+export { InvoiceUsecase };

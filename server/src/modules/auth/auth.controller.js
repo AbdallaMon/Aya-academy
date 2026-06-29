@@ -29,17 +29,17 @@ function setAuthCookies(res, payload) {
   );
 }
 
-class AuthController {
-  // Students are gated by subscription; everyone else is always "active".
-  async withSubscriptionFlag(user) {
-    const hasActive =
-      user.role === USER_ROLES.STUDENT
-        ? await hasActiveSubscription(user.id)
-        : true;
-    return { ...user, hasActiveSubscription: hasActive };
-  }
+// Students are gated by subscription; everyone else is always "active".
+async function withSubscriptionFlag(user) {
+  const hasActive =
+    user.role === USER_ROLES.STUDENT
+      ? await hasActiveSubscription(user.id)
+      : true;
+  return { ...user, hasActiveSubscription: hasActive };
+}
 
-  register = async (req, res) => {
+class AuthController {
+  async register(req, res) {
     const user = await authUsecase.register(req.body);
     return created(
       res,
@@ -47,9 +47,9 @@ class AuthController {
       authMessagesCodes.REGISTERED_SUCCESS,
       messagesNames.authMessages,
     );
-  };
+  }
 
-  enroll = async (req, res) => {
+  async enroll(req, res) {
     const result = await authUsecase.enrollFamily(req.body);
     return created(
       res,
@@ -57,9 +57,9 @@ class AuthController {
       authMessagesCodes.ENROLLED_SUCCESS,
       messagesNames.authMessages,
     );
-  };
+  }
 
-  login = async (req, res) => {
+  async login(req, res) {
     const user = await authUsecase.login(req.body);
     setAuthCookies(res, {
       id: user.id,
@@ -67,14 +67,14 @@ class AuthController {
       sessionVersion: user.sessionVersion,
     });
     const { passwordHash: _drop, ...safe } = user;
-    const payload = await this.withSubscriptionFlag({
+    const payload = await withSubscriptionFlag({
       ...safe,
       permissions: getPermissionsForRole(user.role),
     });
     return ok(res, { user: payload }, authMessagesCodes.LOGIN_SUCCESS, messagesNames.authMessages);
-  };
+  }
 
-  logout = async (_req, res) => {
+  async logout(_req, res) {
     res.clearCookie(AUTH_COOKIE, JwtService.clearCookieOptions());
     res.clearCookie(REFRESH_COOKIE, JwtService.clearCookieOptions());
     return ok(
@@ -83,14 +83,14 @@ class AuthController {
       authMessagesCodes.LOGOUT_SUCCESS,
       messagesNames.authMessages,
     );
-  };
+  }
 
-  me = async (req, res) => {
-    const user = await this.withSubscriptionFlag(req.auth);
+  async me(req, res) {
+    const user = await withSubscriptionFlag(req.auth);
     return ok(res, { user });
-  };
+  }
 
-  refresh = async (req, res) => {
+  async refresh(req, res) {
     const token = req.cookies?.[REFRESH_COOKIE];
     if (!token) throw unauthorized();
     let payload;
@@ -110,7 +110,8 @@ class AuthController {
       authMessagesCodes.TOKEN_REFRESHED,
       messagesNames.authMessages,
     );
-  };
+  }
 }
 
 export const authController = new AuthController();
+export { AuthController };

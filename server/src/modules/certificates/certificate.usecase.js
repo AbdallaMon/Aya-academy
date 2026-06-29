@@ -6,7 +6,6 @@ import {
   messagesNames,
 } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { userRepo } from "../users/user.repo.js";
 import { badgeUsecase } from "../badges/badge.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
@@ -26,6 +25,7 @@ class CertificateUsecase {
     throw forbidden(certificateMessagesCodes.CANNOT_ACCESS_CERTIFICATE);
   }
 
+  /** Auth-scoped `where` for the certificate list (kept in the usecase). */
   async buildListWhere(authUser, { studentId, type }) {
     const where = {};
     if (type) where.type = type;
@@ -42,18 +42,13 @@ class CertificateUsecase {
     return where;
   }
 
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = await this.buildListWhere(authUser, params);
-    const { items, total } = await certificateRepo.list(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+  async list({ page, limit, filters = {}, authUser }) {
+    const where = await this.buildListWhere(authUser, filters);
+    return certificateRepo.list({ page, limit, where });
   }
 
-  async getById(authUser, id) {
-    const cert = await certificateRepo.getById(id);
+  async getById({ id, authUser }) {
+    const cert = await certificateRepo.getById({ id });
     if (!cert) throw notFound(certificateMessagesCodes.CERTIFICATE_NOT_FOUND);
     await this.assertCanAccess(authUser, cert.studentId);
     return cert;
@@ -63,7 +58,7 @@ class CertificateUsecase {
    * Admin manually issues a CUSTOM certificate for a STUDENT (not tied to any
    * game/quiz attempt). Route already gated by CERTIFICATE.CREATE (admin-only).
    */
-  async createManual(authUser, input) {
+  async createManual({ authUser, ...input }) {
     const student = await userRepo.getPublicById(input.studentId);
     if (!student || student.role !== USER_ROLES.STUDENT) {
       throw badRequest(
@@ -88,23 +83,25 @@ class CertificateUsecase {
     }
 
     const cert = await certificateRepo.create({
-      type: CERTIFICATE_TYPES.MANUAL,
-      studentId: student.id,
-      studentName: input.studentName ?? student.name,
-      gameAttemptId: null,
-      quizAttemptId: null,
-      titleAr: input.titleAr,
-      titleEn: input.titleEn,
-      bodyAr: input.bodyAr,
-      bodyEn: input.bodyEn,
-      templateKey: input.templateKey,
-      templateId: input.templateId ?? undefined,
-      reasonAr: input.reasonAr ?? undefined,
-      reasonEn: input.reasonEn ?? undefined,
-      photoId: input.photoId ?? undefined,
-      themeJson: input.themeJson ?? undefined,
-      badgeId: badgeId ?? undefined,
-      createdById: authUser.id,
+      data: {
+        type: CERTIFICATE_TYPES.MANUAL,
+        studentId: student.id,
+        studentName: input.studentName ?? student.name,
+        gameAttemptId: null,
+        quizAttemptId: null,
+        titleAr: input.titleAr,
+        titleEn: input.titleEn,
+        bodyAr: input.bodyAr,
+        bodyEn: input.bodyEn,
+        templateKey: input.templateKey,
+        templateId: input.templateId ?? undefined,
+        reasonAr: input.reasonAr ?? undefined,
+        reasonEn: input.reasonEn ?? undefined,
+        photoId: input.photoId ?? undefined,
+        themeJson: input.themeJson ?? undefined,
+        badgeId: badgeId ?? undefined,
+        createdById: authUser.id,
+      },
     });
 
     // Grant the badge to the student, linked to this certificate (best-effort:
@@ -153,9 +150,11 @@ class CertificateUsecase {
   /**
    * The student's existing GAME certificate for a game (or null) — internal
    * lookup (no auth) so the games module can avoid re-issuing on a replay.
+   *
+   * Positional args — also called cross-module (games).
    */
   findEarnedForGame(studentId, gameId) {
-    return certificateRepo.findForGame(studentId, gameId);
+    return certificateRepo.findForGame({ studentId, gameId });
   }
 
   /**
@@ -167,6 +166,8 @@ class CertificateUsecase {
    *
    * Legacy fallback (when no GAME template is configured): render the per-game
    * embedded look keyed off the game `slug` (`templateKey` + `themeJson`).
+   *
+   * Object arg + `tx` — also called cross-module (games).
    */
   async issueForGameAttempt(
     {
@@ -185,8 +186,8 @@ class CertificateUsecase {
   ) {
     const gameTemplate = await certificateTemplateUsecase.getActiveGameTemplate(tx);
     if (gameTemplate) {
-      return certificateRepo.create(
-        {
+      return certificateRepo.create({
+        data: {
           type: CERTIFICATE_TYPES.GAME,
           studentId,
           studentName,
@@ -197,12 +198,12 @@ class CertificateUsecase {
           reasonEn: titleEn ?? undefined,
           badgeId: badgeId ?? undefined,
         },
-        tx,
-      );
+        client: tx,
+      });
     }
 
-    return certificateRepo.create(
-      {
+    return certificateRepo.create({
+      data: {
         type: CERTIFICATE_TYPES.GAME,
         studentId,
         studentName,
@@ -219,8 +220,8 @@ class CertificateUsecase {
         themeJson: themeJson ?? undefined,
         badgeId: badgeId ?? undefined,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 
   /**
@@ -232,6 +233,8 @@ class CertificateUsecase {
    *
    * Legacy fallback (when no EXAM template is active): render the built-in
    * unified exam look keyed off `CERTIFICATE_TEMPLATE_KEYS.EXAM`.
+   *
+   * Object arg + `tx` — also called cross-module (quizzes).
    */
   async issueForQuizAttempt(
     {
@@ -250,8 +253,8 @@ class CertificateUsecase {
   ) {
     const examTemplate = await certificateTemplateUsecase.getActiveExamTemplate(tx);
     if (examTemplate) {
-      return certificateRepo.create(
-        {
+      return certificateRepo.create({
+        data: {
           type: CERTIFICATE_TYPES.QUIZ,
           studentId,
           studentName,
@@ -262,12 +265,12 @@ class CertificateUsecase {
           reasonEn: titleEn ?? undefined,
           badgeId: badgeId ?? undefined,
         },
-        tx,
-      );
+        client: tx,
+      });
     }
 
-    return certificateRepo.create(
-      {
+    return certificateRepo.create({
+      data: {
         type: CERTIFICATE_TYPES.QUIZ,
         studentId,
         studentName,
@@ -283,9 +286,10 @@ class CertificateUsecase {
         themeJson: themeJson ?? undefined,
         badgeId: badgeId ?? undefined,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 }
 
 export const certificateUsecase = new CertificateUsecase();
+export { CertificateUsecase };
