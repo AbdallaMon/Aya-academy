@@ -42,11 +42,12 @@ export default function MyGamesPage() {
       key: `a-${a.id}`,
       game: a.game,
       assignment: a,
+      locked: Boolean(a.locked),
     }));
     if (freeGame && freeGame.isActive) {
       const alreadyAssigned = assignments.some((a) => a.gameId === freeGame.id);
       if (!alreadyAssigned) {
-        list.unshift({ key: `free-${freeGame.id}`, game: freeGame, assignment: null });
+        list.unshift({ key: `free-${freeGame.id}`, game: freeGame, assignment: null, locked: false });
       }
     }
     return list;
@@ -91,6 +92,7 @@ export default function MyGamesPage() {
               game={c.game}
               basePath="/dashboard/games"
               assignment={c.assignment}
+              locked={c.locked}
             />
           ))}
         </Box>

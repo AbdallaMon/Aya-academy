@@ -13,6 +13,7 @@ import { localePath } from "../../../i18n/routing.js";
 import { useGame } from "../hooks/useGame.js";
 import GamePlayer from "../engine/GamePlayer.jsx";
 import { DEFAULT_THEME } from "../engine/helpers.js";
+import { SubscriptionLockedState } from "../../../shared/components/index.js";
 
 // Marketing-only intro + funnel copy. Makes the public free-game landing clear
 // and inviting (what is this? what do I get?) instead of dropping straight into
@@ -44,7 +45,7 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
   const isDashboard = variant === "dashboard";
   // Dashboard plays ANY active game (auth endpoint). Marketing plays the single
   // admin-chosen free game (free=true) or a specific public slug.
-  const { game, isLoading, error, rateLimited } = useGame({
+  const { game, isLoading, error, rateLimited, locked } = useGame({
     slug,
     auth: isDashboard,
     free,
@@ -111,7 +112,9 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
         </Stack>
       )}
 
-      {rateLimited ? (
+      {locked ? (
+        <SubscriptionLockedState variant="student" />
+      ) : rateLimited ? (
         <Stack
           spacing={2}
           sx={{

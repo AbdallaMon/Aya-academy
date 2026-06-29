@@ -48,6 +48,8 @@ export function useGame({ slug, id, auth = false, free = false }) {
   // Set when the public free game hits its per-IP rate limit (HTTP 429). Carries
   // { retryAfterMinutes, ... } so the page can tell the player when to return.
   const [rateLimited, setRateLimited] = useState(null);
+  // Set when the dashboard returns 403 SUBSCRIPTION_INACTIVE (student inactive).
+  const [locked, setLocked] = useState(false);
 
   const {
     data: game,
@@ -68,6 +70,11 @@ export function useGame({ slug, id, auth = false, free = false }) {
       if (rateLimited) setRateLimited(null);
     },
     onError: (err) => {
+      // Dashboard play blocked because student subscription is inactive.
+      if (err?.status === 403 && err?.data?.code === "SUBSCRIPTION_INACTIVE") {
+        setLocked(true);
+        return;
+      }
       // Free game hit its rate limit → block and show a "come back later"
       // screen. Do NOT fall back to the dev mirror (that would defeat the limit).
       if (free && err?.status === 429) {
@@ -83,11 +90,12 @@ export function useGame({ slug, id, auth = false, free = false }) {
   });
 
   return {
-    game: rateLimited ? null : game,
-    isLoading: isLoading && !game && !rateLimited,
-    error: isFallback || rateLimited ? null : error,
+    game: rateLimited || locked ? null : game,
+    isLoading: isLoading && !game && !rateLimited && !locked,
+    error: isFallback || rateLimited || locked ? null : error,
     isFallback,
     rateLimited,
+    locked,
     refetch: triggerRefetch,
   };
 }
