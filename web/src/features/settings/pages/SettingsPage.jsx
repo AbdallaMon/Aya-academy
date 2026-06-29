@@ -1,17 +1,35 @@
 "use client";
 
-import { useMemo } from "react";
-import { Box, Card, CardContent, Grid, Typography } from "@mui/material";
+import { useEffect, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Grid,
+  Stack,
+} from "@mui/material";
 import { PERMISSIONS, CURRENCY_OPTIONS, DEFAULT_APP_SETTINGS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
-import { AppForm } from "../../../shared/components/index.js";
+import {
+  PageHeader,
+  RHFTextField,
+  RHFSelect,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
+import { useTranslation } from "../../../i18n/client.js";
 import { SETTINGS_URL } from "../config/constant.js";
 import { useSettingsText } from "../config/settingsText.js";
 
 export default function SettingsPage() {
   const txt = useSettingsText();
+  const { t } = useTranslation();
+  const dialogLabels = t("dialogs", { returnObjects: true }) || {};
+  const { showToast } = useToast();
   const { hasPermission } = usePermission();
   const canView = hasPermission(PERMISSIONS.SETTINGS.VIEW);
   const canManage = hasPermission(PERMISSIONS.SETTINGS.MANAGE);
@@ -23,11 +41,6 @@ export default function SettingsPage() {
     syncToUrl: false,
   });
 
-  const mut = useMultiRequest({
-    url: SETTINGS_URL,
-    onSuccess: () => fetchData(),
-  });
-
   const defaultValues = useMemo(
     () => ({
       hourlyRate: data?.hourlyRate ?? DEFAULT_APP_SETTINGS.hourlyRate,
@@ -36,33 +49,43 @@ export default function SettingsPage() {
     [data],
   );
 
-  const fields = useMemo(
-    () => [
-      {
-        name: "hourlyRate",
-        label: txt.hourlyRate,
-        type: "number",
-        gridSize: { xs: 12, sm: 6 },
-        rules: { required: txt.required },
-        helperText: txt.hourlyRateHint,
-      },
-      {
-        name: "currency",
-        label: txt.currency,
-        type: "select",
-        gridSize: { xs: 12, sm: 6 },
-        rules: { required: txt.required },
-        helperText: txt.currencyHint,
-        options: Object.fromEntries(
-          CURRENCY_OPTIONS.map((code) => [code, txt[code] || code]),
-        ),
-      },
-    ],
+  const { control, handleSubmit, reset, setError } = useForm({
+    defaultValues,
+    mode: "onTouched",
+  });
+
+  // Seed the form from the fetched settings once they arrive (and on refetch).
+  useEffect(() => {
+    reset(defaultValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reset, JSON.stringify(defaultValues)]);
+
+  const currencyOptions = useMemo(
+    () =>
+      Object.fromEntries(
+        CURRENCY_OPTIONS.map((code) => [code, txt[code] || code]),
+      ),
     [txt],
   );
 
-  async function submit(values) {
-    await mut.putRequest(null, {
+  const { fetchData: save, isLoading } = useRequest({
+    url: SETTINGS_URL,
+    method: "put",
+    shouldAutoToast: true,
+    onSuccess: () => fetchData(),
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          hourlyRate: txt.hourlyRate,
+          currency: txt.currency,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
+  });
+
+  function submit(values) {
+    save(null, {
       hourlyRate: Number(values.hourlyRate),
       currency: values.currency,
     });
@@ -72,27 +95,63 @@ export default function SettingsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={800}>
-          {txt.pageTitle}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {txt.pageDescription}
-        </Typography>
-      </Box>
+      <PageHeader title={txt.pageTitle} description={txt.pageDescription} />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 7 }}>
           <Card variant="outlined">
             <CardContent>
-              <AppForm
-                fields={fields}
-                defaultValues={defaultValues}
-                onSubmit={submit}
-                submitLabel={txt.save}
-                loading={mut.isPutRequestLoading}
-                hideActions={!canManage}
-              />
+              <Box component="form" onSubmit={handleSubmit(submit)} noValidate>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="hourlyRate"
+                      control={control}
+                      label={txt.hourlyRate}
+                      type="number"
+                      rules={{ required: txt.required }}
+                      helperText={txt.hourlyRateHint}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFSelect
+                      name="currency"
+                      control={control}
+                      label={txt.currency}
+                      options={currencyOptions}
+                      rules={{ required: txt.required }}
+                      helperText={txt.currencyHint}
+                    />
+                  </Grid>
+                </Grid>
+
+                {canManage && (
+                  <Stack
+                    direction="row"
+                    justifyContent="flex-end"
+                    sx={{ mt: 2 }}
+                    spacing={1}
+                  >
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      onClick={() => reset(defaultValues)}
+                      disabled={isLoading}
+                    >
+                      {dialogLabels.cancel}
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isLoading}
+                      startIcon={isLoading ? <CircularProgress size={16} /> : null}
+                    >
+                      {txt.save}
+                    </Button>
+                  </Stack>
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>

@@ -2,7 +2,6 @@
 //   import { DataTable, FormDialog, RHFTextField, PageHeader } from "@/shared/components";
 
 // ── Forms ────────────────────────────────────────────────────────────────────
-export { default as AppForm } from "./forms/AppForm.jsx";
 export { default as RHFTextField } from "./forms/rhf/RHFTextField.jsx";
 export { default as RHFTextArea } from "./forms/rhf/RHFTextArea.jsx";
 export { default as RHFSelect } from "./forms/rhf/RHFSelect.jsx";

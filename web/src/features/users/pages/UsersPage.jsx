@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Avatar, Box, Button, Chip, Link as MuiLink, Stack, Typography } from "@mui/material";
+import { useForm } from "react-hook-form";
+import { Avatar, Box, Chip, Grid, Link as MuiLink, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import {
-  MdAdd,
   MdEdit,
   MdDelete,
   MdLink,
@@ -20,13 +20,19 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import { localePath } from "../../../i18n/routing.js";
 import {
-  AppForm,
   DataTable,
   FormDialog,
+  PageHeader,
   PhotoUpload,
+  RHFPhoneField,
+  RHFSelect,
+  RHFSwitch,
+  RHFTextField,
   RowActionsMenu,
+  applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
 import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
@@ -49,6 +55,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
   const txt = useUsersText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
+  const { showToast } = useToast();
   const { user } = useAuth();
   const { hasPermission } = usePermission();
   const isAdmin = user?.role === USER_ROLES.ADMIN;
@@ -116,6 +123,37 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
 
   const isEditing = Boolean(selected?.id);
 
+  const defaultValues = useMemo(() => {
+    if (selected) {
+      return {
+        name: selected.name ?? "",
+        password: "",
+        phone: selected.phone ?? "",
+        nickname: selected.nickname ?? "",
+        locale: selected.locale ?? "",
+        isActive: selected.isActive ?? true,
+      };
+    }
+    return {
+      name: "",
+      email: "",
+      password: "",
+      role: "STUDENT",
+      phone: "",
+      nickname: "",
+      locale: "",
+    };
+  }, [selected]);
+
+  const { control, handleSubmit, reset, setError } = useForm({ defaultValues });
+
+  // Re-seed the form each time the dialog opens (or the edited row changes) so
+  // create starts blank and edit is pre-filled.
+  useEffect(() => {
+    if (!form.isOpen) return;
+    reset(defaultValues);
+  }, [form.isOpen, defaultValues, reset]);
+
   function onCreate() {
     setSelected(null);
     setAvatarAttachment(null);
@@ -142,103 +180,65 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
 
   async function submit(values) {
     const avatarId = avatarAttachment?.id ? Number(avatarAttachment.id) : null;
-    if (isEditing) {
-      // updateUserSchema: name, phone, locale, nickname, isActive, password
-      const payload = {
-        name: values.name,
-        phone: values.phone || undefined,
-        nickname: values.nickname || undefined,
-        locale: values.locale || undefined,
-        isActive: Boolean(values.isActive),
-      };
-      if (values.password) payload.password = values.password;
-      await mut.putRequest(String(selected.id), payload);
-      // Avatar lives on its own scoped endpoint — only patch when it changed.
-      if (avatarId && avatarId !== selected.avatarId) {
-        await mut.patchRequest(`${selected.id}/avatar`, { attachmentId: avatarId });
+    try {
+      if (isEditing) {
+        // updateUserSchema: name, phone, locale, nickname, isActive, password
+        const payload = {
+          name: values.name,
+          phone: values.phone || undefined,
+          nickname: values.nickname || undefined,
+          locale: values.locale || undefined,
+          isActive: Boolean(values.isActive),
+        };
+        if (values.password) payload.password = values.password;
+        await mut.putRequest(String(selected.id), payload);
+        // Avatar lives on its own scoped endpoint — only patch when it changed.
+        if (avatarId && avatarId !== selected.avatarId) {
+          await mut.patchRequest(`${selected.id}/avatar`, { attachmentId: avatarId });
+        }
+      } else {
+        // createUserSchema: name, email, password, role, phone, locale, nickname, avatarId
+        const payload = {
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role,
+          phone: values.phone || undefined,
+          nickname: values.nickname || undefined,
+          locale: values.locale || undefined,
+          avatarId: avatarId || undefined,
+        };
+        await mut.postRequest(null, payload);
       }
-    } else {
-      // createUserSchema: name, email, password, role, phone, locale, nickname, avatarId
-      const payload = {
-        name: values.name,
-        email: values.email,
-        password: values.password,
-        role: values.role,
-        phone: values.phone || undefined,
-        nickname: values.nickname || undefined,
-        locale: values.locale || undefined,
-        avatarId: avatarId || undefined,
-      };
-      await mut.postRequest(null, payload);
-    }
-    form.close();
-  }
-
-  const fields = useMemo(() => {
-    const base = [
-      { name: "name", label: txt.nameLabel, type: "text", rules: { required: txt.required } },
-    ];
-
-    if (!isEditing) {
-      base.push(
-        { name: "email", label: txt.emailLabel, type: "email", rules: { required: txt.required } },
-        { name: "password", label: txt.passwordLabel, type: "password", rules: { required: txt.required } },
+      form.close();
+    } catch (err) {
+      // The mutation already auto-toasted the failure; bind any field-level
+      // validation errors onto the form (suppress a duplicate fallback toast).
+      applyApiErrorsToForm(
         {
-          name: "role",
-          label: txt.roleLabel,
-          type: "select",
-          options: { ADMIN: txt.admin, PARENT: txt.parent, STUDENT: txt.student },
-          rules: { required: txt.required },
+          message: err?.data?.message || err?.message,
+          status: err?.status,
+          details: err?.data?.details,
+          translationKey: err?.data?.translationKey || err?.translationKey,
+        },
+        setError,
+        {
+          labelMap: {
+            name: txt.nameLabel,
+            email: txt.emailLabel,
+            password: txt.passwordLabel,
+            role: txt.roleLabel,
+            phone: txt.phoneLabel,
+            nickname: txt.nicknameLabel,
+            locale: txt.localeLabel,
+            isActive: txt.isActive,
+          },
+          showToast,
+          suppressFallbackToast: true,
         },
       );
-    } else {
-      // email + role are immutable on the update endpoint → omit them.
-      base.push({
-        name: "password",
-        label: txt.passwordEditLabel,
-        type: "password",
-      });
     }
-
-    base.push(
-      { name: "phone", label: txt.phoneLabel, type: "phone" },
-      { name: "nickname", label: txt.nicknameLabel, type: "text" },
-      {
-        name: "locale",
-        label: txt.localeLabel,
-        type: "select",
-        options: { ar: txt.arabic, en: txt.english },
-      },
-    );
-
-    if (isEditing) {
-      base.push({ name: "isActive", label: txt.isActive, type: "switch" });
-    }
-
-    return base;
-  }, [txt, isEditing]);
-
-  const defaultValues = useMemo(() => {
-    if (selected) {
-      return {
-        name: selected.name ?? "",
-        password: "",
-        phone: selected.phone ?? "",
-        nickname: selected.nickname ?? "",
-        locale: selected.locale ?? "",
-        isActive: selected.isActive ?? true,
-      };
-    }
-    return {
-      name: "",
-      email: "",
-      password: "",
-      role: "STUDENT",
-      phone: "",
-      nickname: "",
-      locale: "",
-    };
-  }, [selected]);
+  }
 
   const columns = useMemo(() => {
     const relationLabels = {
@@ -503,28 +503,12 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {(titleKey && txt[titleKey]) || txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {(descriptionKey && txt[descriptionKey]) || txt.pageDescription}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={(titleKey && txt[titleKey]) || txt.pageTitle}
+        description={(descriptionKey && txt[descriptionKey]) || txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? onCreate : undefined}
+      />
 
       <DataTable
         initialRows={data || []}
@@ -563,12 +547,84 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
             hintLabel={txt.photoHint}
           />
         </Box>
-        <AppForm
-          id="user-form"
-          fields={fields}
-          defaultValues={defaultValues}
-          onSubmit={submit}
-        />
+
+        <form id="user-form" onSubmit={handleSubmit(submit)} noValidate>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="name"
+                control={control}
+                label={txt.nameLabel}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+
+            {!isEditing ? (
+              <>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="email"
+                    control={control}
+                    label={txt.emailLabel}
+                    type="email"
+                    rules={{ required: txt.required }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="password"
+                    control={control}
+                    label={txt.passwordLabel}
+                    type="password"
+                    rules={{ required: txt.required }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFSelect
+                    name="role"
+                    control={control}
+                    label={txt.roleLabel}
+                    options={{ ADMIN: txt.admin, PARENT: txt.parent, STUDENT: txt.student }}
+                    rules={{ required: txt.required }}
+                  />
+                </Grid>
+              </>
+            ) : (
+              // email + role are immutable on the update endpoint → omit them.
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField
+                  name="password"
+                  control={control}
+                  label={txt.passwordEditLabel}
+                  type="password"
+                />
+              </Grid>
+            )}
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFPhoneField name="phone" control={control} label={txt.phoneLabel} />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField name="nickname" control={control} label={txt.nicknameLabel} />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFSelect
+                name="locale"
+                control={control}
+                label={txt.localeLabel}
+                options={{ ar: txt.arabic, en: txt.english }}
+              />
+            </Grid>
+
+            {isEditing && (
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFSwitch name="isActive" control={control} label={txt.isActive} />
+              </Grid>
+            )}
+          </Grid>
+        </form>
       </FormDialog>
 
       <LinkParentDialog

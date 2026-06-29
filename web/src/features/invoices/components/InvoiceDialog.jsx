@@ -62,13 +62,6 @@ export default function InvoiceDialog({
     refresh();
   }
 
-  async function saveEdit(payload) {
-    if (!invoice) return;
-    await mut.patchRequest(String(invoice.id), payload);
-    editDialog.close();
-    refresh();
-  }
-
   async function markPaid() {
     if (!invoice) return;
     const sure = await confirm({ title: txt.markPaidConfirm, intent: "success" });
@@ -177,23 +170,13 @@ export default function InvoiceDialog({
       </FormDialog>
 
       {canEdit && invoice && (
-        <FormDialog
+        <InvoiceEditForm
           open={editDialog.isOpen}
           onClose={editDialog.close}
-          title={txt.editTitle}
-          maxWidth="md"
-          loading={mut.isPatchRequestLoading}
-          submitText={txt.save}
-          cancelText={txt.cancel}
-          onSubmit={() => document.getElementById("invoice-edit-form")?.requestSubmit()}
-        >
-          <InvoiceEditForm
-            id="invoice-edit-form"
-            invoice={invoice}
-            txt={txt}
-            onSubmit={saveEdit}
-          />
-        </FormDialog>
+          invoice={invoice}
+          txt={txt}
+          onSaved={refresh}
+        />
       )}
     </>
   );

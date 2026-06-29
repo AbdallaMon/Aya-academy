@@ -1,14 +1,32 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Card, CardContent, Grid, Stack, Typography } from "@mui/material";
-import { useController, useWatch } from "react-hook-form";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { Controller, useForm } from "react-hook-form";
 import { PERMISSIONS, DEFAULT_PAYMENT_TEMPLATE } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
+import { useTranslation } from "../../../i18n/client.js";
 import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
-import { AppForm, ColorPicker } from "../../../shared/components/index.js";
+import {
+  PageHeader,
+  RHFTextField,
+  RHFTextArea,
+  RHFSwitch,
+  RHFPhoneField,
+  ColorPicker,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
 import useDebounce from "../../../hooks/useDebounce.js";
 import InvoiceDocument from "../../invoices/components/InvoiceDocument.jsx";
 import { PAYMENT_TEMPLATE_URL } from "../config/constant.js";
@@ -96,30 +114,6 @@ function valuesToConfig(values) {
   };
 }
 
-// ── RHF-bound custom fields (rendered via AppForm's `custom` field type) ─────
-
-// Color picker bound to an RHF field through the AppForm `control`.
-function ColorField({ control, name, label }) {
-  const { field } = useController({ control, name });
-  return <ColorPicker label={label} value={field.value} onChange={field.onChange} />;
-}
-
-// Invisible field that subscribes to all form values and pushes a debounced copy
-// up to the parent so the live preview re-renders as the admin types/picks.
-function FormWatcher({ control, onChange }) {
-  const values = useWatch({ control });
-  const debounced = useDebounce(JSON.stringify(values), 350);
-  useEffect(() => {
-    try {
-      onChange(JSON.parse(debounced));
-    } catch {
-      /* ignore */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debounced]);
-  return null;
-}
-
 function samplePreviewInvoice(cfg, txt, currency) {
   const subtotal = 80;
   const fees = cfg.fees || {};
@@ -163,6 +157,9 @@ function samplePreviewInvoice(cfg, txt, currency) {
 
 export default function PaymentTemplateSettingsPage() {
   const txt = usePaymentTemplateText();
+  const { t } = useTranslation();
+  const labels = t("dialogs", { returnObjects: true }) || {};
+  const { showToast } = useToast();
   const { hasPermission } = usePermission();
   const { currency } = useAppSettings();
   const canView = hasPermission(PERMISSIONS.PAYMENT_TEMPLATE.VIEW);
@@ -175,11 +172,6 @@ export default function PaymentTemplateSettingsPage() {
     syncToUrl: false,
   });
 
-  const mut = useMultiRequest({
-    url: PAYMENT_TEMPLATE_URL,
-    onSuccess: () => fetchData(),
-  });
-
   // Preview reflects the saved template, with a live override applied as the
   // admin edits (debounced) and on save (optimistic, confirmed by the refetch).
   const [override, setOverride] = useState(null);
@@ -187,94 +179,72 @@ export default function PaymentTemplateSettingsPage() {
 
   const defaultValues = useMemo(() => buildDefaults(data?.configJson), [data]);
 
-  const fields = useMemo(
-    () => [
-      { name: "companyNameAr", label: txt.companyNameAr, type: "text" },
-      { name: "companyNameEn", label: txt.companyNameEn, type: "text" },
-      { name: "addressAr", label: txt.addressAr, type: "text" },
-      { name: "addressEn", label: txt.addressEn, type: "text" },
-      { name: "phone", label: txt.phone, type: "phone" },
-      { name: "email", label: txt.email, type: "text" },
-      {
-        name: "headerColor",
-        label: txt.headerColor,
-        type: "custom",
-        gridSize: { xs: 12, sm: 3 },
-        component: (p) => <ColorField {...p} />,
-      },
-      {
-        name: "headerTextColor",
-        label: txt.headerTextColor,
-        type: "custom",
-        gridSize: { xs: 12, sm: 3 },
-        component: (p) => <ColorField {...p} />,
-      },
-      {
-        name: "accentColor",
-        label: txt.accentColor,
-        type: "custom",
-        gridSize: { xs: 12, sm: 3 },
-        component: (p) => <ColorField {...p} />,
-      },
-      {
-        name: "textColor",
-        label: txt.textColor,
-        type: "custom",
-        gridSize: { xs: 12, sm: 3 },
-        component: (p) => <ColorField {...p} />,
-      },
-      {
-        name: "notesColor",
-        label: txt.notesColor,
-        type: "custom",
-        gridSize: { xs: 12, sm: 3 },
-        component: (p) => <ColorField {...p} />,
-      },
-      {
-        name: "paymentInstructionsColor",
-        label: txt.paymentInstructionsColor,
-        type: "custom",
-        gridSize: { xs: 12, sm: 3 },
-        component: (p) => <ColorField {...p} />,
-      },
-      { name: "transferFeePercent", label: txt.transferFeePercent, type: "number" },
-      { name: "transferFeeFixed", label: txt.transferFeeFixed, type: "number" },
-      { name: "dueDays", label: txt.dueDays, type: "number" },
-      { name: "footerAr", label: txt.footerAr, type: "text" },
-      { name: "footerEn", label: txt.footerEn, type: "text" },
-      {
-        name: "paymentInstructionsAr",
-        label: txt.paymentInstructionsArLabel,
-        type: "textarea",
-        gridSize: { xs: 12 },
-      },
-      {
-        name: "paymentInstructionsEn",
-        label: txt.paymentInstructionsEnLabel,
-        type: "textarea",
-        gridSize: { xs: 12 },
-      },
-      { name: "notesAr", label: txt.notesArLabel, type: "textarea", gridSize: { xs: 12 } },
-      { name: "notesEn", label: txt.notesEnLabel, type: "textarea", gridSize: { xs: 12 } },
-      { name: "showPreviousCredit", label: txt.showPreviousCredit, type: "switch" },
-      { name: "showPreviousDebt", label: txt.showPreviousDebt, type: "switch" },
-      {
-        name: "__watcher",
-        label: "",
-        type: "custom",
-        gridSize: { xs: 12 },
-        component: ({ control }) => (
-          <FormWatcher control={control} onChange={(v) => setOverride(valuesToConfig(v))} />
-        ),
-      },
-    ],
-    [txt],
-  );
+  const { control, handleSubmit, reset, watch, setError } = useForm({
+    defaultValues,
+    mode: "onTouched",
+  });
+
+  // Re-seed the form whenever the fetched template arrives/changes (the GET
+  // resolves after mount, so defaults must flow into RHF then).
+  useEffect(() => {
+    reset(defaultValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reset, JSON.stringify(defaultValues)]);
+
+  // Live preview: subscribe to every value and push a debounced copy into the
+  // override so the invoice re-renders as the admin types/picks (350ms).
+  const watched = watch();
+  const debounced = useDebounce(JSON.stringify(watched), 350);
+  useEffect(() => {
+    try {
+      setOverride(valuesToConfig(JSON.parse(debounced)));
+    } catch {
+      /* ignore */
+    }
+  }, [debounced]);
+
+  const { fetchData: putRequest, isLoading: isSaving } = useRequest({
+    url: PAYMENT_TEMPLATE_URL,
+    method: "put",
+    shouldAutoToast: true,
+    syncToUrl: false,
+    onSuccess: () => fetchData(),
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          companyNameAr: txt.companyNameAr,
+          companyNameEn: txt.companyNameEn,
+          addressAr: txt.addressAr,
+          addressEn: txt.addressEn,
+          phone: txt.phone,
+          email: txt.email,
+          headerColor: txt.headerColor,
+          headerTextColor: txt.headerTextColor,
+          accentColor: txt.accentColor,
+          textColor: txt.textColor,
+          notesColor: txt.notesColor,
+          paymentInstructionsColor: txt.paymentInstructionsColor,
+          transferFeePercent: txt.transferFeePercent,
+          transferFeeFixed: txt.transferFeeFixed,
+          dueDays: txt.dueDays,
+          footerAr: txt.footerAr,
+          footerEn: txt.footerEn,
+          paymentInstructionsAr: txt.paymentInstructionsArLabel,
+          paymentInstructionsEn: txt.paymentInstructionsEnLabel,
+          notesAr: txt.notesArLabel,
+          notesEn: txt.notesEnLabel,
+          showPreviousCredit: txt.showPreviousCredit,
+          showPreviousDebt: txt.showPreviousDebt,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
+  });
 
   async function submit(values) {
     const configJson = valuesToConfig(values);
     setOverride(configJson);
-    await mut.putRequest(null, { configJson });
+    await putRequest(null, { configJson });
   }
 
   if (!canView) return null;
@@ -283,27 +253,214 @@ export default function PaymentTemplateSettingsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={800}>
-          {txt.pageTitle}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {txt.pageDescription}
-        </Typography>
-      </Box>
+      <PageHeader title={txt.pageTitle} description={txt.pageDescription} />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 7 }}>
           <Card variant="outlined">
             <CardContent>
-              <AppForm
-                fields={fields}
-                defaultValues={defaultValues}
-                onSubmit={submit}
-                submitLabel={txt.save}
-                loading={mut.isPutRequestLoading}
-                hideActions={!canManage}
-              />
+              <Box component="form" onSubmit={handleSubmit(submit)} noValidate>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="companyNameAr"
+                      control={control}
+                      label={txt.companyNameAr}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="companyNameEn"
+                      control={control}
+                      label={txt.companyNameEn}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField name="addressAr" control={control} label={txt.addressAr} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField name="addressEn" control={control} label={txt.addressEn} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFPhoneField name="phone" control={control} label={txt.phone} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField name="email" control={control} label={txt.email} />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <Controller
+                      name="headerColor"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorPicker
+                          label={txt.headerColor}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <Controller
+                      name="headerTextColor"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorPicker
+                          label={txt.headerTextColor}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <Controller
+                      name="accentColor"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorPicker
+                          label={txt.accentColor}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <Controller
+                      name="textColor"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorPicker
+                          label={txt.textColor}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <Controller
+                      name="notesColor"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorPicker
+                          label={txt.notesColor}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <Controller
+                      name="paymentInstructionsColor"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorPicker
+                          label={txt.paymentInstructionsColor}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="transferFeePercent"
+                      control={control}
+                      label={txt.transferFeePercent}
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="transferFeeFixed"
+                      control={control}
+                      label={txt.transferFeeFixed}
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="dueDays"
+                      control={control}
+                      label={txt.dueDays}
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField name="footerAr" control={control} label={txt.footerAr} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField name="footerEn" control={control} label={txt.footerEn} />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <RHFTextArea
+                      name="paymentInstructionsAr"
+                      control={control}
+                      label={txt.paymentInstructionsArLabel}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <RHFTextArea
+                      name="paymentInstructionsEn"
+                      control={control}
+                      label={txt.paymentInstructionsEnLabel}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <RHFTextArea name="notesAr" control={control} label={txt.notesArLabel} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <RHFTextArea name="notesEn" control={control} label={txt.notesEnLabel} />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFSwitch
+                      name="showPreviousCredit"
+                      control={control}
+                      label={txt.showPreviousCredit}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFSwitch
+                      name="showPreviousDebt"
+                      control={control}
+                      label={txt.showPreviousDebt}
+                    />
+                  </Grid>
+                </Grid>
+
+                {canManage && (
+                  <Stack
+                    direction="row"
+                    justifyContent="flex-end"
+                    sx={{ mt: 2 }}
+                    spacing={1}
+                  >
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      onClick={() => reset(defaultValues)}
+                      disabled={isSaving}
+                    >
+                      {labels.cancel}
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isSaving}
+                      startIcon={isSaving ? <CircularProgress size={16} /> : null}
+                    >
+                      {txt.save}
+                    </Button>
+                  </Stack>
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>

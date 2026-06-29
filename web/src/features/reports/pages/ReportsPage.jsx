@@ -1,19 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import { useForm } from "react-hook-form";
+import { Box, Chip, Grid, Stack, Typography } from "@mui/material";
+import { MdEdit, MdDelete } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import {
-  AppForm,
   DataTable,
   FormDialog,
+  PageHeader,
+  RHFTextArea,
+  RHFTextField,
   RowActionsMenu,
+  applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
 import {
@@ -25,10 +30,13 @@ import {
 import { useReportsText } from "../config/reportsText.js";
 import StudentsMultiSelect from "../components/StudentsMultiSelect.jsx";
 
+const FORM_ID = "report-form";
+
 export default function ReportsPage() {
   const txt = useReportsText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
+  const { showToast } = useToast();
   const { hasPermission } = usePermission();
   const canList = hasPermission(PERMISSIONS.REPORT.LIST);
   const canCreate = hasPermission(PERMISSIONS.REPORT.CREATE);
@@ -66,10 +74,59 @@ export default function ReportsPage() {
 
   const form = useOpen();
   const [selected, setSelected] = useState(null);
+  const isEdit = Boolean(selected?.id);
+
+  const defaultValues = useMemo(() => {
+    if (selected) {
+      return {
+        title: selected.title ?? "",
+        body: selected.body ?? "",
+        reportDate: toDateInput(selected.reportDate),
+        studentIds: (selected.students || []).map((s) => s.studentId),
+      };
+    }
+    return {
+      title: "",
+      body: "",
+      reportDate: toDateInput(new Date()),
+      studentIds: [],
+    };
+  }, [selected]);
+
+  const { control, handleSubmit, reset, setError } = useForm({
+    defaultValues,
+    mode: "onTouched",
+  });
+
+  useEffect(() => {
+    reset(defaultValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reset, JSON.stringify(defaultValues)]);
 
   const mut = useMultiRequest({
     url: REPORTS_URL,
     onSuccess: () => triggerRefetch(),
+  });
+
+  const formMut = useRequest({
+    url: REPORTS_URL,
+    method: isEdit ? "put" : "post",
+    shouldAutoToast: true,
+    onSuccess: () => {
+      triggerRefetch();
+      form.close();
+    },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          title: txt.titleLabel,
+          body: txt.bodyLabel,
+          reportDate: txt.reportDateLabel,
+          studentIds: txt.studentsLabel,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
   });
 
   useEffect(() => {
@@ -91,81 +148,15 @@ export default function ReportsPage() {
     await mut.deleteRequest(String(row.id));
   }
 
-  async function submit(values) {
+  function submit(values) {
     const payload = {
       title: values.title?.trim(),
       body: values.body,
       reportDate: values.reportDate || undefined,
       studentIds: (values.studentIds || []).map((id) => Number(id)),
     };
-    if (selected?.id) await mut.putRequest(String(selected.id), payload);
-    else await mut.postRequest(null, payload);
-    form.close();
+    formMut.fetchData(isEdit ? String(selected.id) : null, payload);
   }
-
-  const fields = useMemo(
-    () => [
-      {
-        name: "title",
-        label: txt.titleLabel,
-        type: "text",
-        rules: { required: txt.required },
-        gridSize: { xs: 12 },
-      },
-      {
-        name: "studentIds",
-        label: txt.studentsLabel,
-        type: "custom",
-        rules: {
-          validate: (v) =>
-            (Array.isArray(v) && v.length > 0) || txt.studentsRequired,
-        },
-        gridSize: { xs: 12 },
-        component: (props) => (
-          <StudentsMultiSelect
-            {...props}
-            options={students}
-            loading={studentsReq.isLoading}
-            placeholder={txt.selectStudents}
-            loadingText={txt.loadingStudents}
-          />
-        ),
-      },
-      {
-        name: "reportDate",
-        label: txt.reportDateLabel,
-        type: "date",
-        InputLabelProps: { shrink: true },
-        gridSize: { xs: 12, sm: 6 },
-      },
-      {
-        name: "body",
-        label: txt.bodyLabel,
-        type: "textarea",
-        rules: { required: txt.required },
-        gridSize: { xs: 12 },
-        minRows: 4,
-      },
-    ],
-    [txt, students, studentsReq.isLoading],
-  );
-
-  const defaultValues = useMemo(() => {
-    if (selected) {
-      return {
-        title: selected.title ?? "",
-        body: selected.body ?? "",
-        reportDate: toDateInput(selected.reportDate),
-        studentIds: (selected.students || []).map((s) => s.studentId),
-      };
-    }
-    return {
-      title: "",
-      body: "",
-      reportDate: toDateInput(new Date()),
-      studentIds: [],
-    };
-  }, [selected]);
 
   const columns = useMemo(
     () => [
@@ -255,28 +246,12 @@ export default function ReportsPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? onCreate : undefined}
+      />
 
       <DataTable
         initialRows={data || []}
@@ -298,17 +273,59 @@ export default function ReportsPage() {
         onClose={form.close}
         title={selected ? txt.editTitle : txt.createTitle}
         maxWidth="md"
-        loading={mut.isPostRequestLoading || mut.isPutRequestLoading}
+        loading={formMut.isLoading}
         submitText={txt.save}
         cancelText={txt.cancel}
-        onSubmit={() => document.getElementById("report-form")?.requestSubmit()}
+        onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
       >
-        <AppForm
-          id="report-form"
-          fields={fields}
-          defaultValues={defaultValues}
-          onSubmit={submit}
-        />
+        <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <RHFTextField
+                name="title"
+                control={control}
+                label={txt.titleLabel}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <StudentsMultiSelect
+                name="studentIds"
+                control={control}
+                label={txt.studentsLabel}
+                rules={{
+                  validate: (v) =>
+                    (Array.isArray(v) && v.length > 0) || txt.studentsRequired,
+                }}
+                options={students}
+                loading={studentsReq.isLoading}
+                placeholder={txt.selectStudents}
+                loadingText={txt.loadingStudents}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="reportDate"
+                control={control}
+                label={txt.reportDateLabel}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <RHFTextArea
+                name="body"
+                control={control}
+                label={txt.bodyLabel}
+                rules={{ required: txt.required }}
+                minRows={4}
+              />
+            </Grid>
+          </Grid>
+        </form>
       </FormDialog>
     </Box>
   );
