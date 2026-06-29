@@ -8,6 +8,7 @@ export { default as RHFTextArea } from "./forms/rhf/RHFTextArea.jsx";
 export { default as RHFSelect } from "./forms/rhf/RHFSelect.jsx";
 export { default as RHFSwitch } from "./forms/rhf/RHFSwitch.jsx";
 export { default as RHFPhoneField } from "./forms/rhf/RHFPhoneField.jsx";
+export { applyApiErrorsToForm } from "./forms/rhf/applyApiErrorsToForm.js";
 export { default as PasswordField } from "./forms/PasswordField.jsx";
 export { default as CouponControl } from "./CouponControl.jsx";
 
