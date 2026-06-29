@@ -1,6 +1,8 @@
 import { NOTIFICATION_TYPES, USER_ROLES, messagesNames } from "@aya/shared";
+import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
 import { prisma } from "@aya/db/prisma.client.js";
 import { badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
+import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { userRepo } from "../users/user.repo.js";
 import { pointUsecase } from "../points/point.usecase.js";
@@ -17,18 +19,26 @@ class BadgeUsecase {
   /** Throws unless `authUser` may read the given student's badges. */
   async assertCanAccess(authUser, studentId) {
     if (authUser.role === USER_ROLES.ADMIN) return;
+    let allowed = false;
     if (authUser.role === USER_ROLES.STUDENT) {
-      if (authUser.id === studentId) return;
+      allowed = authUser.id === studentId;
     } else if (authUser.role === USER_ROLES.PARENT) {
-      const linked = await userRepo.isStudentOfParent(authUser.id, studentId);
-      if (linked) return;
+      allowed = await userRepo.isStudentOfParent(authUser.id, studentId);
     }
-    throw forbidden(badgeMessagesCodes.CANNOT_ACCESS_BADGE);
+    if (!allowed) throw forbidden(badgeMessagesCodes.CANNOT_ACCESS_BADGE);
+    // Achievements hidden when the student's subscription is not active.
+    await assertActiveForStudent(studentId);
   }
 
-  async list(_authUser, { page, limit }) {
+  async list(_authUser, { page, limit, search }) {
     const { skip, take, page: p, limit: l } = paginate({ page, limit });
-    const { items, total } = await badgeRepo.list({}, skip, take);
+    const where = {};
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["nameAr", "nameEn", "code"],
+    });
+    if (or) where.OR = or;
+    const { items, total } = await badgeRepo.list(where, skip, take);
     return paginatedResult(items, total, p, l);
   }
 
@@ -149,6 +159,57 @@ class BadgeUsecase {
     }
 
     // Notify the student (best-effort).
+    try {
+      await notificationUsecase.createNotification({
+        userId: studentId,
+        type: NOTIFICATION_TYPES.GIFT_RECEIVED,
+        titleAr: "حصلت على وسام جديد 🎉",
+        titleEn: "You earned a new badge 🎉",
+        link: "/dashboard/badges",
+      });
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return toAwardedBadgeItem(studentBadge);
+  }
+
+  /**
+   * Reusable auto-award (no admin/auth required) — used by side-effects such as
+   * completing a game. Idempotent: silently no-ops if the badge is missing /
+   * inactive or the student already has it, so callers can fire it best-effort.
+   * Grants the badge's score as BADGE-sourced points in the same transaction.
+   * Returns the awarded item, or null when nothing was granted.
+   */
+  async awardToStudent({ studentId, badgeId, awardedById = null }) {
+    const badge = await badgeRepo.getById(badgeId);
+    if (!badge || !badge.isActive) return null;
+
+    const existing = await badgeRepo.findStudentBadge(studentId, badgeId);
+    if (existing) return null;
+
+    let studentBadge;
+    try {
+      studentBadge = await prisma.$transaction(async (tx) => {
+        const sb = await badgeRepo.createStudentBadge(
+          { studentId, badgeId, awardedById },
+          tx,
+        );
+        await pointUsecase.awardForBadge(tx, {
+          studentId,
+          badgeId,
+          amount: badge.score,
+          awardedById,
+          sourceId: sb.id,
+        });
+        return sb;
+      });
+    } catch (err) {
+      // Lost a race for the same (studentId, badgeId) — already awarded, no-op.
+      if (isUniqueViolation(err)) return null;
+      throw err;
+    }
+
     try {
       await notificationUsecase.createNotification({
         userId: studentId,
