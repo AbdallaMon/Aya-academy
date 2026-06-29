@@ -13,6 +13,8 @@ import {
   ListSubheader,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import { USER_ROLES } from "@aya/shared";
+import { useAuth } from "../../../hooks/useAuth.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath, stripLocale } from "../../../i18n/routing.js";
@@ -76,10 +78,14 @@ export default function DashboardNav({ role, onNavigate }) {
   const pathname = usePathname();
   const bare = stripLocale(pathname);
   const { lng } = useTranslation();
+  const { user } = useAuth();
   const { hasPermission, hasAnyPermission } = usePermission();
   const txt = useDashboardText();
 
+  const studentBlocked = user?.role === USER_ROLES.STUDENT && user?.hasActiveSubscription === false;
+
   const canSee = (item) => {
+    if (studentBlocked && item.subscriptionGated) return false;
     if (item.permission) return hasPermission(item.permission);
     if (item.anyPermission) return hasAnyPermission(item.anyPermission);
     return true;

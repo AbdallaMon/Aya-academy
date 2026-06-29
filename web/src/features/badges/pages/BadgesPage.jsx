@@ -11,11 +11,12 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { useAuth } from "../../../hooks/useAuth.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { EmptyState } from "../../../shared/components/index.js";
+import { EmptyState, SubscriptionLockedState } from "../../../shared/components/index.js";
 import {
   REWARDS_URL,
   REWARD_TYPE_META,
@@ -26,16 +27,18 @@ import { useBadgesText } from "../config/badgesText.js";
 
 export default function BadgesPage() {
   const txt = useBadgesText();
+  const { user } = useAuth();
   const { lng } = useTranslation();
   const { hasPermission } = usePermission();
   const canList = hasPermission(PERMISSIONS.REWARD.LIST);
+  const blocked = user?.role === USER_ROLES.STUDENT && user?.hasActiveSubscription === false;
 
   // Rewards endpoint is paginated + role-scoped (a student sees only their own).
   const { data, isLoading } = useRequest({
     url: REWARDS_URL,
     method: "get",
     isPaginated: true,
-    autoFetch: canList,
+    autoFetch: canList && !blocked,
     syncToUrl: false,
     initialParams: { limit: 100 },
   });
@@ -53,6 +56,7 @@ export default function BadgesPage() {
   }
 
   if (!canList) return null;
+  if (blocked) return <SubscriptionLockedState variant="student" />;
 
   return (
     <Box>

@@ -18,10 +18,11 @@ import {
   Typography,
 } from "@mui/material";
 import { MdEmojiEvents } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { useAuth } from "../../../hooks/useAuth.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { EmptyState } from "../../../shared/components/index.js";
+import { EmptyState, SubscriptionLockedState } from "../../../shared/components/index.js";
 import { useLeaderboardText } from "../config/leaderboardText.js";
 
 const RANK_COLORS = { 1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32" };
@@ -29,8 +30,10 @@ const RANK_COLORS = { 1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32" };
 /** Full leaderboard with a week | all-time toggle. */
 export default function LeaderboardPage() {
   const txt = useLeaderboardText();
+  const { user } = useAuth();
   const { hasPermission } = usePermission();
   const canView = hasPermission(PERMISSIONS.POINT.VIEW_LEADERBOARD);
+  const blocked = user?.role === USER_ROLES.STUDENT && user?.hasActiveSubscription === false;
   const [range, setRange] = useState("week");
 
   // Non-paginated GET: query params must live in the URL. Changing `url`
@@ -38,13 +41,14 @@ export default function LeaderboardPage() {
   const { data, isLoading } = useRequest({
     url: `points/leaderboard?range=${range}`,
     method: "get",
-    autoFetch: canView,
+    autoFetch: canView && !blocked,
     syncToUrl: false,
   });
 
   const rows = Array.isArray(data) ? data : [];
 
   if (!canView) return null;
+  if (blocked) return <SubscriptionLockedState variant="student" />;
 
   return (
     <Box>
