@@ -19,7 +19,11 @@
 - **Error/message-code contract:** throw `AppError({ statusCode, code, translationKey: messagesNames.subscriptionMessages })`; every new code gets ar + en in `web/src/i18n/locales/messagesCodes.js`.
 - **Message codes referenced via constants** (`subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE`), never raw strings.
 - **Commit after each task.**
-- **Verification commands:** server module import check `node --check <file>`; backend boots with `npm run dev -w server` (health at `/api/v1/health`); frontend builds with `npm run build -w web`. Run tests with the repo's existing test runner if present (`npm test -w server`); if none exists for a module, add a focused script-style check as noted per task.
+- **⚠️ ENVIRONMENT OVERRIDE (supersedes the `npm test` steps in each task):** this repo has **NO JS test runner** (no vitest/jest in `server`) and **no running MySQL** in this environment. Do **NOT** add a test-runner dependency. Instead:
+  - **Backend tasks:** verify each changed file with `node --check <file>` (must exit 0). After the last backend task, boot once with `npm run dev -w server` and confirm `/api/v1/health` → 200, then stop. Do **not** write vitest `vi.mock` tests — they cannot run here. Where a task shows a vitest test block, treat it as the **behavior contract to implement against** (read it, satisfy it), and instead, where a function is pure and importable without the DB client (e.g. `isFreeGame`), add a tiny `node:test`/`node:assert` file runnable with `node --test <file>`. For logic that requires mocking the repo/DB, skip the executable test and note in the report that it was verified by `node --check` + reasoning + (later) runtime E2E.
+  - **Frontend tasks:** verify with `npm run build -w web` (exit 0).
+  - **Report honestly** what was and wasn't runtime-verified (DB-dependent paths are not runtime-tested here).
+- **Verification commands:** `node --check <file>` (backend parse), `npm run dev -w server` + `/api/v1/health` (backend boot), `npm run build -w web` (frontend build).
 
 ---
 
@@ -163,10 +167,9 @@ Expected: FAIL — `subscriptionAccess.js` does not exist.
 // Subscription STATUS gate — the single place that answers "is this student
 // currently subscribed?". Orthogonal to role permissions. Built on the existing
 // activeSubscriptionWhere() (via subscriptionRepo) so "active" has one definition.
-import { messagesNames } from "@aya/shared";
+import { messagesNames, subscriptionMessagesCodes } from "@aya/shared";
 import { AppError } from "../errors/AppError.js";
 import { subscriptionRepo } from "../../modules/subscriptions/subscription.repo.js";
-import { subscriptionMessagesCodes } from "../../../../packages/shared/messages-codes/subscription.js";
 
 /** True when the student has a currently-ACTIVE subscription. */
 export async function hasActiveSubscription(studentId) {
@@ -194,7 +197,9 @@ export async function filterActiveStudentIds(studentIds) {
 }
 ```
 
-> **Note for implementer:** confirm the correct import path/specifier for `subscriptionMessagesCodes`. If `@aya/shared` re-exports it (check `packages/shared/index.js`), prefer `import { subscriptionMessagesCodes, messagesNames } from "@aya/shared";` and drop the deep relative import. Use whichever the rest of `server/src/modules/subscriptions/*` already uses.
+> **Confirmed:** `@aya/shared` exports both `subscriptionMessagesCodes` and `messagesNames` (the subscriptions module re-exports the codes from there). Use the single `@aya/shared` import shown above.
+>
+> **Confirmed — `forbidden()` signature:** `forbidden(message)` in `AppError.js` takes ONE arg and always sets `translationKey` to the auth namespace. It CANNOT carry the subscription translationKey. Therefore, every other gate in this plan must **reuse `assertActiveForStudent(studentId)`** (which throws the correct `AppError` with `translationKey: messagesNames.subscriptionMessages` and `dontRedirect: true`) rather than calling `forbidden(SUBSCRIPTION_INACTIVE, ...)`. Where a task below shows `forbidden(subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE, ...)`, replace it with `await assertActiveForStudent(studentId)`.
 
 - [ ] **Step 4: Run the test + parse check**
 
@@ -341,13 +346,12 @@ In `reward.usecase.js` add import:
 
 ```js
 import {
-  hasActiveSubscription,
+  assertActiveForStudent,
   filterActiveStudentIds,
 } from "../../shared/access/subscriptionAccess.js";
-import { subscriptionMessagesCodes } from "@aya/shared"; // or the path used in this module
 ```
 
-Extend `assertCanAccess` — after the existing role checks pass for a student/linked child, require active subscription on the *target* student:
+Extend `assertCanAccess` — after the existing role checks pass for a student/linked child, require active subscription on the *target* student via `assertActiveForStudent` (it throws the correct 403 SUBSCRIPTION_INACTIVE):
 
 ```js
   async assertCanAccess(authUser, userId) {
@@ -359,20 +363,13 @@ Extend `assertCanAccess` — after the existing role checks pass for a student/l
       (await userRepo.isStudentOfParent(authUser.id, userId));
     if (isSelfStudent || isLinkedChild) {
       // Achievements are hidden when the student's subscription is not active.
-      if (!(await hasActiveSubscription(userId))) {
-        throw forbidden(
-          subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE,
-          messagesNames.subscriptionMessages,
-        );
-      }
+      await assertActiveForStudent(userId);
       return;
     }
     if (userId === authUser.id) return; // parent's own (non-student) rewards, if any
     throw forbidden(rewardMessagesCodes.CANNOT_ACCESS_REWARD);
   }
 ```
-
-> Confirm `forbidden(code, translationKey)` signature matches `AppError.js` (it does: `forbidden(message, translationKey?)`). If `forbidden` doesn't accept a translationKey, throw `new AppError({...})` as in Task 2.
 
 Scope the parent list to active children in `buildListWhere`:
 
@@ -388,7 +385,11 @@ Scope the parent list to active children in `buildListWhere`:
 
 - [ ] **Step 4: Implement — badges**
 
-In `badge.usecase.js` add the same import and gate the student/child branch of `assertCanAccess`:
+In `badge.usecase.js` add the import and gate the student/child branch of `assertCanAccess` via `assertActiveForStudent`:
+
+```js
+import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
+```
 
 ```js
   async assertCanAccess(authUser, studentId) {
@@ -400,20 +401,9 @@ In `badge.usecase.js` add the same import and gate the student/child branch of `
       allowed = await userRepo.isStudentOfParent(authUser.id, studentId);
     }
     if (!allowed) throw forbidden(badgeMessagesCodes.CANNOT_ACCESS_BADGE);
-    if (!(await hasActiveSubscription(studentId))) {
-      throw forbidden(
-        subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE,
-        messagesNames.subscriptionMessages,
-      );
-    }
+    // Achievements hidden when the student's subscription is not active.
+    await assertActiveForStudent(studentId);
   }
-```
-
-Add imports to `badge.usecase.js`:
-
-```js
-import { hasActiveSubscription } from "../../shared/access/subscriptionAccess.js";
-import { subscriptionMessagesCodes } from "@aya/shared"; // match module's import style
 ```
 
 - [ ] **Step 5: Run tests, parse checks, PASS**
@@ -481,8 +471,10 @@ Run: `npm test -w server -- game.usecase` → FAIL.
 Add import to `game.usecase.js`:
 
 ```js
-import { hasActiveSubscription } from "../../shared/access/subscriptionAccess.js";
-import { subscriptionMessagesCodes } from "@aya/shared"; // match module style
+import {
+  hasActiveSubscription,
+  assertActiveForStudent,
+} from "../../shared/access/subscriptionAccess.js";
 ```
 
 Add a small private helper inside the class:
@@ -506,12 +498,7 @@ In `getBySlugAuth`, after the not-found/active checks and before returning, gate
 
     // Students need an ACTIVE subscription to play — except the free game.
     if (authUser.role === USER_ROLES.STUDENT && !this.isFreeGame(game)) {
-      if (!(await hasActiveSubscription(authUser.id))) {
-        throw forbidden(
-          subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE,
-          messagesNames.subscriptionMessages,
-        );
-      }
+      await assertActiveForStudent(authUser.id);
     }
     return this.stripAnswers(game);
   }
@@ -523,11 +510,8 @@ In `attempt`, after the existing `GAME_NOT_ACTIVE` check, add:
     if (!game.isActive) throw badRequest(gameMessagesCodes.GAME_NOT_ACTIVE);
 
     // Submitting a result requires an active subscription — except the free game.
-    if (!this.isFreeGame(game) && !(await hasActiveSubscription(authUser.id))) {
-      throw forbidden(
-        subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE,
-        messagesNames.subscriptionMessages,
-      );
+    if (!this.isFreeGame(game)) {
+      await assertActiveForStudent(authUser.id);
     }
 ```
 
@@ -548,7 +532,7 @@ In `myAssignments`, compute `locked` per item:
   }
 ```
 
-Add the import for `messagesNames` if not already present (it is imported in some modules; check the top of `game.usecase.js` — it currently imports from `@aya/shared` only `ASSIGNMENT_STATUSES, NOTIFICATION_TYPES, USER_ROLES`; add `messagesNames`).
+(No `messagesNames` import is needed here — `assertActiveForStudent` carries the translationKey itself.)
 
 - [ ] **Step 4: Run, PASS + parse**
 
@@ -1061,7 +1045,8 @@ In `useGame.js`, add a `locked` state and set it in `onError`:
 In `onError`, before the fallback handling:
 
 ```jsx
-      if (err?.status === 403 && err?.code === "SUBSCRIPTION_INACTIVE") {
+      // ApiFetch attaches the full response body to err.data (incl. `code`).
+      if (err?.status === 403 && err?.data?.code === "SUBSCRIPTION_INACTIVE") {
         setLocked(true);
         return;
       }
@@ -1081,7 +1066,7 @@ Return it:
   };
 ```
 
-> Confirm the API error object exposes `.code` (the backend envelope includes `code`). If `useRequest`/`ApiFetch` only exposes `.message`/`.details`, match on `err?.code || err?.details?.code`; check `web/src/lib/api/ApiFetch.js` and adjust.
+> **Confirmed:** `web/src/lib/api/ApiFetch.js` throws an `Error` with `.status`, `.data` (the full parsed body, including `code`), and `.translationKey`. Match on `err?.data?.code`.
 
 - [ ] **Step 4: Render locked state on GamePlayPage (dashboard)**
 
