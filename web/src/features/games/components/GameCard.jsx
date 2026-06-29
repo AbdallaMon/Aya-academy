@@ -1,7 +1,9 @@
 "use client";
 
 // GameCard — a big, friendly tappable card for the games list. Uses the game's
-// theme + hero emoji from configJson. Links to /games/:slug.
+// theme + hero emoji from configJson. Links to /games/:slug. When `locked`
+// (inactive subscription, non-free game) it renders dimmed, non-clickable, with
+// a lock badge — the card stays visible but cannot be played.
 
 import Link from "next/link";
 import { Box, Typography } from "@mui/material";
@@ -9,7 +11,6 @@ import { motion } from "framer-motion";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { pickText, DEFAULT_THEME } from "../engine/helpers.js";
-import CertificateDownloadButton from "../../certificates/components/CertificateDownloadButton.jsx";
 
 export default function GameCard({ game, basePath = "/dashboard/games", assignment, locked = false }) {
   const { t, lng } = useTranslation();
@@ -25,9 +26,7 @@ export default function GameCard({ game, basePath = "/dashboard/games", assignme
       ? `${dueLabel}: ${new Date(assignment.dueAt).toLocaleDateString()}`
       : null;
 
-  const isCompleted = assignment?.status === "COMPLETED";
-  const certificateId = assignment?.certificateId || null;
-  const ctaLabel = locked ? gd.locked : isCompleted ? gd.replay || gd.playNow : gd.playNow;
+  const ctaLabel = locked ? gd.locked : gd.playNow;
 
   const body = (
     <Box
@@ -119,19 +118,6 @@ export default function GameCard({ game, basePath = "/dashboard/games", assignme
           {body}
         </Link>
       )}
-
-      {/* Completed → offer the earned certificate right next to the game. The
-          button lives OUTSIDE the play <Link> (no nested interactive elements)
-          and renders nothing when no certificate exists. */}
-      {certificateId ? (
-        <Box sx={{ mt: 1, display: "flex", justifyContent: "center" }}>
-          <CertificateDownloadButton
-            certificateId={certificateId}
-            label={gd.downloadCertificate}
-            variant="text"
-          />
-        </Box>
-      ) : null}
     </motion.div>
   );
 }
