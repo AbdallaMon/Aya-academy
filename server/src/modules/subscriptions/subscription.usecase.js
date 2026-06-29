@@ -827,8 +827,15 @@ class SubscriptionUsecase {
       coupon: couponId ? { connect: { id: couponId } } : { disconnect: true },
     };
 
-    // 4. Persist the change.
-    const updated = await subscriptionRepo.updateSubscription(id, data);
+    // 4. Persist the change + correct the coupon redemption accounting atomically.
+    //    The new coupon (couponId) may differ from the sub's current one
+    //    (existing.couponId): old->new, old->none, none->new are all handled by
+    //    swapCouponRedemption. Without this the old coupon stays burned and the
+    //    new one is never counted.
+    const updated = await prisma.$transaction(async (tx) => {
+      await this.swapCouponRedemption(existing.couponId, couponId, tx);
+      return subscriptionRepo.updateSubscription(id, data, tx);
+    });
 
     // 5. Regenerate the demand invoice so its amounts match the new plan. The
     //    invoice usecase is loaded dynamically to avoid the subscription↔invoice
