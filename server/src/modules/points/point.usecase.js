@@ -6,6 +6,7 @@ import { userRepo } from "../users/user.repo.js";
 import { pointRepo } from "./point.repo.js";
 import { toLeaderboardItem } from "./point.dto.js";
 import { pointMessagesCodes } from "./point.messages.js";
+import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const LEADERBOARD_LIMIT = 50;
@@ -35,7 +36,12 @@ class PointUsecase {
    * Leaderboard (range=week|all). Returns up to 50 rows ordered by the relevant
    * metric. Exposes only name/nickname/points — never email/PII.
    */
-  async leaderboard(_authUser, { range }) {
+  async leaderboard(authUser, { range }) {
+    // Students must have an ACTIVE subscription to view the leaderboard.
+    // Admins/parents are unaffected.
+    if (authUser?.role === USER_ROLES.STUDENT) {
+      await assertActiveForStudent(authUser.id);
+    }
     const since = new Date(Date.now() - WEEK_MS);
 
     if (range === "week") {
