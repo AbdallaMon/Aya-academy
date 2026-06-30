@@ -7,6 +7,8 @@ export const subscriptionsText = {
     pageTitle: "الاشتراكات",
     view: "عرض",
     renew: "تجديد",
+    renewTitle: "تجديد الاشتراك",
+    renewSubmit: "تجديد",
     confirmRenewActive: "يوجد اشتراك فعّال لم ينتهِ بعد، هل تريد المتابعة؟",
     discount: "خصم",
     pageDescriptionAdmin:
@@ -67,6 +69,8 @@ export const subscriptionsText = {
     pageTitle: "Subscriptions",
     view: "View",
     renew: "Renew",
+    renewTitle: "Renew subscription",
+    renewSubmit: "Renew",
     confirmRenewActive: "There is still an active subscription, continue anyway?",
     discount: "Discount",
     pageDescriptionAdmin:

@@ -138,7 +138,7 @@ class CertificateUsecase {
         titleEn: `${name} earned a new certificate 🎓`,
         bodyAr: cert.reasonAr || cert.titleAr || undefined,
         bodyEn: cert.reasonEn || cert.titleEn || undefined,
-        link: "/dashboard",
+        link: `/dashboard/certificates/${cert.id}`,
         dataJson: { certificateId: cert.id },
       });
     } catch {

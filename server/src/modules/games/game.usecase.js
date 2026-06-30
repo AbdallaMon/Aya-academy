@@ -20,10 +20,6 @@ import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { gameRepo } from "./game.repo.js";
 import { gameMessagesCodes } from "./game.messages.js";
 
-// Points awarded per correct answer + a flat bonus for passing.
-const POINTS_PER_CORRECT = 5;
-const PASS_BONUS = 20;
-
 class GameUsecase {
   /**
    * Remove `isCorrect` from every option (kids must not see the raw answer key),
@@ -314,16 +310,10 @@ class GameUsecase {
         client: tx,
       });
 
-      if (firstCompletion) {
-        const points = correctCount * POINTS_PER_CORRECT + PASS_BONUS;
-        if (points > 0) {
-          await gameRepo.incrementStudentPoints({
-            studentId: authUser.id,
-            points,
-            client: tx,
-          });
-        }
-      }
+      // Points are NOT awarded directly for completing a game. The student's
+      // points are derived solely from the badges they earn — the linked badge
+      // (awarded below) is the single source of truth, so there is no
+      // double-counting between a "completion bonus" and the badge's score.
 
       if (existingAssignment) {
         await gameRepo.updateAssignmentStatus({

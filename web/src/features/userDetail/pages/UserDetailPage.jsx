@@ -19,14 +19,13 @@ import BadgesTab from "../components/BadgesTab.jsx";
 import CertificatesTab from "../components/CertificatesTab.jsx";
 import GamesTab from "../components/GamesTab.jsx";
 import EvaluationsTab from "../components/EvaluationsTab.jsx";
-import SubscriptionsTab from "../components/SubscriptionsTab.jsx";
+import SubscriptionsPage from "../../subscriptions/pages/SubscriptionsPage.jsx";
 import ParentChildrenTab from "../components/ParentChildrenTab.jsx";
 import ProfileTab from "../components/ProfileTab.jsx";
 import AwardBadgeDialog from "../components/AwardBadgeDialog.jsx";
 import GrantPointsDialog from "../components/GrantPointsDialog.jsx";
 import SendReportDialog from "../components/SendReportDialog.jsx";
 import SendInviteDialog from "../components/SendInviteDialog.jsx";
-import AddSubscriptionDialog from "../components/AddSubscriptionDialog.jsx";
 import BanDialog from "../components/BanDialog.jsx";
 
 export default function UserDetailPage({ userId }) {
@@ -43,9 +42,6 @@ export default function UserDetailPage({ userId }) {
   const canGrantPoints = hasPermission(PERMISSIONS.POINT.AWARD);
   const canSendReport = hasPermission(PERMISSIONS.REPORT.CREATE);
   const canSendInvite = hasPermission(PERMISSIONS.QUIZ.CREATE_INVITE);
-  const canAddSub = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE);
-  const canCancelSub = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL);
-  const canEditSub = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
   const canAssignGame = hasPermission(PERMISSIONS.GAME.ASSIGN);
   const canCreateCert = hasPermission(PERMISSIONS.CERTIFICATE.CREATE);
 
@@ -88,7 +84,6 @@ export default function UserDetailPage({ userId }) {
   const pointsDialog = useOpen();
   const reportDialog = useOpen();
   const inviteDialog = useOpen();
-  const subscriptionDialog = useOpen();
   const banDialog = useOpen();
 
   async function onUnban() {
@@ -225,15 +220,14 @@ export default function UserDetailPage({ userId }) {
       case "evaluations":
         return <EvaluationsTab overview={overview} txt={txt} />;
       case "subscriptions":
+        // The user-scoped subscriptions tab IS the real subscriptions page,
+        // filtered to this student — identical table + actions (approve / renew /
+        // invoice / request-payment …) for admin and parent alike.
         return (
-          <SubscriptionsTab
-            overview={overview}
-            txt={txt}
-            canAdd={canAddSub}
-            canCancel={canCancelSub}
-            canEdit={canEditSub}
-            onAdd={subscriptionDialog.open}
-            onRefetch={triggerRefetch}
+          <SubscriptionsPage
+            studentId={userId}
+            studentName={user.name}
+            embedded
           />
         );
       case "children":
@@ -293,14 +287,6 @@ export default function UserDetailPage({ userId }) {
           <SendReportDialog
             open={reportDialog.isOpen}
             onClose={reportDialog.close}
-            studentId={userId}
-            studentName={user.name}
-            txt={txt}
-            onSuccess={triggerRefetch}
-          />
-          <AddSubscriptionDialog
-            open={subscriptionDialog.isOpen}
-            onClose={subscriptionDialog.close}
             studentId={userId}
             studentName={user.name}
             txt={txt}

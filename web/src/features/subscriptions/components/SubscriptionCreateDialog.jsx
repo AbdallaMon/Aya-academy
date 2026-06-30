@@ -48,9 +48,9 @@ function deriveFromPlan(plan, billingPeriod, hourlyRate) {
   };
 }
 
-function makeDefaults(today) {
+function makeDefaults(today, studentId = "") {
   return {
-    studentId: "",
+    studentId,
     planId: "",
     billingPeriod: "MONTHLY",
     startDate: today,
@@ -61,14 +61,26 @@ function makeDefaults(today) {
   };
 }
 
-/** Admin-only: create an ACTIVE subscription for a student directly. */
-export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt, loading }) {
+/**
+ * Admin-only: create an ACTIVE subscription for a student directly.
+ * When `lockedStudent` ({ id, name }) is provided (embedded in a user's detail
+ * tab) the student is preset + shown read-only instead of the picker.
+ */
+export default function SubscriptionCreateDialog({
+  open,
+  onClose,
+  onCreate,
+  txt,
+  loading,
+  lockedStudent = null,
+}) {
   const { lng } = useTranslation();
   const { hourlyRate } = useAppSettings({ enabled: open });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const lockedStudentId = lockedStudent?.id ?? "";
 
   const { control, handleSubmit, reset, getValues, setValue } = useForm({
-    defaultValues: makeDefaults(today),
+    defaultValues: makeDefaults(today, lockedStudentId),
   });
 
   // The coupon is a complex async sub-state object ({ status, code, quote, reason })
@@ -102,16 +114,18 @@ export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt,
     syncToUrl: false,
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     if (open) {
-      studentsReq.fetchData();
+      // No need to load the student picker when the student is locked.
+      if (!lockedStudent) studentsReq.fetchData();
       plansReq.fetchData();
       publicPlansReq.fetchData();
-      reset(makeDefaults(today));
+      reset(makeDefaults(today, lockedStudentId));
       setCoupon(EMPTY_COUPON);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
   const plans = plansReq.data || [];
@@ -218,25 +232,35 @@ export default function SubscriptionCreateDialog({ open, onClose, onCreate, txt,
     >
       <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
-          <Controller
-            name="studentId"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                select
-                label={txt.selectStudent}
-                fullWidth
-                required
-              >
-                {students.map((s) => (
-                  <MenuItem key={s.id} value={s.id}>
-                    {s.name} {s.nickname ? `(${s.nickname})` : ""}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
+          {lockedStudent ? (
+            <TextField
+              label={txt.selectStudent}
+              value={lockedStudent.name || `#${lockedStudent.id}`}
+              fullWidth
+              InputProps={{ readOnly: true }}
+              disabled
+            />
+          ) : (
+            <Controller
+              name="studentId"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={txt.selectStudent}
+                  fullWidth
+                  required
+                >
+                  {students.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      {s.name} {s.nickname ? `(${s.nickname})` : ""}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          )}
 
           <Controller
             name="planId"

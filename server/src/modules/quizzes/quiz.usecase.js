@@ -7,7 +7,6 @@ import {
   messagesNames,
 } from "@aya/shared";
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "@aya/db/prisma.client.js";
 import {
   badRequest,
   conflict,
@@ -25,10 +24,6 @@ import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { quizRepo } from "./quiz.repo.js";
 import { quizMessagesCodes } from "./quiz.messages.js";
 import { quizListSelect, stripAnswers } from "./quiz.dto.js";
-
-// Points awarded per attempt: 5 per correct answer, +30 bonus on pass.
-const POINTS_PER_CORRECT = 5;
-const PASS_BONUS_POINTS = 30;
 
 class QuizUsecase {
   // ════════════════════════════════════════════════════════
@@ -602,29 +597,22 @@ class QuizUsecase {
     const scorePercent =
       totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
     const passed = scorePercent >= quiz.passThreshold;
-    const points = correctCount * POINTS_PER_CORRECT + (passed ? PASS_BONUS_POINTS : 0);
 
-    // Atomic: record the attempt + bump the student's points.
-    const attempt = await prisma.$transaction(async (tx) => {
-      const created = await quizRepo.createAttempt({
-        data: {
-          quizId,
-          studentId: authUser.id,
-          score: correctCount,
-          correctCount,
-          totalQuestions,
-          passed,
-          answersJson: input.answersJson ?? undefined,
-          completedAt: new Date(),
-        },
-        client: tx,
-      });
-      await quizRepo.incrementStudentPoints({
+    // Record the attempt. Points are NOT awarded directly for a quiz attempt —
+    // the student's points are derived solely from the badges they earn (the
+    // linked badge awarded below on pass), so there is no double-counting
+    // between an attempt bonus and the badge's score.
+    const attempt = await quizRepo.createAttempt({
+      data: {
+        quizId,
         studentId: authUser.id,
-        points,
-        client: tx,
-      });
-      return created;
+        score: correctCount,
+        correctCount,
+        totalQuestions,
+        passed,
+        answersJson: input.answersJson ?? undefined,
+        completedAt: new Date(),
+      },
     });
 
     let certificate = null;

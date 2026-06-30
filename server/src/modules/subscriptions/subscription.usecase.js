@@ -219,6 +219,20 @@ class SubscriptionUsecase {
     return where;
   }
 
+  /**
+   * Hide an unsent demand invoice from non-admins. A parent/student must not see
+   * the invoice until the teacher has requested payment for it (sentAt set), so
+   * we strip the embedded invoice projection for them when it hasn't been sent.
+   * Admins always see it. Mutates + returns the row for convenience.
+   */
+  gateInvoiceForViewer(row, authUser) {
+    if (!row) return row;
+    if (authUser.role !== USER_ROLES.ADMIN && row.invoice && !row.invoice.sentAt) {
+      row.invoice = null;
+    }
+    return row;
+  }
+
   async list({ authUser, page, limit, studentId, status }) {
     const { skip, take, page: p, limit: l } = paginate({ page, limit });
     const where = await this.buildListWhere(authUser, { studentId, status });
@@ -227,7 +241,8 @@ class SubscriptionUsecase {
       skip,
       take,
     });
-    return paginatedResult(items, total, p, l);
+    const gated = items.map((row) => this.gateInvoiceForViewer(row, authUser));
+    return paginatedResult(gated, total, p, l);
   }
 
   async listExpiring({ authUser, page, limit, days }) {
@@ -271,7 +286,7 @@ class SubscriptionUsecase {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
     await this.assertCanAccess(authUser, subscription.studentId);
-    return subscription;
+    return this.gateInvoiceForViewer(subscription, authUser);
   }
 
   async create({ authUser, ...input }) {
@@ -1037,21 +1052,9 @@ class SubscriptionUsecase {
       }
     }
 
-    // 5. Notify the student their subscription is active (best-effort).
-    try {
-      await notificationUsecase.createNotification({
-        userId: updated.studentId,
-        type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
-        titleAr: "تم تفعيل اشتراكك 🎉",
-        titleEn: "Your subscription has been activated 🎉",
-        link: "/dashboard",
-      });
-    } catch {
-      // swallow — notification is best-effort
-    }
-
-    // 6. Notify the student's parent(s) too — they manage the subscription and
-    //    should know it is now active (best-effort).
+    // 5. Notify the student's PARENT(s) — they manage the subscription and pay
+    //    for it, so the activation notice goes to them, not to the student
+    //    (best-effort). The parent's notification deep-links to the subscription.
     try {
       const parentIds = await userRepo.getParentIdsForStudent(updated.studentId);
       if (parentIds.length) {
@@ -1059,7 +1062,7 @@ class SubscriptionUsecase {
           type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
           titleAr: "تم تفعيل اشتراك ابنك/ابنتك 🎉",
           titleEn: "Your child's subscription has been activated 🎉",
-          link: "/dashboard",
+          link: `/dashboard/subscriptions/${updated.id}`,
           dataJson: { subscriptionId: updated.id, studentId: updated.studentId },
         });
       }

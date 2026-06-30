@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { MdAutorenew, MdEdit, MdFileDownload, MdReceiptLong, MdPaid } from "react-icons/md";
+import { MdAutorenew, MdEdit, MdFileDownload, MdReceiptLong, MdPaid, MdSend, MdCheckCircle } from "react-icons/md";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
@@ -12,6 +12,7 @@ import {
   INVOICES_URL,
   invoiceGeneratePath,
   invoiceSubscriptionPath,
+  invoiceSendPath,
 } from "../config/constant.js";
 import InvoiceDocument from "./InvoiceDocument.jsx";
 import InvoiceEditForm from "./InvoiceEditForm.jsx";
@@ -59,6 +60,17 @@ export default function InvoiceDialog({
 
   async function generate() {
     await mut.postRequest(invoiceGeneratePath(subscriptionId), {});
+    refresh();
+  }
+
+  async function requestPayment() {
+    if (!invoice) return;
+    const sure = await confirm({
+      title: txt.requestPaymentConfirm,
+      intent: "info",
+    });
+    if (!sure) return;
+    await mut.postRequest(invoiceSendPath(invoice.id), {});
     refresh();
   }
 
@@ -120,6 +132,17 @@ export default function InvoiceDialog({
               disabled={busy}
             >
               {txt.edit}
+            </Button>
+          )}
+          {canEdit && invoice.status !== "PAID" && (
+            <Button
+              variant={invoice.sentAt ? "outlined" : "contained"}
+              color="info"
+              startIcon={invoice.sentAt ? <MdCheckCircle /> : <MdSend />}
+              onClick={requestPayment}
+              disabled={busy}
+            >
+              {invoice.sentAt ? txt.resendPayment : txt.requestPayment}
             </Button>
           )}
           {canEdit && invoice.status !== "PAID" && (

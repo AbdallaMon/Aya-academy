@@ -2,17 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Box, Chip, Grid, Stack, Typography } from "@mui/material";
-import { MdEdit, MdDelete } from "react-icons/md";
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { MdEdit, MdDelete, MdVisibility } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
+import { localePath } from "../../../i18n/routing.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
 import {
   DataTable,
+  EmptyState,
   FormDialog,
   PageHeader,
   RHFTextArea,
@@ -29,6 +38,7 @@ import {
 } from "../config/constant.js";
 import { useReportsText } from "../config/reportsText.js";
 import StudentsMultiSelect from "../components/StudentsMultiSelect.jsx";
+import ReportCard from "../components/ReportCard.jsx";
 
 const FORM_ID = "report-form";
 
@@ -42,6 +52,12 @@ export default function ReportsPage() {
   const canCreate = hasPermission(PERMISSIONS.REPORT.CREATE);
   const canEdit = hasPermission(PERMISSIONS.REPORT.EDIT);
   const canDelete = hasPermission(PERMISSIONS.REPORT.DELETE);
+  // Management = anyone who can author/manage reports (admin/manager). Parents
+  // hold only LIST/VIEW, so they get the read-only card grid instead of the table.
+  const isManagement = canCreate || canEdit || canDelete;
+
+  const reportHref = (id) =>
+    localePath(lng, `/dashboard/${REPORTS_URL}/${id}`);
 
   const {
     data,
@@ -217,6 +233,11 @@ export default function ReportsPage() {
           <RowActionsMenu
             actions={[
               {
+                label: txt.view,
+                icon: <MdVisibility />,
+                href: reportHref(row.id),
+              },
+              {
                 label: txt.edit,
                 icon: <MdEdit />,
                 onClick: () => onEdit(row),
@@ -253,20 +274,28 @@ export default function ReportsPage() {
         onCreate={canCreate ? onCreate : undefined}
       />
 
-      <DataTable
-        initialRows={data || []}
-        columns={columns}
-        total={total}
-        page={page}
-        rowsPerPage={pageSize}
-        setPage={setPage}
-        setRowsPerPage={setPageSize}
-        loading={isLoading}
-        filters={filters}
-        setFilters={setFilters}
-        filterConfig={filterConfig}
-        noContainer
-      />
+      {isManagement ? (
+        <DataTable
+          initialRows={data || []}
+          columns={columns}
+          total={total}
+          page={page}
+          rowsPerPage={pageSize}
+          setPage={setPage}
+          setRowsPerPage={setPageSize}
+          loading={isLoading}
+          filters={filters}
+          setFilters={setFilters}
+          filterConfig={filterConfig}
+          noContainer
+        />
+      ) : (
+        <ParentReportsGrid
+          reports={data || []}
+          isLoading={isLoading}
+          txt={txt}
+        />
+      )}
 
       <FormDialog
         open={form.isOpen}
@@ -328,5 +357,37 @@ export default function ReportsPage() {
         </form>
       </FormDialog>
     </Box>
+  );
+}
+
+// Parent (read-only) view: a responsive card grid of reports, each linking to
+// the detail page. Handles the loading + empty states gracefully.
+function ParentReportsGrid({ reports, isLoading, txt }) {
+  if (isLoading && !reports.length) {
+    return (
+      <Stack alignItems="center" sx={{ py: 8 }}>
+        <CircularProgress />
+      </Stack>
+    );
+  }
+
+  if (!reports.length) {
+    return (
+      <EmptyState
+        title={txt.emptyTitle}
+        body={txt.emptyBody}
+        icon={<Box sx={{ fontSize: 48 }}>📋</Box>}
+      />
+    );
+  }
+
+  return (
+    <Grid container spacing={2.5}>
+      {reports.map((report) => (
+        <Grid key={report.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+          <ReportCard report={report} txt={txt} />
+        </Grid>
+      ))}
+    </Grid>
   );
 }

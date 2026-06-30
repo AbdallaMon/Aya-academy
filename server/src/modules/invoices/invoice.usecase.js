@@ -231,6 +231,12 @@ class InvoiceUsecase {
       authUser,
       invoice.subscription?.studentId,
     );
+    // A non-admin (parent/student) only sees an invoice once the teacher has
+    // requested payment for it (sentAt set). Before that it does not exist for
+    // them — same 404 as a missing invoice, so its existence is not leaked.
+    if (authUser.role !== USER_ROLES.ADMIN && !invoice.sentAt) {
+      throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
+    }
     return invoice;
   }
 
@@ -241,7 +247,13 @@ class InvoiceUsecase {
       throw notFound(invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
     await subscriptionUsecase.assertCanAccess(authUser, subscription.studentId);
-    return invoiceRepo.getBySubscriptionId(subscriptionId);
+    const invoice = await invoiceRepo.getBySubscriptionId(subscriptionId);
+    // Hide an unsent invoice from non-admins (see getById) — to a parent/student
+    // the subscription simply has no invoice until the teacher requests payment.
+    if (authUser.role !== USER_ROLES.ADMIN && invoice && !invoice.sentAt) {
+      return null;
+    }
+    return invoice;
   }
 
   /**
@@ -256,8 +268,11 @@ class InvoiceUsecase {
     if (authUser.role === USER_ROLES.PARENT) {
       const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
       where.subscription = { studentId: { in: studentIds } };
+      // Non-admins only see invoices the teacher has requested payment for.
+      where.sentAt = { not: null };
     } else if (authUser.role === USER_ROLES.STUDENT) {
       where.subscription = { studentId: authUser.id };
+      where.sentAt = { not: null };
     }
 
     return invoiceRepo.list({ page, limit, where });
@@ -386,7 +401,7 @@ class InvoiceUsecase {
       });
     }
 
-    const link = `/dashboard/subscriptions/${invoice.subscriptionId}`;
+    const link = `/dashboard/invoices/${invoice.id}`;
 
     const delivered = await messagingService.notifyInvoiceSent({
       parents,
@@ -435,14 +450,19 @@ class InvoiceUsecase {
       status,
     });
 
+    // Notify the student's PARENT(s) — they pay for and manage the subscription,
+    // so the payment-confirmed/activation notice goes to them, not the student.
     try {
-      await notificationUsecase.createNotification({
-        userId: updated.studentId,
-        type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
-        titleAr: "تم تأكيد الدفع وتفعيل اشتراكك 🎉",
-        titleEn: "Payment confirmed — your subscription is now active 🎉",
-        link: "/dashboard",
-      });
+      const parentIds = await userRepo.getParentIdsForStudent(updated.studentId);
+      if (parentIds.length) {
+        await notificationUsecase.createManyForUsers(parentIds, {
+          type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
+          titleAr: "تم تأكيد الدفع وتفعيل اشتراك ابنك/ابنتك 🎉",
+          titleEn: "Payment confirmed — your child's subscription is now active 🎉",
+          link: `/dashboard/subscriptions/${updated.id}`,
+          dataJson: { subscriptionId: updated.id, studentId: updated.studentId },
+        });
+      }
     } catch {
       // swallow — notification is best-effort
     }

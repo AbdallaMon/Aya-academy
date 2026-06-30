@@ -1,5 +1,6 @@
 import { forbidden, notFound } from "../../shared/errors/AppError.js";
 import { paginatedResult } from "../../shared/utility/pagination.js";
+import { emitToUser } from "../../infra/realtime/socket.js";
 import { notificationMessagesCodes } from "./notification.messages.js";
 import { notificationRepo } from "./notification.repo.js";
 
@@ -54,15 +55,26 @@ class NotificationUsecase {
   // ── reusable service (importable by other modules) ──────────
   // FROZEN signatures — called cross-module (badges / games / quizzes /
   // subscriptions / certificates / invoices / auth / reports / messaging).
-  /** Create a single notification for one user. */
-  createNotification(input, tx) {
-    return notificationRepo.create({ data: toCreateData(input), client: tx });
+  /** Create a single notification for one user, then push it over the socket. */
+  async createNotification(input, tx) {
+    const created = await notificationRepo.create({
+      data: toCreateData(input),
+      client: tx,
+    });
+    emitToUser(input.userId, "notification:new", created);
+    return created;
   }
 
-  /** Create one notification per user from a shared payload. */
-  createManyForUsers(userIds, input, tx) {
+  /** Create one notification per user from a shared payload, pushing to each. */
+  async createManyForUsers(userIds, input, tx) {
     const data = userIds.map((userId) => toCreateData({ ...input, userId }));
-    return notificationRepo.createMany({ data, client: tx });
+    const result = await notificationRepo.createMany({ data, client: tx });
+    // createMany returns a count, not rows — push a lightweight signal so each
+    // recipient's client refetches its list + unread badge (and chimes).
+    for (const userId of userIds) {
+      emitToUser(userId, "notification:new", null);
+    }
+    return result;
   }
 }
 

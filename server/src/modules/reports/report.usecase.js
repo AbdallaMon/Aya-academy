@@ -82,7 +82,10 @@ class ReportUsecase {
         type: NOTIFICATION_TYPES.REPORT_RECEIVED,
         titleAr: report.title,
         titleEn: report.title,
-        link: "/dashboard",
+        bodyAr: "وصلك تقرير جديد. اضغط لعرض التفاصيل.",
+        bodyEn: "You have a new report. Tap to view the details.",
+        link: `/dashboard/reports/${report.id}`,
+        dataJson: { reportId: report.id },
       });
     } catch {
       // notification failures must not break report creation
