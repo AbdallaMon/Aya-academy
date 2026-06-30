@@ -54,32 +54,30 @@ const raf = () => new Promise((r) => requestAnimationFrame(() => r()));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * Capture `node` at a fixed, device-independent A4 design width. Parks the node
- * off-screen at the design width (so the page doesn't visibly resize), waits for
- * fonts + reflow + any auto-fitter to settle, rasterizes, then restores every
- * inline style it touched. Returns a PNG data URL + the captured CSS size.
+ * Capture `node` at a fixed, device-independent A4 design width. We force ONLY
+ * the node's width (in place) — never its position. html-to-image clones the
+ * node together with its inline styles, so giving it an off-screen position here
+ * would draw the clone off-canvas and yield a blank image; instead we widen it in
+ * place (briefly, behind the click) and rely on html-to-image rendering the clone
+ * standalone (ancestor clipping/scroll don't affect the capture). Waits for fonts
+ * + reflow + any auto-fitter to settle, rasterizes, then restores the styles.
+ * Returns a PNG data URL + the captured CSS size.
  */
 async function captureNodeFixed(node, { orientation = "portrait", pixelRatio = 2 } = {}) {
   if (!node) throw new Error("captureNodeFixed: missing node");
   const designW = DESIGN_WIDTH[orientation] || DESIGN_WIDTH.portrait;
 
-  // These are all class-driven (emotion/MUI) on our documents, so the inline
-  // values are empty strings — overriding then clearing them hands styling back
-  // to the original CSS cleanly.
+  // These are class-driven (emotion/MUI) on our documents, so the inline values
+  // are empty strings — overriding then clearing them hands styling back to the
+  // original CSS cleanly. We touch ONLY width/maxWidth/margin (no position).
   const s = node.style;
-  const keys = ["position", "left", "top", "right", "bottom", "margin", "width", "maxWidth", "zIndex"];
+  const keys = ["margin", "width", "maxWidth"];
   const saved = {};
   keys.forEach((k) => (saved[k] = s[k]));
 
-  s.position = "fixed";
-  s.left = "-100000px";
-  s.top = "0";
-  s.right = "auto";
-  s.bottom = "auto";
   s.margin = "0";
   s.width = `${designW}px`;
   s.maxWidth = `${designW}px`;
-  s.zIndex = "-1";
 
   try {
     if (typeof document !== "undefined" && document.fonts?.ready) {
