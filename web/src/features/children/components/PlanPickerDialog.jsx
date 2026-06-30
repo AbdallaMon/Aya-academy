@@ -21,7 +21,13 @@ import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.
 
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
-/** Pick a plan + cycle (with the plan's removable default coupon) and request it. */
+/**
+ * Pick a plan + cycle (with the plan's removable default coupon) and request it.
+ *
+ * Reused for renewal too (subscriptionDetail/RenewDialog): pass `defaultPlanId` +
+ * `defaultBillingPeriod` to preselect the current plan/cycle, and `title` /
+ * `confirmLabel` / `confirmingLabel` to relabel for the renewal context.
+ */
 export default function PlanPickerDialog({
   open,
   onClose,
@@ -29,10 +35,15 @@ export default function PlanPickerDialog({
   onRequest,
   requesting,
   txt,
+  defaultPlanId = null,
+  defaultBillingPeriod = "MONTHLY",
+  title,
+  confirmLabel,
+  confirmingLabel,
 }) {
   const { lng } = useTranslation();
-  const [billingPeriod, setBillingPeriod] = useState("MONTHLY");
-  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [billingPeriod, setBillingPeriod] = useState(defaultBillingPeriod);
+  const [selectedPlanId, setSelectedPlanId] = useState(defaultPlanId);
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
 
   const plansReq = useRequest({
@@ -43,15 +54,23 @@ export default function PlanPickerDialog({
     syncToUrl: false,
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     if (open) {
-      setBillingPeriod("MONTHLY");
-      setSelectedPlanId(null);
+      setBillingPeriod(defaultBillingPeriod);
+      setSelectedPlanId(defaultPlanId);
       setCoupon(EMPTY_COUPON);
       plansReq.fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Seed the preselected plan's default coupon once the public plans resolve.
+  useEffect(() => {
+    if (!open || !defaultPlanId) return;
+    const p = (plansReq.data || []).find((x) => x.id === defaultPlanId);
+    if (p) setCoupon(initialCoupon(p, defaultBillingPeriod));
+  }, [open, plansReq.data]);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const plans = plansReq.data || [];
   const isYearly = billingPeriod === "YEARLY";
@@ -78,11 +97,15 @@ export default function PlanPickerDialog({
     <FormDialog
       open={open}
       onClose={onClose}
-      title={`${txt.pickPlanTitle} ${child?.name || ""}`}
+      title={title ?? `${txt.pickPlanTitle} ${child?.name || ""}`}
       maxWidth="md"
       showCloseIcon
       loading={requesting}
-      submitText={requesting ? txt.requesting : txt.request}
+      submitText={
+        requesting
+          ? confirmingLabel ?? txt.requesting
+          : confirmLabel ?? txt.request
+      }
       cancelText={txt.cancel}
       onSubmit={confirm}
     >
