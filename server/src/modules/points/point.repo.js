@@ -4,7 +4,6 @@
 // and returns { items, total, page, pageSize }.)
 // ===========================================================================
 
-import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
 import { pointSelect, leaderboardStudentSelect } from "./point.dto.js";
@@ -43,14 +42,23 @@ class PointRepo {
   }
 
   // ── leaderboard helpers ──────────────────────────────────────
-  /** Top students by all-time cached points (User.points). */
-  topStudentsByPoints({ take, client } = {}) {
-    return (client ?? prisma).user.findMany({
-      where: { role: USER_ROLES.STUDENT, isActive: true },
-      orderBy: { points: "desc" },
+  /**
+   * Students ranked by ALL-TIME ledger sum (for range=all). Derived purely from
+   * the Point ledger — NOT the cached User.points counter — so the leaderboard
+   * total always equals the real sum of point rows. Returns
+   * [{ studentId, totalPoints }] ordered desc, limited to `take`.
+   */
+  async topStudentsByAllTime({ take, client } = {}) {
+    const grouped = await (client ?? prisma).point.groupBy({
+      by: ["studentId"],
+      _sum: { amount: true },
+      orderBy: { _sum: { amount: "desc" } },
       take,
-      select: leaderboardStudentSelect,
     });
+    return grouped.map((g) => ({
+      studentId: g.studentId,
+      totalPoints: g._sum.amount ?? 0,
+    }));
   }
 
   /** Sum of ledger amounts since `since`, grouped by student. */

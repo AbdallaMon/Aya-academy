@@ -78,17 +78,20 @@ class PointUsecase {
       });
     }
 
-    // range=all → order by cached all-time points.
-    const students = await pointRepo.topStudentsByPoints({
+    // range=all → rank by ALL-TIME ledger sum (from Point only, NOT the cached
+    // User.points counter) so the total always equals the real sum of point rows.
+    const ranked = await pointRepo.topStudentsByAllTime({
       take: LEADERBOARD_LIMIT,
     });
-    const ids = students.map((s) => s.id);
+    const ids = ranked.map((r) => r.studentId);
     if (!ids.length) return [];
 
-    const [weekly, badges] = await Promise.all([
+    const [students, weekly, badges] = await Promise.all([
+      pointRepo.getStudentsByIds({ studentIds: ids }),
       pointRepo.weeklyPointsByStudent({ since }),
       pointRepo.badgeCountByStudent({ studentIds: ids }),
     ]);
+    const studentById = new Map(students.map((s) => [s.id, s]));
     const weeklyById = new Map(
       weekly.map((w) => [w.studentId, w._sum?.amount ?? 0]),
     );
@@ -96,22 +99,23 @@ class PointUsecase {
       badges.map((b) => [b.studentId, b._count?._all ?? 0]),
     );
 
-    return students.map((s, i) =>
-      toLeaderboardItem(
+    return ranked.map((r, i) => {
+      const s = studentById.get(r.studentId) ?? {};
+      return toLeaderboardItem(
         {
-          studentId: s.id,
+          studentId: r.studentId,
           name: s.name,
           nickname: s.nickname,
-          points: s.points,
-          weeklyPoints: weeklyById.get(s.id) ?? 0,
-          badgeCount: badgeById.get(s.id) ?? 0,
+          points: r.totalPoints,
+          weeklyPoints: weeklyById.get(r.studentId) ?? 0,
+          badgeCount: badgeById.get(r.studentId) ?? 0,
           level: s.level,
           studentLevel: s.studentLevel,
           avatar: s.avatar,
         },
         i + 1,
-      ),
-    );
+      );
+    });
   }
 
   /**
