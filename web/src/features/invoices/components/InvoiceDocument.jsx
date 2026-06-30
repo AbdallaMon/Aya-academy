@@ -155,7 +155,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
       }}
     >
       {/* Header band */}
-      <Box sx={{ bgcolor: headerColor, color: headerTextColor, px: { xs: 2, md: 4 }, py: { xs: 2, md: 3 } }}>
+      <Box sx={{ bgcolor: headerColor, color: headerTextColor, px: { xs: 2.5, md: 5 }, py: { xs: 2, md: 3 } }}>
         {/* Top row: logo + invoice title on the start, number + status on the end */}
         <Box sx={DOC_ROW_SX}>
           <Stack spacing={0.5} alignItems="flex-start" sx={{ minWidth: 0 }}>
@@ -213,7 +213,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
         </Box>
       </Box>
 
-      <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 2, md: 3 } }}>
+      <Box sx={{ px: { xs: 2.5, md: 5 }, py: { xs: 2, md: 3 } }}>
         {/* Bill-to + meta */}
         <Box sx={{ ...DOC_ROW_SX, mb: 2 }}>
           <Box sx={{ minWidth: 220 }}>

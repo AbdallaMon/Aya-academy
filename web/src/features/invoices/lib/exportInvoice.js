@@ -27,7 +27,16 @@ async function nodeToPng(node, { pixelRatio = 2 } = {}) {
       /* fonts API missing/failed — capture anyway */
     }
   }
-  return toPng(node, { pixelRatio, cacheBust: true, backgroundColor: "#ffffff" });
+  // Round the capture box UP. html-to-image otherwise floors a fractional width,
+  // which in RTL shaves the right-most (leading) pixels off the Arabic text.
+  const rect = node.getBoundingClientRect();
+  return toPng(node, {
+    pixelRatio,
+    cacheBust: true,
+    backgroundColor: "#ffffff",
+    width: Math.ceil(rect.width),
+    height: Math.ceil(rect.height),
+  });
 }
 
 // Download the invoice node as an A4-portrait PDF (multi-page when tall).
