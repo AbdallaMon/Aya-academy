@@ -1,8 +1,15 @@
 import { prisma } from "@aya/db/prisma.client.js";
+import { paginate } from "../../shared/utility/pagination.js";
+import {
+  buildSearchQuery,
+  buildIsActiveFilter,
+} from "../../shared/utility/helper.js";
 
 const planInclude = {
   plans: { include: { plan: { select: { id: true, titleAr: true, titleEn: true } } } },
 };
+
+const COUPON_STATUSES = ["active", "disabled", "consumed"];
 
 /**
  * Prisma `where` fragments for a coupon's COMPUTED state. A coupon's lifecycle
@@ -43,27 +50,67 @@ export function couponStatusConditions(status, now = new Date()) {
 }
 
 class CouponRepo {
-  async listCoupons(where, skip, take) {
+  /**
+   * Build the `where` for a coupon list from raw query filters. Lives in the repo
+   * because the lifecycle filter reuses `couponStatusConditions`, whose
+   * cross-column comparison touches the Prisma client.
+   */
+  buildListWhere({ search, isActive, status, source, planId } = {}) {
+    const where = {};
+    const and = [];
+
+    const searchWhere = buildSearchQuery({
+      searchType: "multiKeySearch",
+      keysValues: [{ key: "code", value: typeof search === "string" ? search : undefined }],
+    });
+    if (searchWhere.OR) and.push({ OR: searchWhere.OR });
+
+    if (source && source !== "ALL") where.source = source;
+
+    // Scope to a single plan's discounts (the per-plan discounts dialog).
+    if (planId) where.plans = { some: { planId: Number(planId) } };
+
+    // Lifecycle filter (active | disabled | consumed). Takes precedence over the
+    // legacy isActive boolean filter; falls back to it when no status is given.
+    if (status && COUPON_STATUSES.includes(status)) {
+      where.isActive = status !== "disabled";
+      and.push(...couponStatusConditions(status));
+    } else {
+      const active = buildIsActiveFilter({ isActive });
+      if (active !== undefined) where.isActive = active;
+    }
+
+    if (and.length) where.AND = and;
+
+    return where;
+  }
+
+  async listCoupons({ page, limit, search, isActive, status, source, planId, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+    const where = this.buildListWhere({ search, isActive, status, source, planId });
+
     const [items, total] = await Promise.all([
-      prisma.coupon.findMany({
+      db.coupon.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
         include: planInclude,
       }),
-      prisma.coupon.count({ where }),
+      db.coupon.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  getById(id) {
-    return prisma.coupon.findUnique({
+  getById({ id, client } = {}) {
+    return (client ?? prisma).coupon.findUnique({
       where: { id },
       include: planInclude,
     });
   }
 
+  // Positional `(code)` — also called cross-module (subscriptions / plans).
   getByCode(code) {
     return prisma.coupon.findUnique({
       where: { code },
@@ -71,8 +118,8 @@ class CouponRepo {
     });
   }
 
-  async createCoupon(data, planIds) {
-    return prisma.$transaction(async (tx) => {
+  async createCoupon({ data, planIds, client } = {}) {
+    const run = async (tx) => {
       const coupon = await tx.coupon.create({ data });
       if (planIds && planIds.length) {
         await tx.couponPlan.createMany({
@@ -83,11 +130,12 @@ class CouponRepo {
         where: { id: coupon.id },
         include: planInclude,
       });
-    });
+    };
+    return client ? run(client) : prisma.$transaction(run);
   }
 
-  async updateCoupon(id, data, planIds) {
-    return prisma.$transaction(async (tx) => {
+  async updateCoupon({ id, data, planIds, client } = {}) {
+    const run = async (tx) => {
       await tx.coupon.update({ where: { id }, data });
       if (planIds !== undefined) {
         await tx.couponPlan.deleteMany({ where: { couponId: id } });
@@ -101,11 +149,12 @@ class CouponRepo {
         where: { id },
         include: planInclude,
       });
-    });
+    };
+    return client ? run(client) : prisma.$transaction(run);
   }
 
-  deactivateCoupon(id) {
-    return prisma.coupon.update({
+  deactivateCoupon({ id, client } = {}) {
+    return (client ?? prisma).coupon.update({
       where: { id },
       data: { isActive: false },
       include: planInclude,
@@ -135,3 +184,4 @@ class CouponRepo {
 }
 
 export const couponRepo = new CouponRepo();
+export { CouponRepo };

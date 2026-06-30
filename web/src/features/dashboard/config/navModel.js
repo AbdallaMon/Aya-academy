@@ -245,13 +245,6 @@ function parentGroups() {
           icon: ICONS.children,
           permission: PERMISSIONS.USER.LIST,
         },
-        {
-          key: 'invitations',
-          labelKey: 'invitations',
-          href: '/dashboard/quiz-invites',
-          icon: ICONS.invitations,
-          permission: PERMISSIONS.QUIZ.LIST,
-        },
       ],
     },
     {
@@ -317,13 +310,6 @@ function studentGroups() {
           href: '/dashboard/games',
           icon: ICONS.games,
           permission: PERMISSIONS.GAME.LIST,
-        },
-        {
-          key: 'quizzes',
-          labelKey: 'quizzes',
-          href: '/dashboard/quizzes',
-          icon: ICONS.quizzes,
-          anyPermission: [PERMISSIONS.QUIZ.VIEW, PERMISSIONS.QUIZ.ATTEMPT],
         },
       ],
     },

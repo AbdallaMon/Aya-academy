@@ -16,7 +16,11 @@ import { useAuth } from "../../../hooks/useAuth.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { EmptyState, SubscriptionLockedState } from "../../../shared/components/index.js";
+import {
+  EmptyState,
+  PageHeader,
+  SubscriptionLockedState,
+} from "../../../shared/components/index.js";
 import {
   REWARDS_URL,
   REWARD_TYPE_META,
@@ -60,14 +64,7 @@ export default function BadgesPage() {
 
   return (
     <Box>
-      <Stack sx={{ mb: 3 }} gap={0.5}>
-        <Typography variant="h4" fontWeight={800}>
-          {txt.pageTitle}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {txt.pageDescription}
-        </Typography>
-      </Stack>
+      <PageHeader title={txt.pageTitle} description={txt.pageDescription} />
 
       {isLoading && (
         <Grid container spacing={2}>

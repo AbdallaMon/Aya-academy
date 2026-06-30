@@ -15,6 +15,11 @@ export const invoicesText = {
     edit: "تعديل",
     print: "طباعة",
     markPaid: "تأكيد الدفع",
+    requestPayment: "مطالبة بالسداد",
+    resendPayment: "إعادة المطالبة",
+    requestPaymentConfirm:
+      "سيتم إظهار الفاتورة لولي الأمر وإرسال إشعار له بالمطالبة بالسداد. هل تريد المتابعة؟",
+    paymentRequested: "تم إرسال المطالبة",
     close: "إغلاق",
     // document
     invoiceTitle: "فاتورة مطالبة",
@@ -90,6 +95,11 @@ export const invoicesText = {
     edit: "Edit",
     print: "Print",
     markPaid: "Mark as paid",
+    requestPayment: "Request payment",
+    resendPayment: "Resend request",
+    requestPaymentConfirm:
+      "This will show the invoice to the guardian and send them a notification requesting payment. Continue?",
+    paymentRequested: "Payment requested",
     close: "Close",
     invoiceTitle: "Demand Invoice",
     invoiceNumber: "Invoice #",

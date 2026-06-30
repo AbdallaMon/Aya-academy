@@ -44,7 +44,9 @@ class BackupsUsecase {
     }
 
     const { page, limit } = paginate({ page: query.page, limit: query.limit });
-    const { rows, total } = await backupsRepo.list({ page, limit, where });
+    // Repo `list` returns the reference shape { items, total, page, pageSize };
+    // alias `items` → `rows` here so the local enrichment below is unchanged.
+    const { items: rows, total } = await backupsRepo.list({ page, limit, where });
 
     const localPresenceMap = {};
     for (const r of rows) {

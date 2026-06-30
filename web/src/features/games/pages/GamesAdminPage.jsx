@@ -16,7 +16,12 @@ import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
-import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
+import {
+  DataTable,
+  PageHeader,
+  RowActionsMenu,
+  useConfirm,
+} from "../../../shared/components/index.js";
 import { useGamesAdminText } from "../config/gamesAdminText.js";
 import GameAssignDialog from "../components/GameAssignDialog.jsx";
 import GameBadgeDialog from "../components/GameBadgeDialog.jsx";
@@ -259,23 +264,7 @@ export default function GamesAdminPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-      </Stack>
+      <PageHeader title={txt.pageTitle} description={txt.pageDescription} />
 
       <DataTable
         initialRows={data || []}

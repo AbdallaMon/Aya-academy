@@ -1,18 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   Box,
-  FormControlLabel,
   Grid,
   Stack,
-  Switch,
   TextField,
   Typography,
 } from "@mui/material";
-import { FormDialog } from "../../../shared/components/index.js";
+import {
+  FormDialog,
+  RHFTextField,
+  RHFTextArea,
+  RHFSwitch,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
+import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import { useTranslation } from "../../../i18n/client.js";
 import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
+import { BADGES_URL } from "../config/constant.js";
+
+const FORM_ID = "badge-form";
 
 const EMPTY = {
   code: "",
@@ -26,6 +36,24 @@ const EMPTY = {
   score: 0,
   isActive: true,
 };
+
+function makeDefaults(badge) {
+  if (badge) {
+    return {
+      code: badge.code ?? "",
+      nameAr: badge.nameAr ?? "",
+      nameEn: badge.nameEn ?? "",
+      descriptionAr: badge.descriptionAr ?? "",
+      descriptionEn: badge.descriptionEn ?? "",
+      emoji: badge.emoji ?? "",
+      bgColor: badge.bgColor ?? EMPTY.bgColor,
+      textColor: badge.textColor ?? EMPTY.textColor,
+      score: badge.score ?? 0,
+      isActive: badge.isActive ?? true,
+    };
+  }
+  return EMPTY;
+}
 
 function ColorInput({ label, value, onChange }) {
   return (
@@ -65,44 +93,51 @@ function ColorInput({ label, value, onChange }) {
  * Create / edit a badge definition.
  *   POST badges  /  PATCH badges/:id
  */
-export default function BadgeFormDialog({ open, onClose, badge, txt, loading, onSubmit }) {
+export default function BadgeFormDialog({ open, onClose, badge, txt, onSaved }) {
   const { lng } = useTranslation();
-  const [values, setValues] = useState(EMPTY);
-  const [error, setError] = useState("");
-
+  const { showToast } = useToast();
   const isEditing = Boolean(badge?.id);
+
+  const { control, handleSubmit, reset, setError } = useForm({
+    defaultValues: makeDefaults(badge),
+  });
 
   useEffect(() => {
     if (!open) return;
-    setError("");
-    if (badge) {
-      setValues({
-        code: badge.code ?? "",
-        nameAr: badge.nameAr ?? "",
-        nameEn: badge.nameEn ?? "",
-        descriptionAr: badge.descriptionAr ?? "",
-        descriptionEn: badge.descriptionEn ?? "",
-        emoji: badge.emoji ?? "",
-        bgColor: badge.bgColor ?? EMPTY.bgColor,
-        textColor: badge.textColor ?? EMPTY.textColor,
-        score: badge.score ?? 0,
-        isActive: badge.isActive ?? true,
-      });
-    } else {
-      setValues(EMPTY);
-    }
-  }, [open, badge]);
+    reset(makeDefaults(badge));
+  }, [open, badge, reset]);
 
-  function set(key, value) {
-    setValues((prev) => ({ ...prev, [key]: value }));
-  }
+  // Live preview values for the BadgeChip.
+  const preview = useWatch({ control });
 
-  function submit() {
-    setError("");
-    if (!values.code.trim() || !values.nameAr.trim() || !values.nameEn.trim()) {
-      setError(txt.required);
-      return;
-    }
+  const { fetchData, isLoading } = useRequest({
+    url: BADGES_URL,
+    method: isEditing ? "patch" : "post",
+    shouldAutoToast: true,
+    onSuccess: () => {
+      onSaved?.();
+      onClose?.();
+    },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          code: txt.codeLabel,
+          nameAr: txt.nameArLabel,
+          nameEn: txt.nameEnLabel,
+          descriptionAr: txt.descriptionArLabel,
+          descriptionEn: txt.descriptionEnLabel,
+          emoji: txt.emojiLabel,
+          bgColor: txt.bgColorLabel,
+          textColor: txt.textColorLabel,
+          score: txt.scoreLabel,
+          isActive: txt.isActiveLabel,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
+  });
+
+  function submit(values) {
     const payload = {
       code: values.code.trim(),
       nameAr: values.nameAr.trim(),
@@ -115,7 +150,7 @@ export default function BadgeFormDialog({ open, onClose, badge, txt, loading, on
       score: Number(values.score) || 0,
       isActive: Boolean(values.isActive),
     };
-    onSubmit(payload, isEditing);
+    fetchData(isEditing ? String(badge.id) : null, payload);
   }
 
   return (
@@ -124,119 +159,106 @@ export default function BadgeFormDialog({ open, onClose, badge, txt, loading, on
       onClose={onClose}
       title={isEditing ? txt.editTitle : txt.createTitle}
       maxWidth="md"
-      loading={loading}
+      loading={isLoading}
       submitText={txt.save}
       cancelText={txt.cancel}
-      onSubmit={submit}
+      onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
     >
-      <Stack spacing={2.5} sx={{ pt: 1 }}>
-        {error && (
-          <Typography variant="body2" color="error.main">
-            {error}
-          </Typography>
-        )}
-
-        <Box>
-          <Typography variant="caption" color="text.secondary">
-            {txt.preview}
-          </Typography>
-          <Box sx={{ mt: 0.5 }}>
-            <BadgeChip badge={values} lng={lng} />
+      <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              {txt.preview}
+            </Typography>
+            <Box sx={{ mt: 0.5 }}>
+              <BadgeChip badge={preview} lng={lng} />
+            </Box>
           </Box>
-        </Box>
 
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label={txt.codeLabel}
-              value={values.code}
-              onChange={(e) => set("code", e.target.value)}
-              fullWidth
-              required
-            />
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="code"
+                control={control}
+                label={txt.codeLabel}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField name="emoji" control={control} label={txt.emojiLabel} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="nameAr"
+                control={control}
+                label={txt.nameArLabel}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="nameEn"
+                control={control}
+                label={txt.nameEnLabel}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextArea
+                name="descriptionAr"
+                control={control}
+                label={txt.descriptionArLabel}
+                minRows={2}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextArea
+                name="descriptionEn"
+                control={control}
+                label={txt.descriptionEnLabel}
+                minRows={2}
+              />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <Controller
+                name="bgColor"
+                control={control}
+                render={({ field }) => (
+                  <ColorInput
+                    label={txt.bgColorLabel}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <Controller
+                name="textColor"
+                control={control}
+                render={({ field }) => (
+                  <ColorInput
+                    label={txt.textColorLabel}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="score"
+                control={control}
+                label={txt.scoreLabel}
+                type="number"
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <RHFSwitch name="isActive" control={control} label={txt.isActiveLabel} />
+            </Grid>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label={txt.emojiLabel}
-              value={values.emoji}
-              onChange={(e) => set("emoji", e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label={txt.nameArLabel}
-              value={values.nameAr}
-              onChange={(e) => set("nameAr", e.target.value)}
-              fullWidth
-              required
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label={txt.nameEnLabel}
-              value={values.nameEn}
-              onChange={(e) => set("nameEn", e.target.value)}
-              fullWidth
-              required
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label={txt.descriptionArLabel}
-              value={values.descriptionAr}
-              onChange={(e) => set("descriptionAr", e.target.value)}
-              fullWidth
-              multiline
-              minRows={2}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label={txt.descriptionEnLabel}
-              value={values.descriptionEn}
-              onChange={(e) => set("descriptionEn", e.target.value)}
-              fullWidth
-              multiline
-              minRows={2}
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <ColorInput
-              label={txt.bgColorLabel}
-              value={values.bgColor}
-              onChange={(v) => set("bgColor", v)}
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <ColorInput
-              label={txt.textColorLabel}
-              value={values.textColor}
-              onChange={(v) => set("textColor", v)}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              type="number"
-              label={txt.scoreLabel}
-              value={values.score}
-              onChange={(e) => set("score", e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={Boolean(values.isActive)}
-                  onChange={(e) => set("isActive", e.target.checked)}
-                />
-              }
-              label={txt.isActiveLabel}
-            />
-          </Grid>
-        </Grid>
-      </Stack>
+        </Stack>
+      </form>
     </FormDialog>
   );
 }

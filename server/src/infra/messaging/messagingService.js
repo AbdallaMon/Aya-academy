@@ -41,10 +41,10 @@ class MessagingService {
           await notificationUsecase.createNotification({
             userId: parent.id,
             type: NOTIFICATION_TYPES.INVOICE_SENT,
-            titleAr: "تم إرسال فاتورة اشتراك",
-            titleEn: "A subscription invoice was sent",
-            bodyAr: `فاتورة اشتراك ${studentName} بإجمالي ${invoice.total} ${invoice.currency}`,
-            bodyEn: `Invoice for ${studentName}, total ${invoice.total} ${invoice.currency}`,
+            titleAr: "صدرت فاتورة اشتراك — برجاء السداد",
+            titleEn: "A subscription invoice is ready — please pay",
+            bodyAr: `فاتورة اشتراك ${studentName} بإجمالي ${invoice.total} ${invoice.currency}. اضغط لعرض الفاتورة.`,
+            bodyEn: `Invoice for ${studentName}, total ${invoice.total} ${invoice.currency}. Tap to view the invoice.`,
             dataJson: { invoiceId: invoice.id, subscriptionId },
             link,
           });

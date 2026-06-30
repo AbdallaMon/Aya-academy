@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MdAdd, MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew } from "react-icons/md";
+import { MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew, MdAdd } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -16,6 +16,7 @@ import { localePath } from "../../../i18n/routing.js";
 import {
   DataTable,
   FormDialog,
+  PageHeader,
   RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
@@ -29,10 +30,21 @@ import { useSubscriptionsText } from "../config/subscriptionsText.js";
 import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
 import EditHoursDialog from "../components/EditHoursDialog.jsx";
 import InvoiceDialog from "../../invoices/components/InvoiceDialog.jsx";
+import RenewDialog from "../../subscriptionDetail/components/RenewDialog.jsx";
 import { useInvoicesText } from "../../invoices/config/invoicesText.js";
 import { INVOICE_STATUS_COLOR } from "../../invoices/config/constant.js";
 
-export default function SubscriptionsPage() {
+/**
+ * Subscriptions list. Standalone at /dashboard/subscriptions, and ALSO embedded
+ * (with `studentId` + `embedded`) inside a user's detail page so the user-scoped
+ * tab is literally the same table + the same actions (approve/renew/invoice/…)
+ * for admin and parent alike — only filtered to that student.
+ */
+export default function SubscriptionsPage({
+  studentId = null,
+  studentName = null,
+  embedded = false,
+}) {
   const txt = useSubscriptionsText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
@@ -71,6 +83,10 @@ export default function SubscriptionsPage() {
     method: "get",
     isPaginated: true,
     autoFetch: canList,
+    // Embedded in a user's detail tab: lock the list to that student and keep the
+    // filter out of the URL (the tab already owns ?tab=subscriptions).
+    syncToUrl: !embedded,
+    initialParams: studentId ? { studentId: Number(studentId) } : undefined,
   });
 
   const mut = useMultiRequest({
@@ -78,22 +94,16 @@ export default function SubscriptionsPage() {
     onSuccess: () => triggerRefetch(),
   });
 
-  const { fetchData: doRenew, isLoading: isRenewing } = useRequest({
-    url: SUBSCRIPTIONS_URL,
-    method: "post",
-    autoFetch: false,
-    shouldAutoToast: true,
-    syncToUrl: false,
-  });
-
   const createDialog = useOpen();
   const rejectDialog = useOpen();
   const invoiceDialog = useOpen();
   const editHoursDialog = useOpen();
+  const renewDialog = useOpen();
   const [invoiceTarget, setInvoiceTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [hoursTarget, setHoursTarget] = useState(null);
+  const [renewTarget, setRenewTarget] = useState(null);
 
   function openInvoice(row) {
     setInvoiceTarget(row);
@@ -136,15 +146,9 @@ export default function SubscriptionsPage() {
     editHoursDialog.close();
   }
 
-  async function renew(row) {
-    try {
-      const res = await doRenew(`${row.id}/renew`, {});
-      if (res?.data?.id) {
-        router.push(localePath(lng, `/dashboard/subscriptions/${res.data.id}`));
-      }
-    } catch {
-      // errors (e.g. SUBSCRIPTION_STILL_ACTIVE) already toasted by shouldAutoToast
-    }
+  function openRenew(row) {
+    setRenewTarget(row);
+    renewDialog.open();
   }
 
   const CANCELLABLE = ["PENDING", "UPCOMING", "ACTIVE"];
@@ -374,9 +378,8 @@ export default function SubscriptionsPage() {
                         label: txt.renew,
                         icon: <MdAutorenew />,
                         color: "primary",
-                        onClick: () => renew(row),
+                        onClick: () => openRenew(row),
                         hidden: !showRenew,
-                        disabled: isRenewing,
                       },
                       {
                         label: txt.approve,
@@ -408,7 +411,7 @@ export default function SubscriptionsPage() {
         : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [txt, lng, canApprove, canCancel, canEdit, canRenew, hasRowActions, canViewInvoice, invoiceTxt, isRenewing],
+    [txt, lng, canApprove, canCancel, canEdit, canRenew, hasRowActions, canViewInvoice, invoiceTxt],
   );
 
   const filterConfig = useMemo(
@@ -430,32 +433,26 @@ export default function SubscriptionsPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button
-            variant="contained"
-            startIcon={<MdAdd />}
-            onClick={createDialog.open}
-          >
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      {embedded ? (
+        canCreate && (
+          <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<MdAdd />}
+              onClick={createDialog.open}
+            >
+              {txt.create}
+            </Button>
+          </Stack>
+        )
+      ) : (
+        <PageHeader
+          title={txt.pageTitle}
+          description={description}
+          createLabel={txt.create}
+          onCreate={canCreate ? createDialog.open : undefined}
+        />
+      )}
 
       <DataTable
         initialRows={data || []}
@@ -479,6 +476,21 @@ export default function SubscriptionsPage() {
           onCreate={create}
           txt={txt}
           loading={mut.isPostRequestLoading}
+          lockedStudent={
+            studentId ? { id: Number(studentId), name: studentName } : null
+          }
+        />
+      )}
+
+      {canRenew && renewTarget && (
+        <RenewDialog
+          open={renewDialog.isOpen}
+          onClose={() => {
+            renewDialog.close();
+            triggerRefetch();
+          }}
+          subscription={renewTarget}
+          txt={txt}
         />
       )}
 

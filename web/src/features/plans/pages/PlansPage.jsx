@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete, MdLocalOffer } from "react-icons/md";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Box, Chip, Grid, Stack, Typography } from "@mui/material";
+import { MdEdit, MdDelete, MdLocalOffer } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -10,12 +11,17 @@ import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
 import {
-  AppForm,
   DataTable,
   FormDialog,
+  PageHeader,
+  RHFTextField,
+  RHFTextArea,
+  RHFSwitch,
   RowActionsMenu,
+  applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import { PLANS_URL } from "../config/constant.js";
 import { formatMoney } from "../../../shared/lib/money.js";
 import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
@@ -23,10 +29,38 @@ import { usePlansText } from "../config/plansText.js";
 import PlanCouponsDialog from "../components/PlanCouponsDialog.jsx";
 import PlanPriceFields from "../components/PlanPriceFields.jsx";
 
+const FORM_ID = "plan-form";
+
+function makeDefaults(plan) {
+  if (plan) {
+    return {
+      titleAr: plan.titleAr ?? "",
+      titleEn: plan.titleEn ?? "",
+      descriptionAr: plan.descriptionAr ?? "",
+      descriptionEn: plan.descriptionEn ?? "",
+      hours: plan.hours ?? "",
+      sortOrder: plan.sortOrder ?? 0,
+      isFeatured: Boolean(plan.isFeatured),
+      isActive: plan.isActive ?? true,
+    };
+  }
+  return {
+    titleAr: "",
+    titleEn: "",
+    descriptionAr: "",
+    descriptionEn: "",
+    isActive: true,
+    isFeatured: false,
+    sortOrder: 0,
+    hours: "",
+  };
+}
+
 export default function PlansPage() {
   const txt = usePlansText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
+  const { showToast } = useToast();
   const { hasPermission } = usePermission();
   const canList = hasPermission(PERMISSIONS.PLAN.LIST);
   const canCreate = hasPermission(PERMISSIONS.PLAN.CREATE);
@@ -57,10 +91,47 @@ export default function PlansPage() {
   const form = useOpen();
   const discountsDialog = useOpen();
   const [selected, setSelected] = useState(null);
+  const isEdit = Boolean(selected?.id);
 
+  const { control, handleSubmit, reset, watch, setError } = useForm({
+    defaultValues: makeDefaults(selected),
+    mode: "onTouched",
+  });
+
+  // Re-seed the form whenever the dialog opens (create vs the selected row).
+  useEffect(() => {
+    if (!form.isOpen) return;
+    reset(makeDefaults(selected));
+  }, [form.isOpen, selected, reset]);
+
+  // List/delete refetch only. The create/edit form mutates through its own
+  // single useRequest below (so it can auto-toast + bind field errors).
   const mut = useMultiRequest({
     url: PLANS_URL,
     onSuccess: () => triggerRefetch(),
+  });
+
+  const { fetchData: savePlan, isLoading: isSaving } = useRequest({
+    url: PLANS_URL,
+    method: isEdit ? "put" : "post",
+    shouldAutoToast: true,
+    onSuccess: () => {
+      triggerRefetch();
+      form.close();
+    },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          titleAr: txt.titleAr,
+          titleEn: txt.titleEn,
+          descriptionAr: txt.descriptionAr,
+          descriptionEn: txt.descriptionEn,
+          hours: txt.hours,
+          sortOrder: txt.sortOrder,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
   });
 
   function onCreate() {
@@ -81,7 +152,7 @@ export default function PlansPage() {
     await mut.deleteRequest(String(row.id));
   }
 
-  async function submit(values) {
+  function submit(values) {
     const payload = {
       titleAr: values.titleAr,
       titleEn: values.titleEn,
@@ -92,61 +163,8 @@ export default function PlansPage() {
       isFeatured: Boolean(values.isFeatured),
       isActive: values.isActive === undefined ? true : Boolean(values.isActive),
     };
-    if (selected?.id) await mut.putRequest(String(selected.id), payload);
-    else await mut.postRequest(null, payload);
-    form.close();
+    savePlan(isEdit ? String(selected.id) : null, payload);
   }
-
-  const fields = useMemo(
-    () => [
-      { name: "titleAr", label: txt.titleAr, type: "text", rules: { required: txt.required } },
-      { name: "titleEn", label: txt.titleEn, type: "text", rules: { required: txt.required } },
-      {
-        name: "pricing",
-        type: "custom",
-        gridSize: { xs: 12 },
-        txt,
-        hourlyRate,
-        currency,
-        component: ({ control, watch, txt: fieldTxt, hourlyRate: hr, currency: cur }) => (
-          <PlanPriceFields
-            control={control}
-            watch={watch}
-            txt={fieldTxt}
-            hourlyRate={hr}
-            currency={cur}
-          />
-        ),
-      },
-      { name: "sortOrder", label: txt.sortOrder, type: "number" },
-      { name: "descriptionAr", label: txt.descriptionAr, type: "textarea", gridSize: { xs: 12 } },
-      { name: "descriptionEn", label: txt.descriptionEn, type: "textarea", gridSize: { xs: 12 } },
-      { name: "isFeatured", label: txt.isFeatured, type: "switch" },
-      { name: "isActive", label: txt.isActive, type: "switch" },
-    ],
-    [txt, hourlyRate, currency],
-  );
-
-  const defaultValues = useMemo(() => {
-    if (selected) {
-      return {
-        titleAr: selected.titleAr ?? "",
-        titleEn: selected.titleEn ?? "",
-        descriptionAr: selected.descriptionAr ?? "",
-        descriptionEn: selected.descriptionEn ?? "",
-        hours: selected.hours ?? "",
-        sortOrder: selected.sortOrder ?? 0,
-        isFeatured: Boolean(selected.isFeatured),
-        isActive: selected.isActive ?? true,
-      };
-    }
-    return {
-      isActive: true,
-      isFeatured: false,
-      sortOrder: 0,
-      hours: "",
-    };
-  }, [selected]);
 
   const columns = useMemo(
     () => [
@@ -246,28 +264,12 @@ export default function PlansPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? onCreate : undefined}
+      />
 
       <DataTable
         initialRows={data || []}
@@ -289,19 +291,83 @@ export default function PlansPage() {
         onClose={form.close}
         title={selected ? txt.editTitle : txt.createTitle}
         maxWidth="md"
-        loading={mut.isPostRequestLoading || mut.isPutRequestLoading}
+        loading={isSaving}
         submitText={txt.save}
         cancelText={txt.cancel}
-        onSubmit={() =>
-          document.getElementById("plan-form")?.requestSubmit()
-        }
+        onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
       >
-        <AppForm
-          id="plan-form"
-          fields={fields}
-          defaultValues={defaultValues}
-          onSubmit={submit}
-        />
+        <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="titleAr"
+                control={control}
+                label={txt.titleAr}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="titleEn"
+                control={control}
+                label={txt.titleEn}
+                rules={{ required: txt.required }}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <PlanPriceFields
+                control={control}
+                watch={watch}
+                txt={txt}
+                hourlyRate={hourlyRate}
+                currency={currency}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFTextField
+                name="sortOrder"
+                control={control}
+                label={txt.sortOrder}
+                type="number"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <RHFTextArea
+                name="descriptionAr"
+                control={control}
+                label={txt.descriptionAr}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <RHFTextArea
+                name="descriptionEn"
+                control={control}
+                label={txt.descriptionEn}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFSwitch
+                name="isFeatured"
+                control={control}
+                label={txt.isFeatured}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <RHFSwitch
+                name="isActive"
+                control={control}
+                label={txt.isActive}
+              />
+            </Grid>
+          </Grid>
+        </form>
       </FormDialog>
 
       <PlanCouponsDialog

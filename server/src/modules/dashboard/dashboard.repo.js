@@ -1,10 +1,15 @@
+// ===========================================================================
+// dashboard.repo — Prisma I/O only. Read-only aggregates. (Reference idiom:
+// single object args with optional `client`; keep select projections.)
+// ===========================================================================
+
 import { prisma } from "@aya/db/prisma.client.js";
 import { USER_ROLES, activeSubscriptionWhere } from "@aya/shared";
 
-// All Prisma I/O for the dashboard module lives here. Read-only aggregates.
 class DashboardRepo {
   // ── admin ──────────────────────────────────────────────────
-  async adminCounts() {
+  async adminCounts({ client } = {}) {
+    const db = client ?? prisma;
     const now = new Date();
     const expiringUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -19,22 +24,22 @@ class DashboardRepo {
       games,
       quizzes,
     ] = await Promise.all([
-      prisma.user.count({ where: { role: USER_ROLES.STUDENT } }),
-      prisma.user.count({ where: { role: USER_ROLES.PARENT } }),
-      prisma.user.count({ where: { role: USER_ROLES.ADMIN } }),
-      prisma.plan.count(),
-      prisma.subscription.count({
+      db.user.count({ where: { role: USER_ROLES.STUDENT } }),
+      db.user.count({ where: { role: USER_ROLES.PARENT } }),
+      db.user.count({ where: { role: USER_ROLES.ADMIN } }),
+      db.plan.count(),
+      db.subscription.count({
         where: activeSubscriptionWhere(now),
       }),
-      prisma.subscription.count({
+      db.subscription.count({
         where: {
           ...activeSubscriptionWhere(now),
           endDate: { gte: now, lte: expiringUntil },
         },
       }),
-      prisma.certificate.count(),
-      prisma.game.count(),
-      prisma.quiz.count(),
+      db.certificate.count(),
+      db.game.count(),
+      db.quiz.count(),
     ]);
 
     return {
@@ -50,22 +55,22 @@ class DashboardRepo {
     };
   }
 
-  subscriptionsByStatus() {
-    return prisma.subscription.groupBy({
+  subscriptionsByStatus({ client } = {}) {
+    return (client ?? prisma).subscription.groupBy({
       by: ["status"],
       _count: { _all: true },
     });
   }
 
-  revenueSum() {
-    return prisma.subscription.aggregate({
+  revenueSum({ client } = {}) {
+    return (client ?? prisma).subscription.aggregate({
       where: activeSubscriptionWhere(),
       _sum: { priceCharged: true },
     });
   }
 
-  recentCertificates(limit) {
-    return prisma.certificate.findMany({
+  recentCertificates({ limit, client } = {}) {
+    return (client ?? prisma).certificate.findMany({
       take: limit,
       orderBy: { issuedAt: "desc" },
       select: {
@@ -81,17 +86,17 @@ class DashboardRepo {
     });
   }
 
-  countGames() {
-    return prisma.game.count();
+  countGames({ client } = {}) {
+    return (client ?? prisma).game.count();
   }
 
-  countQuizzes() {
-    return prisma.quiz.count();
+  countQuizzes({ client } = {}) {
+    return (client ?? prisma).quiz.count();
   }
 
   // ── leaderboard ────────────────────────────────────────────
-  leaderboard(limit) {
-    return prisma.user.findMany({
+  leaderboard({ limit, client } = {}) {
+    return (client ?? prisma).user.findMany({
       where: { role: USER_ROLES.STUDENT },
       take: limit,
       orderBy: [{ points: "desc" }, { id: "asc" }],
@@ -107,16 +112,16 @@ class DashboardRepo {
   }
 
   // 1-based rank: number of students with strictly more points + 1.
-  async studentRank(points) {
-    const ahead = await prisma.user.count({
+  async studentRank({ points, client } = {}) {
+    const ahead = await (client ?? prisma).user.count({
       where: { role: USER_ROLES.STUDENT, points: { gt: points } },
     });
     return ahead + 1;
   }
 
   // ── parent ─────────────────────────────────────────────────
-  parentChildren(studentIds) {
-    return prisma.user.findMany({
+  parentChildren({ studentIds, client } = {}) {
+    return (client ?? prisma).user.findMany({
       where: { id: { in: studentIds }, role: USER_ROLES.STUDENT },
       orderBy: { name: "asc" },
       select: {
@@ -130,8 +135,8 @@ class DashboardRepo {
     });
   }
 
-  activeSubscriptionForStudent(studentId) {
-    return prisma.subscription.findFirst({
+  activeSubscriptionForStudent({ studentId, client } = {}) {
+    return (client ?? prisma).subscription.findFirst({
       where: { studentId, ...activeSubscriptionWhere() },
       orderBy: { endDate: "desc" },
       select: {
@@ -145,16 +150,16 @@ class DashboardRepo {
 
   // Returns the newest subscription for the student regardless of status,
   // so the parent dashboard can distinguish pending-renewal from expired/none.
-  latestSubscriptionForStudent(studentId) {
-    return prisma.subscription.findFirst({
+  latestSubscriptionForStudent({ studentId, client } = {}) {
+    return (client ?? prisma).subscription.findFirst({
       where: { studentId },
       orderBy: { id: "desc" },
       select: { id: true, status: true },
     });
   }
 
-  recentReports(studentIds, limit) {
-    return prisma.report.findMany({
+  recentReports({ studentIds, limit, client } = {}) {
+    return (client ?? prisma).report.findMany({
       where: { students: { some: { studentId: { in: studentIds } } } },
       take: limit,
       orderBy: { reportDate: "desc" },
@@ -166,8 +171,8 @@ class DashboardRepo {
     });
   }
 
-  recentCertificatesForStudents(studentIds, limit) {
-    return prisma.certificate.findMany({
+  recentCertificatesForStudents({ studentIds, limit, client } = {}) {
+    return (client ?? prisma).certificate.findMany({
       where: { studentId: { in: studentIds } },
       take: limit,
       orderBy: { issuedAt: "desc" },
@@ -185,8 +190,8 @@ class DashboardRepo {
   }
 
   // ── student ────────────────────────────────────────────────
-  studentProfile(studentId) {
-    return prisma.user.findUnique({
+  studentProfile({ studentId, client } = {}) {
+    return (client ?? prisma).user.findUnique({
       where: { id: studentId },
       select: {
         id: true,
@@ -198,8 +203,8 @@ class DashboardRepo {
     });
   }
 
-  studentBadges(studentId) {
-    return prisma.studentBadge.findMany({
+  studentBadges({ studentId, client } = {}) {
+    return (client ?? prisma).studentBadge.findMany({
       where: { studentId },
       orderBy: { awardedAt: "desc" },
       select: {
@@ -217,8 +222,8 @@ class DashboardRepo {
     });
   }
 
-  studentCertificates(studentId, limit) {
-    return prisma.certificate.findMany({
+  studentCertificates({ studentId, limit, client } = {}) {
+    return (client ?? prisma).certificate.findMany({
       where: { studentId },
       take: limit,
       orderBy: { issuedAt: "desc" },
@@ -235,8 +240,8 @@ class DashboardRepo {
     });
   }
 
-  studentAssignedGames(studentId) {
-    return prisma.gameAssignment.findMany({
+  studentAssignedGames({ studentId, client } = {}) {
+    return (client ?? prisma).gameAssignment.findMany({
       where: { studentId },
       orderBy: { createdAt: "desc" },
       select: {
@@ -256,3 +261,4 @@ class DashboardRepo {
 }
 
 export const dashboardRepo = new DashboardRepo();
+export { DashboardRepo };

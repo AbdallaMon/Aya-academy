@@ -7,124 +7,135 @@ const TK = messagesNames.gameMessages;
 
 class GameController {
   // ── public (no auth) ────────────────────────────────────
-  listPublic = async (_req, res) => {
+  async listPublic(req, res) {
     const result = await gameUsecase.listPublic();
     return ok(res, result);
-  };
+  }
 
-  getPublicBySlug = async (req, res) => {
-    const game = await gameUsecase.getPublicBySlug(req.params.slug);
+  async getPublicBySlug(req, res) {
+    const game = await gameUsecase.getPublicBySlug({ slug: req.params.slug });
     return ok(res, game);
-  };
+  }
 
-  getPublicFree = async (_req, res) => {
+  async getPublicFree(req, res) {
     const game = await gameUsecase.getPublicFree();
     return ok(res, game);
-  };
+  }
 
   // ── authenticated ───────────────────────────────────────
-  list = async (req, res) => {
-    const result = await gameUsecase.list(req.auth, {
-      page: req.query.page,
-      limit: req.query.limit,
-      search: req.query.search,
-      isActive: req.query.isActive,
-      isPublic: req.query.isPublic,
-      type: req.query.type,
+  async list(req, res) {
+    const { page, limit, ...filters } = req.query;
+    const result = await gameUsecase.list({
+      page,
+      limit,
+      filters,
+      authUser: req.auth,
     });
     return ok(res, result);
-  };
+  }
 
-  getOne = async (req, res) => {
-    const game = await gameUsecase.getById(req.auth, idParam(req.params.id));
+  async getOne(req, res) {
+    const game = await gameUsecase.getById({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, game);
-  };
+  }
 
-  getBySlug = async (req, res) => {
-    const game = await gameUsecase.getBySlugAuth(req.auth, req.params.slug);
+  async getBySlug(req, res) {
+    const game = await gameUsecase.getBySlugAuth({
+      slug: req.params.slug,
+      authUser: req.auth,
+    });
     return ok(res, game);
-  };
+  }
 
-  setFree = async (req, res) => {
-    const game = await gameUsecase.setFree(req.auth, idParam(req.params.id));
+  async setFree(req, res) {
+    const game = await gameUsecase.setFree({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, game, gameMessagesCodes.FREE_GAME_UPDATED, TK);
-  };
+  }
 
-  setBadge = async (req, res) => {
+  async setBadge(req, res) {
     const badgeId = req.body.badgeId ?? null;
-    const game = await gameUsecase.setBadge(
-      req.auth,
-      idParam(req.params.id),
+    const game = await gameUsecase.setBadge({
+      id: idParam(req.params.id),
       badgeId,
-    );
+      authUser: req.auth,
+    });
     const code =
       badgeId == null
         ? gameMessagesCodes.GAME_BADGE_UNLINKED
         : gameMessagesCodes.GAME_BADGE_LINKED;
     return ok(res, game, code, TK);
-  };
+  }
 
-  assign = async (req, res) => {
-    const result = await gameUsecase.assign(
-      req.auth,
-      idParam(req.params.id),
-      req.body,
-    );
+  async assign(req, res) {
+    const result = await gameUsecase.assign({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return created(res, result);
-  };
+  }
 
-  myAssignments = async (req, res) => {
-    const result = await gameUsecase.myAssignments(req.auth);
+  async myAssignments(req, res) {
+    const result = await gameUsecase.myAssignments({ authUser: req.auth });
     return ok(res, result);
-  };
+  }
 
-  studentAssignments = async (req, res) => {
-    const result = await gameUsecase.studentAssignments(
-      req.auth,
-      idParam(req.params.studentId),
-    );
+  async studentAssignments(req, res) {
+    const result = await gameUsecase.studentAssignments({
+      studentId: idParam(req.params.studentId),
+      authUser: req.auth,
+    });
     return ok(res, result);
-  };
+  }
 
-  myFreeGame = async (_req, res) => {
+  async myFreeGame(req, res) {
     const result = await gameUsecase.getMyFreeGame();
     return ok(res, result);
-  };
+  }
 
-  listAssignments = async (req, res) => {
-    const result = await gameUsecase.listAssignments(
-      req.auth,
-      idParam(req.params.id),
-    );
+  async listAssignments(req, res) {
+    const result = await gameUsecase.listAssignments({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, result);
-  };
+  }
 
-  unassign = async (req, res) => {
-    const result = await gameUsecase.unassign(
-      req.auth,
-      idParam(req.params.id),
-      idParam(req.params.studentId),
-    );
+  async unassign(req, res) {
+    const result = await gameUsecase.unassign({
+      id: idParam(req.params.id),
+      studentId: idParam(req.params.studentId),
+      authUser: req.auth,
+    });
     return ok(res, result);
-  };
+  }
 
-  attempt = async (req, res) => {
-    const result = await gameUsecase.attempt(
-      req.auth,
-      idParam(req.params.id),
-      req.body,
-    );
+  async attempt(req, res) {
+    const result = await gameUsecase.attempt({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return created(res, result);
-  };
+  }
 
-  listAttempts = async (req, res) => {
-    const result = await gameUsecase.listAttempts(
-      req.auth,
-      idParam(req.params.id),
-      { page: req.query.page, limit: req.query.limit },
-    );
+  async listAttempts(req, res) {
+    const { page, limit } = req.query;
+    const result = await gameUsecase.listAttempts({
+      id: idParam(req.params.id),
+      page,
+      limit,
+      authUser: req.auth,
+    });
     return ok(res, result);
-  };
+  }
 }
 
 export const gameController = new GameController();
+export { GameController };

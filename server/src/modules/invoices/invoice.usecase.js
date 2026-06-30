@@ -7,7 +7,6 @@ import {
 } from "@aya/shared";
 import { AppError, badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { messagingService } from "../../infra/messaging/messagingService.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { priceForPeriod, roundMoney } from "../../shared/utility/pricing.js";
 import { userRepo } from "../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
@@ -148,26 +147,31 @@ class InvoiceUsecase {
     const issueDate = new Date();
 
     if (existing) {
-      const updated = await invoiceRepo.update(existing.id, {
-        ...amounts,
-        configJson,
-        issueDate,
-        dueDate: this.computeDueDate(issueDate, template),
-        // Clear any manual label so the period derives from the subscription.
-        billingPeriodLabel: null,
+      const updated = await invoiceRepo.update({
+        id: existing.id,
+        data: {
+          ...amounts,
+          configJson,
+          issueDate,
+          dueDate: this.computeDueDate(issueDate, template),
+          // Clear any manual label so the period derives from the subscription.
+          billingPeriodLabel: null,
+        },
       });
       return { invoice: updated, regenerated: true };
     }
 
     const created = await invoiceRepo.create({
-      subscriptionId,
-      invoiceNumber: this.invoiceNumberFor(subscriptionId),
-      status: INVOICE_STATUSES.UNPAID,
-      ...amounts,
-      configJson,
-      issueDate,
-      dueDate: this.computeDueDate(issueDate, template),
-      createdById: authUser.id,
+      data: {
+        subscriptionId,
+        invoiceNumber: this.invoiceNumberFor(subscriptionId),
+        status: INVOICE_STATUSES.UNPAID,
+        ...amounts,
+        configJson,
+        issueDate,
+        dueDate: this.computeDueDate(issueDate, template),
+        createdById: authUser.id,
+      },
     });
     return { invoice: created, regenerated: false };
   }
@@ -205,8 +209,8 @@ class InvoiceUsecase {
     const configJson = { ...template.configJson, discount };
     const issueDate = new Date();
 
-    return invoiceRepo.create(
-      {
+    return invoiceRepo.create({
+      data: {
         subscriptionId: subscription.id,
         invoiceNumber: this.invoiceNumberFor(subscription.id),
         status: INVOICE_STATUSES.UNPAID,
@@ -216,45 +220,62 @@ class InvoiceUsecase {
         dueDate: this.computeDueDate(issueDate, template),
         createdById,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 
-  async getById(authUser, id) {
-    const invoice = await invoiceRepo.getById(id);
+  async getById({ id, authUser }) {
+    const invoice = await invoiceRepo.getById({ id });
     if (!invoice) throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
     await subscriptionUsecase.assertCanAccess(
       authUser,
       invoice.subscription?.studentId,
     );
+    // A non-admin (parent/student) only sees an invoice once the teacher has
+    // requested payment for it (sentAt set). Before that it does not exist for
+    // them — same 404 as a missing invoice, so its existence is not leaked.
+    if (authUser.role !== USER_ROLES.ADMIN && !invoice.sentAt) {
+      throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
+    }
     return invoice;
   }
 
   /** Invoice for a subscription (scoped). Returns null when none exists yet. */
-  async getBySubscription(authUser, subscriptionId) {
+  async getBySubscription({ subscriptionId, authUser }) {
     const subscription = await subscriptionRepo.getById(subscriptionId);
     if (!subscription) {
       throw notFound(invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
     await subscriptionUsecase.assertCanAccess(authUser, subscription.studentId);
-    return invoiceRepo.getBySubscriptionId(subscriptionId);
+    const invoice = await invoiceRepo.getBySubscriptionId(subscriptionId);
+    // Hide an unsent invoice from non-admins (see getById) — to a parent/student
+    // the subscription simply has no invoice until the teacher requests payment.
+    if (authUser.role !== USER_ROLES.ADMIN && invoice && !invoice.sentAt) {
+      return null;
+    }
+    return invoice;
   }
 
-  async list(authUser, { page, limit, status }) {
-    const { skip, take, page: p, limit: l } = paginate({ page, limit });
-
+  /**
+   * Paginated invoice list. The auth-scoped `where` (parent → their students,
+   * student → self, admin → all) is built here; generic pagination lives in the
+   * repo.
+   */
+  async list({ page, limit, filters = {}, authUser }) {
     const where = {};
-    if (status) where.status = status;
+    if (filters.status) where.status = filters.status;
 
     if (authUser.role === USER_ROLES.PARENT) {
       const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
       where.subscription = { studentId: { in: studentIds } };
+      // Non-admins only see invoices the teacher has requested payment for.
+      where.sentAt = { not: null };
     } else if (authUser.role === USER_ROLES.STUDENT) {
       where.subscription = { studentId: authUser.id };
+      where.sentAt = { not: null };
     }
 
-    const { items, total } = await invoiceRepo.listInvoices(where, skip, take);
-    return paginatedResult(items, total, p, l);
+    return invoiceRepo.list({ page, limit, where });
   }
 
   /**
@@ -269,7 +290,7 @@ class InvoiceUsecase {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(invoiceMessagesCodes.CANNOT_ACCESS_INVOICE);
     }
-    const existing = await invoiceRepo.getById(id);
+    const existing = await invoiceRepo.getById({ id });
     if (!existing) throw notFound(invoiceMessagesCodes.INVOICE_NOT_FOUND);
 
     const data = {};
@@ -330,7 +351,7 @@ class InvoiceUsecase {
       input.status === INVOICE_STATUSES.PAID &&
       existing.status !== INVOICE_STATUSES.PAID;
 
-    const updated = await invoiceRepo.update(id, data);
+    const updated = await invoiceRepo.update({ id, data });
 
     // Demand-invoice flow: paying the invoice can activate the subscription.
     if (becomingPaid && input.activateSubscription) {
@@ -346,7 +367,7 @@ class InvoiceUsecase {
    * Messaging is best-effort: failures in the messaging layer never fail this
    * request (handled inside messagingService).
    */
-  async send(authUser, id) {
+  async send({ id, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw new AppError({
         statusCode: 403,
@@ -354,7 +375,7 @@ class InvoiceUsecase {
         translationKey: messagesNames.invoiceMessages,
       });
     }
-    const invoice = await invoiceRepo.getById(id);
+    const invoice = await invoiceRepo.getById({ id });
     if (!invoice) {
       throw new AppError({
         statusCode: 404,
@@ -380,7 +401,7 @@ class InvoiceUsecase {
       });
     }
 
-    const link = `/dashboard/subscriptions/${invoice.subscriptionId}`;
+    const link = `/dashboard/invoices/${invoice.id}`;
 
     const delivered = await messagingService.notifyInvoiceSent({
       parents,
@@ -401,7 +422,10 @@ class InvoiceUsecase {
       });
     }
 
-    const updated = await invoiceRepo.update(invoice.id, { sentAt: new Date() });
+    const updated = await invoiceRepo.update({
+      id: invoice.id,
+      data: { sentAt: new Date() },
+    });
     return updated;
   }
 
@@ -426,14 +450,19 @@ class InvoiceUsecase {
       status,
     });
 
+    // Notify the student's PARENT(s) — they pay for and manage the subscription,
+    // so the payment-confirmed/activation notice goes to them, not the student.
     try {
-      await notificationUsecase.createNotification({
-        userId: updated.studentId,
-        type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
-        titleAr: "تم تأكيد الدفع وتفعيل اشتراكك 🎉",
-        titleEn: "Payment confirmed — your subscription is now active 🎉",
-        link: "/dashboard",
-      });
+      const parentIds = await userRepo.getParentIdsForStudent(updated.studentId);
+      if (parentIds.length) {
+        await notificationUsecase.createManyForUsers(parentIds, {
+          type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
+          titleAr: "تم تأكيد الدفع وتفعيل اشتراك ابنك/ابنتك 🎉",
+          titleEn: "Payment confirmed — your child's subscription is now active 🎉",
+          link: `/dashboard/subscriptions/${updated.id}`,
+          dataJson: { subscriptionId: updated.id, studentId: updated.studentId },
+        });
+      }
     } catch {
       // swallow — notification is best-effort
     }
@@ -443,3 +472,4 @@ class InvoiceUsecase {
 }
 
 export const invoiceUsecase = new InvoiceUsecase();
+export { InvoiceUsecase };

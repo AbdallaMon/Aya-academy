@@ -1,78 +1,83 @@
 import { generalMessagesCodes, messagesNames } from "@aya/shared";
-import { created, ok } from "../../shared/http/response.js";
-import { idParam, authUser } from "../../shared/http/params.js";
+import { created, ok, updated } from "../../shared/http/response.js";
+import { idParam } from "../../shared/http/params.js";
 import { badgeUsecase } from "./badge.usecase.js";
 import { badgeMessagesCodes } from "./badge.messages.js";
 
 class BadgeController {
-  list = async (req, res) => {
-    const result = await badgeUsecase.list(authUser(req), {
-      page: req.query.page,
-      limit: req.query.limit,
-      search: req.query.search,
+  async list(req, res) {
+    const { page, limit, ...filters } = req.query;
+    const result = await badgeUsecase.list({
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+      filters,
     });
     return ok(res, result);
-  };
+  }
 
-  getOne = async (req, res) => {
+  async getOne(req, res) {
     const badge = await badgeUsecase.getById(idParam(req.params.id));
     return ok(res, badge);
-  };
+  }
 
-  create = async (req, res) => {
-    const badge = await badgeUsecase.create(authUser(req), req.body);
+  async create(req, res) {
+    const badge = await badgeUsecase.create({ ...req.body, authUser: req.auth });
     return created(res, badge, generalMessagesCodes.CREATED);
-  };
+  }
 
-  update = async (req, res) => {
-    const badge = await badgeUsecase.update(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
-    return ok(res, badge, generalMessagesCodes.UPDATED);
-  };
+  async update(req, res) {
+    const badge = await badgeUsecase.update({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
+    return updated(res, badge, generalMessagesCodes.UPDATED);
+  }
 
-  remove = async (req, res) => {
-    const badge = await badgeUsecase.remove(authUser(req), idParam(req.params.id));
+  async remove(req, res) {
+    const badge = await badgeUsecase.remove({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, badge, generalMessagesCodes.DELETED);
-  };
+  }
 
-  studentBadges = async (req, res) => {
-    const result = await badgeUsecase.listStudentBadges(
-      authUser(req),
-      idParam(req.params.studentId),
-    );
+  async studentBadges(req, res) {
+    const result = await badgeUsecase.listStudentBadges({
+      authUser: req.auth,
+      studentId: idParam(req.params.studentId),
+    });
     return ok(res, result);
-  };
+  }
 
-  award = async (req, res) => {
-    const result = await badgeUsecase.award(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async award(req, res) {
+    const result = await badgeUsecase.award({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return created(
       res,
       result,
       badgeMessagesCodes.BADGE_AWARDED,
       messagesNames.badgeMessages,
     );
-  };
+  }
 
-  revoke = async (req, res) => {
-    const result = await badgeUsecase.revoke(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async revoke(req, res) {
+    const result = await badgeUsecase.revoke({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(
       res,
       result,
       badgeMessagesCodes.BADGE_REVOKED,
       messagesNames.badgeMessages,
     );
-  };
+  }
 }
 
 export const badgeController = new BadgeController();
+export { BadgeController };

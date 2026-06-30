@@ -5,18 +5,22 @@ import {
   Alert,
   Box,
   Divider,
-  FormControlLabel,
   Grid,
   MenuItem,
   Slider,
   Stack,
-  Switch,
   TextField,
   Typography,
 } from "@mui/material";
+import { Controller, useForm } from "react-hook-form";
 import { MdInfoOutline } from "react-icons/md";
 import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
-import { FormDialog } from "../../../shared/components/index.js";
+import {
+  FormDialog,
+  RHFTextField,
+  RHFSwitch,
+} from "../../../shared/components/index.js";
+import useDebounce from "../../../hooks/useDebounce.js";
 import CertificateCard from "../../certificates/components/CertificateCard.jsx";
 import {
   TEMPLATE_TYPES,
@@ -35,6 +39,8 @@ import {
   CONTENT_SPACING_MAX,
   DEFAULT_TEMPLATE_THEME,
 } from "../config/constant.js";
+
+const FORM_ID = "certificate-template-form";
 
 const ORIENTATION_LABEL_KEY = {
   portrait: "orientationPortrait",
@@ -217,50 +223,49 @@ function buildThemeJson(v) {
   };
 }
 
-// Debounce a value so the heavy CertificateCard preview re-renders at most once
-// per `delay` ms — keeps typing and color-picker dragging snappy.
-function useDebouncedValue(value, delay = 220) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-  return debounced;
-}
-
 /**
  * Create / edit a certificate template (all fixed texts + style), with a live
  * CertificateCard preview fed a synthetic template-driven certificate.
  *   POST certificate-templates  /  PATCH certificate-templates/:id
  */
 export default function TemplateFormDialog({ open, onClose, template, txt, loading, onSubmit }) {
-  const [values, setValues] = useState(() => emptyValues(txt));
-  const [error, setError] = useState("");
-
   const isEditing = Boolean(template?.id);
 
-  // Reset the form whenever the dialog (re)opens or targets a new template.
-  // Done during render (React's "adjust state on prop change" pattern) rather
-  // than in an effect so it never triggers a cascading-render warning.
+  const { control, handleSubmit, reset, watch } = useForm({
+    defaultValues: emptyValues(txt),
+  });
+  const [error, setError] = useState("");
+
+  // Reset the form whenever the dialog (re)opens or targets a new template, so
+  // the inputs are seeded from the edited template (or fresh defaults).
   const openKey = open ? String(template?.id ?? "new") : "__closed__";
-  const [syncedKey, setSyncedKey] = useState("__closed__");
-  if (openKey !== syncedKey) {
-    setSyncedKey(openKey);
-    if (open) {
-      setValues(template ? fromTemplate(template, txt) : emptyValues(txt));
-      setError("");
-    }
-  }
+  useEffect(() => {
+    if (!open) return;
+    reset(template ? fromTemplate(template, txt) : emptyValues(txt));
+    setError("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openKey, reset]);
 
   // Inputs stay instant; the (heavy) live preview follows a debounced copy so
-  // dragging the color pickers / typing never janks.
-  const debouncedValues = useDebouncedValue(values, 220);
+  // dragging the color pickers / typing never janks. Watch every value and feed
+  // a debounced snapshot into the preview (220ms — at most ~4 re-renders/sec).
+  const watched = watch();
+  const debounced = useDebounce(JSON.stringify(watched), 220);
+  const debouncedValues = useMemo(() => {
+    try {
+      return JSON.parse(debounced);
+    } catch {
+      return watched;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debounced]);
 
-  function set(key, value) {
-    setValues((prev) => ({ ...prev, [key]: value }));
-  }
+  // `showSeal` / `showWatermark` gate the seal-text input + watermark slider —
+  // watch them so the disabled state reacts as the toggles change.
+  const showSeal = watch("showSeal");
+  const showWatermark = watch("showWatermark");
 
-  function submit() {
+  function submit(values) {
     setError("");
     if (!values.key.trim() || !values.nameAr.trim() || !values.nameEn.trim()) {
       setError(txt.required);
@@ -319,16 +324,6 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
     [debouncedValues, txt.previewStudent, txt.previewReason],
   );
 
-  const field = (name, label, extra = {}) => (
-    <TextField
-      label={label}
-      value={values[name]}
-      onChange={(e) => set(name, e.target.value)}
-      fullWidth
-      {...extra}
-    />
-  );
-
   return (
     <FormDialog
       open={open}
@@ -338,385 +333,426 @@ export default function TemplateFormDialog({ open, onClose, template, txt, loadi
       loading={loading}
       submitText={txt.save}
       cancelText={txt.cancel}
-      onSubmit={submit}
+      onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
     >
-      <Grid container spacing={3}>
-        {/* ── Form ── */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          {error && (
-            <Typography variant="body2" color="error.main" sx={{ mb: 1 }}>
-              {error}
-            </Typography>
-          )}
+      <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+        <Grid container spacing={3}>
+          {/* ── Form ── */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            {error && (
+              <Typography variant="body2" color="error.main" sx={{ mb: 1 }}>
+                {error}
+              </Typography>
+            )}
 
-          <Typography variant="overline" color="text.secondary">
-            {txt.sectionTexts}
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 0 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("key", txt.keyLabel, { required: true })}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                label={txt.typeLabel}
-                value={values.type}
-                onChange={(e) => set("type", e.target.value)}
-              >
-                {TEMPLATE_TYPES.map((t) => (
-                  <MenuItem key={t} value={t}>
-                    {txt[TYPE_LABEL_KEY[t]] || t}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            {values.type === CERTIFICATE_TEMPLATE_TYPES.GAME && (
+            <Typography variant="overline" color="text.secondary">
+              {txt.sectionTexts}
+            </Typography>
+            <Grid container spacing={2} sx={{ mt: 0 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="key" control={control} label={txt.keyLabel} required />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField select fullWidth label={txt.typeLabel} {...field}>
+                      {TEMPLATE_TYPES.map((t) => (
+                        <MenuItem key={t} value={t}>
+                          {txt[TYPE_LABEL_KEY[t]] || t}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+              {watch("type") === CERTIFICATE_TEMPLATE_TYPES.GAME && (
+                <Grid size={{ xs: 12 }}>
+                  <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
+                    {txt.typeGameHint}
+                  </Alert>
+                </Grid>
+              )}
+              {watch("type") === CERTIFICATE_TEMPLATE_TYPES.EXAM && (
+                <Grid size={{ xs: 12 }}>
+                  <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
+                    {txt.typeExamHint}
+                  </Alert>
+                </Grid>
+              )}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFSwitch name="isActive" control={control} label={txt.isActiveLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFSwitch name="isDefault" control={control} label={txt.isDefaultLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="nameAr" control={control} label={txt.nameArLabel} required />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="nameEn" control={control} label={txt.nameEnLabel} required />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="headingAr" control={control} label={txt.headingArLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="headingEn" control={control} label={txt.headingEnLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="introAr" control={control} label={txt.introArLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="introEn" control={control} label={txt.introEnLabel} />
+              </Grid>
               <Grid size={{ xs: 12 }}>
-                <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
-                  {txt.typeGameHint}
+                <Alert icon={<MdInfoOutline />} severity="info" sx={{ py: 0.25 }}>
+                  {txt.bodyHint}
                 </Alert>
               </Grid>
-            )}
-            {values.type === CERTIFICATE_TEMPLATE_TYPES.EXAM && (
-              <Grid size={{ xs: 12 }}>
-                <Alert icon={<MdInfoOutline />} severity="warning" sx={{ py: 0.25 }}>
-                  {txt.typeExamHint}
-                </Alert>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField
+                  name="bodyAr"
+                  control={control}
+                  label={txt.bodyArLabel}
+                  multiline
+                  minRows={2}
+                />
               </Grid>
-            )}
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.isActive)}
-                    onChange={(e) => set("isActive", e.target.checked)}
-                  />
-                }
-                label={txt.isActiveLabel}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.isDefault)}
-                    onChange={(e) => set("isDefault", e.target.checked)}
-                  />
-                }
-                label={txt.isDefaultLabel}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("nameAr", txt.nameArLabel, { required: true })}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("nameEn", txt.nameEnLabel, { required: true })}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("headingAr", txt.headingArLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("headingEn", txt.headingEnLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("introAr", txt.introArLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("introEn", txt.introEnLabel)}</Grid>
-            <Grid size={{ xs: 12 }}>
-              <Alert icon={<MdInfoOutline />} severity="info" sx={{ py: 0.25 }}>
-                {txt.bodyHint}
-              </Alert>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {field("bodyAr", txt.bodyArLabel, { multiline: true, minRows: 2 })}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {field("bodyEn", txt.bodyEnLabel, { multiline: true, minRows: 2 })}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("congratsAr", txt.congratsArLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("congratsEn", txt.congratsEnLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("thanksAr", txt.thanksArLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("thanksEn", txt.thanksEnLabel)}</Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2.5 }} />
-          <Typography variant="overline" color="text.secondary">
-            {txt.sectionSignature}
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 0 }}>
-            <Grid size={{ xs: 12 }}>{field("signatureName", txt.signatureNameLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("signatureTitleAr", txt.signatureTitleArLabel)}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{field("signatureTitleEn", txt.signatureTitleEnLabel)}</Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2.5 }} />
-          <Typography variant="overline" color="text.secondary">
-            {txt.sectionStyle}
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 0 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                label={txt.orientationLabel}
-                value={values.orientation}
-                onChange={(e) => set("orientation", e.target.value)}
-              >
-                {TEMPLATE_ORIENTATIONS.map((o) => (
-                  <MenuItem key={o} value={o}>
-                    {txt[ORIENTATION_LABEL_KEY[o]] || o}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                label={txt.borderStyleLabel}
-                value={values.borderStyle}
-                onChange={(e) => set("borderStyle", e.target.value)}
-              >
-                {TEMPLATE_BORDER_STYLES.map((b) => (
-                  <MenuItem key={b} value={b}>
-                    {txt[BORDER_LABEL_KEY[b]] || b}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                type="color"
-                fullWidth
-                label={txt.accentLabel}
-                value={values.accent}
-                onChange={(e) => set("accent", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                type="color"
-                fullWidth
-                label={txt.secondaryLabel}
-                value={values.secondary}
-                onChange={(e) => set("secondary", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                type="color"
-                fullWidth
-                label={txt.backgroundLabel}
-                value={values.background}
-                onChange={(e) => set("background", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                type="color"
-                fullWidth
-                label={txt.nameColorLabel}
-                value={values.nameColor}
-                onChange={(e) => set("nameColor", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.showPhoto)}
-                    onChange={(e) => set("showPhoto", e.target.checked)}
-                  />
-                }
-                label={txt.showPhotoLabel}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.showBismillah)}
-                    onChange={(e) => set("showBismillah", e.target.checked)}
-                  />
-                }
-                label={txt.showBismillahLabel}
-              />
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2.5 }} />
-          <Typography variant="overline" color="text.secondary">
-            {txt.sectionMore}
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 0 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                label={txt.decorationLabel}
-                value={values.decoration}
-                onChange={(e) => set("decoration", e.target.value)}
-              >
-                {TEMPLATE_DECORATIONS.map((d) => (
-                  <MenuItem key={d} value={d}>
-                    {txt[DECORATION_LABEL_KEY[d]] || d}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                label={txt.fontStyleLabel}
-                value={values.fontStyle}
-                onChange={(e) => set("fontStyle", e.target.value)}
-              >
-                {TEMPLATE_FONT_STYLES.map((f) => (
-                  <MenuItem key={f} value={f}>
-                    {txt[FONT_LABEL_KEY[f]] || f}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                label={txt.logoSizeLabel}
-                value={values.logoSize}
-                onChange={(e) => set("logoSize", e.target.value)}
-              >
-                {TEMPLATE_LOGO_SIZES.map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {txt[LOGO_SIZE_LABEL_KEY[s]] || s}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {field("sealText", txt.sealTextLabel, {
-                slotProps: { htmlInput: { maxLength: 16 } },
-                disabled: !values.showSeal,
-              })}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {txt.nameScaleLabel} ({Number(values.nameScale).toFixed(2)}×)
-                </Typography>
-                <Slider
-                  size="small"
-                  value={Number(values.nameScale)}
-                  min={NAME_SCALE_MIN}
-                  max={NAME_SCALE_MAX}
-                  step={0.05}
-                  onChange={(_e, v) => set("nameScale", v)}
-                  valueLabelDisplay="auto"
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField
+                  name="bodyEn"
+                  control={control}
+                  label={txt.bodyEnLabel}
+                  multiline
+                  minRows={2}
                 />
-              </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="congratsAr" control={control} label={txt.congratsArLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="congratsEn" control={control} label={txt.congratsEnLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="thanksAr" control={control} label={txt.thanksArLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField name="thanksEn" control={control} label={txt.thanksEnLabel} />
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {txt.headingScaleLabel} ({Number(values.headingScale).toFixed(2)}×)
-                </Typography>
-                <Slider
-                  size="small"
-                  value={Number(values.headingScale)}
-                  min={HEADING_SCALE_MIN}
-                  max={HEADING_SCALE_MAX}
-                  step={0.05}
-                  onChange={(_e, v) => set("headingScale", v)}
-                  valueLabelDisplay="auto"
-                />
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {txt.contentSpacingLabel} ({Number(values.contentSpacing).toFixed(2)}×)
-                </Typography>
-                <Slider
-                  size="small"
-                  value={Number(values.contentSpacing)}
-                  min={CONTENT_SPACING_MIN}
-                  max={CONTENT_SPACING_MAX}
-                  step={0.05}
-                  onChange={(_e, v) => set("contentSpacing", v)}
-                  valueLabelDisplay="auto"
-                />
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {txt.watermarkOpacityLabel} ({Number(values.watermarkOpacity).toFixed(2)})
-                </Typography>
-                <Slider
-                  size="small"
-                  value={Number(values.watermarkOpacity)}
-                  min={WATERMARK_OPACITY_MIN}
-                  max={WATERMARK_OPACITY_MAX}
-                  step={0.01}
-                  disabled={!values.showWatermark}
-                  onChange={(_e, v) => set("watermarkOpacity", v)}
-                  valueLabelDisplay="auto"
-                />
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.showSeal)}
-                    onChange={(e) => set("showSeal", e.target.checked)}
-                  />
-                }
-                label={txt.showSealLabel}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.showWatermark)}
-                    onChange={(e) => set("showWatermark", e.target.checked)}
-                  />
-                }
-                label={txt.showWatermarkLabel}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.showTagline)}
-                    onChange={(e) => set("showTagline", e.target.checked)}
-                  />
-                }
-                label={txt.showTaglineLabel}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={Boolean(values.showDate)}
-                    onChange={(e) => set("showDate", e.target.checked)}
-                  />
-                }
-                label={txt.showDateLabel}
-              />
-            </Grid>
-          </Grid>
-        </Grid>
 
-        {/* ── Live preview ── */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Stack spacing={1} sx={{ position: { md: "sticky" }, top: { md: 8 } }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              {txt.previewLabel}
+            <Divider sx={{ my: 2.5 }} />
+            <Typography variant="overline" color="text.secondary">
+              {txt.sectionSignature}
             </Typography>
-            <Box>
-              <CertificateCard certificate={previewCertificate} />
-            </Box>
-          </Stack>
+            <Grid container spacing={2} sx={{ mt: 0 }}>
+              <Grid size={{ xs: 12 }}>
+                <RHFTextField name="signatureName" control={control} label={txt.signatureNameLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField
+                  name="signatureTitleAr"
+                  control={control}
+                  label={txt.signatureTitleArLabel}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField
+                  name="signatureTitleEn"
+                  control={control}
+                  label={txt.signatureTitleEnLabel}
+                />
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 2.5 }} />
+            <Typography variant="overline" color="text.secondary">
+              {txt.sectionStyle}
+            </Typography>
+            <Grid container spacing={2} sx={{ mt: 0 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Controller
+                  name="orientation"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField select fullWidth label={txt.orientationLabel} {...field}>
+                      {TEMPLATE_ORIENTATIONS.map((o) => (
+                        <MenuItem key={o} value={o}>
+                          {txt[ORIENTATION_LABEL_KEY[o]] || o}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Controller
+                  name="borderStyle"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField select fullWidth label={txt.borderStyleLabel} {...field}>
+                      {TEMPLATE_BORDER_STYLES.map((b) => (
+                        <MenuItem key={b} value={b}>
+                          {txt[BORDER_LABEL_KEY[b]] || b}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name="accent"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="color"
+                      fullWidth
+                      label={txt.accentLabel}
+                      {...field}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name="secondary"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="color"
+                      fullWidth
+                      label={txt.secondaryLabel}
+                      {...field}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name="background"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="color"
+                      fullWidth
+                      label={txt.backgroundLabel}
+                      {...field}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name="nameColor"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="color"
+                      fullWidth
+                      label={txt.nameColorLabel}
+                      {...field}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+                <RHFSwitch name="showPhoto" control={control} label={txt.showPhotoLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+                <RHFSwitch name="showBismillah" control={control} label={txt.showBismillahLabel} />
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 2.5 }} />
+            <Typography variant="overline" color="text.secondary">
+              {txt.sectionMore}
+            </Typography>
+            <Grid container spacing={2} sx={{ mt: 0 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Controller
+                  name="decoration"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField select fullWidth label={txt.decorationLabel} {...field}>
+                      {TEMPLATE_DECORATIONS.map((d) => (
+                        <MenuItem key={d} value={d}>
+                          {txt[DECORATION_LABEL_KEY[d]] || d}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Controller
+                  name="fontStyle"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField select fullWidth label={txt.fontStyleLabel} {...field}>
+                      {TEMPLATE_FONT_STYLES.map((f) => (
+                        <MenuItem key={f} value={f}>
+                          {txt[FONT_LABEL_KEY[f]] || f}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Controller
+                  name="logoSize"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField select fullWidth label={txt.logoSizeLabel} {...field}>
+                      {TEMPLATE_LOGO_SIZES.map((s) => (
+                        <MenuItem key={s} value={s}>
+                          {txt[LOGO_SIZE_LABEL_KEY[s]] || s}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFTextField
+                  name="sealText"
+                  control={control}
+                  label={txt.sealTextLabel}
+                  slotProps={{ htmlInput: { maxLength: 16 } }}
+                  disabled={!showSeal}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ px: 1 }}>
+                  <Controller
+                    name="nameScale"
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <Typography variant="caption" color="text.secondary">
+                          {txt.nameScaleLabel} ({Number(field.value).toFixed(2)}×)
+                        </Typography>
+                        <Slider
+                          size="small"
+                          value={Number(field.value)}
+                          min={NAME_SCALE_MIN}
+                          max={NAME_SCALE_MAX}
+                          step={0.05}
+                          onChange={(_e, v) => field.onChange(v)}
+                          valueLabelDisplay="auto"
+                        />
+                      </>
+                    )}
+                  />
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ px: 1 }}>
+                  <Controller
+                    name="headingScale"
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <Typography variant="caption" color="text.secondary">
+                          {txt.headingScaleLabel} ({Number(field.value).toFixed(2)}×)
+                        </Typography>
+                        <Slider
+                          size="small"
+                          value={Number(field.value)}
+                          min={HEADING_SCALE_MIN}
+                          max={HEADING_SCALE_MAX}
+                          step={0.05}
+                          onChange={(_e, v) => field.onChange(v)}
+                          valueLabelDisplay="auto"
+                        />
+                      </>
+                    )}
+                  />
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ px: 1 }}>
+                  <Controller
+                    name="contentSpacing"
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <Typography variant="caption" color="text.secondary">
+                          {txt.contentSpacingLabel} ({Number(field.value).toFixed(2)}×)
+                        </Typography>
+                        <Slider
+                          size="small"
+                          value={Number(field.value)}
+                          min={CONTENT_SPACING_MIN}
+                          max={CONTENT_SPACING_MAX}
+                          step={0.05}
+                          onChange={(_e, v) => field.onChange(v)}
+                          valueLabelDisplay="auto"
+                        />
+                      </>
+                    )}
+                  />
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ px: 1 }}>
+                  <Controller
+                    name="watermarkOpacity"
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <Typography variant="caption" color="text.secondary">
+                          {txt.watermarkOpacityLabel} ({Number(field.value).toFixed(2)})
+                        </Typography>
+                        <Slider
+                          size="small"
+                          value={Number(field.value)}
+                          min={WATERMARK_OPACITY_MIN}
+                          max={WATERMARK_OPACITY_MAX}
+                          step={0.01}
+                          disabled={!showWatermark}
+                          onChange={(_e, v) => field.onChange(v)}
+                          valueLabelDisplay="auto"
+                        />
+                      </>
+                    )}
+                  />
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+                <RHFSwitch name="showSeal" control={control} label={txt.showSealLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+                <RHFSwitch name="showWatermark" control={control} label={txt.showWatermarkLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+                <RHFSwitch name="showTagline" control={control} label={txt.showTaglineLabel} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }} sx={{ display: "flex", alignItems: "center" }}>
+                <RHFSwitch name="showDate" control={control} label={txt.showDateLabel} />
+              </Grid>
+            </Grid>
+          </Grid>
+
+          {/* ── Live preview ── */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Stack spacing={1} sx={{ position: { md: "sticky" }, top: { md: 8 } }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                {txt.previewLabel}
+              </Typography>
+              <Box>
+                <CertificateCard certificate={previewCertificate} />
+              </Box>
+            </Stack>
+          </Grid>
         </Grid>
-      </Grid>
+      </form>
     </FormDialog>
   );
 }

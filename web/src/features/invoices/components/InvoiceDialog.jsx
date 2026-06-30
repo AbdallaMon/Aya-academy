@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { MdAutorenew, MdEdit, MdFileDownload, MdReceiptLong, MdPaid } from "react-icons/md";
+import { MdAutorenew, MdEdit, MdFileDownload, MdReceiptLong, MdPaid, MdSend, MdCheckCircle } from "react-icons/md";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
@@ -12,6 +12,7 @@ import {
   INVOICES_URL,
   invoiceGeneratePath,
   invoiceSubscriptionPath,
+  invoiceSendPath,
 } from "../config/constant.js";
 import InvoiceDocument from "./InvoiceDocument.jsx";
 import InvoiceEditForm from "./InvoiceEditForm.jsx";
@@ -62,10 +63,14 @@ export default function InvoiceDialog({
     refresh();
   }
 
-  async function saveEdit(payload) {
+  async function requestPayment() {
     if (!invoice) return;
-    await mut.patchRequest(String(invoice.id), payload);
-    editDialog.close();
+    const sure = await confirm({
+      title: txt.requestPaymentConfirm,
+      intent: "info",
+    });
+    if (!sure) return;
+    await mut.postRequest(invoiceSendPath(invoice.id), {});
     refresh();
   }
 
@@ -131,6 +136,17 @@ export default function InvoiceDialog({
           )}
           {canEdit && invoice.status !== "PAID" && (
             <Button
+              variant={invoice.sentAt ? "outlined" : "contained"}
+              color="info"
+              startIcon={invoice.sentAt ? <MdCheckCircle /> : <MdSend />}
+              onClick={requestPayment}
+              disabled={busy}
+            >
+              {invoice.sentAt ? txt.resendPayment : txt.requestPayment}
+            </Button>
+          )}
+          {canEdit && invoice.status !== "PAID" && (
+            <Button
               variant="contained"
               color="success"
               startIcon={<MdPaid />}
@@ -177,23 +193,13 @@ export default function InvoiceDialog({
       </FormDialog>
 
       {canEdit && invoice && (
-        <FormDialog
+        <InvoiceEditForm
           open={editDialog.isOpen}
           onClose={editDialog.close}
-          title={txt.editTitle}
-          maxWidth="md"
-          loading={mut.isPatchRequestLoading}
-          submitText={txt.save}
-          cancelText={txt.cancel}
-          onSubmit={() => document.getElementById("invoice-edit-form")?.requestSubmit()}
-        >
-          <InvoiceEditForm
-            id="invoice-edit-form"
-            invoice={invoice}
-            txt={txt}
-            onSubmit={saveEdit}
-          />
-        </FormDialog>
+          invoice={invoice}
+          txt={txt}
+          onSaved={refresh}
+        />
       )}
     </>
   );

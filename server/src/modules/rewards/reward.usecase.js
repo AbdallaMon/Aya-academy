@@ -5,7 +5,6 @@ import {
   messagesNames,
 } from "@aya/shared";
 import { conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import {
   assertActiveForStudent,
   filterActiveStudentIds,
@@ -49,25 +48,20 @@ class RewardUsecase {
     return where;
   }
 
-  async list(authUser, params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = await this.buildListWhere(authUser, params);
-    const { items, total } = await rewardRepo.list(where, skip, take);
-    return paginatedResult(items, total, page, limit);
+  async list({ page, limit, filters = {}, authUser }) {
+    const where = await this.buildListWhere(authUser, filters);
+    return rewardRepo.list({ page, limit, where });
   }
 
-  async getById(authUser, id) {
-    const reward = await rewardRepo.getById(id);
+  async getById({ id, authUser }) {
+    const reward = await rewardRepo.getById({ id });
     if (!reward) throw notFound(rewardMessagesCodes.REWARD_NOT_FOUND);
     await this.assertCanAccess(authUser, reward.userId);
     return reward;
   }
 
-  async claim(authUser, id) {
-    const reward = await rewardRepo.getById(id);
+  async claim({ id, authUser }) {
+    const reward = await rewardRepo.getById({ id });
     if (!reward) throw notFound(rewardMessagesCodes.REWARD_NOT_FOUND);
     await this.assertCanAccess(authUser, reward.userId);
     if (reward.status === REWARD_STATUSES.CLAIMED) {
@@ -76,14 +70,14 @@ class RewardUsecase {
         messagesNames.rewardMessages,
       );
     }
-    return rewardRepo.markClaimed(id);
+    return rewardRepo.markClaimed({ id });
   }
 
   // ── reusable services (importable by games / quizzes) ──────────
   /** Grant a coupon reward (discount gift). */
   grantCoupon({ userId, couponId, sourceType, sourceId }, tx) {
-    return rewardRepo.create(
-      {
+    return rewardRepo.create({
+      data: {
         type: REWARD_TYPES.COUPON,
         status: REWARD_STATUSES.PENDING,
         userId,
@@ -91,14 +85,14 @@ class RewardUsecase {
         sourceType,
         sourceId,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 
   /** Grant free lectures. */
   grantFreeLectures({ userId, count, sourceType, sourceId }, tx) {
-    return rewardRepo.create(
-      {
+    return rewardRepo.create({
+      data: {
         type: REWARD_TYPES.FREE_LECTURES,
         status: REWARD_STATUSES.PENDING,
         userId,
@@ -106,23 +100,24 @@ class RewardUsecase {
         sourceType,
         sourceId,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 
   /** Grant a symbolic badge/sticker gift (e.g. a parent-built quiz gift). */
   grantBadge({ userId, sourceType, sourceId }, tx) {
-    return rewardRepo.create(
-      {
+    return rewardRepo.create({
+      data: {
         type: REWARD_TYPES.BADGE,
         status: REWARD_STATUSES.PENDING,
         userId,
         sourceType,
         sourceId,
       },
-      tx,
-    );
+      client: tx,
+    });
   }
 }
 
 export const rewardUsecase = new RewardUsecase();
+export { RewardUsecase };

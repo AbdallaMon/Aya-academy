@@ -1,70 +1,105 @@
-import { prisma } from "@aya/db/prisma.client.js";
+// ===========================================================================
+// plan.repo — Prisma I/O only on Plan. (Reference idiom: single object args with
+// optional `client`, list owns filtering + pagination and returns
+// { items, total, page, pageSize }.)
+//
+// NOTE: `getById` and `getByIdWithCoupons` keep a POSITIONAL `(id)` signature —
+// they are called cross-module (auth / invoices / subscriptions) and their
+// parameter shape is frozen.
+// ===========================================================================
 
-// Admin list/detail carries a count of the plan's ACTIVE discounts only
-// (disabled coupons live on the Coupons page, not under the plan).
-const listInclude = {
-  _count: { select: { coupons: { where: { coupon: { isActive: true } } } } },
-};
+import { prisma } from "@aya/db/prisma.client.js";
+import { paginate } from "../../shared/utility/pagination.js";
+import {
+  buildSearchQuery,
+  buildIsActiveFilter,
+} from "../../shared/utility/helper.js";
+import { planListInclude, planWithCouponsInclude } from "./plan.dto.js";
 
 class PlanRepo {
-  async listPlans(where, skip, take) {
+  buildListWhere({ search, isActive } = {}) {
+    const where = {};
+
+    const searchWhere = buildSearchQuery({
+      searchType: "multiKeySearch",
+      keysValues: [
+        { key: "titleAr", value: typeof search === "string" ? search : undefined },
+        { key: "titleEn", value: typeof search === "string" ? search : undefined },
+      ],
+    });
+    if (searchWhere.OR) where.OR = searchWhere.OR;
+
+    const active = buildIsActiveFilter({ isActive });
+    if (active !== undefined) where.isActive = active;
+
+    return where;
+  }
+
+  async listPlans({ page, limit, search, isActive, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+    const where = this.buildListWhere({ search, isActive });
+
     const [items, total] = await Promise.all([
-      prisma.plan.findMany({
+      db.plan.findMany({
         where,
         skip,
         take,
         orderBy: { sortOrder: "asc" },
-        include: listInclude,
+        include: planListInclude,
       }),
-      prisma.plan.count({ where }),
+      db.plan.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
+  // Positional `(id)` — also called cross-module (invoices / subscriptions).
   getById(id) {
     return prisma.plan.findUnique({
       where: { id },
-      include: listInclude,
+      include: planListInclude,
     });
   }
 
   // Plan with its linked coupons (the plan's discounts) — for pricing at
   // subscription time.
+  // Positional `(id)` — also called cross-module (auth / subscriptions).
   getByIdWithCoupons(id) {
     return prisma.plan.findUnique({
       where: { id },
-      include: { coupons: { include: { coupon: true } } },
+      include: planWithCouponsInclude,
     });
   }
 
   // Public pricing: active plans with their linked coupons (the plan discounts).
-  listActiveWithCoupons() {
-    return prisma.plan.findMany({
+  listActiveWithCoupons({ client } = {}) {
+    return (client ?? prisma).plan.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
-      include: { coupons: { include: { coupon: true } } },
+      include: planWithCouponsInclude,
     });
   }
 
-  createPlan(data) {
-    return prisma.plan.create({ data, include: listInclude });
+  createPlan({ data, client } = {}) {
+    return (client ?? prisma).plan.create({ data, include: planListInclude });
   }
 
-  updatePlan(id, data) {
-    return prisma.plan.update({
+  updatePlan({ id, data, client } = {}) {
+    return (client ?? prisma).plan.update({
       where: { id },
       data,
-      include: listInclude,
+      include: planListInclude,
     });
   }
 
-  deactivatePlan(id) {
-    return prisma.plan.update({
+  deactivatePlan({ id, client } = {}) {
+    return (client ?? prisma).plan.update({
       where: { id },
       data: { isActive: false },
-      include: listInclude,
+      include: planListInclude,
     });
   }
 }
 
 export const planRepo = new PlanRepo();
+export { PlanRepo };

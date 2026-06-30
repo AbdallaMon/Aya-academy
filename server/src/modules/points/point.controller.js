@@ -1,6 +1,5 @@
 import { messagesNames } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
-import { authUser } from "../../shared/http/params.js";
 import { badRequest } from "../../shared/errors/AppError.js";
 import { pointUsecase } from "./point.usecase.js";
 import { pointMessagesCodes } from "./point.messages.js";
@@ -13,30 +12,32 @@ function requiredIntQuery(value) {
 }
 
 class PointController {
-  list = async (req, res) => {
-    const result = await pointUsecase.list(authUser(req), {
+  async list(req, res) {
+    const result = await pointUsecase.list({
+      authUser: req.auth,
       studentId: requiredIntQuery(req.query.studentId),
       page: req.query.page,
       limit: req.query.limit,
     });
     return ok(res, result);
-  };
+  }
 
-  leaderboard = async (req, res) => {
+  async leaderboard(req, res) {
     const range = req.query.range === "week" ? "week" : "all";
-    const result = await pointUsecase.leaderboard(authUser(req), { range });
+    const result = await pointUsecase.leaderboard({ authUser: req.auth, range });
     return ok(res, result);
-  };
+  }
 
-  award = async (req, res) => {
-    const point = await pointUsecase.award(authUser(req), req.body);
+  async award(req, res) {
+    const point = await pointUsecase.award({ ...req.body, authUser: req.auth });
     return created(
       res,
       point,
       pointMessagesCodes.POINTS_GRANTED,
       messagesNames.pointMessages,
     );
-  };
+  }
 }
 
 export const pointController = new PointController();
+export { PointController };

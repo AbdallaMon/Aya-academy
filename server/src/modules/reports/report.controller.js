@@ -1,48 +1,53 @@
 import { generalMessagesCodes } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
-import { idParam, optionalIntQuery, authUser } from "../../shared/http/params.js";
+import { idParam, optionalIntQuery } from "../../shared/http/params.js";
 import { reportUsecase } from "./report.usecase.js";
 
 class ReportController {
-  list = async (req, res) => {
-    const result = await reportUsecase.list(authUser(req), {
-      page: req.query.page,
-      limit: req.query.limit,
-      search: req.query.search,
-      studentId: optionalIntQuery(req.query.studentId),
+  async list(req, res) {
+    const { page, limit, ...filters } = req.query;
+    const result = await reportUsecase.list({
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+      filters: {
+        ...filters,
+        studentId: optionalIntQuery(filters.studentId),
+      },
+      authUser: req.auth,
     });
     return ok(res, result);
-  };
+  }
 
-  getOne = async (req, res) => {
-    const report = await reportUsecase.getById(
-      authUser(req),
-      idParam(req.params.id),
-    );
+  async getOne(req, res) {
+    const report = await reportUsecase.getById({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, report);
-  };
+  }
 
-  create = async (req, res) => {
-    const report = await reportUsecase.create(authUser(req), req.body);
+  async create(req, res) {
+    const report = await reportUsecase.create({ ...req.body, authUser: req.auth });
     return created(res, report, generalMessagesCodes.CREATED);
-  };
+  }
 
-  update = async (req, res) => {
-    const report = await reportUsecase.update(
-      authUser(req),
-      idParam(req.params.id),
-      req.body,
-    );
+  async update(req, res) {
+    const report = await reportUsecase.update({
+      ...req.body,
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, report, generalMessagesCodes.UPDATED);
-  };
+  }
 
-  remove = async (req, res) => {
-    const report = await reportUsecase.remove(
-      authUser(req),
-      idParam(req.params.id),
-    );
+  async remove(req, res) {
+    const report = await reportUsecase.remove({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
     return ok(res, report, generalMessagesCodes.DELETED);
-  };
+  }
 }
 
 export const reportController = new ReportController();
+export { ReportController };

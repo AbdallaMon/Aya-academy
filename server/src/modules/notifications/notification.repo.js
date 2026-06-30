@@ -1,52 +1,66 @@
+// ===========================================================================
+// notification.repo — Prisma I/O only on Notification. (Reference idiom:
+// single object args with optional `client`, list owns filtering + pagination
+// and returns { items, total, page, pageSize }.)
+// ===========================================================================
+
 import { prisma } from "@aya/db/prisma.client.js";
+import { paginate } from "../../shared/utility/pagination.js";
+import { parseBooleanFilter } from "../../shared/utility/helper.js";
 import { notificationSelect } from "./notification.dto.js";
 
 class NotificationRepo {
-  async list(where, skip, take) {
+  async list({ userId, page, limit, isRead, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+
+    const where = { userId };
+    // `isRead` is a plain read/unread flag (NOT an isActive filter).
+    const readFilter = parseBooleanFilter(isRead);
+    if (readFilter !== undefined) where.isRead = readFilter;
+
     const [items, total] = await Promise.all([
-      prisma.notification.findMany({
+      db.notification.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
         select: notificationSelect,
       }),
-      prisma.notification.count({ where }),
+      db.notification.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  count(where) {
-    return prisma.notification.count({ where });
+  count({ where, client } = {}) {
+    return (client ?? prisma).notification.count({ where });
   }
 
-  getById(id) {
-    return prisma.notification.findUnique({
+  getById({ id, client } = {}) {
+    return (client ?? prisma).notification.findUnique({
       where: { id },
       select: notificationSelect,
     });
   }
 
-  create(data, tx) {
-    const client = tx ?? prisma;
-    return client.notification.create({ data, select: notificationSelect });
+  create({ data, client } = {}) {
+    return (client ?? prisma).notification.create({ data, select: notificationSelect });
   }
 
-  createMany(data, tx) {
-    const client = tx ?? prisma;
-    return client.notification.createMany({ data });
+  createMany({ data, client } = {}) {
+    return (client ?? prisma).notification.createMany({ data });
   }
 
-  markRead(id) {
-    return prisma.notification.update({
+  markRead({ id, client } = {}) {
+    return (client ?? prisma).notification.update({
       where: { id },
       data: { isRead: true, readAt: new Date() },
       select: notificationSelect,
     });
   }
 
-  markAllRead(userId) {
-    return prisma.notification.updateMany({
+  markAllRead({ userId, client } = {}) {
+    return (client ?? prisma).notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true, readAt: new Date() },
     });
@@ -54,3 +68,4 @@ class NotificationRepo {
 }
 
 export const notificationRepo = new NotificationRepo();
+export { NotificationRepo };

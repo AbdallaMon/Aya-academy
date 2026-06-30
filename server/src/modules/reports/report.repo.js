@@ -1,27 +1,40 @@
+// ===========================================================================
+// report.repo — Prisma I/O only on Report / ReportStudent / ReportAttachment.
+// (Reference idiom: single object args with optional `client`, list owns
+// pagination and returns { items, total, page, pageSize }.)
+// ===========================================================================
+
 import { prisma } from "@aya/db/prisma.client.js";
+import { paginate } from "../../shared/utility/pagination.js";
 import { reportListSelect, reportSelect } from "./report.dto.js";
 
 class ReportRepo {
-  async listReports(where, skip, take) {
+  async listReports({ where = {}, page, limit, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+
     const [items, total] = await Promise.all([
-      prisma.report.findMany({
+      db.report.findMany({
         where,
         skip,
         take,
         orderBy: { reportDate: "desc" },
         select: reportListSelect,
       }),
-      prisma.report.count({ where }),
+      db.report.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  getById(id) {
-    return prisma.report.findUnique({ where: { id }, select: reportSelect });
+  getById({ id, client } = {}) {
+    return (client ?? prisma).report.findUnique({
+      where: { id },
+      select: reportSelect,
+    });
   }
 
-  createReport({ title, body, reportDate, createdById, studentIds, attachmentIds }) {
-    return prisma.$transaction(async (tx) => {
+  createReport({ title, body, reportDate, createdById, studentIds, attachmentIds, client } = {}) {
+    const run = async (tx) => {
       const report = await tx.report.create({
         data: { title, body, reportDate, createdById },
         select: { id: true },
@@ -46,11 +59,12 @@ class ReportRepo {
         where: { id: report.id },
         select: reportSelect,
       });
-    });
+    };
+    return client ? run(client) : prisma.$transaction(run);
   }
 
-  updateReport(id, { data, studentIds, attachmentIds }) {
-    return prisma.$transaction(async (tx) => {
+  updateReport({ id, data, studentIds, attachmentIds, client } = {}) {
+    const run = async (tx) => {
       await tx.report.update({ where: { id }, data });
       if (studentIds !== undefined) {
         await tx.reportStudent.deleteMany({ where: { reportId: id } });
@@ -72,15 +86,19 @@ class ReportRepo {
         }
       }
       return tx.report.findUnique({ where: { id }, select: reportSelect });
+    };
+    return client ? run(client) : prisma.$transaction(run);
+  }
+
+  deleteReport({ id, client } = {}) {
+    return (client ?? prisma).report.delete({
+      where: { id },
+      select: { id: true },
     });
   }
 
-  deleteReport(id) {
-    return prisma.report.delete({ where: { id }, select: { id: true } });
-  }
-
-  async getParentIdsForStudents(studentIds) {
-    const links = await prisma.parentStudent.findMany({
+  async getParentIdsForStudents({ studentIds, client } = {}) {
+    const links = await (client ?? prisma).parentStudent.findMany({
       where: { studentId: { in: studentIds } },
       select: { parentId: true },
     });
@@ -89,3 +107,4 @@ class ReportRepo {
 }
 
 export const reportRepo = new ReportRepo();
+export { ReportRepo };

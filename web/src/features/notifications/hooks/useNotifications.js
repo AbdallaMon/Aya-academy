@@ -5,6 +5,8 @@
 
 import { useCallback } from "react";
 import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useNotificationSocket } from "./useNotificationSocket.js";
+import { playNotificationChime } from "../lib/notificationSound.js";
 
 export function useNotifications({ canList, listLimit = 8 } = {}) {
   const countReq = useRequest({
@@ -39,6 +41,16 @@ export function useNotifications({ canList, listLimit = 8 } = {}) {
     countReq.triggerRefetch();
     listReq.triggerRefetch();
   }, [countReq, listReq]);
+
+  // Realtime: when the server emits "notification:new", refresh the badge + list
+  // and play a short chime. The payload is ignored — it just means "new arrived".
+  useNotificationSocket(
+    useCallback(() => {
+      if (!canList) return;
+      refreshAll();
+      playNotificationChime();
+    }, [canList, refreshAll]),
+  );
 
   const markRead = useCallback(
     async (id) => {

@@ -1,3 +1,16 @@
+// ===========================================================================
+// user.repo — Prisma I/O only on User / ParentStudent (+ cross-entity counts).
+//
+// FREEZE: this is the most-shared repo in the codebase. Methods called from
+// OTHER modules keep their POSITIONAL signatures byte-for-byte — changing their
+// shape would silently break ~10 callers (auth, badges, attachments, dashboard,
+// reports, rewards, certificates, points, invoices, subscriptions). Each such
+// method is marked `FROZEN — externally called (positional)`.
+//
+// Internal-only methods (used solely within users/) follow the reference idiom:
+// single object args with optional `client` (`client ?? prisma`).
+// ===========================================================================
+
 import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import {
@@ -10,23 +23,25 @@ import {
 } from "./user.dto.js";
 
 class UserRepo {
-  async listUsers(where, skip, take) {
+  // Internal-only — low-level page fetch; the usecase owns pagination/scope.
+  async listUsers({ where, skip, take, client } = {}) {
+    const db = client ?? prisma;
     const [items, total] = await Promise.all([
-      prisma.user.findMany({
+      db.user.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
         select: userListSelect,
       }),
-      prisma.user.count({ where }),
+      db.user.count({ where }),
     ]);
     return { items, total };
   }
 
   /** Linked students of a parent, with the ParentStudent relation. */
-  getChildrenOfParent(parentId) {
-    return prisma.parentStudent.findMany({
+  getChildrenOfParent({ parentId, client } = {}) {
+    return (client ?? prisma).parentStudent.findMany({
       where: { parentId },
       orderBy: { createdAt: "desc" },
       select: {
@@ -36,29 +51,32 @@ class UserRepo {
     });
   }
 
+  // FROZEN — externally called (positional). Certificates uses getPublicById(id).
   getPublicById(id) {
     return prisma.user.findUnique({ where: { id }, select: publicUserSelect });
   }
 
+  // FROZEN — externally called (positional). Auth uses findByEmail(email).
   findByEmail(email) {
     return prisma.user.findUnique({ where: { email } });
   }
 
+  // FROZEN — externally called (positional). Auth uses createUser(data, tx).
   createUser(data, tx) {
     const client = tx ?? prisma;
     return client.user.create({ data, select: publicUserSelect });
   }
 
-  updateUser(id, data) {
-    return prisma.user.update({
+  updateUser({ id, data, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data,
       select: publicUserSelect,
     });
   }
 
-  deactivateUser(id) {
-    return prisma.user.update({
+  deactivateUser({ id, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: { isActive: false, sessionVersion: { increment: 1 } },
       select: publicUserSelect,
@@ -66,6 +84,8 @@ class UserRepo {
   }
 
   // ── parent ↔ student links ──────────────────────────────
+  // FROZEN — externally called (positional). Auth uses
+  // linkParentStudent(parentId, studentId, relation, tx).
   linkParentStudent(parentId, studentId, relation, tx) {
     const client = tx ?? prisma;
     return client.parentStudent.upsert({
@@ -75,10 +95,14 @@ class UserRepo {
     });
   }
 
-  unlinkParentStudent(parentId, studentId) {
-    return prisma.parentStudent.deleteMany({ where: { parentId, studentId } });
+  unlinkParentStudent({ parentId, studentId, client } = {}) {
+    return (client ?? prisma).parentStudent.deleteMany({
+      where: { parentId, studentId },
+    });
   }
 
+  // FROZEN — externally called (positional). dashboard / certificates / invoices
+  // / rewards / reports / subscriptions use getStudentIdsForParent(parentId).
   async getStudentIdsForParent(parentId) {
     const links = await prisma.parentStudent.findMany({
       where: { parentId },
@@ -88,6 +112,8 @@ class UserRepo {
   }
 
   /** The parent (guardian) user ids linked to a given student. */
+  // FROZEN — externally called (positional). certificates / subscriptions use
+  // getParentIdsForStudent(studentId).
   async getParentIdsForStudent(studentId) {
     const links = await prisma.parentStudent.findMany({
       where: { studentId },
@@ -96,6 +122,8 @@ class UserRepo {
     return links.map((l) => l.parentId);
   }
 
+  // FROZEN — externally called (positional). badges / attachments / certificates
+  // / points / rewards / subscriptions use isStudentOfParent(parentId, studentId).
   async isStudentOfParent(parentId, studentId) {
     const link = await prisma.parentStudent.findUnique({
       where: { parentId_studentId: { parentId, studentId } },
@@ -104,25 +132,29 @@ class UserRepo {
     return Boolean(link);
   }
 
+  // FROZEN — externally called (positional). badges / points use getRoleById(id).
   getRoleById(id) {
     return prisma.user.findUnique({ where: { id }, select: { role: true } });
   }
 
   // ── avatar ─────────────────────────────────────────────────
-  getAvatarId(id) {
-    return prisma.user.findUnique({ where: { id }, select: { avatarId: true } });
+  getAvatarId({ id, client } = {}) {
+    return (client ?? prisma).user.findUnique({
+      where: { id },
+      select: { avatarId: true },
+    });
   }
 
-  setAvatar(id, attachmentId) {
-    return prisma.user.update({
+  setAvatar({ id, attachmentId, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: { avatarId: attachmentId },
       select: publicUserSelect,
     });
   }
 
-  clearAvatar(id) {
-    return prisma.user.update({
+  clearAvatar({ id, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: { avatarId: null },
       select: publicUserSelect,
@@ -130,16 +162,16 @@ class UserRepo {
   }
 
   // ── level & ban ────────────────────────────────────────────
-  setStudentLevel(id, studentLevel) {
-    return prisma.user.update({
+  setStudentLevel({ id, studentLevel, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: { studentLevel },
       select: publicUserSelect,
     });
   }
 
-  banUser(id, reason) {
-    return prisma.user.update({
+  banUser({ id, reason, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: {
         isActive: false,
@@ -151,8 +183,8 @@ class UserRepo {
     });
   }
 
-  unbanUser(id) {
-    return prisma.user.update({
+  unbanUser({ id, client } = {}) {
+    return (client ?? prisma).user.update({
       where: { id },
       data: { isActive: true, banReason: null, bannedAt: null },
       select: publicUserSelect,
@@ -160,44 +192,44 @@ class UserRepo {
   }
 
   // ── overview ───────────────────────────────────────────────
-  getOverviewUser(id) {
-    return prisma.user.findUnique({
+  getOverviewUser({ id, client } = {}) {
+    return (client ?? prisma).user.findUnique({
       where: { id },
       select: overviewUserSelect,
     });
   }
 
   /** A student's parents (with contact), via studentLinks. */
-  getStudentParents(studentId) {
-    return prisma.parentStudent.findMany({
+  getStudentParents({ studentId, client } = {}) {
+    return (client ?? prisma).parentStudent.findMany({
       where: { studentId },
       select: overviewParentSelect,
     });
   }
 
   /** A parent's children (with overview detail), via parentLinks. */
-  getParentChildrenDetailed(parentId) {
-    return prisma.parentStudent.findMany({
+  getParentChildrenDetailed({ parentId, client } = {}) {
+    return (client ?? prisma).parentStudent.findMany({
       where: { parentId },
       orderBy: { createdAt: "desc" },
       select: { student: { select: overviewChildSelect } },
     });
   }
 
-  countCertificates(studentId) {
-    return prisma.certificate.count({ where: { studentId } });
+  countCertificates({ studentId, client } = {}) {
+    return (client ?? prisma).certificate.count({ where: { studentId } });
   }
 
-  countCertificatesForStudents(studentIds) {
-    return prisma.certificate.groupBy({
+  countCertificatesForStudents({ studentIds, client } = {}) {
+    return (client ?? prisma).certificate.groupBy({
       by: ["studentId"],
       where: { studentId: { in: studentIds } },
       _count: { _all: true },
     });
   }
 
-  getStudentBadges(studentId) {
-    return prisma.studentBadge.findMany({
+  getStudentBadges({ studentId, client } = {}) {
+    return (client ?? prisma).studentBadge.findMany({
       where: { studentId },
       orderBy: { awardedAt: "desc" },
       select: {
@@ -218,8 +250,8 @@ class UserRepo {
     });
   }
 
-  getRecentGameAttempts(studentId, take = 10) {
-    return prisma.gameAttempt.findMany({
+  getRecentGameAttempts({ studentId, take = 10, client } = {}) {
+    return (client ?? prisma).gameAttempt.findMany({
       where: { studentId },
       orderBy: { createdAt: "desc" },
       take,
@@ -236,8 +268,8 @@ class UserRepo {
     });
   }
 
-  getRecentQuizAttempts(studentId, take = 10) {
-    return prisma.quizAttempt.findMany({
+  getRecentQuizAttempts({ studentId, take = 10, client } = {}) {
+    return (client ?? prisma).quizAttempt.findMany({
       where: { studentId },
       orderBy: { createdAt: "desc" },
       take,
@@ -255,6 +287,7 @@ class UserRepo {
   }
 
   /** Active ADMIN user ids — used for fan-out notifications (e.g. pending requests). */
+  // FROZEN — externally called (positional, no args). auth / subscriptions use findAdminIds().
   async findAdminIds() {
     const admins = await prisma.user.findMany({
       where: { role: USER_ROLES.ADMIN, isActive: true },
@@ -265,3 +298,4 @@ class UserRepo {
 }
 
 export const userRepo = new UserRepo();
+export { UserRepo };

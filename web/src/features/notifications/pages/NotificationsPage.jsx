@@ -18,7 +18,7 @@ import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { LoadingOverlay } from "../../../shared/components/index.js";
+import { LoadingOverlay, PageHeader } from "../../../shared/components/index.js";
 import { useNotificationsText, localizedField } from "../config/notificationsText.js";
 
 export default function NotificationsPage() {
@@ -60,26 +60,17 @@ export default function NotificationsPage() {
 
   return (
     <Box sx={{ position: "relative" }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        {canRead && hasUnread && (
-          <Button variant="outlined" onClick={markAll} disabled={markAllReq.isLoading}>
-            {txt.markAll}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.title}
+        description={txt.pageDescription}
+        renderExtraComponent={() =>
+          canRead && hasUnread ? (
+            <Button variant="outlined" onClick={markAll} disabled={markAllReq.isLoading}>
+              {txt.markAll}
+            </Button>
+          ) : null
+        }
+      />
 
       <Card elevation={2} sx={{ borderRadius: 3, position: "relative", minHeight: 200 }}>
         <LoadingOverlay isLoading={listReq.isLoading} />

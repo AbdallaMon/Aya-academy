@@ -19,7 +19,7 @@ function toNumber(value) {
 
 class DashboardUsecase {
   // ── admin ──────────────────────────────────────────────────
-  async getAdminDashboard(authUser) {
+  async getAdminDashboard({ authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(dashboardMessagesCodes.DASHBOARD_FORBIDDEN);
     }
@@ -29,7 +29,7 @@ class DashboardUsecase {
         dashboardRepo.adminCounts(),
         dashboardRepo.subscriptionsByStatus(),
         dashboardRepo.revenueSum(),
-        dashboardRepo.recentCertificates(RECENT_LIMIT),
+        dashboardRepo.recentCertificates({ limit: RECENT_LIMIT }),
       ]);
 
     return {
@@ -61,7 +61,7 @@ class DashboardUsecase {
 
   async getLeaderboard({ authUser: _authUser, limit }) {
     const take = this.resolveLimit(limit);
-    const rows = await dashboardRepo.leaderboard(take);
+    const rows = await dashboardRepo.leaderboard({ limit: take });
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -73,7 +73,7 @@ class DashboardUsecase {
   }
 
   // ── parent ─────────────────────────────────────────────────
-  async getParentDashboard(authUser) {
+  async getParentDashboard({ authUser }) {
     if (authUser.role !== USER_ROLES.PARENT) {
       throw forbidden(dashboardMessagesCodes.NOT_A_PARENT);
     }
@@ -89,9 +89,9 @@ class DashboardUsecase {
     }
 
     const [children, recentCertificates, recentReports] = await Promise.all([
-      dashboardRepo.parentChildren(studentIds),
-      dashboardRepo.recentCertificatesForStudents(studentIds, RECENT_LIMIT),
-      dashboardRepo.recentReports(studentIds, RECENT_LIMIT),
+      dashboardRepo.parentChildren({ studentIds }),
+      dashboardRepo.recentCertificatesForStudents({ studentIds, limit: RECENT_LIMIT }),
+      dashboardRepo.recentReports({ studentIds, limit: RECENT_LIMIT }),
     ]);
 
     const activeIds = new Set(await filterActiveStudentIds(studentIds));
@@ -100,9 +100,11 @@ class DashboardUsecase {
       children.map(async (child) => {
         const isActive = activeIds.has(child.id);
         const [sub, rank, latest] = await Promise.all([
-          dashboardRepo.activeSubscriptionForStudent(child.id),
-          isActive ? dashboardRepo.studentRank(child.points ?? 0) : Promise.resolve(null),
-          dashboardRepo.latestSubscriptionForStudent(child.id),
+          dashboardRepo.activeSubscriptionForStudent({ studentId: child.id }),
+          isActive
+            ? dashboardRepo.studentRank({ points: child.points ?? 0 })
+            : Promise.resolve(null),
+          dashboardRepo.latestSubscriptionForStudent({ studentId: child.id }),
         ]);
 
         let subscriptionState;
@@ -165,21 +167,21 @@ class DashboardUsecase {
   }
 
   // ── student ────────────────────────────────────────────────
-  async getStudentDashboard(authUser) {
+  async getStudentDashboard({ authUser }) {
     if (authUser.role !== USER_ROLES.STUDENT) {
       throw forbidden(dashboardMessagesCodes.NOT_A_STUDENT);
     }
 
     const studentId = authUser.id;
-    const profile = await dashboardRepo.studentProfile(studentId);
+    const profile = await dashboardRepo.studentProfile({ studentId });
 
     const [rank, activeSubscription, badges, certificates, assignedGames] =
       await Promise.all([
-        dashboardRepo.studentRank(profile?.points ?? 0),
-        dashboardRepo.activeSubscriptionForStudent(studentId),
-        dashboardRepo.studentBadges(studentId),
-        dashboardRepo.studentCertificates(studentId, RECENT_LIMIT),
-        dashboardRepo.studentAssignedGames(studentId),
+        dashboardRepo.studentRank({ points: profile?.points ?? 0 }),
+        dashboardRepo.activeSubscriptionForStudent({ studentId }),
+        dashboardRepo.studentBadges({ studentId }),
+        dashboardRepo.studentCertificates({ studentId, limit: RECENT_LIMIT }),
+        dashboardRepo.studentAssignedGames({ studentId }),
       ]);
 
     const active = await hasActiveSubscription(studentId);
@@ -236,3 +238,4 @@ class DashboardUsecase {
 }
 
 export const dashboardUsecase = new DashboardUsecase();
+export { DashboardUsecase };

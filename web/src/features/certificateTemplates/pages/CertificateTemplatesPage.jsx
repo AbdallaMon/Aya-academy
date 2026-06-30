@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete, MdCheckCircle } from "react-icons/md";
+import { Box, Chip, Typography } from "@mui/material";
+import { MdEdit, MdDelete, MdCheckCircle } from "react-icons/md";
 import {
   AUTO_CERTIFICATE_TEMPLATE_TYPES,
   CERTIFICATE_TEMPLATE_TYPES,
@@ -13,7 +13,12 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
+import {
+  DataTable,
+  PageHeader,
+  RowActionsMenu,
+  useConfirm,
+} from "../../../shared/components/index.js";
 import { CERTIFICATE_TEMPLATES_URL } from "../config/constant.js";
 import { useCertificateTemplatesText } from "../config/certificateTemplatesText.js";
 import TemplateFormDialog from "../components/TemplateFormDialog.jsx";
@@ -186,26 +191,12 @@ export default function CertificateTemplatesPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-          {txt.create}
-        </Button>
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={onCreate}
+      />
 
       <DataTable
         initialRows={data || []}

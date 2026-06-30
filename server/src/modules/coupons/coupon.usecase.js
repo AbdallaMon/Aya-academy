@@ -1,60 +1,25 @@
 import { randomBytes } from "node:crypto";
 import { badRequest, conflict, notFound } from "../../shared/errors/AppError.js";
 import { messagesNames } from "@aya/shared";
-import {
-  buildSearchQuery,
-  parseBooleanFilter,
-} from "../../shared/utility/helper.js";
-import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { couponAppliesToPeriod } from "../../shared/utility/pricing.js";
-import { couponRepo, couponStatusConditions } from "./coupon.repo.js";
+import { couponRepo } from "./coupon.repo.js";
 import { couponMessagesCodes } from "./coupon.messages.js";
 
-const COUPON_STATUSES = ["active", "disabled", "consumed"];
-
 class CouponUsecase {
-  buildListWhere({ search, isActive, status, source, planId }) {
-    const where = {};
-    const and = [];
-
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["code"],
+  async list({ page, limit, filters = {} }) {
+    return couponRepo.listCoupons({
+      page,
+      limit,
+      search: filters.search,
+      isActive: filters.isActive,
+      status: filters.status,
+      source: filters.source,
+      planId: filters.planId,
     });
-    if (or) and.push({ OR: or });
-
-    if (source && source !== "ALL") where.source = source;
-
-    // Scope to a single plan's discounts (the per-plan discounts dialog).
-    if (planId) where.plans = { some: { planId: Number(planId) } };
-
-    // Lifecycle filter (active | disabled | consumed). Takes precedence over the
-    // legacy isActive boolean filter; falls back to it when no status is given.
-    if (status && COUPON_STATUSES.includes(status)) {
-      where.isActive = status !== "disabled";
-      and.push(...couponStatusConditions(status));
-    } else {
-      const active = parseBooleanFilter(isActive);
-      if (active !== undefined) where.isActive = active;
-    }
-
-    if (and.length) where.AND = and;
-
-    return where;
-  }
-
-  async list(params) {
-    const { skip, take, page, limit } = paginate({
-      page: params.page,
-      limit: params.limit,
-    });
-    const where = this.buildListWhere(params);
-    const { items, total } = await couponRepo.listCoupons(where, skip, take);
-    return paginatedResult(items, total, page, limit);
   }
 
   async getById(id) {
-    const coupon = await couponRepo.getById(id);
+    const coupon = await couponRepo.getById({ id });
     if (!coupon) throw notFound(couponMessagesCodes.COUPON_NOT_FOUND);
     return coupon;
   }
@@ -70,7 +35,7 @@ class CouponUsecase {
     throw conflict(couponMessagesCodes.COUPON_CODE_TAKEN);
   }
 
-  async create(input) {
+  async create({ authUser, ...input }) {
     const code = input.code?.trim()
       ? input.code.trim()
       : await this.generateUniqueCode();
@@ -89,10 +54,10 @@ class CouponUsecase {
       endsAt: input.endsAt,
       isActive: input.isActive,
     };
-    return couponRepo.createCoupon(data, input.planIds);
+    return couponRepo.createCoupon({ data, planIds: input.planIds });
   }
 
-  async update(id, input) {
+  async update({ id, authUser, ...input }) {
     const coupon = await this.getById(id);
 
     if (input.code) {
@@ -125,12 +90,12 @@ class CouponUsecase {
       endsAt: input.endsAt,
       isActive: input.isActive,
     };
-    return couponRepo.updateCoupon(id, data, input.planIds);
+    return couponRepo.updateCoupon({ id, data, planIds: input.planIds });
   }
 
-  async remove(id) {
+  async remove({ id, authUser }) {
     await this.getById(id);
-    return couponRepo.deactivateCoupon(id);
+    return couponRepo.deactivateCoupon({ id });
   }
 
   // ── validation (any authenticated user) ─────────────────────
@@ -185,3 +150,4 @@ class CouponUsecase {
 }
 
 export const couponUsecase = new CouponUsecase();
+export { CouponUsecase };

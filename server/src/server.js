@@ -1,9 +1,18 @@
 import app from "./app.js";
 import { ENV } from "./config/env.js";
+import { initRealtime } from "./infra/realtime/socket.js";
 
 const server = app.listen(ENV.PORT, () => {
   console.log(`Aya Academy API running on http://localhost:${ENV.PORT}/api/v1`);
 });
+
+// Attach the realtime (socket.io) server to the same HTTP server so notification
+// pushes share the API's port + auth. Best-effort: a failure must not crash boot.
+try {
+  initRealtime(server);
+} catch (err) {
+  console.error("[realtime] failed to start:", err?.message || err);
+}
 
 // Auto-backup scheduler (node-cron) — only when enabled, and guarded so a failure
 // never crashes boot. Dynamic import keeps the backup infra lazy when disabled.

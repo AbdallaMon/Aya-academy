@@ -1,10 +1,16 @@
+// ===========================================================================
+// attachment.repo — Prisma I/O only on Attachment (joined against User.avatarId
+// and Certificate.photoId for reference checks). (Reference idiom: single object
+// args with optional `client`.) NOTE: `getById(id)` keeps a positional signature
+// — it is called cross-module (users) and that call shape is frozen.
+// ===========================================================================
+
 import { prisma } from "@aya/db/prisma.client.js";
 import { attachmentSelect } from "./attachment.dto.js";
 
 class AttachmentRepo {
-  create(data, tx) {
-    const client = tx ?? prisma;
-    return client.attachment.create({ data, select: attachmentSelect });
+  create({ data, client } = {}) {
+    return (client ?? prisma).attachment.create({ data, select: attachmentSelect });
   }
 
   /** Used to validate an attachment exists before consuming it (e.g. as avatar). */
@@ -20,13 +26,14 @@ class AttachmentRepo {
    * the students of certificates using it as their photo. Empty array means the
    * attachment is generic (not a student-private photo).
    */
-  async getOwnerStudentIds(attachmentId) {
+  async getOwnerStudentIds({ attachmentId, client } = {}) {
+    const db = client ?? prisma;
     const [avatarUsers, certPhotos] = await Promise.all([
-      prisma.user.findMany({
+      db.user.findMany({
         where: { avatarId: attachmentId },
         select: { id: true },
       }),
-      prisma.certificate.findMany({
+      db.certificate.findMany({
         where: { photoId: attachmentId },
         select: { studentId: true },
       }),
@@ -38,18 +45,19 @@ class AttachmentRepo {
   }
 
   /** True if any user avatar or certificate photo still points at this attachment. */
-  async isReferenced(id) {
+  async isReferenced({ id, client } = {}) {
+    const db = client ?? prisma;
     const [avatarCount, certCount] = await Promise.all([
-      prisma.user.count({ where: { avatarId: id } }),
-      prisma.certificate.count({ where: { photoId: id } }),
+      db.user.count({ where: { avatarId: id } }),
+      db.certificate.count({ where: { photoId: id } }),
     ]);
     return avatarCount + certCount > 0;
   }
 
-  deleteById(id, tx) {
-    const client = tx ?? prisma;
-    return client.attachment.delete({ where: { id } });
+  deleteById({ id, client } = {}) {
+    return (client ?? prisma).attachment.delete({ where: { id } });
   }
 }
 
 export const attachmentRepo = new AttachmentRepo();
+export { AttachmentRepo };

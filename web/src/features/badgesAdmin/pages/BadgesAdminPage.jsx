@@ -1,15 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import { Box, Chip, Typography } from "@mui/material";
+import { MdEdit, MdDelete } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { DataTable, RowActionsMenu, useConfirm } from "../../../shared/components/index.js";
+import {
+  DataTable,
+  PageHeader,
+  RowActionsMenu,
+  useConfirm,
+} from "../../../shared/components/index.js";
 import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 import { BADGES_URL } from "../config/constant.js";
 import { useBadgesAdminText } from "../config/badgesAdminText.js";
@@ -65,12 +70,6 @@ export default function BadgesAdminPage() {
     const ok = await confirm({ title: txt.deleteConfirm, intent: "danger" });
     if (!ok) return;
     await mut.deleteRequest(String(row.id));
-  }
-
-  async function submit(payload, isEditing) {
-    if (isEditing) await mut.patchRequest(String(selected.id), payload);
-    else await mut.postRequest(null, payload);
-    form.close();
   }
 
   const columns = useMemo(
@@ -152,28 +151,12 @@ export default function BadgesAdminPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-            {txt.create}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? onCreate : undefined}
+      />
 
       <DataTable
         initialRows={data || []}
@@ -195,8 +178,7 @@ export default function BadgesAdminPage() {
         onClose={form.close}
         badge={selected}
         txt={txt}
-        loading={mut.isPostRequestLoading || mut.isPatchRequestLoading}
-        onSubmit={submit}
+        onSaved={triggerRefetch}
       />
     </Box>
   );

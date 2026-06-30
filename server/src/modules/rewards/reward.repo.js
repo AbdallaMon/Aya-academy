@@ -1,32 +1,35 @@
 import { prisma } from "@aya/db/prisma.client.js";
+import { paginate } from "../../shared/utility/pagination.js";
 import { rewardSelect } from "./reward.dto.js";
 
 class RewardRepo {
-  async list(where, skip, take) {
+  async list({ page, limit, where = {}, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+
     const [items, total] = await Promise.all([
-      prisma.reward.findMany({
+      db.reward.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
         select: rewardSelect,
       }),
-      prisma.reward.count({ where }),
+      db.reward.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  getById(id) {
-    return prisma.reward.findUnique({ where: { id }, select: rewardSelect });
+  getById({ id, client } = {}) {
+    return (client ?? prisma).reward.findUnique({ where: { id }, select: rewardSelect });
   }
 
-  create(data, tx) {
-    const client = tx ?? prisma;
-    return client.reward.create({ data, select: rewardSelect });
+  create({ data, client } = {}) {
+    return (client ?? prisma).reward.create({ data, select: rewardSelect });
   }
 
-  markClaimed(id) {
-    return prisma.reward.update({
+  markClaimed({ id, client } = {}) {
+    return (client ?? prisma).reward.update({
       where: { id },
       data: { status: "CLAIMED", claimedAt: new Date() },
       select: rewardSelect,
@@ -35,3 +38,4 @@ class RewardRepo {
 }
 
 export const rewardRepo = new RewardRepo();
+export { RewardRepo };

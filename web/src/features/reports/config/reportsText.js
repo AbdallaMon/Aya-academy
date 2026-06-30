@@ -32,6 +32,21 @@ export const reportsText = {
     createTitle: "إنشاء تقرير",
     editTitle: "تعديل التقرير",
     deleteConfirm: "هل تريد حذف هذا التقرير؟",
+    // list — parent view
+    view: "عرض",
+    open: "فتح التقرير",
+    emptyTitle: "لا توجد تقارير بعد",
+    emptyBody: "ستظهر هنا تقارير متابعة أبنائك فور إرسالها من الأكاديمية.",
+    // detail page
+    back: "رجوع",
+    notFoundTitle: "التقرير غير متاح",
+    notFoundBody: "قد يكون التقرير محذوفًا أو ليس لديك صلاحية الوصول إليه.",
+    body: "نص التقرير",
+    aboutStudents: "بخصوص الطلاب",
+    attachments: "المرفقات",
+    attachment: "مرفق",
+    download: "تحميل",
+    noAttachments: "لا توجد مرفقات.",
   },
   en: {
     pageTitle: "Student reports",
@@ -60,6 +75,21 @@ export const reportsText = {
     createTitle: "Create a report",
     editTitle: "Edit report",
     deleteConfirm: "Delete this report?",
+    // list — parent view
+    view: "View",
+    open: "Open report",
+    emptyTitle: "No reports yet",
+    emptyBody: "Your children's progress reports will appear here once the academy sends them.",
+    // detail page
+    back: "Back",
+    notFoundTitle: "Report unavailable",
+    notFoundBody: "It may have been removed, or you don't have access to it.",
+    body: "Report",
+    aboutStudents: "About the students",
+    attachments: "Attachments",
+    attachment: "Attachment",
+    download: "Download",
+    noAttachments: "No attachments.",
   },
 };
 

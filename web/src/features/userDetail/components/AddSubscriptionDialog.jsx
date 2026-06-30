@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import {
   MenuItem,
   Stack,
@@ -9,13 +10,20 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { FormDialog, CouponControl } from "../../../shared/components/index.js";
+import {
+  FormDialog,
+  CouponControl,
+  RHFTextField,
+  applyApiErrorsToForm,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
+import { useToast } from "../../../providers/ToastProvider.jsx";
 import { useTranslation } from "../../../i18n/client.js";
 import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
 import { SUBSCRIPTIONS_URL, PLANS_URL } from "../config/constant.js";
 
+const FORM_ID = "add-subscription-form";
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
 function addPeriod(dateStr, billingPeriod) {
@@ -47,22 +55,37 @@ function deriveFromPlan(plan, billingPeriod, hourlyRate) {
   };
 }
 
+function makeDefaults(today) {
+  return {
+    planId: "",
+    billingPeriod: "MONTHLY",
+    startDate: today,
+    endDate: addPeriod(today, "MONTHLY"),
+    priceCharged: "",
+    totalHours: "",
+    remainingHours: "",
+  };
+}
+
 /**
  * Create an ACTIVE subscription for a preselected student.
  *   POST subscriptions { studentId, planId?, billingPeriod, startDate, endDate, status:"ACTIVE", priceCharged?, totalHours?, remainingHours?, couponCode? }
  */
 export default function AddSubscriptionDialog({ open, onClose, studentId, studentName, txt, onSuccess }) {
   const { lng } = useTranslation();
+  const { showToast } = useToast();
   const { hourlyRate } = useAppSettings({ enabled: open });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  const [planId, setPlanId] = useState("");
-  const [billingPeriod, setBillingPeriod] = useState("MONTHLY");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(addPeriod(today, "MONTHLY"));
-  const [priceCharged, setPriceCharged] = useState("");
-  const [totalHours, setTotalHours] = useState("");
-  const [remainingHours, setRemainingHours] = useState("");
+  const { control, handleSubmit, reset, setValue, setError } = useForm({
+    defaultValues: makeDefaults(today),
+  });
+
+  const planId = useWatch({ control, name: "planId" });
+  const billingPeriod = useWatch({ control, name: "billingPeriod" });
+  const startDate = useWatch({ control, name: "startDate" });
+
+  // The coupon is a composite control-state object (not a plain form field).
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
 
   const plansReq = useRequest({
@@ -92,17 +115,25 @@ export default function AddSubscriptionDialog({ open, onClose, studentId, studen
       onSuccess?.();
       onClose?.();
     },
+    onError: (err) =>
+      applyApiErrorsToForm(err, setError, {
+        labelMap: {
+          planId: txt.plan,
+          billingPeriod: txt.billingPeriod,
+          startDate: txt.startDate,
+          endDate: txt.endDate,
+          priceCharged: txt.priceCharged,
+          totalHours: txt.totalHours,
+          remainingHours: txt.remainingHours,
+        },
+        showToast,
+        suppressFallbackToast: true,
+      }),
   });
 
   useEffect(() => {
     if (open) {
-      setPlanId("");
-      setBillingPeriod("MONTHLY");
-      setStartDate(today);
-      setEndDate(addPeriod(today, "MONTHLY"));
-      setPriceCharged("");
-      setTotalHours("");
-      setRemainingHours("");
+      reset(makeDefaults(today));
       setCoupon(EMPTY_COUPON);
       plansReq.fetchData();
       publicPlansReq.fetchData();
@@ -119,26 +150,26 @@ export default function AddSubscriptionDialog({ open, onClose, studentId, studen
   // is reflected); plans missing from the public list (e.g. inactive) fall back
   // to hours × global hourly rate.
   function applyPlanSuggestions({ id, period, start, couponState }) {
-    setEndDate(addPeriod(start, period));
+    setValue("endDate", addPeriod(start, period));
     const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
     if (publicPlan) {
       const { net } = resolveCoupon(publicPlan, period, couponState);
       const hrs =
         period === "YEARLY" ? Number(publicPlan.hours) * 12 : Number(publicPlan.hours);
-      setPriceCharged(String(net));
-      setTotalHours(String(hrs));
-      setRemainingHours(String(hrs));
+      setValue("priceCharged", String(net));
+      setValue("totalHours", String(hrs));
+      setValue("remainingHours", String(hrs));
       return;
     }
     const adminPlan = plans.find((p) => String(p.id) === String(id)) || null;
     const { price, hours } = deriveFromPlan(adminPlan, period, hourlyRate);
-    setPriceCharged(price);
-    setTotalHours(hours);
-    setRemainingHours(hours);
+    setValue("priceCharged", price);
+    setValue("totalHours", hours);
+    setValue("remainingHours", hours);
   }
 
   function onPlanChange(id) {
-    setPlanId(id);
+    setValue("planId", id);
     const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
     const c = initialCoupon(publicPlan, billingPeriod);
     setCoupon(c);
@@ -146,7 +177,7 @@ export default function AddSubscriptionDialog({ open, onClose, studentId, studen
   }
 
   function onPeriodChange(period) {
-    setBillingPeriod(period);
+    setValue("billingPeriod", period);
     const publicPlan = publicPlans.find((p) => String(p.id) === String(planId)) || null;
     const c = initialCoupon(publicPlan, period);
     setCoupon(c);
@@ -154,33 +185,33 @@ export default function AddSubscriptionDialog({ open, onClose, studentId, studen
   }
 
   function onStartChange(v) {
-    setStartDate(v);
-    setEndDate(addPeriod(v, billingPeriod));
+    setValue("startDate", v);
+    setValue("endDate", addPeriod(v, billingPeriod));
   }
 
   function onCouponChange(c) {
     setCoupon(c);
     if (selectedPublicPlan) {
       const { net } = resolveCoupon(selectedPublicPlan, billingPeriod, c);
-      setPriceCharged(String(net));
+      setValue("priceCharged", String(net));
     }
   }
 
   const { codeToSend } = resolveCoupon(selectedPublicPlan, billingPeriod, coupon);
 
-  function submit() {
-    if (!studentId || !startDate || !endDate) return;
+  function submit(values) {
+    if (!studentId || !values.startDate || !values.endDate) return;
     createReq.fetchData(null, {
       studentId: Number(studentId),
-      planId: planId ? Number(planId) : undefined,
-      billingPeriod,
-      startDate,
-      endDate,
+      planId: values.planId ? Number(values.planId) : undefined,
+      billingPeriod: values.billingPeriod,
+      startDate: values.startDate,
+      endDate: values.endDate,
       status: "ACTIVE",
       ...(codeToSend ? { couponCode: codeToSend } : {}),
-      ...(priceCharged !== "" ? { priceCharged: Number(priceCharged) } : {}),
-      ...(totalHours !== "" ? { totalHours: Number(totalHours) } : {}),
-      ...(remainingHours !== "" ? { remainingHours: Number(remainingHours) } : {}),
+      ...(values.priceCharged !== "" ? { priceCharged: Number(values.priceCharged) } : {}),
+      ...(values.totalHours !== "" ? { totalHours: Number(values.totalHours) } : {}),
+      ...(values.remainingHours !== "" ? { remainingHours: Number(values.remainingHours) } : {}),
     });
   }
 
@@ -194,93 +225,91 @@ export default function AddSubscriptionDialog({ open, onClose, studentId, studen
       loading={createReq.isLoading}
       submitText={txt.save}
       cancelText={txt.cancel}
-      onSubmit={submit}
+      onSubmit={() => document.getElementById(FORM_ID)?.requestSubmit()}
     >
-      <Stack spacing={2.5} sx={{ pt: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {studentName}
-        </Typography>
-        <TextField
-          select
-          label={txt.plan}
-          value={planId}
-          onChange={(e) => onPlanChange(e.target.value)}
-          fullWidth
-        >
-          {plans.map((p) => (
-            <MenuItem key={p.id} value={p.id}>
-              {lng === "en" ? p.titleEn : p.titleAr}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <ToggleButtonGroup
-          value={billingPeriod}
-          exclusive
-          color="primary"
-          size="small"
-          fullWidth
-          onChange={(_e, v) => v && onPeriodChange(v)}
-          aria-label={txt.billingPeriod}
-        >
-          <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
-          <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
-        </ToggleButtonGroup>
-
-        <Stack direction="row" spacing={2}>
+      <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {studentName}
+          </Typography>
           <TextField
-            type="date"
-            label={txt.startDate}
-            value={startDate}
-            onChange={(e) => onStartChange(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            select
+            label={txt.plan}
+            value={planId}
+            onChange={(e) => onPlanChange(e.target.value)}
             fullWidth
-          />
-          <TextField
-            type="date"
-            label={txt.endDate}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+          >
+            {plans.map((p) => (
+              <MenuItem key={p.id} value={p.id}>
+                {lng === "en" ? p.titleEn : p.titleAr}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <ToggleButtonGroup
+            value={billingPeriod}
+            exclusive
+            color="primary"
+            size="small"
             fullWidth
-          />
-        </Stack>
+            onChange={(_e, v) => v && onPeriodChange(v)}
+            aria-label={txt.billingPeriod}
+          >
+            <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
+            <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
+          </ToggleButtonGroup>
 
-        {selectedPublicPlan && (
-          <CouponControl
-            plan={selectedPublicPlan}
-            billingPeriod={billingPeriod}
-            coupon={coupon}
-            onCoupon={onCouponChange}
-          />
-        )}
+          <Stack direction="row" spacing={2}>
+            <TextField
+              type="date"
+              label={txt.startDate}
+              value={startDate}
+              onChange={(e) => onStartChange(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+            <RHFTextField
+              name="endDate"
+              control={control}
+              type="date"
+              label={txt.endDate}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
 
-        <TextField
-          type="number"
-          label={txt.priceCharged}
-          value={priceCharged}
-          onChange={(e) => setPriceCharged(e.target.value)}
-          fullWidth
-          helperText={codeToSend ? txt.priceCouponNote : undefined}
-        />
+          {selectedPublicPlan && (
+            <CouponControl
+              plan={selectedPublicPlan}
+              billingPeriod={billingPeriod}
+              coupon={coupon}
+              onCoupon={onCouponChange}
+            />
+          )}
 
-        <Stack direction="row" spacing={2}>
-          <TextField
+          <RHFTextField
+            name="priceCharged"
+            control={control}
             type="number"
-            label={txt.totalHours}
-            value={totalHours}
-            onChange={(e) => setTotalHours(e.target.value)}
-            fullWidth
+            label={txt.priceCharged}
+            helperText={codeToSend ? txt.priceCouponNote : undefined}
           />
-          <TextField
-            type="number"
-            label={txt.remainingHours}
-            value={remainingHours}
-            onChange={(e) => setRemainingHours(e.target.value)}
-            fullWidth
-          />
+
+          <Stack direction="row" spacing={2}>
+            <RHFTextField
+              name="totalHours"
+              control={control}
+              type="number"
+              label={txt.totalHours}
+            />
+            <RHFTextField
+              name="remainingHours"
+              control={control}
+              type="number"
+              label={txt.remainingHours}
+            />
+          </Stack>
         </Stack>
-      </Stack>
+      </form>
     </FormDialog>
   );
 }

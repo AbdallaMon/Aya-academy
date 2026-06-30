@@ -1,5 +1,12 @@
+// ===========================================================================
+// quiz.repo — Prisma I/O only for the quizzes module. (Reference idiom:
+// single object args with optional `client`, each list owns pagination and
+// returns { items, total, page, pageSize }.)
+// ===========================================================================
+
 import { prisma } from "@aya/db/prisma.client.js";
 import { activeSubscriptionWhere } from "@aya/shared";
+import { paginate } from "../../shared/utility/pagination.js";
 import {
   attemptSelect,
   bankQuestionSelect,
@@ -15,77 +22,82 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // CATEGORIES
   // ════════════════════════════════════════════════════════
-  listCategories() {
-    return prisma.questionCategory.findMany({
+  listCategories({ client } = {}) {
+    return (client ?? prisma).questionCategory.findMany({
       orderBy: { nameAr: "asc" },
       select: categorySelect,
     });
   }
 
-  getCategoryById(id) {
-    return prisma.questionCategory.findUnique({
+  getCategoryById({ id, client } = {}) {
+    return (client ?? prisma).questionCategory.findUnique({
       where: { id },
       select: categorySelect,
     });
   }
 
-  createCategory(data) {
-    return prisma.questionCategory.create({ data, select: categorySelect });
+  createCategory({ data, client } = {}) {
+    return (client ?? prisma).questionCategory.create({
+      data,
+      select: categorySelect,
+    });
   }
 
-  updateCategory(id, data) {
-    return prisma.questionCategory.update({
+  updateCategory({ id, data, client } = {}) {
+    return (client ?? prisma).questionCategory.update({
       where: { id },
       data,
       select: categorySelect,
     });
   }
 
-  deleteCategory(id) {
-    return prisma.questionCategory.delete({
+  deleteCategory({ id, client } = {}) {
+    return (client ?? prisma).questionCategory.delete({
       where: { id },
       select: { id: true },
     });
   }
 
-  countQuestionsInCategory(categoryId) {
-    return prisma.quizQuestion.count({ where: { categoryId } });
+  countQuestionsInCategory({ categoryId, client } = {}) {
+    return (client ?? prisma).quizQuestion.count({ where: { categoryId } });
   }
 
   // ════════════════════════════════════════════════════════
   // BANK
   // ════════════════════════════════════════════════════════
-  async listBankQuestions(where, skip, take) {
+  async listBankQuestions({ where, page, limit, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
     const [items, total] = await Promise.all([
-      prisma.quizQuestion.findMany({
+      db.quizQuestion.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
         select: bankQuestionSelect,
       }),
-      prisma.quizQuestion.count({ where }),
+      db.quizQuestion.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  getBankQuestionById(id) {
-    return prisma.quizQuestion.findUnique({
+  getBankQuestionById({ id, client } = {}) {
+    return (client ?? prisma).quizQuestion.findUnique({
       where: { id },
       select: bankQuestionSelect,
     });
   }
 
   /** Active bank questions among the given ids (used when validating invites). */
-  findActiveBankQuestionIds(ids) {
-    return prisma.quizQuestion.findMany({
+  findActiveBankQuestionIds({ ids, client } = {}) {
+    return (client ?? prisma).quizQuestion.findMany({
       where: { id: { in: ids }, isActive: true },
       select: { id: true },
     });
   }
 
-  createBankQuestion({ categoryId, textAr, textEn, isActive, createdById, options }) {
-    return prisma.quizQuestion.create({
+  createBankQuestion({ categoryId, textAr, textEn, isActive, createdById, options, client } = {}) {
+    return (client ?? prisma).quizQuestion.create({
       data: {
         categoryId: categoryId ?? null,
         textAr,
@@ -105,30 +117,32 @@ class QuizRepo {
     });
   }
 
-  updateBankQuestion(id, { data, options }) {
-    return prisma.$transaction(async (tx) => {
-      await tx.quizQuestion.update({ where: { id }, data });
-      if (options !== undefined) {
-        await tx.quizQuestionOption.deleteMany({ where: { questionId: id } });
-        await tx.quizQuestionOption.createMany({
-          data: options.map((o, index) => ({
-            questionId: id,
-            labelAr: o.labelAr,
-            labelEn: o.labelEn,
-            isCorrect: o.isCorrect ?? false,
-            order: o.order ?? index,
-          })),
+  updateBankQuestion({ id, data, options, client } = {}) {
+    const run = (tx) =>
+      (async () => {
+        await tx.quizQuestion.update({ where: { id }, data });
+        if (options !== undefined) {
+          await tx.quizQuestionOption.deleteMany({ where: { questionId: id } });
+          await tx.quizQuestionOption.createMany({
+            data: options.map((o, index) => ({
+              questionId: id,
+              labelAr: o.labelAr,
+              labelEn: o.labelEn,
+              isCorrect: o.isCorrect ?? false,
+              order: o.order ?? index,
+            })),
+          });
+        }
+        return tx.quizQuestion.findUnique({
+          where: { id },
+          select: bankQuestionSelect,
         });
-      }
-      return tx.quizQuestion.findUnique({
-        where: { id },
-        select: bankQuestionSelect,
-      });
-    });
+      })();
+    return client ? run(client) : prisma.$transaction(run);
   }
 
-  deactivateBankQuestion(id) {
-    return prisma.quizQuestion.update({
+  deactivateBankQuestion({ id, client } = {}) {
+    return (client ?? prisma).quizQuestion.update({
       where: { id },
       data: { isActive: false },
       select: bankQuestionSelect,
@@ -138,30 +152,32 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // INVITES
   // ════════════════════════════════════════════════════════
-  async listInvites(where, skip, take) {
+  async listInvites({ where, page, limit, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
     const [items, total] = await Promise.all([
-      prisma.quizInvite.findMany({
+      db.quizInvite.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
         select: inviteListSelect,
       }),
-      prisma.quizInvite.count({ where }),
+      db.quizInvite.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
-  getInviteByToken(token) {
-    return prisma.quizInvite.findUnique({
+  getInviteByToken({ token, client } = {}) {
+    return (client ?? prisma).quizInvite.findUnique({
       where: { token },
       select: inviteListSelect,
     });
   }
 
   /** Raw invite row + its exposed question ids (no projection) for build flow. */
-  getInviteWithQuestionIdsByToken(token) {
-    return prisma.quizInvite.findUnique({
+  getInviteWithQuestionIdsByToken({ token, client } = {}) {
+    return (client ?? prisma).quizInvite.findUnique({
       where: { token },
       select: {
         id: true,
@@ -177,16 +193,16 @@ class QuizRepo {
   }
 
   /** Exposed (selected) bank questions for an invite, with options. */
-  getExposedQuestionsForInvite(inviteId) {
-    return prisma.quizQuestion.findMany({
+  getExposedQuestionsForInvite({ inviteId, client } = {}) {
+    return (client ?? prisma).quizQuestion.findMany({
       where: { inviteLinks: { some: { inviteId } } },
       orderBy: { id: "asc" },
       select: exposedQuestionSelect,
     });
   }
 
-  createInvite({ token, parentId, createdById, expiresAt, questionIds, badgeId }) {
-    return prisma.quizInvite.create({
+  createInvite({ token, parentId, createdById, expiresAt, questionIds, badgeId, client } = {}) {
+    return (client ?? prisma).quizInvite.create({
       data: {
         token,
         parentId,
@@ -201,7 +217,7 @@ class QuizRepo {
     });
   }
 
-  updateInviteStatus(id, status, client) {
+  updateInviteStatus({ id, status, client } = {}) {
     return (client ?? prisma).quizInvite.update({
       where: { id },
       data: { status },
@@ -213,8 +229,8 @@ class QuizRepo {
   // QUIZ BUILD
   // ════════════════════════════════════════════════════════
   /** Snapshot bank questions (text + options) for cloning into quiz items. */
-  getBankQuestionsForSnapshot(ids) {
-    return prisma.quizQuestion.findMany({
+  getBankQuestionsForSnapshot({ ids, client } = {}) {
+    return (client ?? prisma).quizQuestion.findMany({
       where: { id: { in: ids } },
       select: {
         id: true,
@@ -233,77 +249,81 @@ class QuizRepo {
    * then flip the invite status to BUILT. `items` are pre-snapshotted by the
    * usecase (each carries source, sourceQuestionId?, textAr/En + options[]).
    */
-  buildQuiz({ invite, quizData, items, participantStudentIds, builtStatus }) {
-    return prisma.$transaction(async (tx) => {
-      const quiz = await tx.quiz.create({
-        data: {
-          inviteId: invite.id,
-          title: quizData.title,
-          createdByParentId: invite.parentId,
-          passThreshold: quizData.passThreshold,
-          giftName: quizData.giftName ?? null,
-          giftThemeJson: quizData.giftThemeJson ?? undefined,
-          badgeId: quizData.badgeId ?? null,
-        },
-        select: { id: true },
-      });
-
-      for (let i = 0; i < items.length; i += 1) {
-        const item = items[i];
-        await tx.quizItem.create({
+  buildQuiz({ invite, quizData, items, participantStudentIds, builtStatus, client } = {}) {
+    const run = (tx) =>
+      (async () => {
+        const quiz = await tx.quiz.create({
           data: {
-            quizId: quiz.id,
-            order: i,
-            source: item.source,
-            sourceQuestionId: item.sourceQuestionId ?? null,
-            textAr: item.textAr,
-            textEn: item.textEn,
-            options: {
-              create: item.options.map((o, index) => ({
-                labelAr: o.labelAr,
-                labelEn: o.labelEn,
-                isCorrect: o.isCorrect ?? false,
-                order: o.order ?? index,
-              })),
-            },
+            inviteId: invite.id,
+            title: quizData.title,
+            createdByParentId: invite.parentId,
+            passThreshold: quizData.passThreshold,
+            giftName: quizData.giftName ?? null,
+            giftThemeJson: quizData.giftThemeJson ?? undefined,
+            badgeId: quizData.badgeId ?? null,
           },
+          select: { id: true },
         });
-      }
 
-      await tx.quizParticipant.createMany({
-        data: participantStudentIds.map((studentId) => ({
-          quizId: quiz.id,
-          studentId,
-        })),
-      });
+        for (let i = 0; i < items.length; i += 1) {
+          const item = items[i];
+          await tx.quizItem.create({
+            data: {
+              quizId: quiz.id,
+              order: i,
+              source: item.source,
+              sourceQuestionId: item.sourceQuestionId ?? null,
+              textAr: item.textAr,
+              textEn: item.textEn,
+              options: {
+                create: item.options.map((o, index) => ({
+                  labelAr: o.labelAr,
+                  labelEn: o.labelEn,
+                  isCorrect: o.isCorrect ?? false,
+                  order: o.order ?? index,
+                })),
+              },
+            },
+          });
+        }
 
-      await tx.quizInvite.update({
-        where: { id: invite.id },
-        data: { status: builtStatus },
-      });
+        await tx.quizParticipant.createMany({
+          data: participantStudentIds.map((studentId) => ({
+            quizId: quiz.id,
+            studentId,
+          })),
+        });
 
-      return tx.quiz.findUnique({
-        where: { id: quiz.id },
-        select: quizDetailSelect,
-      });
-    });
+        await tx.quizInvite.update({
+          where: { id: invite.id },
+          data: { status: builtStatus },
+        });
+
+        return tx.quiz.findUnique({
+          where: { id: quiz.id },
+          select: quizDetailSelect,
+        });
+      })();
+    return client ? run(client) : prisma.$transaction(run);
   }
 
   // ════════════════════════════════════════════════════════
   // QUIZ READ
   // ════════════════════════════════════════════════════════
-  async listQuizzes(where, skip, take, { select, orderBy } = {}) {
+  async listQuizzes({ where, page, limit, select, orderBy, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
     const [items, total] = await Promise.all([
-      prisma.quiz.findMany({
+      db.quiz.findMany({
         where,
         skip,
         take,
         orderBy: orderBy ?? { createdAt: "desc" },
         select: select ?? quizListSelect(),
       }),
-      prisma.quiz.count({ where }),
+      db.quiz.count({ where }),
     ]);
-    return { items, total };
+    return { items, total, page: currentPage, pageSize: take };
   }
 
   /**
@@ -312,9 +332,10 @@ class QuizRepo {
    * admin/parent "done" filter, which a plain Prisma `where` can't express
    * (it needs a per-row participants-vs-attempts count comparison).
    */
-  async getFullyCompletedQuizIds(parentId) {
+  async getFullyCompletedQuizIds({ parentId, client } = {}) {
+    const db = client ?? prisma;
     const rows = parentId
-      ? await prisma.$queryRaw`
+      ? await db.$queryRaw`
           SELECT q.id AS id
           FROM \`Quiz\` q
           JOIN \`QuizParticipant\` p ON p.quizId = q.id
@@ -322,7 +343,7 @@ class QuizRepo {
           WHERE q.createdByParentId = ${parentId}
           GROUP BY q.id
           HAVING COUNT(DISTINCT p.studentId) = COUNT(DISTINCT a.studentId)`
-      : await prisma.$queryRaw`
+      : await db.$queryRaw`
           SELECT q.id AS id
           FROM \`Quiz\` q
           JOIN \`QuizParticipant\` p ON p.quizId = q.id
@@ -332,13 +353,16 @@ class QuizRepo {
     return rows.map((r) => Number(r.id));
   }
 
-  getQuizById(id) {
-    return prisma.quiz.findUnique({ where: { id }, select: quizDetailSelect });
+  getQuizById({ id, client } = {}) {
+    return (client ?? prisma).quiz.findUnique({
+      where: { id },
+      select: quizDetailSelect,
+    });
   }
 
   /** Bare quiz (scope fields + grading inputs) without heavy projection. */
-  getQuizForGrading(id) {
-    return prisma.quiz.findUnique({
+  getQuizForGrading({ id, client } = {}) {
+    return (client ?? prisma).quiz.findUnique({
       where: { id },
       select: {
         id: true,
@@ -353,8 +377,8 @@ class QuizRepo {
     });
   }
 
-  isParticipant(quizId, studentId) {
-    return prisma.quizParticipant
+  isParticipant({ quizId, studentId, client } = {}) {
+    return (client ?? prisma).quizParticipant
       .findUnique({
         where: { quizId_studentId: { quizId, studentId } },
         select: { id: true },
@@ -362,8 +386,8 @@ class QuizRepo {
       .then(Boolean);
   }
 
-  async getParticipantStudentIds(quizId) {
-    const rows = await prisma.quizParticipant.findMany({
+  async getParticipantStudentIds({ quizId, client } = {}) {
+    const rows = await (client ?? prisma).quizParticipant.findMany({
       where: { quizId },
       select: { studentId: true },
     });
@@ -373,7 +397,7 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // ATTEMPTS
   // ════════════════════════════════════════════════════════
-  createAttempt(data, client) {
+  createAttempt({ data, client } = {}) {
     return (client ?? prisma).quizAttempt.create({
       data,
       select: attemptSelect,
@@ -381,7 +405,7 @@ class QuizRepo {
   }
 
   /** Increment a student's points (used inside the attempt transaction). */
-  incrementStudentPoints(studentId, points, client) {
+  incrementStudentPoints({ studentId, points, client } = {}) {
     return (client ?? prisma).user.update({
       where: { id: studentId },
       data: { points: { increment: points } },
@@ -393,13 +417,16 @@ class QuizRepo {
   // SHARED HELPERS
   // ════════════════════════════════════════════════════════
   /** Confirm a user exists and is a PARENT (for invite creation). */
-  getUserRole(id) {
-    return prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
+  getUserRole({ id, client } = {}) {
+    return (client ?? prisma).user.findUnique({
+      where: { id },
+      select: { id: true, role: true },
+    });
   }
 
   /** studentIds linked to this parent (subset of the input). */
-  async getLinkedStudentIds(parentId, studentIds) {
-    const links = await prisma.parentStudent.findMany({
+  async getLinkedStudentIds({ parentId, studentIds, client } = {}) {
+    const links = await (client ?? prisma).parentStudent.findMany({
       where: { parentId, studentId: { in: studentIds } },
       select: { studentId: true },
     });
@@ -411,12 +438,16 @@ class QuizRepo {
    * currently subscribed. Currently active = status ACTIVE AND now within
    * [startDate, endDate] (see `activeSubscriptionWhere`).
    */
-  async getActiveSubscribedStudentIds(parentId, studentIds) {
+  async getActiveSubscribedStudentIds({ parentId, studentIds, client } = {}) {
     if (!studentIds?.length) return [];
-    const linkedIds = await this.getLinkedStudentIds(parentId, studentIds);
+    const linkedIds = await this.getLinkedStudentIds({
+      parentId,
+      studentIds,
+      client,
+    });
     if (!linkedIds.length) return [];
 
-    const subs = await prisma.subscription.findMany({
+    const subs = await (client ?? prisma).subscription.findMany({
       where: {
         studentId: { in: linkedIds },
         ...activeSubscriptionWhere(),
@@ -428,3 +459,4 @@ class QuizRepo {
 }
 
 export const quizRepo = new QuizRepo();
+export { QuizRepo };

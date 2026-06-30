@@ -79,7 +79,7 @@ function ReviewTile({ shot, label, badge, onOpen }) {
           borderColor: (th) => alpha(th.palette.primary.main, 0.5),
           boxShadow: (th) => `0 16px 36px ${alpha(th.palette.primary.main, 0.16)}`,
         },
-        '&:hover .review-badge': { opacity: 1 },
+        '&:hover [data-review-badge]': { opacity: 1 },
       }}
       onClick={onOpen}
       role="button"
@@ -102,7 +102,7 @@ function ReviewTile({ shot, label, badge, onOpen }) {
           sx={{ display: 'block', width: '100%', height: 'auto' }}
         />
         <Stack
-          className="review-badge"
+          data-review-badge
           direction="row"
           alignItems="center"
           spacing={0.75}

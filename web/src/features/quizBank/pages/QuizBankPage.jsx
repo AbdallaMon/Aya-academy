@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { MdAdd, MdCategory } from "react-icons/md";
+import { Box, Button } from "@mui/material";
+import { MdCategory } from "react-icons/md";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { DataTable, useConfirm } from "../../../shared/components/index.js";
+import {
+  DataTable,
+  PageHeader,
+  useConfirm,
+} from "../../../shared/components/index.js";
 import { BANK_URL, CATEGORIES_URL } from "../config/constant.js";
 import { useQuizBankText } from "../config/quizBankText.js";
 import {
@@ -127,39 +131,25 @@ export default function QuizBankPage() {
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: 3 }}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            {txt.pageTitle}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {txt.pageDescription}
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          {canCreate && (
-            <Button
-              variant="outlined"
-              startIcon={<MdCategory />}
-              onClick={categoriesDialog.open}
-            >
-              {txt.manageCategories}
-            </Button>
-          )}
-          {canCreate && (
-            <Button variant="contained" startIcon={<MdAdd />} onClick={onCreate}>
-              {txt.create}
-            </Button>
-          )}
-        </Stack>
-      </Stack>
+      <PageHeader
+        title={txt.pageTitle}
+        description={txt.pageDescription}
+        createLabel={txt.create}
+        onCreate={canCreate ? onCreate : undefined}
+        renderExtraComponent={
+          canCreate
+            ? () => (
+                <Button
+                  variant="outlined"
+                  startIcon={<MdCategory />}
+                  onClick={categoriesDialog.open}
+                >
+                  {txt.manageCategories}
+                </Button>
+              )
+            : undefined
+        }
+      />
 
       <DataTable
         initialRows={data || []}

@@ -53,8 +53,10 @@ export const subscriptionSelect = {
   plan: { select: subscriptionPlanSelect },
   coupon: { select: subscriptionCouponSelect },
   // 1:1 demand invoice — surfaced so the subscriptions list can show whether
-  // it's paid. Null until the invoice is generated.
-  invoice: { select: { id: true, status: true, dueDate: true } },
+  // it's paid. Null until the invoice is generated. `sentAt` lets the usecase
+  // hide an unsent invoice from non-admins (the teacher must request payment
+  // before a parent/student sees it).
+  invoice: { select: { id: true, status: true, dueDate: true, sentAt: true } },
 };
 
 /**

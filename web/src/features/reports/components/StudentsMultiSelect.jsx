@@ -13,9 +13,9 @@ import { Controller } from "react-hook-form";
 import { studentLabel } from "../config/constant.js";
 
 /**
- * RHF-bound multi-select of students. Mounted as an AppForm `type:"custom"`
- * field — AppForm passes { control, name, label, rules }. The field VALUE is an
- * array of numeric student ids (exactly what createReportSchema.studentIds wants).
+ * RHF-bound multi-select of students. Mounted directly in a manual react-hook-form
+ * with { control, name, label, rules }. The field VALUE is an array of numeric
+ * student ids (exactly what createReportSchema.studentIds wants).
  *
  *   options  Array<{ id, name, nickname }>
  *   loading  shows a disabled "loading…" placeholder

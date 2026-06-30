@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { Typography } from "@mui/material";
 import ChildEnrollCard from "../../auth/components/ChildEnrollCard.jsx";
 import { useAuthText } from "../../auth/config/authText.js";
-import { FormDialog } from "../../../shared/components/index.js";
+import { FormDialog, applyApiErrorsToForm } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
@@ -37,9 +38,23 @@ function emptyChild() {
  */
 export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
   const authTxt = useAuthText();
-  const [child, setChild] = useState(emptyChild);
-  const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState(null);
+
+  // The whole child object lives in a single RHF field; ChildEnrollCard (shared
+  // with the auth wizard) still drives the individual inputs through child/onChange,
+  // so we bridge its patches into the form value and read it back with useWatch.
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm({
+    defaultValues: { child: emptyChild() },
+  });
+  const child = useWatch({ control, name: "child" }) || emptyChild();
 
   const plansReq = useRequest({
     url: PLANS_PUBLIC_URL,
@@ -54,60 +69,86 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
   const loading =
     createChildMut.isPostRequestLoading || requestMut.isPostRequestLoading;
 
-  // Fetch the public plans whenever the dialog opens (the form itself is reset
-  // on close, so each open starts clean without a setState-in-effect).
+  // Re-seed a clean form and fetch the public plans whenever the dialog opens.
   useEffect(() => {
-    if (open) plansReq.fetchData();
+    if (!open) return;
+    reset({ child: emptyChild() });
+    plansReq.fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const plans = plansReq.data || [];
 
-  const patch = (p) => setChild((prev) => ({ ...prev, ...p }));
+  // ChildEnrollCard patches one or more keys at a time; merge into the form value.
+  const patch = (p) =>
+    setValue("child", { ...child, ...p }, { shouldDirty: true });
 
-  function validate() {
-    const e = {};
-    if (!child.name.trim()) e.name = authTxt.required;
-    if (!EMAIL_RE.test(child.email.trim())) e.email = authTxt.invalidEmail;
-    if ((child.password || "").length < 6) e.password = authTxt.passwordShort;
-    if (!child.planId) e.planId = authTxt.planRequired;
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
+  // ChildEnrollCard expects an error dict keyed by field name; project RHF errors.
+  const childErrs = errors.child || {};
+  const fieldErrors = {
+    ...(childErrs.name ? { name: childErrs.name.message } : {}),
+    ...(childErrs.email ? { email: childErrs.email.message } : {}),
+    ...(childErrs.password ? { password: childErrs.password.message } : {}),
+    ...(childErrs.planId ? { planId: childErrs.planId.message } : {}),
+  };
 
-  function reset() {
-    setChild(emptyChild());
-    setErrors({});
-    setFormError(null);
+  function validate(values) {
+    clearErrors();
+    let ok = true;
+    if (!values.name.trim()) {
+      setError("child.name", { type: "validate", message: authTxt.required });
+      ok = false;
+    }
+    if (!EMAIL_RE.test(values.email.trim())) {
+      setError("child.email", { type: "validate", message: authTxt.invalidEmail });
+      ok = false;
+    }
+    if ((values.password || "").length < 6) {
+      setError("child.password", {
+        type: "validate",
+        message: authTxt.passwordShort,
+      });
+      ok = false;
+    }
+    if (!values.planId) {
+      setError("child.planId", { type: "validate", message: authTxt.planRequired });
+      ok = false;
+    }
+    return ok;
   }
 
   function handleClose() {
     if (loading) return;
-    reset();
+    reset({ child: emptyChild() });
+    setFormError(null);
     onClose();
   }
 
-  async function submit() {
+  async function submit({ child: values }) {
     setFormError(null);
-    if (!validate()) {
+    if (!validate(values)) {
       setFormError(authTxt.fixErrors);
       return;
     }
 
-    const plan = plans.find((p) => p.id === child.planId) || null;
-    const { codeToSend } = resolveCoupon(plan, child.billingPeriod, child.coupon);
+    const plan = plans.find((p) => p.id === values.planId) || null;
+    const { codeToSend } = resolveCoupon(plan, values.billingPeriod, values.coupon);
 
     let res;
     try {
       res = await createChildMut.postRequest(null, {
-        name: child.name.trim(),
-        email: child.email.trim(),
-        password: child.password,
-        nickname: child.nickname.trim() || undefined,
-        birthDate: child.birthDate || undefined,
+        name: values.name.trim(),
+        email: values.email.trim(),
+        password: values.password,
+        nickname: values.nickname.trim() || undefined,
+        birthDate: values.birthDate || undefined,
       });
-    } catch {
-      // creation failed (e.g. email taken) — toast already shown; keep the dialog
+    } catch (err) {
+      // creation failed (e.g. email taken) — toast already shown; map any field
+      // errors onto the form and keep the dialog open.
+      applyApiErrorsToForm(err, (path, e) => setError(`child.${path}`, e), {
+        suppressFallbackToast: true,
+      });
       return;
     }
 
@@ -117,8 +158,8 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
     try {
       await requestMut.postRequest(null, {
         studentId: childId,
-        planId: child.planId,
-        billingPeriod: child.billingPeriod,
+        planId: values.planId,
+        billingPeriod: values.billingPeriod,
         ...(codeToSend ? { couponCode: codeToSend } : {}),
       });
     } catch {
@@ -127,7 +168,8 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
     }
 
     onCreated?.();
-    reset();
+    reset({ child: emptyChild() });
+    setFormError(null);
     onClose();
   }
 
@@ -140,7 +182,7 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
       loading={loading}
       submitText={txt.save}
       cancelText={txt.cancel}
-      onSubmit={submit}
+      onSubmit={handleSubmit(submit)}
     >
       <ChildEnrollCard
         index={0}
@@ -148,7 +190,7 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
         plans={plans}
         onChange={patch}
         canRemove={false}
-        errors={errors}
+        errors={fieldErrors}
         txt={authTxt}
         lng={lng}
       />
