@@ -110,6 +110,21 @@ class InvoiceUsecase {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(invoiceMessagesCodes.CANNOT_ACCESS_INVOICE);
     }
+    return this.regenerateForSubscription(subscriptionId, {
+      createdById: authUser.id,
+    });
+  }
+
+  /**
+   * System (no auth-gate) invoice (re)generation for a subscription — the shared
+   * core behind the admin `generate` and the automatic refresh after a
+   * coupon/plan change. A FULL reset: re-copies the current template, recomputes
+   * amounts AND the discount snapshot (so the coupon code + discount always match
+   * the subscription's current coupon), refreshes the dates, keeps only the
+   * stable invoice number + payment status. Use this from server-side flows where
+   * the actor may be a parent (e.g. apply-coupon) — never expose it to a route.
+   */
+  async regenerateForSubscription(subscriptionId, { createdById = null } = {}) {
     const subscription = await subscriptionRepo.getById(subscriptionId);
     if (!subscription) {
       throw notFound(invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND);
@@ -121,7 +136,7 @@ class InvoiceUsecase {
       );
     }
 
-    const template = await paymentTemplateUsecase.get(authUser);
+    const template = await paymentTemplateUsecase.get(null);
     const settings = await settingsUsecase.getEffective();
     const existing = await invoiceRepo.getBySubscriptionId(subscriptionId);
 
@@ -170,7 +185,7 @@ class InvoiceUsecase {
         configJson,
         issueDate,
         dueDate: this.computeDueDate(issueDate, template),
-        createdById: authUser.id,
+        createdById,
       },
     });
     return { invoice: created, regenerated: false };

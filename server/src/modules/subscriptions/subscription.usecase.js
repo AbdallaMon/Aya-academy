@@ -882,12 +882,15 @@ class SubscriptionUsecase {
       return subscriptionRepo.updateSubscription(id, data, tx);
     });
 
-    // 5. Regenerate the demand invoice so its amounts match the new plan. The
-    //    invoice usecase is loaded dynamically to avoid the subscription↔invoice
-    //    circular import. Best-effort — admin can regenerate manually.
+    // 5. Regenerate the demand invoice so its amounts AND discount snapshot match
+    //    the new plan/coupon. Uses the system regenerate (no admin gate) so a
+    //    PARENT changing the plan also refreshes the invoice. Dynamic import
+    //    avoids the subscription↔invoice circular import. Best-effort.
     try {
       const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
-      await invoiceUsecase.generate(authUser, id);
+      await invoiceUsecase.regenerateForSubscription(id, {
+        createdById: authUser.id,
+      });
     } catch {
       // swallow — invoice regeneration is best-effort
     }
@@ -980,11 +983,15 @@ class SubscriptionUsecase {
       );
     });
 
-    // 5. Regenerate the demand invoice so its amounts match. Dynamic import
+    // 5. Regenerate the demand invoice so its amounts AND discount snapshot match
+    //    the new coupon. Uses the system regenerate (no admin gate) so a PARENT
+    //    applying/removing a coupon also refreshes the invoice. Dynamic import
     //    avoids the subscription<->invoice circular dependency. Best-effort.
     try {
       const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
-      await invoiceUsecase.generate(authUser, id);
+      await invoiceUsecase.regenerateForSubscription(id, {
+        createdById: authUser.id,
+      });
     } catch {
       // swallow — invoice regeneration is best-effort
     }
