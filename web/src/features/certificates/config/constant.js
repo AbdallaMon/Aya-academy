@@ -47,16 +47,19 @@ export const FONT_STYLES = [
 ];
 export const DEFAULT_FONT_STYLE = "elegant";
 
-// CSS font stacks per fontStyle. Each loads a DISTINCT Arabic web font (see the
-// @import in globals.css) so the style genuinely changes for Arabic text, with a
-// matching Latin fallback. Every text node on the card uses one of these.
+// CSS font stacks per fontStyle. Each references a DISTINCT Arabic web font that
+// is SELF-HOSTED via next/font (see the layout) and exposed as a CSS variable, so
+// the font is same-origin and CAN be embedded by html-to-image at export time.
+// (Using the raw family name here — e.g. "Amiri" — would render on screen but not
+// in the exported PDF, because the family was only reachable via the cross-origin
+// Google Fonts CDN.) `--font-sans` is Cairo. Generic keywords stay as fallbacks.
 export const FONT_STACKS = {
-  elegant: `"Amiri", "Georgia", "Times New Roman", serif`,
-  classic: `"Scheherazade New", "Amiri", "Georgia", serif`,
-  modern: `"Cairo", "Helvetica Neue", Arial, sans-serif`,
-  kufi: `"Reem Kufi", "Cairo", "Trebuchet MS", sans-serif`,
-  ruqaa: `"Aref Ruqaa", "Amiri", "Georgia", serif`,
-  naskh: `"Noto Naskh Arabic", "Amiri", "Times New Roman", serif`,
+  elegant: `var(--font-amiri), "Georgia", "Times New Roman", serif`,
+  classic: `var(--font-scheherazade), "Georgia", serif`,
+  modern: `var(--font-sans), "Helvetica Neue", Arial, sans-serif`,
+  kufi: `var(--font-reem-kufi), var(--font-sans), sans-serif`,
+  ruqaa: `var(--font-aref-ruqaa), "Georgia", serif`,
+  naskh: `var(--font-noto-naskh), "Times New Roman", serif`,
 };
 
 // Academy brand shown on EVERY certificate (logo + name).

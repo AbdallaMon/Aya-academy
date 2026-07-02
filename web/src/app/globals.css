@@ -1,8 +1,8 @@
-/* Arabic display fonts for certificate templates (heading / student name /
-   body fonts the admin can pick per template). Loaded once globally so both
-   the live preview and the printable certificate render with the chosen font.
-   Must precede every other rule per the CSS @import spec. */
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;700;900&family=Reem+Kufi:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Markazi+Text:wght@400;700&display=swap');
+/* Certificate display fonts (Amiri / Scheherazade New / Cairo / Reem Kufi /
+   Aref Ruqaa / Noto Naskh Arabic) are now SELF-HOSTED via next/font in the root
+   layout and exposed as CSS variables. They were previously pulled from the
+   Google Fonts CDN here, but a cross-origin @import cannot be embedded by
+   html-to-image, so exported certificates lost the chosen font. */
 
 html,
 body {

@@ -25,6 +25,14 @@ import { jsPDF } from "jspdf";
 // pixelRatio then multiplies this for print-grade resolution.
 const DESIGN_WIDTH = { portrait: 794, landscape: 1123 };
 
+// 1×1 transparent PNG. Used as html-to-image's imagePlaceholder so that an image
+// which STILL fails to embed (deleted / genuinely blocked) degrades to a blank
+// pixel instead of REJECTING the whole capture. Without this, one un-embeddable
+// image (e.g. an authenticated cross-origin student photo) makes toPng throw and
+// the export silently aborts — no PDF, no print, no error.
+const TRANSPARENT_PX =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -102,6 +110,16 @@ async function captureNodeFixed(node, { orientation = "portrait", pixelRatio = 2
       // which in RTL shaves the right-most (leading) Arabic pixels.
       width: Math.ceil(rect.width),
       height: Math.ceil(rect.height),
+      // Send the auth cookie when html-to-image re-fetches images to inline them.
+      // Our uploads (e.g. the student photo on a manual certificate) are served
+      // from GET /attachments/:id/raw behind requireAuth on the API origin; the
+      // default fetch sends no credentials, so the image 404/401s and the capture
+      // rejects. credentials:"include" lets the same-site cookie through (the API
+      // CORS already allows our origin with credentials).
+      fetchRequestInit: { credentials: "include" },
+      // Final safety net: if an image can't be embedded at all, fall back to a
+      // transparent pixel instead of aborting the whole export.
+      imagePlaceholder: TRANSPARENT_PX,
     });
     return { dataUrl, width: rect.width, height: rect.height };
   } finally {
