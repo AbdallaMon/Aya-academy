@@ -1,6 +1,6 @@
 # nixpacks.toml — server service
 [phases.setup]
-nixPkgs = ["nodejs_22", "openssl"]   # عدّل نسخة node لنفس اللي بتشغّل بيها محلياً
+nixPkgs = ["nodejs_24", "openssl"]   # عدّل نسخة node لنفس اللي بتشغّل بيها محلياً
 
 [phases.install]
 cmds = ["npm install"]
