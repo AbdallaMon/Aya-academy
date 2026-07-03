@@ -9,9 +9,12 @@
     "server"
   ],
   "scripts": {
+    "install:web": "npm install -w web",
+    "install:server": "npm install -w @aya/db && npm install -w server && npm install -@aya/shared",
     "dev:web": "npm run dev -w web",
     "dev:server": "npm run dev -w server",
     "build:web": "npm run build -w web",
+    "start:web": "npm run start -w web",
     "start:server": "npm run start -w server",
     "db:generate": "npm run generate -w @aya/db",
     "db:migrate": "npm run migrate:dev -w @aya/db",
