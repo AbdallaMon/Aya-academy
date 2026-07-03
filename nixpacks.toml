@@ -1,0 +1,12 @@
+# nixpacks.toml — server service
+[phases.setup]
+nixPkgs = ["nodejs_22", "openssl"]   # عدّل نسخة node لنفس اللي بتشغّل بيها محلياً
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run db:generate"]
+
+[start]
+cmd = "npm run db:migrate:deploy && npm run start:server"
