@@ -74,6 +74,27 @@ class AuthController {
     return ok(res, { user: payload }, authMessagesCodes.LOGIN_SUCCESS, messagesNames.authMessages);
   }
 
+  async forgotPassword(req, res) {
+    await authUsecase.requestPasswordReset(req.body);
+    // Generic response either way — never reveal whether the e-mail exists.
+    return ok(
+      res,
+      { sent: true },
+      authMessagesCodes.RESET_EMAIL_SENT,
+      messagesNames.authMessages,
+    );
+  }
+
+  async resetPassword(req, res) {
+    await authUsecase.resetPassword(req.body);
+    return ok(
+      res,
+      { reset: true },
+      authMessagesCodes.PASSWORD_RESET_SUCCESS,
+      messagesNames.authMessages,
+    );
+  }
+
   async logout(_req, res) {
     res.clearCookie(AUTH_COOKIE, JwtService.clearCookieOptions());
     res.clearCookie(REFRESH_COOKIE, JwtService.clearCookieOptions());

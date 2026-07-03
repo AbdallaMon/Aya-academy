@@ -11,17 +11,19 @@ const PUBLIC_PATHS = [
   { path: '/free-game', priority: 0.8, changeFrequency: 'monthly' },
   { path: '/register', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/login', priority: 0.5, changeFrequency: 'yearly' },
-  // Every blog article (data-driven — new posts appear automatically).
+  // Every blog article (data-driven — new posts appear automatically). Each
+  // carries its publish date as lastModified so crawlers schedule sensibly.
   ...sortedArticles.map((a) => ({
     path: `/blog/${a.slug}`,
     priority: 0.6,
     changeFrequency: 'monthly',
+    lastModified: a.dateModified || a.datePublished,
   })),
 ];
 
 export default function sitemap() {
   const entries = [];
-  for (const { path, priority, changeFrequency } of PUBLIC_PATHS) {
+  for (const { path, priority, changeFrequency, lastModified } of PUBLIC_PATHS) {
     const languagesMap = {};
     for (const lng of languages) {
       languagesMap[lng] = `${SITE_URL}${localePath(lng, path)}`;
@@ -33,6 +35,7 @@ export default function sitemap() {
         url: `${SITE_URL}${localePath(lng, path)}`,
         changeFrequency,
         priority,
+        ...(lastModified ? { lastModified } : {}),
         alternates: { languages: languagesMap },
       });
     }

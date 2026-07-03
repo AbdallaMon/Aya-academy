@@ -41,6 +41,9 @@ export default function LoginForm() {
       subtitle={txt.loginSubtitle}
       footer={
         <Stack spacing={1} alignItems="center">
+          <Box component={Link} href={localePath(lng, "/forgot-password")} sx={{ color: "primary.main", fontWeight: 600, fontSize: 14 }}>
+            {txt.forgotLink}
+          </Box>
           <Typography variant="body2" color="text.secondary">
             {txt.noAccount}{" "}
             <Box component={Link} href={localePath(lng, "/register")} sx={{ color: "primary.main", fontWeight: 600 }}>

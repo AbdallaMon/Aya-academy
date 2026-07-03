@@ -15,7 +15,9 @@ export const ENV = {
   NODE_ENV,
   IS_PROD: NODE_ENV === "production",
   PORT: Number(process.env.PORT ?? 4000),
-  appUrl: process.env.APP_URL ?? "http://localhost:3000",
+  // Public URL of the WEB app (used to build links inside emails, OAuth redirects,
+  // etc.). Falls back to NEXT_PUBLIC_APP_URL so a single value in .env drives both.
+  appUrl: process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   cors: {
     origins: (process.env.CORS_ORIGINS ?? "")
       .split(",")
@@ -89,6 +91,30 @@ export const ENV = {
     prefix: process.env.AWS_S3_PREFIX || "",
   },
 
+  // SMTP e-mail — provider-agnostic, driven entirely by env. Works with ANY SMTP
+  // server (Spacemail, Gmail, Mailgun, SES-SMTP, …); nothing here is tied to a
+  // specific provider. Either set SMTP_URL as a full connection string, or the
+  // discrete parts. `port` and `secure` are taken verbatim from env
+  // (secure=true → implicit TLS, typically 465; false → STARTTLS, typically 587);
+  // when SMTP_SECURE is omitted it's inferred from the port (465 ⇒ true).
+  // Default OFF — until it's configured, sends are a no-op and (in dev) the link
+  // is logged to the console so the flow stays testable.
+  smtp: {
+    url: process.env.SMTP_URL,
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT ?? 587),
+    secure:
+      process.env.SMTP_SECURE !== undefined && process.env.SMTP_SECURE !== ""
+        ? process.env.SMTP_SECURE === "true"
+        : Number(process.env.SMTP_PORT ?? 587) === 465,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    fromName: process.env.SMTP_FROM_NAME || "Aya Academy",
+    // Reject invalid TLS certs by default; opt out only for self-signed servers.
+    rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
+  },
+
   // Meta WhatsApp Cloud API. Default OFF — no-op until enabled + configured.
   whatsapp: {
     enabled: process.env.WHATSAPP_ENABLED === "true",
@@ -110,4 +136,9 @@ export function isAwsConfigured() {
 /** Whether WhatsApp Cloud API is fully configured (token + phoneId required). */
 export function isWhatsAppConfigured() {
   return Boolean(ENV.whatsapp.token && ENV.whatsapp.phoneId);
+}
+
+/** Whether SMTP e-mail is configured — either a full SMTP_URL or host+user+pass. */
+export function isSmtpConfigured() {
+  return Boolean(ENV.smtp.url || (ENV.smtp.host && ENV.smtp.user && ENV.smtp.pass));
 }

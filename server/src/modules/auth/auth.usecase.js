@@ -8,9 +8,13 @@ import {
   messagesNames,
   planMessagesCodes,
 } from "@aya/shared";
+import crypto from "node:crypto";
 import { prisma } from "@aya/db/prisma.client.js";
 import { AppError, badRequest, notFound } from "../../shared/errors/AppError.js";
 import { comparePassword, hashPassword } from "../../infra/security/hash.js";
+import { ENV } from "../../config/env.js";
+import { mailer } from "../../infra/messaging/providers/mailer.js";
+import { buildPasswordResetEmail } from "../../infra/messaging/templates/passwordResetEmail.js";
 import { userRepo } from "../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { couponRepo } from "../coupons/coupon.repo.js";
@@ -21,6 +25,15 @@ import { subscriptionUsecase } from "../subscriptions/subscription.usecase.js";
 import { invoiceUsecase } from "../invoices/invoice.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { authRepo } from "./auth.repo.js";
+
+// Password-reset links are short-lived and single-use.
+const RESET_TOKEN_TTL_MINUTES = 60;
+
+// Only the SHA-256 hash of the token is ever stored; the raw token lives only in
+// the e-mailed link. So a leaked DB row can't be turned back into a usable link.
+function hashResetToken(rawToken) {
+  return crypto.createHash("sha256").update(rawToken).digest("hex");
+}
 
 class AuthUsecase {
   /** Public self-registration — always creates a PARENT account. */
@@ -251,6 +264,96 @@ class AuthUsecase {
     }
     await authRepo.updateLastLogin({ id: user.id });
     return user;
+  }
+
+  /**
+   * Forgot password — issue a single-use reset link and e-mail it.
+   *
+   * ALWAYS resolves the same way (the controller returns a generic "if the
+   * account exists, we sent a link" message) so an attacker can't use this to
+   * discover which e-mails are registered. Work only happens for an existing,
+   * active account. Delivery is best-effort: a send failure is logged, never
+   * surfaced. When SMTP is not configured the link is logged to the console so
+   * the flow is still testable in development.
+   */
+  async requestPasswordReset({ email, locale }) {
+    const user = await authRepo.findByEmail({ email });
+    // Silently no-op for unknown / inactive accounts (no enumeration signal).
+    if (!user || !user.isActive) return;
+
+    // One live link at a time — drop any previous tokens for this user.
+    await authRepo.deleteUserPasswordResets({ userId: user.id });
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = hashResetToken(rawToken);
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+    await authRepo.createPasswordReset({ userId: user.id, tokenHash, expiresAt });
+
+    // The e-mail (and its link) follow the language the user is currently using,
+    // falling back to the account locale.
+    const emailLocale = locale ?? user.locale ?? "ar";
+    const resetUrl = `${ENV.appUrl}/${emailLocale}/reset-password?token=${rawToken}`;
+    const { subject, html, text } = buildPasswordResetEmail({
+      name: user.name,
+      resetUrl,
+      locale: emailLocale,
+      expiresMinutes: RESET_TOKEN_TTL_MINUTES,
+      logoUrl: `${ENV.appUrl}/logos/logo.png`,
+    });
+
+    if (mailer.isReady()) {
+      try {
+        await mailer.sendMail({ to: user.email, subject, html, text });
+      } catch (err) {
+        // Best-effort: never leak delivery status back to the caller.
+        console.error(`[auth] password-reset email failed for user ${user.id}:`, err?.message ?? err);
+      }
+    } else if (!ENV.IS_PROD) {
+      // Dev fallback: SMTP not configured — print the link so it's testable.
+      console.log(`[auth] SMTP not configured. Password reset link for ${user.email}:\n${resetUrl}`);
+    }
+  }
+
+  /**
+   * Reset password — consume the emailed token and set a new password.
+   * Bumps sessionVersion (logs the user out everywhere) and invalidates every
+   * outstanding reset token for the account.
+   */
+  async resetPassword({ token, password }) {
+    const tokenHash = hashResetToken(token);
+    const row = await authRepo.findValidPasswordReset({ tokenHash });
+    if (!row) {
+      throw new AppError({
+        statusCode: 400,
+        code: authMessagesCodes.RESET_TOKEN_INVALID,
+        message: authMessagesCodes.RESET_TOKEN_INVALID,
+        translationKey: messagesNames.authMessages,
+        redirectTo: "/forgot-password",
+      });
+    }
+    if (!row.user.isActive) {
+      throw new AppError({
+        statusCode: 403,
+        code: authMessagesCodes.ACCOUNT_INACTIVE,
+        message: authMessagesCodes.ACCOUNT_INACTIVE,
+        translationKey: messagesNames.authMessages,
+        redirectTo: "/login",
+        redirectText: authMessagesCodes.BACK_TO_LOGIN,
+      });
+    }
+
+    const passwordHash = await hashPassword(password);
+    await prisma.$transaction(async (tx) => {
+      await authRepo.updatePasswordAndBumpSession({
+        id: row.user.id,
+        passwordHash,
+        client: tx,
+      });
+      // Spend this token + revoke every other outstanding link for the account.
+      await authRepo.deleteUserPasswordResets({ userId: row.user.id, client: tx });
+    });
+
+    return { success: true };
   }
 
   getById(id) {

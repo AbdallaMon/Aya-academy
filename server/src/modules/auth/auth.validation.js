@@ -21,6 +21,19 @@ export class AuthValidation {
     password: z.string().min(1, authMessagesCodes.PASSWORD_REQUIRED),
   });
 
+  // Forgot password — ask for a reset link by e-mail. `locale` picks the e-mail
+  // language (defaults to the account's stored locale on the server side).
+  static forgotPasswordSchema = z.object({
+    email: z.string().email(authMessagesCodes.INVALID_EMAIL),
+    locale: z.enum(["ar", "en"]).optional(),
+  });
+
+  // Reset password — consume the emailed token and set a new password.
+  static resetPasswordSchema = z.object({
+    token: z.string().min(1, authMessagesCodes.RESET_TOKEN_REQUIRED),
+    password: z.string().min(6, authMessagesCodes.PASSWORD_TOO_SHORT),
+  });
+
   // One child in the family-enrollment payload.
   static enrollChildSchema = z.object({
     name: z.string().min(1, authMessagesCodes.NAME_REQUIRED),

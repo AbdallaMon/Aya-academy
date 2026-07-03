@@ -33,6 +33,26 @@ export const authText = {
     passwordShort: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
     invalidPhone: "رقم هاتف غير صالح",
     registerSuccess: "تم إنشاء الحساب بنجاح، يمكنك تسجيل الدخول الآن",
+    passwordsDontMatch: "كلمتا المرور غير متطابقتين",
+    // forgot / reset password
+    forgotLink: "نسيت كلمة المرور؟",
+    forgotTitle: "نسيت كلمة المرور؟",
+    forgotSubtitle: "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
+    forgotButton: "إرسال رابط إعادة التعيين",
+    emailSentTitle: "تفقّد بريدك الإلكتروني ✉️",
+    emailSentBody:
+      "إذا كان لديك حساب لدينا، فقد أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك. تحقّق من صندوق الوارد ومجلد الرسائل غير المرغوب فيها.",
+    emailSentHint: "قد يستغرق وصول الرسالة دقيقة. الرابط صالح لمدة ساعة واحدة.",
+    resetTitle: "إعادة تعيين كلمة المرور",
+    resetSubtitle: "اختر كلمة مرور جديدة لحسابك.",
+    newPassword: "كلمة المرور الجديدة",
+    confirmPassword: "تأكيد كلمة المرور",
+    resetButton: "حفظ كلمة المرور",
+    invalidLinkTitle: "رابط غير صالح",
+    invalidLinkBody:
+      "انتهت صلاحية رابط إعادة التعيين أو أنه غير صحيح. يمكنك طلب رابط جديد.",
+    requestNewLink: "طلب رابط جديد",
+    backToLogin: "العودة لتسجيل الدخول",
     // wizard
     wizardTitle: "التسجيل في أكاديمية آية",
     wizardSubtitle: "أضف أبناءك واختر الخطة المناسبة",
@@ -108,6 +128,26 @@ export const authText = {
     passwordShort: "Password must be at least 6 characters",
     invalidPhone: "Invalid phone number",
     registerSuccess: "Account created. You can sign in now.",
+    passwordsDontMatch: "Passwords do not match",
+    // forgot / reset password
+    forgotLink: "Forgot your password?",
+    forgotTitle: "Forgot your password?",
+    forgotSubtitle: "Enter your email and we'll send you a link to reset your password.",
+    forgotButton: "Send reset link",
+    emailSentTitle: "Check your email ✉️",
+    emailSentBody:
+      "If you have an account with us, we've sent a password reset link to your email. Check your inbox and spam folder.",
+    emailSentHint: "It may take a minute to arrive. The link is valid for one hour.",
+    resetTitle: "Reset your password",
+    resetSubtitle: "Choose a new password for your account.",
+    newPassword: "New password",
+    confirmPassword: "Confirm password",
+    resetButton: "Save password",
+    invalidLinkTitle: "Invalid link",
+    invalidLinkBody:
+      "This reset link is invalid or has expired. You can request a new one.",
+    requestNewLink: "Request a new link",
+    backToLogin: "Back to sign in",
     // wizard
     wizardTitle: "Join Aya Academy",
     wizardSubtitle: "Add your children and choose a plan",

@@ -2,13 +2,13 @@
 // it can be imported from layouts, pages, robots.js, sitemap.js and manifest.js.
 //
 // The canonical/OG URLs need the REAL production origin. Set NEXT_PUBLIC_SITE_URL
-// in the deploy env (e.g. https://aya.academy). We fall back to the brand domain
+// in the deploy env (e.g. https://ayah.academy). We fall back to the brand domain
 // so builds never produce relative/broken OG URLs.
 
 import { fallbackLng, languages } from "@/i18n/settings.js";
 
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://aya.academy"
+  process.env.NEXT_PUBLIC_SITE_URL || "https://ayah.academy"
 ).replace(/\/+$/, "");
 
 // Brand name per locale — appended to page titles via the title template.

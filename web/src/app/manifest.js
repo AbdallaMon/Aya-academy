@@ -15,9 +15,11 @@ export default function manifest() {
     description:
       'رحلة مرحة وآمنة لتعليم الأطفال القرآن الكريم والأخلاق الجميلة.',
     start_url: `/${fallbackLng}`,
+    scope: '/',
     display: 'standalone',
     dir: 'rtl',
     lang: fallbackLng,
+    categories: ['education', 'kids', 'books'],
     background_color: BACKGROUND_COLOR,
     theme_color: THEME_COLOR,
     icons: [

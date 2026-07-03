@@ -258,12 +258,31 @@ model User {
   paymentTemplates    PaymentTemplate[] @relation("PaymentTemplateUpdatedBy")
   appSettingUpdates   AppSetting[]      @relation("AppSettingUpdatedBy")
 
+  passwordResets PasswordResetToken[] @relation("UserPasswordResets")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([role])
   @@index([isActive])
   @@index([createdById])
+}
+
+// One-time password-reset link. The RAW token is emailed to the user; only its
+// SHA-256 hash is stored here, so a DB leak can't be used to reset an account.
+// A token is spent on first successful use (usedAt) and always has a short TTL.
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  userId    Int
+  user      User      @relation("UserPasswordResets", fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model ParentStudent {
