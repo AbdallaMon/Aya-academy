@@ -24,7 +24,7 @@ const ORG_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const COURSE_ID = `${SITE_URL}/#course`;
 
-const CONTACT_EMAIL = "hello@aya.academy";
+const CONTACT_EMAIL = "info@ayah.academy";
 // The same WhatsApp line the site exposes (see WhatsAppButton) — a verifiable
 // contact number strengthens the entity in Google's Knowledge Graph.
 const CONTACT_PHONE = "+966582509655";

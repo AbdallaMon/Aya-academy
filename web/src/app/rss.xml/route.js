@@ -7,7 +7,7 @@ import { sortedArticles, blogCategories } from '@/features/blog';
 // blog page <head> via alternates.types. Data-driven: every article in
 // features/blog/data/articles.js appears automatically, newest first.
 
-const CONTACT_EMAIL = 'hello@aya.academy';
+const CONTACT_EMAIL = 'info@ayah.academy';
 
 const esc = (s = '') =>
   String(s)

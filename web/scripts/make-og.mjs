@@ -89,7 +89,7 @@ const LOCALES = [
       role: 'رحلة مرحة وآمنة لطفلك مع القرآن:<br>حصص تفاعلية، وألعاب تعليمية، ومتابعة للأهل.',
       pill: '★ حصة تجريبية مجانية · من ٥ إلى ١٤ سنة',
       trust: 'محبوبة من الأهل والأطفال',
-      brand: 'aya.academy',
+      brand: 'ayah.academy',
     },
   },
   {
@@ -104,7 +104,7 @@ const LOCALES = [
       role: 'A joyful, safe journey for your child with the Quran:<br>interactive sessions, learning games, and parent tracking.',
       pill: '★ Free trial session · Ages 5–14',
       trust: 'Loved by parents & kids',
-      brand: 'aya.academy',
+      brand: 'ayah.academy',
     },
   },
 ];

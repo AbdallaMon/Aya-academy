@@ -134,8 +134,8 @@ export default function SiteFooter() {
               {t.contact}
             </Typography>
             <Stack spacing={1.5}>
-              <Box component="a" href="mailto:hello@aya.academy" sx={{ ...linkSx, display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                <MdEmail /> hello@aya.academy
+              <Box component="a" href="mailto:info@ayah.academy" sx={{ ...linkSx, display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                <MdEmail /> info@ayah.academy
               </Box>
               <LanguageSwitch size="sm" />
             </Stack>
