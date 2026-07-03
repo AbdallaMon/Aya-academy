@@ -1,5 +1,7 @@
 import { BlogList } from '@/features/blog';
-import { buildMetadata, SITE_URL } from '@/shared/lib/seo';
+import JsonLd from '@/shared/components/seo/JsonLd.jsx';
+import { buildMetadata, breadcrumbSchema, SITE_URL, getSeo } from '@/shared/lib/seo';
+import { localePath } from '@/i18n/routing.js';
 
 export async function generateMetadata({ params }) {
   const { lng } = await params;
@@ -14,6 +16,17 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function BlogIndexRoute() {
-  return <BlogList />;
+export default async function BlogIndexRoute({ params }) {
+  const { lng } = await params;
+  const abs = (path) => `${SITE_URL}${localePath(lng, path)}`;
+  const breadcrumb = breadcrumbSchema([
+    { name: lng === 'en' ? 'Home' : 'الرئيسية', url: abs('/') },
+    { name: getSeo('blog', lng)?.title || (lng === 'en' ? 'Blog' : 'المدوّنة'), url: abs('/blog') },
+  ]);
+  return (
+    <>
+      <JsonLd data={breadcrumb} />
+      <BlogList />
+    </>
+  );
 }

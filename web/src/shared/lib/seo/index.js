@@ -5,5 +5,8 @@ export {
   organizationSchema,
   websiteSchema,
   faqSchema,
+  courseSchema,
+  breadcrumbSchema,
+  articleSchema,
 } from "./structuredData.js";
 export * from "./config.js";

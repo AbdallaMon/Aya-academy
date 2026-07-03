@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "install:web": "npm install -w web",
-    "install:server": "npm install -w @aya/db && npm install -w server && npm install -@aya/shared",
+    "install:server": "npm install -w @aya/db -w @aya/shared -w server",
     "dev:web": "npm run dev -w web",
     "dev:server": "npm run dev -w server",
     "build:web": "npm run build -w web",

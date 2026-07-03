@@ -10,7 +10,7 @@ import SafetyStrip from '@/features/trust/SafetyStrip.jsx';
 import FAQ from '@/features/faq/FAQ.jsx';
 import FreeSessionPromo from '@/features/promo/FreeSessionPromo.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
-import { buildMetadata, faqSchema } from '@/shared/lib/seo';
+import { buildMetadata, faqSchema, courseSchema } from '@/shared/lib/seo';
 import { getFaq } from '@/features/faq/faqData.js';
 
 export async function generateMetadata({ params }) {
@@ -35,7 +35,8 @@ export default async function Home({ params }) {
   const faq = getFaq(lng);
   return (
     <>
-      <JsonLd data={faqSchema(faq.items)} />
+      {/* FAQPage mirrors the visible accordion; Course describes the program. */}
+      <JsonLd data={[faqSchema(faq.items), courseSchema(lng)]} />
       <Hero pageTheme={pageTheme} />
       <HeroReviews pageTheme={pageTheme} />
       <WhyAya />
