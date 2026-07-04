@@ -15,8 +15,8 @@ import { languages } from "@/i18n/settings.js";
 import { SITE_URL, brand } from "./config.js";
 
 const DESCRIPTION = {
-  ar: "أكاديمية آية — رحلة مرحة وآمنة لتعليم الأطفال (٥–١٤ سنة) القرآن الكريم والأخلاق الجميلة عبر حصص تفاعلية وألعاب تعليمية ومتابعة لولي الأمر.",
-  en: "Aya Academy — a joyful, safe journey for kids (ages 5–14) to learn the Quran and beautiful manners through interactive sessions, educational games and parent tracking.",
+  ar: "أكاديمية آية — رحلة مرحة وآمنة لتعليم الأطفال (من ٥ سنوات فأكثر) القرآن الكريم والأخلاق الجميلة عبر حصص تفاعلية وألعاب تعليمية ومتابعة لولي الأمر.",
+  en: "Aya Academy — a joyful, safe journey for kids (ages 5 and up) to learn the Quran and beautiful manners through interactive sessions, educational games and parent tracking.",
 };
 
 // A stable @id for the organization so other nodes can reference it.
@@ -37,6 +37,8 @@ const KNOWS_ABOUT = {
     "تعليم القرآن الكريم للأطفال",
     "تحفيظ القرآن",
     "التجويد",
+    "اللغة العربية للأطفال",
+    "الدراسات الإسلامية للأطفال",
     "الأخلاق الإسلامية",
     "الأدعية والأذكار",
     "التربية الإسلامية للأطفال",
@@ -45,6 +47,8 @@ const KNOWS_ABOUT = {
     "Quran education for children",
     "Quran memorization",
     "Tajweed",
+    "Arabic language for children",
+    "Islamic studies for children",
     "Islamic manners",
     "Duas and dhikr",
     "Islamic parenting",
@@ -110,20 +114,24 @@ const COURSE = {
     teaches: [
       "حفظ القرآن الكريم",
       "التلاوة والتجويد",
+      "اللغة العربية",
+      "الدراسات الإسلامية",
       "الأخلاق والآداب الإسلامية",
       "الأدعية والأذكار",
     ],
-    audience: "الأطفال من ٥ إلى ١٤ سنة",
+    audience: "الأطفال من ٥ سنوات فأكثر",
   },
   en: {
     name: "Online Quran & Manners Program for Kids",
     teaches: [
       "Quran memorization",
       "Recitation & Tajweed",
+      "Arabic language",
+      "Islamic studies",
       "Islamic manners & etiquette",
       "Duas & dhikr",
     ],
-    audience: "Children aged 5–14",
+    audience: "Children aged 5 and up",
   },
 };
 

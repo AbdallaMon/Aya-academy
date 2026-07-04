@@ -11,7 +11,7 @@ export const faqContent = {
     items: [
       {
         q: 'ما هي الأعمار المناسبة؟',
-        a: 'أكاديمية آية مصمّمة للأطفال من ٥ إلى ١٤ سنة، مع مستويات مرتّبة حسب العمر والخبرة ليتقدّم كل طفل بإيقاع مناسب له.',
+        a: 'أكاديمية آية مصمّمة للأطفال من ٥ سنوات فأكثر، مع مستويات مرتّبة حسب العمر والخبرة ليتقدّم كل طفل بإيقاع مناسب له.',
       },
       {
         q: 'هل الحصص مباشرة أم مسجّلة؟',
@@ -50,7 +50,7 @@ export const faqContent = {
     items: [
       {
         q: 'What ages is it for?',
-        a: 'Aya Academy is built for kids aged 5–14, with levels organized by age and experience so every child progresses at their own pace.',
+        a: 'Aya Academy is built for kids aged 5 and up, with levels organized by age and experience so every child progresses at their own pace.',
       },
       {
         q: 'Are lessons live or recorded?',

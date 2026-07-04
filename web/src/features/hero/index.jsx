@@ -11,10 +11,10 @@ import { localePath } from '@/i18n/routing.js';
 
 const HERO = {
   ar: {
-    eyebrow: 'قرآن وأخلاق وألعاب للأطفال',
+    eyebrow: 'قرآن · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
     title: 'رحلة مُحبّبة لتعلّم القرآن والأخلاق الجميلة',
     subtitle:
-      'دروس ممتعة وآمنة للأطفال من ٥ إلى ١٤ سنة — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
+      'دروس ممتعة وآمنة للأطفال من ٥ سنوات فأكثر — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
     primary: 'احجز حصة مجانية',
     secondary: 'جرّب ألعابنا التفاعلية 🎮',
     freeTrial: 'بدون بطاقة دفع · بدون التزام · إلغاء في أي وقت',
@@ -22,10 +22,10 @@ const HERO = {
     imgAlt: 'أطفال يتعلّمون القرآن بسعادة',
   },
   en: {
-    eyebrow: 'Quran, manners & games for kids',
+    eyebrow: 'Quran · Arabic · Islamic studies · Manners · Games',
     title: 'A loving journey to learn the Quran and beautiful manners',
     subtitle:
-      'Fun, safe lessons for kids aged 5–14 — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
+      'Fun, safe lessons for kids aged 5 and up — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
     primary: 'Book a free session',
     secondary: 'Try our interactive games 🎮',
     freeTrial: 'No card · No commitment · Cancel anytime',
@@ -132,8 +132,26 @@ export default function Hero() {
           >
             <Chip
               label={t.eyebrow}
-              color="secondary"
-              sx={{ fontWeight: 800, mb: 2.5, px: 0.5, color: 'secondary.contrastText' }}
+              sx={{
+                fontWeight: 800,
+                mb: 2.5,
+                // Solid amber fill + dark slate text (secondary.contrastText #25313F
+                // on #F6C453 ≈ 8:1) so the kicker reads clearly in BOTH themes — the
+                // old translucent `color="secondary"` fill (amber @20%) went
+                // near-invisible over the dark-navy hero background. `height: auto`
+                // + wrapping lets the (now longer) subject list flow onto a second
+                // line on small screens instead of truncating.
+                height: 'auto',
+                py: 0.75,
+                bgcolor: 'secondary.main',
+                color: 'secondary.contrastText',
+                '& .MuiChip-label': {
+                  px: 1.5,
+                  whiteSpace: 'normal',
+                  lineHeight: 1.6,
+                  textAlign: 'center',
+                },
+              }}
             />
             <Typography
               variant="h1"

@@ -46,7 +46,7 @@ const CONTENT = {
       { title: 'مبتدئ', age: '٥–٦ سنوات', desc: 'الحروف والأصوات وسور قصيرة بسيطة.', reward: 'وسام أول سورة' },
       { title: 'مستكشف', age: '٧–٨ سنوات', desc: 'سور قصيرة وأساسيات التجويد ومعانٍ سهلة.', reward: 'وسام المستكشف' },
       { title: 'بنّاء', age: '٩–١١ سنة', desc: 'سور أطول وتجويد أقوى وفهم للمعاني.', reward: 'وسام البنّاء' },
-      { title: 'قارئ واثق', age: '١٢–١٤ سنة', desc: 'تلاوة طليقة وفهم أعمق ولحظات تأمّل.', reward: 'وسام إتقان القرآن' },
+      { title: 'قارئ واثق', age: '١٢ سنة فأكثر', desc: 'تلاوة طليقة وفهم أعمق ولحظات تأمّل.', reward: 'وسام إتقان القرآن' },
     ],
   },
   en: {
@@ -71,7 +71,7 @@ const CONTENT = {
       { title: 'Beginner', age: 'Ages 5–6', desc: 'Letters, basic sounds and simple short Surahs.', reward: 'First Surah badge' },
       { title: 'Explorer', age: 'Ages 7–8', desc: 'Short Surahs, tajweed basics and easy meanings.', reward: 'Explorer badge' },
       { title: 'Builder', age: 'Ages 9–11', desc: 'Longer Surahs, stronger tajweed, key themes.', reward: 'Builder badge' },
-      { title: 'Confident reader', age: 'Ages 12–14', desc: 'Fluent recitation and deeper understanding.', reward: 'Quran mastery badge' },
+      { title: 'Confident reader', age: 'Ages 12+', desc: 'Fluent recitation and deeper understanding.', reward: 'Quran mastery badge' },
     ],
   },
 };
