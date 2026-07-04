@@ -292,13 +292,6 @@ export default function Testimonials() {
             }}
           >
             <source src={reviewVideo.src} type="video/mp4" />
-            <track
-              kind="captions"
-              src={reviewVideo.captions}
-              srcLang="ar"
-              label="العربية / English"
-              default
-            />
           </Box>
         </Box>
         <Typography variant="body2" fontWeight={700} sx={{ mt: 1.5, textAlign: 'center' }}>

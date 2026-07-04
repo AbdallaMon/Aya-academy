@@ -2,12 +2,11 @@
 // The spoken intro is kept faithful to what the student said (English + a greeting).
 // The Quran recitation is the AUTHENTIC mushaf text of Surat Al-Masad (111) —
 // auto-transcription garbles scripture, so the ayat are hand-verified here.
-// Captions track: public/videos/review.vtt
+// The video plays as-is (no captions track).
 
 export const reviewVideo = {
   src: '/videos/review.mp4',
   poster: '/videos/review-poster.jpg',
-  captions: '/videos/review.vtt',
 };
 
 export const reviewVideoText = {
