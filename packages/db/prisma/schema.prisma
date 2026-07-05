@@ -145,6 +145,17 @@ enum DriveAccountType {
   DB
 }
 
+enum WhiteboardSessionStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
+enum WhiteboardVisibility {
+  PRIVATE
+  PUBLIC
+}
+
 enum AssignmentStatus {
   ASSIGNED
   IN_PROGRESS
@@ -197,6 +208,7 @@ enum NotificationType {
   SUBSCRIPTION_RENEWED
   SUBSCRIPTION_EXPIRED
   REPORT_RECEIVED
+  SESSION_LOGGED
   GAME_ASSIGNED
   QUIZ_INVITE
   QUIZ_PASSED
@@ -290,6 +302,9 @@ model User {
 
   passwordResets PasswordResetToken[] @relation("UserPasswordResets")
 
+  whiteboardSessionsCreated WhiteboardSession[]        @relation("WhiteboardCreatedBy")
+  whiteboardAttendances     WhiteboardSessionStudent[] @relation("WhiteboardStudent")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -313,6 +328,38 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+// Interactive whiteboard: an admin-run live board session. Only the session
+// lifecycle + attached students are persisted (the drawing itself lives in the
+// browser's localStorage). A PUBLIC session exposes a shareable token link; only
+// the SHA-256 hash of the raw token is stored.
+model WhiteboardSession {
+  id              Int                        @id @default(autoincrement())
+  title           String
+  status          WhiteboardSessionStatus    @default(DRAFT)
+  visibility      WhiteboardVisibility       @default(PRIVATE)
+  publicTokenHash String?                    @unique
+  createdById     Int
+  createdBy       User                       @relation("WhiteboardCreatedBy", fields: [createdById], references: [id])
+  students        WhiteboardSessionStudent[]
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([createdById])
+  @@index([status])
+}
+
+model WhiteboardSessionStudent {
+  id        Int               @id @default(autoincrement())
+  sessionId Int
+  studentId Int
+  session   WhiteboardSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   User              @relation("WhiteboardStudent", fields: [studentId], references: [id])
+  createdAt DateTime          @default(now())
+
+  @@unique([sessionId, studentId])
+  @@index([studentId])
 }
 
 model ParentStudent {
