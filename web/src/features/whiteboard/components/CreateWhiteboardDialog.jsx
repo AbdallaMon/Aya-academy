@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import {
+  Alert,
   Autocomplete,
   FormControlLabel,
   Stack,
@@ -11,6 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { DEFAULT_APP_SETTINGS } from "@aya/shared";
 import { FormDialog, RHFTextField } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -42,6 +44,16 @@ export default function CreateWhiteboardDialog({ open, onClose, onCreated }) {
     initialParams: STUDENTS_PICKER_PARAMS,
     syncToUrl: false,
   });
+
+  // Show the teacher the current image-retention window (configurable in Settings).
+  const { data: settings } = useRequest({
+    url: "settings",
+    method: "get",
+    autoFetch: open,
+    syncToUrl: false,
+  });
+  const retentionDays =
+    settings?.whiteboardRetentionDays ?? DEFAULT_APP_SETTINGS.whiteboardRetentionDays;
 
   const { fetchData, isLoading } = useRequest({
     url: WHITEBOARD_URL,
@@ -128,6 +140,10 @@ export default function CreateWhiteboardDialog({ open, onClose, onCreated }) {
             </Stack>
           }
         />
+
+        <Alert severity="info" sx={{ borderRadius: 2 }}>
+          {txt.retentionNote(retentionDays)}
+        </Alert>
       </Stack>
     </FormDialog>
   );

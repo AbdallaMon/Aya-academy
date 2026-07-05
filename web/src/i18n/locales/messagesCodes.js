@@ -317,6 +317,7 @@ const ar = {
     [settingsMessagesCodes.SETTINGS_UPDATED]: "تم حفظ الإعدادات",
     [settingsMessagesCodes.INVALID_CURRENCY]: "عملة غير صالحة",
     [settingsMessagesCodes.INVALID_HOURLY_RATE]: "سعر ساعة غير صالح",
+    [settingsMessagesCodes.INVALID_RETENTION_DAYS]: "عدد أيام الاحتفاظ بالصور غير صالح (من 1 إلى 180 يوم)",
   },
   // ── backup-messages ───────────────────────────────────────────────────────
   [messagesNames.backupMessages]: {
@@ -441,6 +442,9 @@ const ar = {
     [whiteboardMessagesCodes.NOT_A_STUDENT]: "الحساب المختار ليس طالبًا",
     [whiteboardMessagesCodes.TITLE_REQUIRED]: "عنوان الجلسة مطلوب",
     [whiteboardMessagesCodes.STUDENT_ID_INVALID]: "معرّف الطالب غير صالح",
+    [whiteboardMessagesCodes.IMAGE_NOT_FOUND]: "الصورة غير موجودة",
+    [whiteboardMessagesCodes.IMAGE_REQUIRED]: "الصورة مطلوبة",
+    [whiteboardMessagesCodes.IMAGE_FORBIDDEN]: "لا يمكنك الوصول لهذه الصورة",
   },
 };
 
@@ -705,6 +709,7 @@ const en = {
     [settingsMessagesCodes.SETTINGS_UPDATED]: "Settings saved",
     [settingsMessagesCodes.INVALID_CURRENCY]: "Invalid currency",
     [settingsMessagesCodes.INVALID_HOURLY_RATE]: "Invalid hourly rate",
+    [settingsMessagesCodes.INVALID_RETENTION_DAYS]: "Invalid image retention days (1 to 180)",
   },
   [messagesNames.attachmentMessages]: {
     [attachmentMessagesCodes.NO_FILE]: "No file selected",
@@ -839,6 +844,9 @@ const en = {
     [whiteboardMessagesCodes.NOT_A_STUDENT]: "Selected account is not a student",
     [whiteboardMessagesCodes.TITLE_REQUIRED]: "Session title is required",
     [whiteboardMessagesCodes.STUDENT_ID_INVALID]: "Invalid student id",
+    [whiteboardMessagesCodes.IMAGE_NOT_FOUND]: "Image not found",
+    [whiteboardMessagesCodes.IMAGE_REQUIRED]: "Image is required",
+    [whiteboardMessagesCodes.IMAGE_FORBIDDEN]: "You cannot access this image",
   },
 };
 

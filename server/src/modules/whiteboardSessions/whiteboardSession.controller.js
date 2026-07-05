@@ -1,9 +1,34 @@
-import { messagesNames, whiteboardMessagesCodes } from "@aya/shared";
+import {
+  getPermissionsForRole,
+  messagesNames,
+  PERMISSIONS,
+  whiteboardMessagesCodes,
+} from "@aya/shared";
 import { created, deleted, ok } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
+import { AUTH_COOKIE, JwtService } from "../../infra/security/jwt.js";
+import { getAuthUserById } from "../../infra/auth/authUser.repo.js";
 import { whiteboardSessionUsecase } from "./whiteboardSession.usecase.js";
 
 const TK = messagesNames.whiteboardMessages;
+
+// Optional auth for the public-mounted image serve route: resolve the caller
+// from the access cookie/bearer WITHOUT rejecting anonymous requests, and report
+// whether they may manage whiteboards (admin). Never throws.
+async function resolveIsAdmin(req) {
+  try {
+    const cookieToken = req.cookies?.[AUTH_COOKIE];
+    const header = req.headers.authorization ?? "";
+    const token = cookieToken || (header.startsWith("Bearer ") ? header.slice(7) : null);
+    if (!token) return false;
+    const payload = JwtService.verifyAccess(token);
+    const user = await getAuthUserById(payload.id);
+    if (!user || !user.isActive) return false;
+    return getPermissionsForRole(user.role).includes(PERMISSIONS.WHITEBOARD.MANAGE);
+  } catch {
+    return false;
+  }
+}
 
 class WhiteboardSessionController {
   // ── public (no auth) ────────────────────────────────────
@@ -92,6 +117,29 @@ class WhiteboardSessionController {
       studentId: idParam(req.params.studentId),
     });
     return ok(res, session, whiteboardMessagesCodes.STUDENT_REMOVED, TK);
+  }
+
+  // ── board images ────────────────────────────────────────
+  async uploadImage(req, res) {
+    const result = await whiteboardSessionUsecase.uploadImage({
+      id: idParam(req.params.id),
+      file: req.file,
+    });
+    return created(res, result);
+  }
+
+  // PUBLIC-mounted: admin (cookie) OR a valid public-session token may view.
+  async serveImage(req, res) {
+    const isAdmin = await resolveIsAdmin(req);
+    const { absolutePath, mimeType } = await whiteboardSessionUsecase.serveImage({
+      sessionId: idParam(req.params.sessionId),
+      imageId: idParam(req.params.imageId),
+      token: typeof req.query.token === "string" ? req.query.token : null,
+      isAdmin,
+    });
+    if (mimeType) res.type(mimeType);
+    res.setHeader("Cache-Control", "private, max-age=86400");
+    return res.sendFile(absolutePath);
   }
 }
 

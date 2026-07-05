@@ -45,6 +45,8 @@ export default function SettingsPage() {
     () => ({
       hourlyRate: data?.hourlyRate ?? DEFAULT_APP_SETTINGS.hourlyRate,
       currency: data?.currency ?? DEFAULT_APP_SETTINGS.currency,
+      whiteboardRetentionDays:
+        data?.whiteboardRetentionDays ?? DEFAULT_APP_SETTINGS.whiteboardRetentionDays,
     }),
     [data],
   );
@@ -78,6 +80,7 @@ export default function SettingsPage() {
         labelMap: {
           hourlyRate: txt.hourlyRate,
           currency: txt.currency,
+          whiteboardRetentionDays: txt.whiteboardRetention,
         },
         showToast,
         suppressFallbackToast: true,
@@ -88,6 +91,7 @@ export default function SettingsPage() {
     save(null, {
       hourlyRate: Number(values.hourlyRate),
       currency: values.currency,
+      whiteboardRetentionDays: Number(values.whiteboardRetentionDays),
     });
   }
 
@@ -122,6 +126,17 @@ export default function SettingsPage() {
                       options={currencyOptions}
                       rules={{ required: txt.required }}
                       helperText={txt.currencyHint}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <RHFTextField
+                      name="whiteboardRetentionDays"
+                      control={control}
+                      label={txt.whiteboardRetention}
+                      type="number"
+                      rules={{ required: txt.required, min: 1, max: 180 }}
+                      helperText={txt.whiteboardRetentionHint}
                     />
                   </Grid>
                 </Grid>

@@ -94,6 +94,38 @@ class WhiteboardSessionRepo {
       where: { sessionId, studentId },
     });
   }
+
+  // ── board images ────────────────────────────────────────
+  createImage({ sessionId, storageKey, mimeType, size, client } = {}) {
+    return (client ?? prisma).whiteboardImage.create({
+      data: { sessionId, storageKey, mimeType, size },
+    });
+  }
+
+  getImageById({ id, client } = {}) {
+    return (client ?? prisma).whiteboardImage.findUnique({ where: { id } });
+  }
+
+  listImagesForSession({ sessionId, client } = {}) {
+    return (client ?? prisma).whiteboardImage.findMany({ where: { sessionId } });
+  }
+
+  // Images older than `cutoff` — reclaimed by the retention cron.
+  listExpiredImages({ cutoff, take = 500, client } = {}) {
+    return (client ?? prisma).whiteboardImage.findMany({
+      where: { createdAt: { lt: cutoff } },
+      take,
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  deleteImageById({ id, client } = {}) {
+    return (client ?? prisma).whiteboardImage.delete({ where: { id } });
+  }
+
+  deleteImagesForSession({ sessionId, client } = {}) {
+    return (client ?? prisma).whiteboardImage.deleteMany({ where: { sessionId } });
+  }
 }
 
 export const whiteboardSessionRepo = new WhiteboardSessionRepo();

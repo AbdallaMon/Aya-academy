@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Box, IconButton, Stack, Tooltip } from "@mui/material";
 import { MdFullscreen } from "react-icons/md";
@@ -19,11 +19,27 @@ const Excalidraw = dynamic(
   { ssr: false },
 );
 
-export default function WhiteboardBoard({ sessionKey, title, students = [] }) {
+export default function WhiteboardBoard({
+  sessionKey,
+  title,
+  students = [],
+  sessionId = null,
+  canUpload = false,
+  token = null,
+}) {
   const rootRef = useRef(null);
   const burstId = useRef(0);
   const [api, setApi] = useState(null);
-  const { initialData, onChange } = useBoardPersistence(sessionKey);
+  const { initialData, onChange, hydrate } = useBoardPersistence(sessionKey, {
+    sessionId,
+    canUpload,
+    token,
+  });
+
+  // Rebuild saved images once the Excalidraw API is ready.
+  useEffect(() => {
+    if (api) hydrate(api);
+  }, [api, hydrate]);
 
   const goFullscreen = () => {
     const el = rootRef.current;

@@ -29,6 +29,10 @@ export function useWhiteboardText() {
       : "Open the board full-screen in a new tab and start teaching.",
     shareTitle: ar ? "المشاركة" : "Sharing",
     manageTitle: ar ? "إدارة الجلسة" : "Manage session",
+    retentionNote: (days) =>
+      ar
+        ? `أي صور بترفعيها على السبورة بتتحذف تلقائيًا بعد ${days} يوم لتوفير المساحة (تقدري تعدّلي المدة من الإعدادات).`
+        : `Any images you add to the board are auto-deleted after ${days} days to save space (configurable in Settings).`,
     status: ar ? "الحالة" : "Status",
     visibility: ar ? "الظهور" : "Visibility",
     studentsCount: ar ? "الطلاب" : "Students",

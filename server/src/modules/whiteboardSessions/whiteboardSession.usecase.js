@@ -1,17 +1,29 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
 import { prisma } from "@aya/db/prisma.client.js";
 import {
   USER_ROLES,
   WHITEBOARD_SESSION_STATUSES,
   WHITEBOARD_VISIBILITIES,
 } from "@aya/shared";
-import { badRequest, conflict, notFound } from "../../shared/errors/AppError.js";
+import { badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { ENV } from "../../config/env.js";
 import { userRepo } from "../users/user.repo.js";
 import { whiteboardSessionRepo } from "./whiteboardSession.repo.js";
+import { whiteboardImagePath } from "./whiteboardImage.storage.js";
 import { toPublicSession } from "./whiteboardSession.dto.js";
 import { whiteboardMessagesCodes } from "./whiteboardSession.messages.js";
+
+// Best-effort unlink of a stored image file (never throws — the DB row is the
+// source of truth; a missing file just means it's already gone).
+function unlinkQuiet(storageKey) {
+  try {
+    fs.unlinkSync(whiteboardImagePath(storageKey));
+  } catch {
+    /* already gone / not on this host */
+  }
+}
 
 // Raw token shown once to the admin; only its SHA-256 hash is stored.
 function generateShareToken() {
@@ -124,8 +136,60 @@ class WhiteboardSessionUsecase {
 
   async remove({ id }) {
     await this.#assertExists(id);
+    // Reclaim the session's image files before the rows cascade away.
+    const images = await whiteboardSessionRepo.listImagesForSession({ sessionId: id });
     await whiteboardSessionRepo.remove({ id });
+    for (const img of images) unlinkQuiet(img.storageKey);
     return { id };
+  }
+
+  // ── board images ────────────────────────────────────────
+  // The teacher inserts an image on the board; the file is stored on disk and we
+  // keep only the reference, linked to the session.
+  async uploadImage({ id, file }) {
+    await this.#assertExists(id);
+    if (!file) throw badRequest(whiteboardMessagesCodes.IMAGE_REQUIRED);
+    const image = await whiteboardSessionRepo.createImage({
+      sessionId: id,
+      storageKey: file.filename,
+      mimeType: file.mimetype,
+      size: file.size,
+    });
+    return { id: image.id, sessionId: id };
+  }
+
+  // Serve an image ONLY when it is linked to the session AND the caller is an
+  // admin OR presents a valid token for that exact PUBLIC session.
+  async serveImage({ sessionId, imageId, token, isAdmin }) {
+    const image = await whiteboardSessionRepo.getImageById({ id: imageId });
+    if (!image || image.sessionId !== sessionId) {
+      throw notFound(whiteboardMessagesCodes.IMAGE_NOT_FOUND);
+    }
+    if (!isAdmin) {
+      const session = token
+        ? await whiteboardSessionRepo.getByTokenHash({ tokenHash: hashShareToken(token) })
+        : null;
+      const ok =
+        session &&
+        session.id === sessionId &&
+        session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
+      if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
+    }
+    return { absolutePath: whiteboardImagePath(image.storageKey), mimeType: image.mimeType };
+  }
+
+  // Retention sweep — delete images older than `retentionDays` (files + rows).
+  async purgeExpiredImages({ retentionDays }) {
+    const days = Number(retentionDays) > 0 ? Number(retentionDays) : 30;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const expired = await whiteboardSessionRepo.listExpiredImages({ cutoff });
+    let count = 0;
+    for (const img of expired) {
+      unlinkQuiet(img.storageKey);
+      await whiteboardSessionRepo.deleteImageById({ id: img.id });
+      count += 1;
+    }
+    return { count };
   }
 
   async addStudent({ id, studentId }) {

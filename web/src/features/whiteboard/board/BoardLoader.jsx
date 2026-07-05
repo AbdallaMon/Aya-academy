@@ -60,6 +60,11 @@ export default function BoardLoader({ mode, idOrToken }) {
       sessionKey={isPublic ? `t-${idOrToken}` : `s-${data.id}`}
       title={data.title}
       students={students}
+      // Private board uploads images to the backend; public board is view-only
+      // (token is passed so it can still fetch a public session's images).
+      sessionId={data.id}
+      canUpload={!isPublic}
+      token={isPublic ? idOrToken : null}
     />
   );
 }

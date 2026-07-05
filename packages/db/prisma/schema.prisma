@@ -343,11 +343,29 @@ model WhiteboardSession {
   createdById     Int
   createdBy       User                       @relation("WhiteboardCreatedBy", fields: [createdById], references: [id])
   students        WhiteboardSessionStudent[]
+  images          WhiteboardImage[]
   createdAt       DateTime                   @default(now())
   updatedAt       DateTime                   @updatedAt
 
   @@index([createdById])
   @@index([status])
+}
+
+// An image the teacher inserted on the board. The binary lives on disk
+// (storageKey); we keep only the reference here so it can be served with a
+// backend access check (image must belong to the session) and reclaimed by the
+// retention cron / on session delete. `createdAt` drives age-based retention.
+model WhiteboardImage {
+  id         Int               @id @default(autoincrement())
+  sessionId  Int
+  session    WhiteboardSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  storageKey String            @unique
+  mimeType   String?
+  size       Int?
+  createdAt  DateTime          @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
 }
 
 model WhiteboardSessionStudent {
@@ -499,6 +517,9 @@ model AppSetting {
   id          Int     @id @default(autoincrement())
   hourlyRate  Decimal @default(8) @db.Decimal(10, 2)
   currency    String  @default("USD")
+  // Days a whiteboard image is kept before the retention cron reclaims it.
+  // Bounded 1..180 by validation to protect storage.
+  whiteboardRetentionDays Int @default(30)
   updatedById Int?
   updatedBy   User?   @relation("AppSettingUpdatedBy", fields: [updatedById], references: [id])
 

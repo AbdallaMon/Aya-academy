@@ -5,6 +5,7 @@ import { WhiteboardSessionValidation } from "./whiteboardSession.validation.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
+import { uploadWhiteboardImage } from "./whiteboardImage.storage.js";
 
 const whiteboardSessionRoutes = Router();
 
@@ -13,6 +14,13 @@ const whiteboardSessionRoutes = Router();
 whiteboardSessionRoutes.get(
   "/public/:token",
   asyncHandler(whiteboardSessionController.getPublic),
+);
+
+// PUBLIC-mounted image serve — access is enforced inside the handler (image must
+// be linked to the session AND caller is admin OR holds a valid public token).
+whiteboardSessionRoutes.get(
+  "/:sessionId/images/:imageId/raw",
+  asyncHandler(whiteboardSessionController.serveImage),
 );
 
 const requireManage = [
@@ -73,6 +81,14 @@ whiteboardSessionRoutes.delete(
   "/:id/students/:studentId",
   ...requireManage,
   asyncHandler(whiteboardSessionController.removeStudent),
+);
+
+// Upload a board image (multipart "file"). Stored on disk + linked to the session.
+whiteboardSessionRoutes.post(
+  "/:id/images",
+  ...requireManage,
+  uploadWhiteboardImage,
+  asyncHandler(whiteboardSessionController.uploadImage),
 );
 
 export default whiteboardSessionRoutes;
