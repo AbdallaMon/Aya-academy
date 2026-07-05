@@ -62,7 +62,6 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
       requesting={renewReq.isLoading}
       txt={childrenTxt}
       defaultPlanId={subscription?.planId ?? subscription?.plan?.id ?? null}
-      defaultBillingPeriod={subscription?.billingPeriod || "MONTHLY"}
       title={txt?.renewTitle}
       confirmLabel={txt?.renewSubmit}
       confirmingLabel={childrenTxt.requesting}

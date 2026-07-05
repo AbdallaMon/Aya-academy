@@ -34,6 +34,62 @@ export const STUDENT_LEVEL_ORDER = [
   STUDENT_LEVELS.CONFIDENT_READER,
 ];
 
+// Subjects taught in a logged tutoring session (multi-select). The UI groups
+// these under Qur'an Programs / Arabic Language / Islamic Education.
+export const SESSION_SUBJECTS = {
+  QURAN_MEMORIZATION: "QURAN_MEMORIZATION",
+  TAJWEED_COURSES: "TAJWEED_COURSES",
+  ARABIC_READING: "ARABIC_READING",
+  ARABIC_SPEAKING: "ARABIC_SPEAKING",
+  QURANIC_ARABIC: "QURANIC_ARABIC",
+  ISLAMIC_STUDIES: "ISLAMIC_STUDIES",
+};
+
+// Display grouping for the subject multi-select (group label → subject keys).
+export const SESSION_SUBJECT_GROUPS = [
+  {
+    key: "QURAN_PROGRAMS",
+    subjects: [
+      SESSION_SUBJECTS.QURAN_MEMORIZATION,
+      SESSION_SUBJECTS.TAJWEED_COURSES,
+    ],
+  },
+  {
+    key: "ARABIC_LANGUAGE",
+    subjects: [
+      SESSION_SUBJECTS.ARABIC_READING,
+      SESSION_SUBJECTS.ARABIC_SPEAKING,
+      SESSION_SUBJECTS.QURANIC_ARABIC,
+    ],
+  },
+  {
+    key: "ISLAMIC_EDUCATION",
+    subjects: [SESSION_SUBJECTS.ISLAMIC_STUDIES],
+  },
+];
+
+export const SESSION_ATTENDANCE = {
+  PRESENT: "PRESENT",
+  ABSENT: "ABSENT",
+};
+
+// Teacher's evaluation of the student in a session (best → weakest).
+export const SESSION_RATINGS = {
+  EXCELLENT: "EXCELLENT",
+  VERY_GOOD: "VERY_GOOD",
+  GOOD: "GOOD",
+  FAIR: "FAIR",
+  WEAK: "WEAK",
+};
+
+export const SESSION_RATING_ORDER = [
+  SESSION_RATINGS.EXCELLENT,
+  SESSION_RATINGS.VERY_GOOD,
+  SESSION_RATINGS.GOOD,
+  SESSION_RATINGS.FAIR,
+  SESSION_RATINGS.WEAK,
+];
+
 export const POINT_SOURCES = {
   BADGE: "BADGE",
   GAME: "GAME",

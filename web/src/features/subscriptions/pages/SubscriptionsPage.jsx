@@ -257,11 +257,11 @@ export default function SubscriptionsPage({
           row.plan ? (lng === "en" ? row.plan.titleEn : row.plan.titleAr) : "—",
       },
       {
-        field: "totalHours",
-        headerName: txt.totalHours,
+        field: "subsHours",
+        headerName: txt.subsHours,
         width: 110,
         sortable: false,
-        renderCell: ({ row }) => row.totalHours ?? "—",
+        renderCell: ({ row }) => row.subsHours ?? "—",
       },
       {
         field: "remainingHours",

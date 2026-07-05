@@ -295,6 +295,17 @@ class UserRepo {
     });
     return admins.map((a) => a.id);
   }
+
+  /** The first active ADMIN id (lowest id) — default teacher for session logs; null if none. */
+  // FROZEN — externally called (positional, no args). sessionLogs uses findFirstAdminId().
+  async findFirstAdminId() {
+    const admin = await prisma.user.findFirst({
+      where: { role: USER_ROLES.ADMIN, isActive: true },
+      orderBy: { id: "asc" },
+      select: { id: true },
+    });
+    return admin?.id ?? null;
+  }
 }
 
 export const userRepo = new UserRepo();

@@ -18,6 +18,7 @@ import {
   subscriptionMessagesCodes,
   gameMessagesCodes,
   reportMessagesCodes,
+  sessionLogMessagesCodes,
   quizMessagesCodes,
   certificateMessagesCodes,
   rewardMessagesCodes,
@@ -183,6 +184,23 @@ const ar = {
     [reportMessagesCodes.REPORT_BODY_REQUIRED]: "محتوى التقرير مطلوب",
     [reportMessagesCodes.STUDENTS_REQUIRED]: "يجب تحديد الطلاب",
     [reportMessagesCodes.CANNOT_ACCESS_REPORT]: "لا يمكنك الوصول لهذا التقرير",
+  },
+
+  // ── session-log-messages ──────────────────────────────────────────────────
+  [messagesNames.sessionLogMessages]: {
+    [sessionLogMessagesCodes.SESSION_LOG_NOT_FOUND]: "سجل الحصة غير موجود",
+    [sessionLogMessagesCodes.STUDENT_REQUIRED]: "يجب اختيار الطالب",
+    [sessionLogMessagesCodes.STUDENT_NOT_FOUND]: "الطالب غير موجود",
+    [sessionLogMessagesCodes.SUBJECTS_REQUIRED]: "يجب اختيار مادة دراسية واحدة على الأقل",
+    [sessionLogMessagesCodes.INVALID_SUBJECT]: "مادة دراسية غير صالحة",
+    [sessionLogMessagesCodes.DURATION_REQUIRED]: "عدد ساعات الحصة مطلوب",
+    [sessionLogMessagesCodes.DURATION_INVALID]: "عدد ساعات الحصة غير صالح",
+    [sessionLogMessagesCodes.SESSION_DATE_REQUIRED]: "تاريخ الحصة مطلوب",
+    [sessionLogMessagesCodes.ATTENDANCE_INVALID]: "حالة الحضور غير صالحة",
+    [sessionLogMessagesCodes.RATING_INVALID]: "تقييم غير صالح",
+    [sessionLogMessagesCodes.TEACHER_NOT_FOUND]: "المعلم غير موجود",
+    [sessionLogMessagesCodes.NO_ADMIN_AVAILABLE]: "لا يوجد معلم متاح لتسجيل الحصة",
+    [sessionLogMessagesCodes.CANNOT_ACCESS_SESSION_LOG]: "لا يمكنك الوصول لسجل هذه الحصة",
   },
   // ── quiz-messages ─────────────────────────────────────────────────────────
   [messagesNames.quizMessages]: {
@@ -551,6 +569,23 @@ const en = {
     [reportMessagesCodes.REPORT_BODY_REQUIRED]: "Report body is required",
     [reportMessagesCodes.STUDENTS_REQUIRED]: "Students are required",
     [reportMessagesCodes.CANNOT_ACCESS_REPORT]: "You cannot access this report",
+  },
+
+  // ── session-log-messages ──────────────────────────────────────────────────
+  [messagesNames.sessionLogMessages]: {
+    [sessionLogMessagesCodes.SESSION_LOG_NOT_FOUND]: "Session log not found",
+    [sessionLogMessagesCodes.STUDENT_REQUIRED]: "A student is required",
+    [sessionLogMessagesCodes.STUDENT_NOT_FOUND]: "Student not found",
+    [sessionLogMessagesCodes.SUBJECTS_REQUIRED]: "At least one subject is required",
+    [sessionLogMessagesCodes.INVALID_SUBJECT]: "Invalid subject",
+    [sessionLogMessagesCodes.DURATION_REQUIRED]: "Session duration is required",
+    [sessionLogMessagesCodes.DURATION_INVALID]: "Session duration is invalid",
+    [sessionLogMessagesCodes.SESSION_DATE_REQUIRED]: "Session date is required",
+    [sessionLogMessagesCodes.ATTENDANCE_INVALID]: "Invalid attendance status",
+    [sessionLogMessagesCodes.RATING_INVALID]: "Invalid rating",
+    [sessionLogMessagesCodes.TEACHER_NOT_FOUND]: "Teacher not found",
+    [sessionLogMessagesCodes.NO_ADMIN_AVAILABLE]: "No teacher available to log the session",
+    [sessionLogMessagesCodes.CANNOT_ACCESS_SESSION_LOG]: "You cannot access this session log",
   },
   [messagesNames.quizMessages]: {
     [quizMessagesCodes.CATEGORY_NOT_FOUND]: "Category not found",

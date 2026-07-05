@@ -31,7 +31,7 @@ class InvoiceUsecase {
    * from the template; previous credit/debt are admin figures.
    */
   async computeAmounts(subscription, adjust, template, settings) {
-    const hours = subscription.totalHours ?? null;
+    const hours = subscription.subsHours ?? null;
     const subtotal = roundMoney(subscription.priceCharged ?? 0);
 
     let hourlyRate = settings?.hourlyRate != null ? roundMoney(settings.hourlyRate) : null;

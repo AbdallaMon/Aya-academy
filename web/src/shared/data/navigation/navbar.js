@@ -10,6 +10,7 @@ export const navSections = [
   { id: 'why-ayah', ar: 'لماذا آية', en: 'Why Aya' },
   { id: 'how-it-works', ar: 'كيف نتعلّم', en: 'How it works' },
   { id: 'levels', ar: 'المستويات', en: 'Levels' },
+  { id: 'programs', ar: 'البرامج', en: 'Programs' },
   { id: 'pricing', ar: 'الباقات', en: 'Pricing' },
   { id: 'faq', ar: 'الأسئلة الشائعة', en: 'FAQ' },
   { id: 'blog', href: '/blog', ar: 'المدوّنة', en: 'Blog' },

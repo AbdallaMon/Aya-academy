@@ -8,8 +8,6 @@ import {
   Chip,
   Grid,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
@@ -36,13 +34,13 @@ export default function PlanPickerDialog({
   requesting,
   txt,
   defaultPlanId = null,
-  defaultBillingPeriod = "MONTHLY",
   title,
   confirmLabel,
   confirmingLabel,
 }) {
   const { lng } = useTranslation();
-  const [billingPeriod, setBillingPeriod] = useState(defaultBillingPeriod);
+  // MONTHLY-only in the UI for now — the yearly toggle is hidden.
+  const billingPeriod = "MONTHLY";
   const [selectedPlanId, setSelectedPlanId] = useState(defaultPlanId);
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
 
@@ -57,7 +55,6 @@ export default function PlanPickerDialog({
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     if (open) {
-      setBillingPeriod(defaultBillingPeriod);
       setSelectedPlanId(defaultPlanId);
       setCoupon(EMPTY_COUPON);
       plansReq.fetchData();
@@ -68,23 +65,16 @@ export default function PlanPickerDialog({
   useEffect(() => {
     if (!open || !defaultPlanId) return;
     const p = (plansReq.data || []).find((x) => x.id === defaultPlanId);
-    if (p) setCoupon(initialCoupon(p, defaultBillingPeriod));
+    if (p) setCoupon(initialCoupon(p, billingPeriod));
   }, [open, plansReq.data]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const plans = plansReq.data || [];
-  const isYearly = billingPeriod === "YEARLY";
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) || null;
 
   function selectPlan(p) {
     setSelectedPlanId(p.id);
     setCoupon(initialCoupon(p, billingPeriod));
-  }
-
-  function changeBilling(v) {
-    if (!v) return;
-    setBillingPeriod(v);
-    if (selectedPlan) setCoupon(initialCoupon(selectedPlan, v));
   }
 
   function confirm() {
@@ -110,19 +100,6 @@ export default function PlanPickerDialog({
       onSubmit={confirm}
     >
       <Stack spacing={2} sx={{ pt: 1 }}>
-        <Stack direction="row" justifyContent="center">
-          <ToggleButtonGroup
-            value={billingPeriod}
-            exclusive
-            color="primary"
-            size="small"
-            onChange={(_e, v) => changeBilling(v)}
-          >
-            <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
-            <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-
         {plans.length === 0 ? (
           <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
             {txt.noPlans}
@@ -130,7 +107,7 @@ export default function PlanPickerDialog({
         ) : (
           <Grid container spacing={2}>
             {plans.map((p) => {
-              const cycle = isYearly ? p.yearly : p.monthly;
+              const cycle = p.monthly;
               const base = cycle?.base;
               const effective = cycle?.effective;
               const discount = cycle?.discount || null;
@@ -195,7 +172,7 @@ export default function PlanPickerDialog({
                           {formatMoney(hasDiscount ? effective : base, p.currency)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {isYearly ? txt.perYear : txt.perMonth}
+                          {txt.perMonth}
                         </Typography>
                       </Stack>
 

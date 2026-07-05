@@ -94,7 +94,7 @@ export default function CouponFormDialog({
   const scopeOptions = useMemo(
     () =>
       BILLING_SCOPES.reduce((acc, s) => {
-        acc[s] = s === "MONTHLY" ? txt.monthly : s === "YEARLY" ? txt.yearly : txt.both;
+        acc[s] = s === "MONTHLY" ? txt.monthly : txt.both;
         return acc;
       }, {}),
     [txt],

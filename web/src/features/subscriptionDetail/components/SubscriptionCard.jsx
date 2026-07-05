@@ -77,8 +77,8 @@ export default function SubscriptionCard({ subscription, invoice, txt }) {
           <Row label={txt.endDate}>
             <Typography variant="body2">{fmtDate(subscription.endDate)}</Typography>
           </Row>
-          <Row label={txt.totalHours}>
-            <Typography variant="body2">{formatHours(subscription.totalHours)}</Typography>
+          <Row label={txt.subsHours}>
+            <Typography variant="body2">{formatHours(subscription.subsHours)}</Typography>
           </Row>
           <Row label={txt.remainingHours}>
             <Typography variant="body2">{formatHours(subscription.remainingHours)}</Typography>

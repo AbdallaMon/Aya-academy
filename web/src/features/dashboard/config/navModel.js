@@ -40,6 +40,7 @@ import {
   MdSettings,
   MdVerified,
   MdDescription,
+  MdMenuBook,
 } from 'react-icons/md';
 
 const ICONS = {
@@ -55,6 +56,7 @@ const ICONS = {
   quizBank: MdLibraryBooks,
   invitations: MdMarkEmailRead,
   reports: MdAssessment,
+  sessionLog: MdMenuBook,
   certificates: MdVerified,
   certificateTemplates: MdDescription,
   backups: MdBackup,
@@ -172,6 +174,13 @@ function adminGroups() {
           permission: PERMISSIONS.REPORT.LIST,
         },
         {
+          key: 'sessionLog',
+          labelKey: 'sessionLog',
+          href: '/dashboard/session-log',
+          icon: ICONS.sessionLog,
+          permission: PERMISSIONS.SESSION_LOG.LIST,
+        },
+        {
           key: 'certificates',
           labelKey: 'certificates',
           href: '/dashboard/certificates',
@@ -257,6 +266,13 @@ function parentGroups() {
           href: '/dashboard/reports',
           icon: ICONS.reports,
           permission: PERMISSIONS.REPORT.LIST,
+        },
+        {
+          key: 'sessionLog',
+          labelKey: 'sessionLog',
+          href: '/dashboard/session-log',
+          icon: ICONS.sessionLog,
+          permission: PERMISSIONS.SESSION_LOG.LIST,
         },
         {
           key: 'certificates',

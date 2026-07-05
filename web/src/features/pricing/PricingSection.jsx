@@ -7,7 +7,6 @@
 // hours. Uses the shared Section primitive for consistent rhythm + heading.
 
 import Link from 'next/link';
-import { useState } from 'react';
 import {
   Button,
   Card,
@@ -17,8 +16,6 @@ import {
   Grid,
   Skeleton,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -102,8 +99,7 @@ export default function PricingSection() {
   // otherwise the section would spin skeletons indefinitely instead of recovering.
   const loading = (isLoading || data == null) && !error;
   const plans = Array.isArray(data) ? data : [];
-  const [billingPeriod, setBillingPeriod] = useState('MONTHLY');
-  const isYearly = billingPeriod === 'YEARLY';
+  // Plans are MONTHLY-only in the UI for now — the yearly toggle is hidden.
 
   return (
     <Section
@@ -121,21 +117,6 @@ export default function PricingSection() {
           <Button variant="outlined" onClick={() => refetch()}>
             {txt.retry}
           </Button>
-        </Stack>
-      )}
-
-      {!loading && !error && plans.length > 0 && (
-        <Stack direction="row" justifyContent="center" sx={{ mb: 4 }}>
-          <ToggleButtonGroup
-            value={billingPeriod}
-            exclusive
-            color="primary"
-            aria-label={txt.billingToggleLabel}
-            onChange={(_e, v) => v && setBillingPeriod(v)}
-          >
-            <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
-            <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
-          </ToggleButtonGroup>
         </Stack>
       )}
 
@@ -164,8 +145,8 @@ export default function PricingSection() {
           {plans.map((plan) => {
             const title = isEn ? plan.titleEn : plan.titleAr;
             const description = isEn ? plan.descriptionEn : plan.descriptionAr;
-            const per = isYearly ? txt.perYear : txt.perMonth;
-            const cycle = isYearly ? plan.yearly : plan.monthly;
+            const per = txt.perMonth;
+            const cycle = plan.monthly;
             const base = cycle?.base;
             const effective = cycle?.effective;
             const discount = cycle?.discount || null;
@@ -302,7 +283,7 @@ export default function PricingSection() {
                       variant={plan.isFeatured ? 'contained' : 'outlined'}
                       size="large"
                       component={Link}
-                      href={`${localePath(lng, '/register')}?planId=${plan.id}&billingPeriod=${billingPeriod}`}
+                      href={`${localePath(lng, '/register')}?planId=${plan.id}&billingPeriod=MONTHLY`}
                       sx={{ mt: 2 }}
                       fullWidth
                     >

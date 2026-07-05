@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import Hero from '@/features/hero';
 import HeroReviews from '@/features/reviews/HeroReviews';
 import { WhyAya } from '@/features/whyAya';
+import { Programs } from '@/features/programs';
 import { ChildDashboardHome } from '@/features/childDashboard';
 import PricingSection from '@/features/pricing/PricingSection.jsx';
 import Testimonials from '@/features/reviews/Testimonials.jsx';
@@ -40,6 +41,7 @@ export default async function Home({ params }) {
       <Hero pageTheme={pageTheme} />
       <HeroReviews pageTheme={pageTheme} />
       <WhyAya />
+      <Programs />
       <ChildDashboardHome />
       <Testimonials />
       <SafetyStrip />

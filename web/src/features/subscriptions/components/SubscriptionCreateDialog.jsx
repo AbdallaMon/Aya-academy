@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import {
-  MenuItem,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
+import { MenuItem, Stack, TextField } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -19,10 +13,10 @@ import { USERS_URL, PLANS_URL } from "../config/constant.js";
 const FORM_ID = "subscription-create-form";
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
-function addPeriod(dateStr, billingPeriod) {
+// MONTHLY-only in the UI for now — always advances the end date by one month.
+function addPeriod(dateStr) {
   const d = dateStr ? new Date(dateStr) : new Date();
-  if (billingPeriod === "YEARLY") d.setFullYear(d.getFullYear() + 1);
-  else d.setMonth(d.getMonth() + 1);
+  d.setMonth(d.getMonth() + 1);
   return d.toISOString().slice(0, 10);
 }
 
@@ -32,16 +26,10 @@ function monthlyPriceOf(plan, hourlyRate) {
   return Number(plan.hours) * Number(hourlyRate || 0);
 }
 
-/** Effective price + hours for the selected billing period (yearly = ×12). */
-function deriveFromPlan(plan, billingPeriod, hourlyRate) {
+/** Effective (monthly) price + hours for the plan. */
+function deriveFromPlan(plan, hourlyRate) {
   if (!plan) return { price: "", hours: "" };
   const monthly = monthlyPriceOf(plan, hourlyRate);
-  if (billingPeriod === "YEARLY") {
-    return {
-      price: monthly != null ? String(monthly * 12) : "",
-      hours: plan.hours != null ? String(Number(plan.hours) * 12) : "",
-    };
-  }
   return {
     price: monthly != null ? String(monthly) : "",
     hours: plan.hours != null ? String(plan.hours) : "",
@@ -54,9 +42,9 @@ function makeDefaults(today, studentId = "") {
     planId: "",
     billingPeriod: "MONTHLY",
     startDate: today,
-    endDate: addPeriod(today, "MONTHLY"),
+    endDate: addPeriod(today),
     priceCharged: "",
-    totalHours: "",
+    subsHours: "",
     remainingHours: "",
   };
 }
@@ -142,21 +130,20 @@ export default function SubscriptionCreateDialog({
   // removable default discount is reflected); plans missing from the public list
   // (e.g. inactive) fall back to hours × global hourly rate.
   function applyPlanSuggestions({ id, period, start, couponState }) {
-    setValue("endDate", addPeriod(start, period));
+    setValue("endDate", addPeriod(start));
     const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
     if (publicPlan) {
       const { net } = resolveCoupon(publicPlan, period, couponState);
-      const hrs =
-        period === "YEARLY" ? Number(publicPlan.hours) * 12 : Number(publicPlan.hours);
+      const hrs = Number(publicPlan.hours);
       setValue("priceCharged", String(net));
-      setValue("totalHours", String(hrs));
+      setValue("subsHours", String(hrs));
       setValue("remainingHours", String(hrs));
       return;
     }
     const adminPlan = plans.find((p) => String(p.id) === String(id)) || null;
-    const { price, hours } = deriveFromPlan(adminPlan, period, hourlyRate);
+    const { price, hours } = deriveFromPlan(adminPlan, hourlyRate);
     setValue("priceCharged", price);
-    setValue("totalHours", hours);
+    setValue("subsHours", hours);
     setValue("remainingHours", hours);
   }
 
@@ -173,22 +160,9 @@ export default function SubscriptionCreateDialog({
     });
   }
 
-  function onPeriodChange(period) {
-    setValue("billingPeriod", period);
-    const publicPlan = publicPlans.find((p) => String(p.id) === String(planId)) || null;
-    const c = initialCoupon(publicPlan, period);
-    setCoupon(c);
-    applyPlanSuggestions({
-      id: planId,
-      period,
-      start: getValues("startDate"),
-      couponState: c,
-    });
-  }
-
   function onStartChange(v) {
     setValue("startDate", v);
-    setValue("endDate", addPeriod(v, getValues("billingPeriod")));
+    setValue("endDate", addPeriod(v));
   }
 
   function onCouponChange(c) {
@@ -212,7 +186,7 @@ export default function SubscriptionCreateDialog({
       status: "ACTIVE",
       ...(codeToSend ? { couponCode: codeToSend } : {}),
       ...(values.priceCharged !== "" ? { priceCharged: Number(values.priceCharged) } : {}),
-      ...(values.totalHours !== "" ? { totalHours: Number(values.totalHours) } : {}),
+      ...(values.subsHours !== "" ? { subsHours: Number(values.subsHours) } : {}),
       ...(values.remainingHours !== ""
         ? { remainingHours: Number(values.remainingHours) }
         : {}),
@@ -282,25 +256,6 @@ export default function SubscriptionCreateDialog({
             )}
           />
 
-          <Controller
-            name="billingPeriod"
-            control={control}
-            render={({ field }) => (
-              <ToggleButtonGroup
-                value={field.value}
-                exclusive
-                color="primary"
-                size="small"
-                fullWidth
-                onChange={(_e, v) => v && onPeriodChange(v)}
-                aria-label={txt.billingPeriod}
-              >
-                <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
-                <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
-              </ToggleButtonGroup>
-            )}
-          />
-
           <Stack direction="row" spacing={2}>
             <Controller
               name="startDate"
@@ -356,10 +311,10 @@ export default function SubscriptionCreateDialog({
 
           <Stack direction="row" spacing={2}>
             <Controller
-              name="totalHours"
+              name="subsHours"
               control={control}
               render={({ field }) => (
-                <TextField {...field} type="number" label={txt.totalHours} fullWidth />
+                <TextField {...field} type="number" label={txt.subsHours} fullWidth />
               )}
             />
             <Controller

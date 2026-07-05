@@ -40,7 +40,7 @@ export const subscriptionSelect = {
   status: true,
   startDate: true,
   endDate: true,
-  totalHours: true,
+  subsHours: true,
   remainingHours: true,
   currency: true,
   priceCharged: true,

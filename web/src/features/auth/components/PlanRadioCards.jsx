@@ -10,7 +10,6 @@ import { formatMoney } from "../../../shared/lib/money.js";
  *  primary-tinted treatment + "most popular" ribbon. */
 export default function PlanRadioCards({
   plans,
-  billingPeriod,
   selectedPlanId,
   onSelect,
   lng,
@@ -24,8 +23,6 @@ export default function PlanRadioCards({
     );
   }
 
-  const isYearly = billingPeriod === "YEARLY";
-
   return (
     <Box
       sx={{
@@ -35,7 +32,7 @@ export default function PlanRadioCards({
       }}
     >
       {plans.map((p) => {
-        const cycle = isYearly ? p.yearly : p.monthly;
+        const cycle = p.monthly;
         const base = cycle?.base;
         const effective = cycle?.effective;
         const discount = cycle?.discount || null;
@@ -151,7 +148,7 @@ export default function PlanRadioCards({
                   {formatMoney(hasDiscount ? effective : base, p.currency)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {isYearly ? txt.perYear : txt.perMonth}
+                  {txt.perMonth}
                 </Typography>
               </Stack>
 

@@ -8,7 +8,6 @@ export const pricingText = {
     title: "باقات مرنة تناسب كل أسرة",
     subtitle: "اختر الباقة المناسبة لطفلك وابدأ رحلة تعلّم القرآن اليوم.",
     perMonth: "/ شهرياً",
-    perYear: "/ سنوياً",
     hours: "ساعة",
     featured: "الأكثر اختياراً",
     subscribe: "ابدأ الآن",
@@ -18,8 +17,6 @@ export const pricingText = {
     retry: "إعادة المحاولة",
     save: "وفّر",
     monthly: "شهري",
-    yearly: "سنوي",
-    billingToggleLabel: "مدة الاشتراك",
     // Real inclusions shared by every plan (plans differ only by hours).
     commonFeatures: [
       "حصص مباشرة ودروس موجّهة",
@@ -34,7 +31,6 @@ export const pricingText = {
     title: "Flexible plans for every family",
     subtitle: "Pick the right plan for your child and start the Quran journey today.",
     perMonth: "/ month",
-    perYear: "/ year",
     hours: "hours",
     featured: "Most popular",
     subscribe: "Get started",
@@ -44,8 +40,6 @@ export const pricingText = {
     retry: "Try again",
     save: "Save",
     monthly: "Monthly",
-    yearly: "Yearly",
-    billingToggleLabel: "Billing period",
     // Real inclusions shared by every plan (plans differ only by hours).
     commonFeatures: [
       "Live sessions & guided lessons",

@@ -6,7 +6,7 @@ export const DISCOUNT_TYPES = ["PERCENT", "FIXED"];
  * Billing-period scope for a coupon. "ALL" is a UI-only sentinel mapping to null
  * (applies to BOTH cycles) — null can't be a select-map object key.
  */
-export const BILLING_SCOPES = ["ALL", "MONTHLY", "YEARLY"];
+export const BILLING_SCOPES = ["ALL", "MONTHLY"];
 
 export const COUPON_SOURCES = [
   "MANUAL",

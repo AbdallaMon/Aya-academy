@@ -8,7 +8,7 @@ export const DISCOUNT_TYPES = ["PERCENT", "FIXED"];
  * "ALL" is a UI-only sentinel mapping to null (applies to BOTH cycles) — null
  * can't be an object key in a value→label select map.
  */
-export const BILLING_SCOPES = ["MONTHLY", "YEARLY", "ALL"];
+export const BILLING_SCOPES = ["MONTHLY", "ALL"];
 
 /** Format a number as GBP (the academy currency). */
 export function formatGBP(value) {

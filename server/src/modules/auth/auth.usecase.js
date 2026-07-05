@@ -182,7 +182,7 @@ class AuthUsecase {
           billingPeriod: p.billingPeriod,
           startDate: p.startDate,
           endDate: p.endDate,
-          totalHours: p.hours,
+          subsHours: p.hours,
           remainingHours: p.hours,
           priceCharged: p.priceCharged,
           currency: settings.currency,

@@ -9,8 +9,6 @@ import {
   InputAdornment,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
   alpha,
@@ -95,13 +93,8 @@ export default function ChildEnrollCard({
     },
   });
 
-  // Selecting a plan / switching the cycle resets the coupon to that plan's
-  // removable default (its own coupon, if any) for the new context.
-  const handleBilling = (_e, value) => {
-    if (!value) return;
-    onChange({ billingPeriod: value, coupon: initialCoupon(selectedPlan, value) });
-  };
-
+  // Selecting a plan resets the coupon to that plan's removable default
+  // (its own coupon, if any) for the current (monthly) cycle.
   const handleSelectPlan = (planId) => {
     const plan = plans.find((p) => p.id === planId) || null;
     onChange({ planId, coupon: initialCoupon(plan, child.billingPeriod) });
@@ -294,30 +287,7 @@ export default function ChildEnrollCard({
 
         {/* ── 2. Choose a plan ───────────────────────────────────────────── */}
         <Box sx={{ mt: 3 }}>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", sm: "center" }}
-            spacing={1.5}
-            sx={{ mb: 2 }}
-          >
-            <SectionHeader step="2" title={txt.choosePlan} />
-            <ToggleButtonGroup
-              value={child.billingPeriod}
-              exclusive
-              color="primary"
-              size="small"
-              onChange={handleBilling}
-              sx={{ alignSelf: { xs: "center", sm: "auto" } }}
-            >
-              <ToggleButton value="MONTHLY" sx={{ px: 2 }}>
-                {txt.monthly}
-              </ToggleButton>
-              <ToggleButton value="YEARLY" sx={{ px: 2 }}>
-                {txt.yearly}
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
+          <SectionHeader step="2" title={txt.choosePlan} />
 
           <PlanRadioCards
             plans={plans}

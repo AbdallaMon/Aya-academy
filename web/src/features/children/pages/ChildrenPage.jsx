@@ -165,13 +165,31 @@ export default function ChildrenPage() {
                     </Typography>
                   )}
 
-                  <Button
-                    fullWidth
-                    variant={sub?.status === "ACTIVE" ? "outlined" : "contained"}
-                    onClick={() => openPicker(child)}
-                  >
-                    {sub ? txt.changePlan : txt.choosePlan}
-                  </Button>
+                  {/* A child that ALREADY has a subscription (any status) sends the
+                      parent to that subscription's detail page — the single renewal
+                      home, where the shared RenewDialog (POST /:id/renew) lives. Only
+                      a child with NO subscription uses the plan picker (/request) for
+                      a first-ever subscription. */}
+                  {sub ? (
+                    <Button
+                      fullWidth
+                      variant={sub.status === "ACTIVE" ? "outlined" : "contained"}
+                      component={Link}
+                      href={localePath(lng, `/dashboard/subscriptions/${sub.id}`)}
+                    >
+                      {sub.status === "EXPIRED" || sub.status === "CANCELLED"
+                        ? txt.renew
+                        : txt.manageSubscription}
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => openPicker(child)}
+                    >
+                      {txt.choosePlan}
+                    </Button>
+                  )}
 
                   <Button
                     fullWidth

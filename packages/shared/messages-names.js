@@ -9,6 +9,7 @@ export const messagesNames = {
   subscriptionMessages: "subscription-messages",
   gameMessages: "game-messages",
   reportMessages: "report-messages",
+  sessionLogMessages: "session-log-messages",
   quizMessages: "quiz-messages",
   certificateMessages: "certificate-messages",
   rewardMessages: "reward-messages",

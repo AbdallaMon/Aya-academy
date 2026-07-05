@@ -15,7 +15,6 @@ export default function PlanPriceFields({ control, watch, txt, hourlyRate, curre
   const hours = Number(watch("hours")) || 0;
   const rate = Number(hourlyRate) || 0;
   const monthly = hours * rate;
-  const yearly = monthly * 12;
 
   return (
     <Grid container spacing={2} alignItems="center">
@@ -36,9 +35,6 @@ export default function PlanPriceFields({ control, watch, txt, hourlyRate, curre
           </Typography>
           <Typography fontWeight={700}>
             {`${formatMoney(monthly, currency)} ${txt.perMonth}`}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {`${formatMoney(yearly, currency)} ${txt.perYear}`}
           </Typography>
         </Stack>
       </Grid>

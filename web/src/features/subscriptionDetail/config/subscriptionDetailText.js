@@ -26,7 +26,7 @@ export const subscriptionDetailText = {
     yearly: "سنوي",
     startDate: "تاريخ البداية",
     endDate: "تاريخ النهاية",
-    totalHours: "إجمالي الساعات",
+    subsHours: "عدد ساعات الفاتورة",
     remainingHours: "الساعات المتبقية",
     priceBreakdown: "تفاصيل السعر",
     basePrice: "السعر قبل الخصم",
@@ -80,6 +80,18 @@ export const subscriptionDetailText = {
     markPaidTitle: "اعتماد الفاتورة كمدفوعة",
     markPaidActivate: "فعّل الاشتراك كمان؟",
     confirm: "تأكيد",
+    // cancel subscription
+    cancelSub: "إلغاء الاشتراك",
+    cancelSubTitle: "إلغاء الاشتراك",
+    cancelSubConfirm: "متأكد إنك عايز تلغي الاشتراك ده؟",
+    // disabled-action tooltips (why an action isn't available now)
+    reasonRenew: "التجديد متاح فقط بعد انتهاء الاشتراك أو إلغائه",
+    reasonChangePlan: "لا يمكن تغيير الخطة بعد تفعيل الاشتراك أو دفع الفاتورة",
+    reasonCoupon: "لا يمكن تعديل الكوبون بعد الدفع أو التفعيل",
+    reasonSend: "لا توجد فاتورة لإرسالها",
+    reasonActivate: "الاشتراك غير قابل للتفعيل في حالته الحالية",
+    reasonMarkPaid: "لا توجد فاتورة غير مدفوعة",
+    reasonCancel: "لا يمكن إلغاء اشتراك منتهٍ أو ملغى بالفعل",
   },
   en: {
     pageTitle: "Subscription details",
@@ -101,7 +113,7 @@ export const subscriptionDetailText = {
     yearly: "Yearly",
     startDate: "Start date",
     endDate: "End date",
-    totalHours: "Total hours",
+    subsHours: "Invoice hours",
     remainingHours: "Remaining hours",
     priceBreakdown: "Price breakdown",
     basePrice: "Base price",
@@ -153,6 +165,18 @@ export const subscriptionDetailText = {
     markPaidTitle: "Mark invoice as paid",
     markPaidActivate: "Also activate the subscription?",
     confirm: "Confirm",
+    // cancel subscription
+    cancelSub: "Cancel subscription",
+    cancelSubTitle: "Cancel subscription",
+    cancelSubConfirm: "Are you sure you want to cancel this subscription?",
+    // disabled-action tooltips (why an action isn't available now)
+    reasonRenew: "Renewal is only available after the subscription has expired or been cancelled.",
+    reasonChangePlan: "The plan can't be changed after the subscription is active or the invoice is paid.",
+    reasonCoupon: "The coupon can't be changed after payment or activation.",
+    reasonSend: "There is no invoice to send.",
+    reasonActivate: "The subscription can't be activated in its current state.",
+    reasonMarkPaid: "There is no unpaid invoice.",
+    reasonCancel: "A subscription that's already expired or cancelled can't be cancelled.",
   },
 };
 

@@ -7,6 +7,7 @@ export * from "./coupon.js";
 export * from "./subscription.js";
 export * from "./game.js";
 export * from "./report.js";
+export * from "./sessionLog.js";
 export * from "./quiz.js";
 export * from "./certificate.js";
 export * from "./reward.js";

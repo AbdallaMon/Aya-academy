@@ -190,10 +190,9 @@ export default function PlansPage() {
         width: 220,
         renderCell: ({ row }) => {
           const monthly = Number(row.hours) * Number(hourlyRate || 0);
-          const yearly = monthly * 12;
           return (
             <Typography fontWeight={700} variant="body2">
-              {`${formatMoney(monthly, currency)} ${txt.perMonth} · ${formatMoney(yearly, currency)} ${txt.perYear}`}
+              {`${formatMoney(monthly, currency)} ${txt.perMonth}`}
             </Typography>
           );
         },

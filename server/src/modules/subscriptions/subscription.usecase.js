@@ -33,6 +33,15 @@ import { invoiceRepo } from "../invoices/invoice.repo.js";
 import { subscriptionRepo } from "./subscription.repo.js";
 import { subscriptionMessagesCodes } from "./subscription.messages.js";
 
+/**
+ * Charged price derived from the subscription's hours × the global hourly rate.
+ * Used when no explicit/coupon-derived price is supplied (admin edits hours →
+ * pays more). Rounded via the shared money helper.
+ */
+function priceFromHours(subsHours, hourlyRate) {
+  return roundMoney(Number(subsHours) * Number(hourlyRate));
+}
+
 class SubscriptionUsecase {
   /** Throws unless `authUser` may access the given subscription (by its studentId). */
   async assertCanAccess(authUser, studentId) {
@@ -307,8 +316,9 @@ class SubscriptionUsecase {
       billingPeriod,
       startDate: input.startDate,
       endDate: input.endDate,
-      totalHours: input.totalHours,
-      remainingHours: input.remainingHours,
+      subsHours: input.subsHours,
+      // remainingHours inherits from subsHours unless explicitly provided.
+      remainingHours: input.remainingHours ?? input.subsHours ?? null,
       priceCharged: input.priceCharged,
       currency: settings.currency,
       notes: input.notes,
@@ -347,6 +357,15 @@ class SubscriptionUsecase {
       couponIdToConsume = coupon.id;
     } else if (input.couponId !== undefined) {
       data.coupon = { connect: { id: input.couponId } };
+    }
+
+    // Price precedence: explicit priceCharged wins; else coupon-derived (set in
+    // the branch above); else derive from subsHours × hourly rate.
+    if (data.priceCharged == null && input.subsHours != null) {
+      data.priceCharged = priceFromHours(
+        input.subsHours,
+        Number(settings.hourlyRate),
+      );
     }
 
     const subscription = await prisma.$transaction(async (tx) => {
@@ -398,7 +417,7 @@ class SubscriptionUsecase {
       billingPeriod: input.billingPeriod,
       startDate: input.startDate,
       endDate: input.endDate,
-      totalHours: input.totalHours,
+      subsHours: input.subsHours,
       remainingHours: input.remainingHours,
       priceCharged: input.priceCharged,
       notes: input.notes,
@@ -413,7 +432,43 @@ class SubscriptionUsecase {
       data.coupon = { connect: { id: input.couponId } };
     }
 
+    // Edit hours → pay more: when hours change without an explicit price, the
+    // charged price is recomputed from the new hours × the global hourly rate
+    // (EditHoursDialog sends only hours, no price).
+    if (input.subsHours !== undefined && input.priceCharged === undefined) {
+      const settings = await settingsUsecase.getEffective();
+      data.priceCharged = priceFromHours(
+        input.subsHours,
+        Number(settings.hourlyRate),
+      );
+    }
+
     const subscription = await subscriptionRepo.updateSubscription(id, data);
+
+    // If subsHours or the charged price actually changed, best-effort regenerate
+    // the demand invoice so its amount matches — mirror changePlan(). Guarded so
+    // a notes-only edit doesn't regenerate.
+    const hoursChanged =
+      input.subsHours !== undefined && input.subsHours !== existing.subsHours;
+    const priceChanged =
+      data.priceCharged !== undefined &&
+      Number(data.priceCharged) !== Number(existing.priceCharged);
+    if (hoursChanged || priceChanged) {
+      try {
+        // Only refresh the demand invoice while it is still UNPAID (or absent):
+        // a settled (PAID/VOID) invoice is a fixed record and must not have its
+        // amount silently rewritten — regenerate is a full amount reset.
+        const invoice = await invoiceRepo.getBySubscriptionId(id);
+        if (!invoice || invoice.status === INVOICE_STATUSES.UNPAID) {
+          const { invoiceUsecase } = await import(
+            "../invoices/invoice.usecase.js"
+          );
+          await invoiceUsecase.regenerateForSubscription(id, {
+            createdById: authUser.id,
+          });
+        }
+      } catch {}
+    }
 
     // If the endDate was extended, notify the student of the renewal (best-effort).
     if (input.endDate && new Date(input.endDate) > new Date(existing.endDate)) {
@@ -491,7 +546,7 @@ class SubscriptionUsecase {
       billingPeriod,
       startDate,
       endDate,
-      totalHours: hours,
+      subsHours: hours,
       remainingHours: hours,
       priceCharged,
       currency: settings.currency,
@@ -742,7 +797,7 @@ class SubscriptionUsecase {
       billingPeriod,
       startDate,
       endDate,
-      totalHours: hours,
+      subsHours: hours,
       remainingHours: hours,
       priceCharged,
       currency: settings.currency,
@@ -801,28 +856,22 @@ class SubscriptionUsecase {
    * for the new plan, then regenerates the invoice so its amounts match.
    */
   async changePlan({ authUser, id, ...input }) {
-    // 1. Load + scope-check. PARENT may only change their own child's sub, and
-    //    only while it is still PENDING (a non-finalised request).
+    // 1. TEACHER-ONLY. Changing an existing subscription's plan is an admin-only
+    //    action — a parent can never switch a plan (they only request/renew a
+    //    plan, which creates a NEW subscription). The route already requires the
+    //    admin-only EDIT permission; this is the explicit belt-and-suspenders.
+    if (authUser.role !== USER_ROLES.ADMIN) {
+      throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
+    }
     const existing = await subscriptionRepo.getById(id);
     if (!existing) {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
-    await this.assertCanAccess(authUser, existing.studentId);
 
-    // An ACTIVE subscription is settled — its plan/period/coupon must not change
-    // (no admin bypass). Cancel it first, then create a fresh one. This is in
-    // ADDITION to the invoice-UNPAID guard below.
+    // An ACTIVE subscription is settled — its plan/period/coupon must not change.
+    // Cancel it first, then create a fresh one. This is in ADDITION to the
+    // invoice-UNPAID guard below.
     if (existing.status === SUBSCRIPTION_STATUSES.ACTIVE) {
-      throw new AppError({
-        statusCode: 409,
-        code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
-        translationKey: messagesNames.subscriptionMessages,
-      });
-    }
-    if (
-      authUser.role === USER_ROLES.PARENT &&
-      existing.status !== SUBSCRIPTION_STATUSES.PENDING
-    ) {
       throw new AppError({
         statusCode: 409,
         code: subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID,
@@ -865,7 +914,7 @@ class SubscriptionUsecase {
     const data = {
       billingPeriod,
       endDate,
-      totalHours: hours,
+      subsHours: hours,
       remainingHours: hours,
       priceCharged,
       plan: { connect: { id: plan.id } },

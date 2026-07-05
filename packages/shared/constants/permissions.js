@@ -65,6 +65,16 @@ export const REPORT_PERMISSIONS = {
   DELETE: "report.delete",
 };
 
+// Logged tutoring sessions (تسجيل حصة). Admin creates/manages; parent reads
+// (scoped to their children); students are not exposed to this list.
+export const SESSION_LOG_PERMISSIONS = {
+  CREATE: "session_log.create",
+  LIST: "session_log.list",
+  VIEW: "session_log.view",
+  EDIT: "session_log.edit",
+  DELETE: "session_log.delete",
+};
+
 export const QUIZ_PERMISSIONS = {
   CREATE_BANK: "quiz.create_bank",
   LIST_BANK: "quiz.list_bank",
@@ -162,6 +172,7 @@ export const PERMISSIONS = {
   SUBSCRIPTION: SUBSCRIPTION_PERMISSIONS,
   GAME: GAME_PERMISSIONS,
   REPORT: REPORT_PERMISSIONS,
+  SESSION_LOG: SESSION_LOG_PERMISSIONS,
   QUIZ: QUIZ_PERMISSIONS,
   CERTIFICATE: CERTIFICATE_PERMISSIONS,
   REWARD: REWARD_PERMISSIONS,
@@ -196,6 +207,8 @@ export const ROLE_PERMISSIONS = {
     INVOICE_PERMISSIONS.LIST,
     REPORT_PERMISSIONS.VIEW,
     REPORT_PERMISSIONS.LIST,
+    SESSION_LOG_PERMISSIONS.VIEW,
+    SESSION_LOG_PERMISSIONS.LIST,
     QUIZ_PERMISSIONS.LIST,
     QUIZ_PERMISSIONS.BUILD,
     QUIZ_PERMISSIONS.VIEW,

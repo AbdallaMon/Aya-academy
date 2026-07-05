@@ -38,6 +38,32 @@ enum StudentLevel {
   CONFIDENT_READER
 }
 
+// Subjects taught in a logged tutoring session (multi-select). Grouped in the UI
+// as Qur'an Programs / Arabic Language / Islamic Education.
+enum SessionSubject {
+  QURAN_MEMORIZATION
+  TAJWEED_COURSES
+  ARABIC_READING
+  ARABIC_SPEAKING
+  QURANIC_ARABIC
+  ISLAMIC_STUDIES
+}
+
+// Whether the student attended the logged session.
+enum SessionAttendance {
+  PRESENT
+  ABSENT
+}
+
+// Teacher's evaluation of the student's performance in a session.
+enum SessionRating {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  FAIR
+  WEAK
+}
+
 // Origin of a points-ledger entry. BADGE is the only writer enabled this round;
 // GAME/QUIZ/MANUAL/ADJUSTMENT are reserved for later wiring.
 enum PointSource {
@@ -237,6 +263,10 @@ model User {
   reportsCreated Report[]        @relation("ReportCreatedBy")
   reportLinks    ReportStudent[]
 
+  sessionLogs        SessionLog[] @relation("StudentSessionLogs")
+  sessionLogsTaught  SessionLog[] @relation("SessionLogTeacher")
+  sessionLogsCreated SessionLog[] @relation("SessionLogCreatedBy")
+
   quizInvitesCreated  QuizInvite[]      @relation("QuizInviteCreatedBy")
   quizInvitesReceived QuizInvite[]      @relation("QuizInviteParent")
   quizzesBuilt        Quiz[]            @relation("QuizCreatedByParent")
@@ -375,7 +405,9 @@ model Subscription {
   status         SubscriptionStatus @default(ACTIVE)
   startDate      DateTime
   endDate        DateTime
-  totalHours     Int?
+  // Paid subscription hours — the billing basis (price = subsHours × hourlyRate).
+  // Column stays `totalHours` (via @map) so no data migration is needed.
+  subsHours      Int?               @map("totalHours")
   remainingHours Int?
   currency       String             @default("GBP")
   priceCharged   Decimal?           @db.Decimal(10, 2)
@@ -621,6 +653,44 @@ model ReportAttachment {
   attachment   Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, attachmentId])
+}
+
+// ============================================================
+// SESSION LOGS (تسجيل حصة — a logged tutoring session per student)
+// ============================================================
+
+// One logged tutoring session for a single student. The admin (teacher) records
+// what was taught, how long it lasted, the student's evaluation, a free-text
+// report, attendance, and the session date. `teacherId` is optional at input —
+// the usecase falls back to the first active admin when none is chosen.
+model SessionLog {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     User     @relation("StudentSessionLogs", fields: [studentId], references: [id], onDelete: Cascade)
+  // The teaching admin. Optional at input; defaults to the first admin.
+  teacherId   Int?
+  teacher     User?    @relation("SessionLogTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+
+  // Multi-select of SessionSubject values (MySQL has no enum arrays).
+  subjectsJson Json
+  // Session length in hours (e.g. 1.5).
+  durationHours Decimal @db.Decimal(4, 2)
+  // Teacher's evaluation of the student for this session.
+  rating      SessionRating?
+  // Free-text report about the session.
+  report      String?           @db.Text
+  attendance  SessionAttendance @default(PRESENT)
+  sessionDate DateTime
+
+  createdById Int?
+  createdBy   User? @relation("SessionLogCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([sessionDate])
 }
 
 // ============================================================

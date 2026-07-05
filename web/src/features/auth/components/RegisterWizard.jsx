@@ -50,9 +50,8 @@ export default function RegisterWizard() {
   // (/register?planId=…&billingPeriod=…).
   const [children, setChildren] = useState(() => {
     const planId = Number(searchParams.get("planId")) || null;
-    const billingPeriod =
-      searchParams.get("billingPeriod") === "YEARLY" ? "YEARLY" : "MONTHLY";
-    return [emptyChild(planId, billingPeriod)];
+    // MONTHLY-only in the UI for now — ignore any ?billingPeriod=YEARLY.
+    return [emptyChild(planId, "MONTHLY")];
   });
   const [parent, setParent] = useState({
     name: "",

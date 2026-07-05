@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  MenuItem,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
+import { MenuItem, Stack, TextField } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -28,7 +22,8 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
   const { lng } = useTranslation();
 
   const [planId, setPlanId] = useState("");
-  const [billingPeriod, setBillingPeriod] = useState("MONTHLY");
+  // MONTHLY-only in the UI for now — the yearly toggle is hidden.
+  const billingPeriod = "MONTHLY";
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
 
   const publicPlansReq = useRequest({
@@ -51,10 +46,8 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
   useEffect(() => {
     if (!open) return;
     publicPlansReq.fetchData();
-    const period = subscription?.billingPeriod || "MONTHLY";
     const id = subscription?.planId ?? subscription?.plan?.id ?? "";
     setPlanId(id ? String(id) : "");
-    setBillingPeriod(period);
     setCoupon(EMPTY_COUPON);
   }, [open]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
@@ -74,11 +67,6 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
     setPlanId(id);
     const plan = publicPlans.find((p) => String(p.id) === String(id)) || null;
     setCoupon(initialCoupon(plan, billingPeriod));
-  }
-
-  function onPeriodChange(period) {
-    setBillingPeriod(period);
-    setCoupon(initialCoupon(selectedPlan, period));
   }
 
   const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
@@ -124,19 +112,6 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
             </MenuItem>
           ))}
         </TextField>
-
-        <ToggleButtonGroup
-          value={billingPeriod}
-          exclusive
-          color="primary"
-          size="small"
-          fullWidth
-          onChange={(_e, v) => v && onPeriodChange(v)}
-          aria-label={txt.billingPeriod}
-        >
-          <ToggleButton value="MONTHLY">{txt.monthly}</ToggleButton>
-          <ToggleButton value="YEARLY">{txt.yearly}</ToggleButton>
-        </ToggleButtonGroup>
 
         {selectedPlan && (
           <CouponControl

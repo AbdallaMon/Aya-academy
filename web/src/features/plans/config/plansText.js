@@ -24,7 +24,6 @@ export const plansText = {
     yes: "نعم",
     no: "لا",
     perMonth: "/ شهر",
-    perYear: "/ سنة",
     // form
     titleAr: "الاسم (عربي)",
     titleEn: "الاسم (إنجليزي)",
@@ -91,7 +90,6 @@ export const plansText = {
     yes: "Yes",
     no: "No",
     perMonth: "/ mo",
-    perYear: "/ yr",
     titleAr: "Name (Arabic)",
     titleEn: "Name (English)",
     descriptionAr: "Description (Arabic)",
