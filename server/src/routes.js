@@ -23,6 +23,7 @@ import encryptionKeyRoutes from "./modules/encryptionKeys/encryptionKeys.route.j
 import attachmentRoutes from "./modules/attachments/attachment.route.js";
 import certificateTemplateRoutes from "./modules/certificateTemplates/certificateTemplate.route.js";
 import settingsRoutes from "./modules/settings/settings.route.js";
+import whiteboardSessionRoutes from "./modules/whiteboardSessions/whiteboardSession.route.js";
 
 const routes = Router();
 
@@ -57,5 +58,6 @@ routes.use("/backups", backupRoutes);
 routes.use("/encryption-keys", encryptionKeyRoutes);
 routes.use("/attachments", attachmentRoutes);
 routes.use("/certificate-templates", certificateTemplateRoutes);
+routes.use("/whiteboard-sessions", whiteboardSessionRoutes);
 
 export default routes;
