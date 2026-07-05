@@ -30,6 +30,7 @@ import {
   invoiceMessagesCodes,
   paymentTemplateMessagesCodes,
   settingsMessagesCodes,
+  whiteboardMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 
@@ -424,6 +425,23 @@ const ar = {
     [backupMessagesCodes.ACCOUNTS_RECONNECT_REQUIRED]:
       "يتطلّب الاسترجاع إعادة ربط حساب أو أكثر ثم إعادة المحاولة.",
   },
+  // ── whiteboard-messages ───────────────────────────────────────────────────
+  [messagesNames.whiteboardMessages]: {
+    [whiteboardMessagesCodes.SESSION_NOT_FOUND]: "الجلسة غير موجودة",
+    [whiteboardMessagesCodes.SESSION_CREATED]: "تم إنشاء الجلسة",
+    [whiteboardMessagesCodes.SESSION_DELETED]: "تم حذف الجلسة",
+    [whiteboardMessagesCodes.SESSION_ACTIVATED]: "تم فتح الجلسة",
+    [whiteboardMessagesCodes.SESSION_ENDED]: "تم إنهاء الجلسة",
+    [whiteboardMessagesCodes.SESSION_MADE_PUBLIC]: "الجلسة أصبحت عامة",
+    [whiteboardMessagesCodes.SESSION_MADE_PRIVATE]: "الجلسة أصبحت خاصة",
+    [whiteboardMessagesCodes.STUDENT_ADDED]: "تمت إضافة الطالب",
+    [whiteboardMessagesCodes.STUDENT_REMOVED]: "تمت إزالة الطالب",
+    [whiteboardMessagesCodes.STUDENT_ALREADY_ADDED]: "الطالب مضاف بالفعل",
+    [whiteboardMessagesCodes.STUDENT_NOT_IN_SESSION]: "الطالب غير موجود في الجلسة",
+    [whiteboardMessagesCodes.NOT_A_STUDENT]: "الحساب المختار ليس طالبًا",
+    [whiteboardMessagesCodes.TITLE_REQUIRED]: "عنوان الجلسة مطلوب",
+    [whiteboardMessagesCodes.STUDENT_ID_INVALID]: "معرّف الطالب غير صالح",
+  },
 };
 
 const en = {
@@ -804,6 +822,23 @@ const en = {
       "The backup (DB) account is disconnected — reconnect it and try again.",
     [backupMessagesCodes.ACCOUNTS_RECONNECT_REQUIRED]:
       "Restore requires reconnecting one or more accounts, then retrying.",
+  },
+  // ── whiteboard-messages ───────────────────────────────────────────────────
+  [messagesNames.whiteboardMessages]: {
+    [whiteboardMessagesCodes.SESSION_NOT_FOUND]: "Session not found",
+    [whiteboardMessagesCodes.SESSION_CREATED]: "Session created",
+    [whiteboardMessagesCodes.SESSION_DELETED]: "Session deleted",
+    [whiteboardMessagesCodes.SESSION_ACTIVATED]: "Session opened",
+    [whiteboardMessagesCodes.SESSION_ENDED]: "Session ended",
+    [whiteboardMessagesCodes.SESSION_MADE_PUBLIC]: "Session is now public",
+    [whiteboardMessagesCodes.SESSION_MADE_PRIVATE]: "Session is now private",
+    [whiteboardMessagesCodes.STUDENT_ADDED]: "Student added",
+    [whiteboardMessagesCodes.STUDENT_REMOVED]: "Student removed",
+    [whiteboardMessagesCodes.STUDENT_ALREADY_ADDED]: "Student already added",
+    [whiteboardMessagesCodes.STUDENT_NOT_IN_SESSION]: "Student is not in the session",
+    [whiteboardMessagesCodes.NOT_A_STUDENT]: "Selected account is not a student",
+    [whiteboardMessagesCodes.TITLE_REQUIRED]: "Session title is required",
+    [whiteboardMessagesCodes.STUDENT_ID_INVALID]: "Invalid student id",
   },
 };
 

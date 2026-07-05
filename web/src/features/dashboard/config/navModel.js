@@ -41,6 +41,7 @@ import {
   MdVerified,
   MdDescription,
   MdMenuBook,
+  MdDraw,
 } from 'react-icons/md';
 
 const ICONS = {
@@ -66,6 +67,7 @@ const ICONS = {
   leaderboard: MdLeaderboard,
   paymentTemplate: MdReceiptLong,
   settings: MdSettings,
+  whiteboard: MdDraw,
 };
 
 // The lone Overview link, shared by every role as the first (header-less) group.
@@ -157,6 +159,13 @@ function adminGroups() {
           icon: ICONS.games,
           permission: PERMISSIONS.GAME.LIST,
         },
+        {
+          key: 'whiteboard',
+          labelKey: 'whiteboard',
+          href: '/dashboard/whiteboard',
+          icon: ICONS.whiteboard,
+          permission: PERMISSIONS.WHITEBOARD.MANAGE,
+        },
         //   { key: "quizzes", labelKey: "quizzes", href: "/dashboard/quizzes", icon: ICONS.quizzes, permission: PERMISSIONS.QUIZ.LIST },
         //   { key: "quizBank", labelKey: "quizBank", href: "/dashboard/quiz-bank", icon: ICONS.quizBank, permission: PERMISSIONS.QUIZ.LIST_BANK },
         //   { key: "invitations", labelKey: "invitations", href: "/dashboard/quiz-invites", icon: ICONS.invitations, permission: PERMISSIONS.QUIZ.CREATE_INVITE },
@@ -166,13 +175,14 @@ function adminGroups() {
       key: 'progress',
       labelKey: 'navGroupProgress',
       items: [
-        {
-          key: 'reports',
-          labelKey: 'reports',
-          href: '/dashboard/reports',
-          icon: ICONS.reports,
-          permission: PERMISSIONS.REPORT.LIST,
-        },
+        // Reports temporarily disabled in the dashboard (kept in backend). Uncomment to restore.
+        // {
+        //   key: 'reports',
+        //   labelKey: 'reports',
+        //   href: '/dashboard/reports',
+        //   icon: ICONS.reports,
+        //   permission: PERMISSIONS.REPORT.LIST,
+        // },
         {
           key: 'sessionLog',
           labelKey: 'sessionLog',
@@ -260,13 +270,14 @@ function parentGroups() {
       key: 'progress',
       labelKey: 'navGroupProgress',
       items: [
-        {
-          key: 'reports',
-          labelKey: 'reports',
-          href: '/dashboard/reports',
-          icon: ICONS.reports,
-          permission: PERMISSIONS.REPORT.LIST,
-        },
+        // Reports temporarily disabled in the dashboard (kept in backend). Uncomment to restore.
+        // {
+        //   key: 'reports',
+        //   labelKey: 'reports',
+        //   href: '/dashboard/reports',
+        //   icon: ICONS.reports,
+        //   permission: PERMISSIONS.REPORT.LIST,
+        // },
         {
           key: 'sessionLog',
           labelKey: 'sessionLog',
