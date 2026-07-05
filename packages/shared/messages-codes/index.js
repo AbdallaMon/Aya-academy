@@ -19,3 +19,4 @@ export * from "./attachment.js";
 export * from "./invoice.js";
 export * from "./paymentTemplate.js";
 export * from "./settings.js";
+export * from "./whiteboard.js";

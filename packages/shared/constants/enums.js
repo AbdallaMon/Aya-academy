@@ -220,6 +220,7 @@ export const NOTIFICATION_TYPES = {
   SUBSCRIPTION_RENEWED: "SUBSCRIPTION_RENEWED",
   SUBSCRIPTION_EXPIRED: "SUBSCRIPTION_EXPIRED",
   REPORT_RECEIVED: "REPORT_RECEIVED",
+  SESSION_LOGGED: "SESSION_LOGGED",
   GAME_ASSIGNED: "GAME_ASSIGNED",
   QUIZ_INVITE: "QUIZ_INVITE",
   QUIZ_PASSED: "QUIZ_PASSED",
@@ -259,5 +260,18 @@ export const BACKUP_PROVIDERS = {
 export const DRIVE_ACCOUNT_TYPES = {
   KEY: "KEY",
   DB: "DB",
+};
+
+// ── Interactive whiteboard sessions (admin-run live board) ──
+// Keep in sync with packages/db/prisma/schema.prisma.
+export const WHITEBOARD_SESSION_STATUSES = {
+  DRAFT: "DRAFT",
+  ACTIVE: "ACTIVE",
+  ENDED: "ENDED",
+};
+
+export const WHITEBOARD_VISIBILITIES = {
+  PRIVATE: "PRIVATE",
+  PUBLIC: "PUBLIC",
 };
 

@@ -165,6 +165,12 @@ export const DASHBOARD_PERMISSIONS = {
   VIEW_STUDENT: "dashboard.view_student",
 };
 
+// Interactive whiteboard sessions — admin-only management (create/attach
+// students/activate/share). ADMIN gets it automatically via getAllPermissions().
+export const WHITEBOARD_PERMISSIONS = {
+  MANAGE: "whiteboard.manage",
+};
+
 export const PERMISSIONS = {
   USER: USER_PERMISSIONS,
   PLAN: PLAN_PERMISSIONS,
@@ -185,6 +191,7 @@ export const PERMISSIONS = {
   INVOICE: INVOICE_PERMISSIONS,
   PAYMENT_TEMPLATE: PAYMENT_TEMPLATE_PERMISSIONS,
   SETTINGS: SETTINGS_PERMISSIONS,
+  WHITEBOARD: WHITEBOARD_PERMISSIONS,
 };
 
 /** Every permission code defined above, flattened. */
