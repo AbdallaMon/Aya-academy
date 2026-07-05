@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Stack, Tooltip } from "@mui/material";
 import { MdFullscreen } from "react-icons/md";
 import "@excalidraw/excalidraw/index.css";
 import { useBoardPersistence } from "./lib/useBoardPersistence.js";
@@ -11,6 +11,7 @@ import { playReactionSound } from "./lib/boardSounds.js";
 import { REACTIONS } from "./config/reactions.js";
 import ReactionOverlay from "./ReactionOverlay.jsx";
 import ReactionBar from "./ReactionBar.jsx";
+import BoardBackgroundPicker from "./BoardBackgroundPicker.jsx";
 
 // Excalidraw touches window/document — never SSR it.
 const Excalidraw = dynamic(
@@ -21,6 +22,7 @@ const Excalidraw = dynamic(
 export default function WhiteboardBoard({ sessionKey, title, students = [] }) {
   const rootRef = useRef(null);
   const burstId = useRef(0);
+  const [api, setApi] = useState(null);
   const { initialData, onChange } = useBoardPersistence(sessionKey);
 
   const goFullscreen = () => {
@@ -28,6 +30,10 @@ export default function WhiteboardBoard({ sessionKey, title, students = [] }) {
     if (!el) return;
     if (document.fullscreenElement) document.exitFullscreen?.();
     else el.requestFullscreen?.();
+  };
+
+  const setBackground = (color) => {
+    api?.updateScene({ appState: { viewBackgroundColor: color } });
   };
 
   const fire = (key, studentName) => {
@@ -40,6 +46,7 @@ export default function WhiteboardBoard({ sessionKey, title, students = [] }) {
     <Box ref={rootRef} sx={{ position: "fixed", inset: 0, bgcolor: "#fff" }}>
       <Box sx={{ position: "absolute", inset: 0 }}>
         <Excalidraw
+          excalidrawAPI={setApi}
           initialData={initialData}
           onChange={onChange}
           langCode="ar-SA"
@@ -47,17 +54,19 @@ export default function WhiteboardBoard({ sessionKey, title, students = [] }) {
         />
       </Box>
 
-      {/* Fullscreen toggle (top, above the canvas) */}
-      <Box sx={{ position: "absolute", top: 12, insetInlineEnd: 12, zIndex: 5 }}>
+      {/* Top controls (above the canvas): background color + fullscreen */}
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ position: "absolute", top: 12, insetInlineEnd: 12, zIndex: 6 }}
+      >
+        <BoardBackgroundPicker onPick={setBackground} />
         <Tooltip title={title || ""}>
-          <IconButton
-            onClick={goFullscreen}
-            sx={{ bgcolor: "background.paper", boxShadow: 2 }}
-          >
+          <IconButton onClick={goFullscreen} sx={{ bgcolor: "background.paper", boxShadow: 2 }}>
             <MdFullscreen />
           </IconButton>
         </Tooltip>
-      </Box>
+      </Stack>
 
       <ReactionOverlay />
       <ReactionBar students={students} onFire={fire} />

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { prisma } from "@aya/db/prisma.client.js";
 import {
   USER_ROLES,
   WHITEBOARD_SESSION_STATUSES,
@@ -44,10 +45,49 @@ class WhiteboardSessionUsecase {
     return session;
   }
 
-  async create({ title, authUser }) {
+  // Create a session that is READY TO USE: it opens (ACTIVE) immediately, with
+  // the chosen students attached and optionally made public in one step.
+  async create({ title, studentIds = [], isPublic = false, locale = "ar", authUser }) {
     const clean = typeof title === "string" ? title.trim() : "";
     if (!clean) throw badRequest(whiteboardMessagesCodes.TITLE_REQUIRED);
-    return whiteboardSessionRepo.create({ title: clean, createdById: authUser.id });
+
+    const ids = [...new Set((studentIds || []).filter((n) => Number.isInteger(n) && n > 0))];
+    // Validate every chosen account is really a STUDENT before we write anything.
+    for (const studentId of ids) {
+      const role = await userRepo.getRoleById(studentId);
+      if (!role || role.role !== USER_ROLES.STUDENT) {
+        throw badRequest(whiteboardMessagesCodes.NOT_A_STUDENT);
+      }
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const session = await whiteboardSessionRepo.create({
+        title: clean,
+        createdById: authUser.id,
+        client: tx,
+      });
+      await Promise.all(
+        ids.map((studentId) =>
+          whiteboardSessionRepo.addStudent({ sessionId: session.id, studentId, client: tx }),
+        ),
+      );
+      // Opens immediately — the teacher can start the board right away.
+      await whiteboardSessionRepo.updateStatus({
+        id: session.id,
+        status: WHITEBOARD_SESSION_STATUSES.ACTIVE,
+        client: tx,
+      });
+      return session.id;
+    });
+
+    let publicUrl = null;
+    if (isPublic) {
+      const result = await this.makePublic({ id: created, locale });
+      publicUrl = result.url;
+    }
+
+    const detail = await whiteboardSessionRepo.getByIdWithStudents({ id: created });
+    return { ...detail, publicUrl };
   }
 
   async activate({ id }) {

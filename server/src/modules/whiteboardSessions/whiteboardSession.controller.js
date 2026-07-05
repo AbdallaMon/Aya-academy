@@ -36,6 +36,9 @@ class WhiteboardSessionController {
   async create(req, res) {
     const session = await whiteboardSessionUsecase.create({
       title: req.body.title,
+      studentIds: req.body.studentIds,
+      isPublic: req.body.isPublic,
+      locale: req.auth.locale || "ar",
       authUser: req.auth,
     });
     return created(res, session, whiteboardMessagesCodes.SESSION_CREATED, TK);

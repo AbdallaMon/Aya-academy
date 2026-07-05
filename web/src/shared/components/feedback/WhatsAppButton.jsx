@@ -5,13 +5,24 @@
 
 import { Fab, Tooltip, Zoom } from "@mui/material";
 import { FaWhatsapp } from "react-icons/fa";
+import { usePathname } from "next/navigation";
 import { useTranslation } from "../../../i18n/client.js";
+import { stripLocale } from "../../../i18n/routing.js";
 
 const WHATSAPP_NUMBER = "966582509655";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
+// Routes that take over the whole screen (the interactive whiteboard) and must
+// stay clean — no floating chat button on top of the canvas.
+const HIDDEN_PREFIXES = ["/board", "/w"];
+
 export default function WhatsAppButton() {
   const { lng } = useTranslation();
+  const pathname = usePathname();
+  const bare = stripLocale(pathname || "");
+  if (HIDDEN_PREFIXES.some((p) => bare === p || bare.startsWith(`${p}/`))) {
+    return null;
+  }
   const label = lng === "en" ? "Chat on WhatsApp" : "تواصل عبر واتساب";
 
   return (
