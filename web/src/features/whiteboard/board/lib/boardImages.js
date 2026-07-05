@@ -52,8 +52,12 @@ export async function hydrateBoardFiles(imageMap, token) {
   const files = await Promise.all(
     entries.map(async ([fileId, ref]) => {
       try {
-        const url = token ? `${ref.url}?token=${encodeURIComponent(token)}` : ref.url;
-        const res = await fetch(url, { credentials: "include" });
+        // Send the share token in a header (not the URL) so it can't leak via
+        // access logs, Referer, or browser history.
+        const res = await fetch(ref.url, {
+          credentials: "include",
+          headers: token ? { "X-Whiteboard-Token": token } : undefined,
+        });
         if (!res.ok) return null;
         const dataURL = await blobToDataURL(await res.blob());
         return {

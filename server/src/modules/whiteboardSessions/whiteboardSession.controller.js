@@ -131,10 +131,16 @@ class WhiteboardSessionController {
   // PUBLIC-mounted: admin (cookie) OR a valid public-session token may view.
   async serveImage(req, res) {
     const isAdmin = await resolveIsAdmin(req);
+    // Prefer the token from a header (kept out of URLs/logs); fall back to the
+    // query param for any legacy caller.
+    const headerToken = req.headers["x-whiteboard-token"];
+    const token =
+      (typeof headerToken === "string" && headerToken) ||
+      (typeof req.query.token === "string" ? req.query.token : null);
     const { absolutePath, mimeType } = await whiteboardSessionUsecase.serveImage({
       sessionId: idParam(req.params.sessionId),
       imageId: idParam(req.params.imageId),
-      token: typeof req.query.token === "string" ? req.query.token : null,
+      token,
       isAdmin,
     });
     if (mimeType) res.type(mimeType);
