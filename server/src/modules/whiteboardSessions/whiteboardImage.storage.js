@@ -26,13 +26,14 @@ export function whiteboardImagePath(storageKey) {
   return path.join(WHITEBOARD_UPLOAD_DIR, path.basename(storageKey));
 }
 
+// Raster formats only. SVG is deliberately EXCLUDED: it can carry inline scripts
+// and the serve route is public, so an inline SVG would be stored XSS.
 const ALLOWED_MIME = {
   "image/png": ".png",
   "image/jpeg": ".jpg",
   "image/jpg": ".jpg",
   "image/webp": ".webp",
   "image/gif": ".gif",
-  "image/svg+xml": ".svg",
 };
 
 const storage = multer.diskStorage({

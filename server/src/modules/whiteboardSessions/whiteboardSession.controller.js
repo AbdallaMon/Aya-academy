@@ -138,6 +138,9 @@ class WhiteboardSessionController {
       isAdmin,
     });
     if (mimeType) res.type(mimeType);
+    // Defense-in-depth: never let the browser sniff a stored file into an
+    // executable type (raster mimes are enforced at upload; SVG is disallowed).
+    res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, max-age=86400");
     return res.sendFile(absolutePath);
   }
