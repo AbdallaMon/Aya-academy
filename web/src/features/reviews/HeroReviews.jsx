@@ -15,7 +15,7 @@ const CONTENT = {
     ratingLabel: (n) => `تقييم ٤٫٩ من ٥ من ${n} تقييماً لأولياء الأمور`,
   },
   en: {
-    title: "Parents around the world trust Aya Academy to start their kids' Quran journey.",
+    title: "Parents around the world trust Aya Academy to start their students' Quran journey.",
     countries: ['🇬🇧 UK', '🇺🇸 US', '🇨🇦 Canada', '🇦🇪 UAE', '🇦🇺 Australia'],
     reviews: (n) => `from ${n} real parent reviews`,
     ratingLabel: (n) => `4.9 out of 5 from ${n} parent reviews`,

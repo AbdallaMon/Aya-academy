@@ -4,6 +4,7 @@ export const appSettingSelect = {
   id: true,
   hourlyRate: true,
   currency: true,
+  whiteboardRetentionDays: true,
   updatedById: true,
   createdAt: true,
   updatedAt: true,

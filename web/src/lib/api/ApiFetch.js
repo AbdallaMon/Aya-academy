@@ -13,11 +13,11 @@
 // Never call this client directly inside a component — go through useRequest /
 // useMultiRequest.
 
-import { authMessagesCodes, generalMessagesCodes } from "@aya/shared";
-import { config } from "../../config/config.js";
-import { EXCLUDED_FROM_ERROR_REDIRECT } from "../../utils/constant.js";
+import { authMessagesCodes, generalMessagesCodes } from '@aya/shared';
+import { config } from '../../config/config.js';
+import { EXCLUDED_FROM_ERROR_REDIRECT } from '../../utils/constant.js';
 
-const MUTATION_BODY_METHODS = ["POST", "PUT", "PATCH"];
+const MUTATION_BODY_METHODS = ['POST', 'PUT', 'PATCH'];
 
 class ApiFetch {
   constructor(baseUrl) {
@@ -31,13 +31,13 @@ class ApiFetch {
   }
 
   _buildUrl(path) {
-    return `${this.baseUrl}/${String(path).replace(/^\//, "")}`;
+    return `${this.baseUrl}/${String(path).replace(/^\//, '')}`;
   }
 
   _buildHeaders(isFileUpload, customHeader, isMultipart) {
-    if (customHeader) return { "Content-Type": customHeader };
+    if (customHeader) return { ...customHeader };
     if (isFileUpload || isMultipart) return {};
-    return { "Content-Type": "application/json" };
+    return { 'Content-Type': 'application/json' };
   }
 
   _serializeBody(body, isFileUpload, isMultipart) {
@@ -48,45 +48,50 @@ class ApiFetch {
   // Build a query string for paginated GET requests. Scalars are encoded
   // directly; arrays repeat the key; plain objects (e.g. a dateRange) are
   // JSON-serialized so the backend can parse them.
-  _buildPaginatedPath(url, { page, limit, search = "", sort = "", others, ...filters }) {
-    let queryPrefix = "?";
-    if (url.endsWith("&")) queryPrefix = "";
-    else if (url.includes("?")) queryPrefix = "&";
+  _buildPaginatedPath(
+    url,
+    { page, limit, search = '', sort = '', others, ...filters }
+  ) {
+    let queryPrefix = '?';
+    if (url.endsWith('&')) queryPrefix = '';
+    else if (url.includes('?')) queryPrefix = '&';
 
     const parts = [
       `page=${page}`,
       `limit=${limit}`,
-      `search=${encodeURIComponent(search ?? "")}`,
-      `sort=${encodeURIComponent(JSON.stringify(sort ?? ""))}`,
+      `search=${encodeURIComponent(search ?? '')}`,
+      `sort=${encodeURIComponent(JSON.stringify(sort ?? ''))}`,
     ];
 
     Object.entries(filters).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === "") return;
+      if (value === undefined || value === null || value === '') return;
       if (Array.isArray(value)) {
         value.forEach((val) => {
           parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
         });
         return;
       }
-      if (typeof value === "object") {
+      if (typeof value === 'object') {
         const serialized = JSON.stringify(value);
-        if (serialized === "{}" || serialized === "null") return;
-        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(serialized)}`);
+        if (serialized === '{}' || serialized === 'null') return;
+        parts.push(
+          `${encodeURIComponent(key)}=${encodeURIComponent(serialized)}`
+        );
         return;
       }
       parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
     });
 
     if (others) parts.push(others);
-    return `${url}${queryPrefix}${parts.join("&")}`;
+    return `${url}${queryPrefix}${parts.join('&')}`;
   }
 
   async _refreshToken() {
     // De-dupe concurrent refreshes — many in-flight 401s share one refresh.
     if (this._refreshPromise) return this._refreshPromise;
 
-    this._refreshPromise = this._request("auth/refresh", {
-      method: "POST",
+    this._refreshPromise = this._request('auth/refresh', {
+      method: 'POST',
       _skipRefresh: true,
       // Transparent mechanism: a failed refresh must NOT raise the global error
       // toast (that was the bogus "session expired" toast on the homepage). Its
@@ -104,7 +109,7 @@ class ApiFetch {
 
   async _request(path, opts = {}) {
     const {
-      method = "GET",
+      method = 'GET',
       body,
       isFileUpload = false,
       customHeader,
@@ -121,15 +126,13 @@ class ApiFetch {
       // onError so we don't get a second, duplicate error toast.
       suppressGlobalError = false,
     } = opts;
-
-    const windowExists = typeof window !== "undefined";
+    const windowExists = typeof window !== 'undefined';
     const headers = this._buildHeaders(isFileUpload, customHeader, isMultipart);
-
     const response = await fetch(this._buildUrl(path), {
       method,
       body,
       headers,
-      credentials: "include",
+      credentials: 'include',
     });
     const status = response.status;
 
@@ -166,7 +169,9 @@ class ApiFetch {
 
     if (status >= 400) {
       const error = new Error(
-        result.message || response.statusText || generalMessagesCodes.UNEXPECTED_ERROR,
+        result.message ||
+          response.statusText ||
+          generalMessagesCodes.UNEXPECTED_ERROR
       );
       error.status = status;
       error.data = result;
@@ -182,15 +187,15 @@ class ApiFetch {
     const {
       _skipRefresh = false,
       _retriedAfterRefresh = false,
-      method = "GET",
+      method = 'GET',
       body,
       _public = false,
     } = opts;
 
-    const requestInit = { method, headers: {}, credentials: "include" };
+    const requestInit = { method, headers: {}, credentials: 'include' };
     if (body !== undefined && body !== null) {
-      requestInit.body = typeof body === "string" ? body : JSON.stringify(body);
-      requestInit.headers["Content-Type"] = "application/json";
+      requestInit.body = typeof body === 'string' ? body : JSON.stringify(body);
+      requestInit.headers['Content-Type'] = 'application/json';
     }
 
     const response = await fetch(this._buildUrl(path), requestInit);
@@ -201,7 +206,8 @@ class ApiFetch {
       if (refreshed) {
         return this._blobRequest(path, { ...opts, _retriedAfterRefresh: true });
       }
-      if (this.onAuthFailure && typeof window !== "undefined") this.onAuthFailure();
+      if (this.onAuthFailure && typeof window !== 'undefined')
+        this.onAuthFailure();
       const error = new Error(authMessagesCodes.UNAUTHORIZED);
       error.status = status;
       throw error;
@@ -214,7 +220,9 @@ class ApiFetch {
       } catch {
         errorResult = { message: response.statusText };
       }
-      const error = new Error(errorResult.message || response.statusText || "Request failed");
+      const error = new Error(
+        errorResult.message || response.statusText || 'Request failed'
+      );
       error.status = status;
       error.data = errorResult;
       error.translationKey = errorResult.translationKey;
@@ -226,15 +234,25 @@ class ApiFetch {
   }
 
   // ── Public verb helpers ────────────────────────────────────────────────────
-  async get(path) {
-    return this._request(path, { method: "GET" });
+  async get(path, params) {
+    return this._request(path, { method: 'GET', ...params });
   }
 
   async getPaginated(url, params) {
-    return this._request(this._buildPaginatedPath(url, params), { method: "GET" });
+    return this._request(this._buildPaginatedPath(url, params), {
+      method: 'GET',
+    });
   }
 
-  async submit(method, path, body, isFileUpload = false, customHeader, isMultipart = false, opts = {}) {
+  async submit(
+    method,
+    path,
+    body,
+    isFileUpload = false,
+    customHeader,
+    isMultipart = false,
+    opts = {}
+  ) {
     const upper = method.toUpperCase();
     const options = {
       method: upper,
@@ -249,20 +267,54 @@ class ApiFetch {
     return this._request(path, options);
   }
 
-  async post(path, body, isFileUpload = false, customHeader, isMultipart = false, opts = {}) {
-    return this.submit("POST", path, body, isFileUpload, customHeader, isMultipart, opts);
+  async post(
+    path,
+    body,
+    isFileUpload = false,
+    customHeader,
+    isMultipart = false,
+    opts = {}
+  ) {
+    return this.submit(
+      'POST',
+      path,
+      body,
+      isFileUpload,
+      customHeader,
+      isMultipart,
+      opts
+    );
   }
 
   async put(path, body, isFileUpload = false, customHeader, opts = {}) {
-    return this.submit("PUT", path, body, isFileUpload, customHeader, false, opts);
+    return this.submit(
+      'PUT',
+      path,
+      body,
+      isFileUpload,
+      customHeader,
+      false,
+      opts
+    );
   }
 
   async patch(path, body, isFileUpload = false, customHeader, opts = {}) {
-    return this.submit("PATCH", path, body, isFileUpload, customHeader, false, opts);
+    return this.submit(
+      'PATCH',
+      path,
+      body,
+      isFileUpload,
+      customHeader,
+      false,
+      opts
+    );
   }
 
   async delete(path, opts = {}) {
-    return this._request(path, { method: "DELETE", suppressGlobalError: opts.suppressGlobalError });
+    return this._request(path, {
+      method: 'DELETE',
+      suppressGlobalError: opts.suppressGlobalError,
+    });
   }
 
   async blob(path) {
@@ -270,38 +322,49 @@ class ApiFetch {
   }
 
   async postBlob(path, body) {
-    return this._blobRequest(path, { method: "POST", body });
+    return this._blobRequest(path, { method: 'POST', body });
   }
 
   // Public (no-refresh) variant for endpoints reached anonymously. Arrow
   // functions capture the instance `this` lexically.
   get public() {
     return {
-      get: (path) => this._request(path, { method: "GET", _skipRefresh: true, _public: true }),
+      get: (path, params) =>
+        this._request(path, {
+          method: 'GET',
+          _skipRefresh: true,
+          _public: true,
+          ...params,
+        }),
       post: (path, body) =>
         this._request(path, {
-          method: "POST",
+          method: 'POST',
           body: this._serializeBody(body),
           _skipRefresh: true,
           _public: true,
         }),
       put: (path, body) =>
         this._request(path, {
-          method: "PUT",
+          method: 'PUT',
           body: this._serializeBody(body),
           _skipRefresh: true,
           _public: true,
         }),
       patch: (path, body) =>
         this._request(path, {
-          method: "PATCH",
+          method: 'PATCH',
           body: this._serializeBody(body),
           _skipRefresh: true,
           _public: true,
         }),
       delete: (path) =>
-        this._request(path, { method: "DELETE", _skipRefresh: true, _public: true }),
-      blob: (path) => this._blobRequest(path, { _skipRefresh: true, _public: true }),
+        this._request(path, {
+          method: 'DELETE',
+          _skipRefresh: true,
+          _public: true,
+        }),
+      blob: (path) =>
+        this._blobRequest(path, { _skipRefresh: true, _public: true }),
     };
   }
 }

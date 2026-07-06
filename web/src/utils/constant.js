@@ -17,7 +17,9 @@ export const EXCLUDED_FROM_ERROR_REDIRECT = ['/error', '/login', '/register'];
 
 // Route prefixes that require an authenticated session (checked AFTER the
 // /{lng} locale prefix is stripped, so it works for /ar/dashboard, /en/... too).
-export const PROTECTED_PREFIXES = ['/dashboard'];
+// '/board' is the admin full-screen whiteboard (auth required). The PUBLIC
+// token board lives at '/w/<token>' and is intentionally NOT protected.
+export const PROTECTED_PREFIXES = ['/dashboard', '/board'];
 
 // Locale-agnostic protected check: "/ar/dashboard/games" → protected.
 export function isProtectedPath(pathname = '') {

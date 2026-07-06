@@ -1128,6 +1128,28 @@ class SubscriptionUsecase {
 
     return updated;
   }
+
+  /**
+   * Automatic monthly renewal — invoked by the end-of-month cron
+   * (subscriptionScheduler) on the LAST day of every month. Meant to find the
+   * subscriptions due for the coming month and renew them (mirroring renew()),
+   * generate their demand invoices, and notify.
+   *
+   * INTENTIONALLY EMPTY for now — the selection + renewal logic will be filled
+   * in later. Must never throw over the edge: the cron wraps it in a .catch, but
+   * keep it self-contained and side-effect-free until implemented.
+   *
+   * @param {Date} [now] the run time (last day of the month). Defaults to now.
+   * @returns {Promise<{ renewed:number, skipped:number }>}
+   */
+  async autoRenewSubscriptions(now = new Date()) {
+    void now;
+    // TODO: implement automatic monthly renewal:
+    //   1. select subscriptions due to renew for next month
+    //   2. renew each (reuse this.renew / createSubscription + ensureInvoice)
+    //   3. notify parents/admins
+    return { renewed: 0, skipped: 0 };
+  }
 }
 
 export const subscriptionUsecase = new SubscriptionUsecase();

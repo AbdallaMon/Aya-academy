@@ -24,7 +24,7 @@
     "db:seed": "npm run seed -w @aya/db"
   },
   "overrides": {
-    "stylis": "4.2.0"
+    "stylis": "4.3.6"
   },
   "dependencies": {
     "@mui/stylis-plugin-rtl": "^9.1.1"

@@ -16,6 +16,7 @@ class SettingsUsecase {
         data: {
           hourlyRate: DEFAULT_APP_SETTINGS.hourlyRate,
           currency: DEFAULT_APP_SETTINGS.currency,
+          whiteboardRetentionDays: DEFAULT_APP_SETTINGS.whiteboardRetentionDays,
           updatedById: authUser?.id ?? null,
         },
       });
@@ -24,10 +25,13 @@ class SettingsUsecase {
   }
 
   /** Update the global settings (admin only — gated at the route). */
-  async update({ authUser, hourlyRate, currency }) {
+  async update({ authUser, hourlyRate, currency, whiteboardRetentionDays }) {
     const data = { updatedById: authUser?.id ?? null };
     if (hourlyRate !== undefined) data.hourlyRate = hourlyRate;
     if (currency !== undefined) data.currency = currency;
+    if (whiteboardRetentionDays !== undefined) {
+      data.whiteboardRetentionDays = whiteboardRetentionDays;
+    }
 
     const existing = await settingsRepo.getSingleton();
     if (!existing) {
@@ -35,6 +39,8 @@ class SettingsUsecase {
         data: {
           hourlyRate: hourlyRate ?? DEFAULT_APP_SETTINGS.hourlyRate,
           currency: currency ?? DEFAULT_APP_SETTINGS.currency,
+          whiteboardRetentionDays:
+            whiteboardRetentionDays ?? DEFAULT_APP_SETTINGS.whiteboardRetentionDays,
           updatedById: authUser?.id ?? null,
         },
       });

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 // useRequest — the single data hook for the app. Wraps ApiFetch and handles:
 //   - GET (single + paginated) and mutations (post/put/patch/delete) + blob
@@ -9,15 +9,15 @@
 //
 // NEVER call ApiFetch directly from a component — always go through this hook.
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useLoading } from "../useLoading.js";
-import apiFetch from "../../lib/api/ApiFetch.js";
-import { DEFAULT_PAGE_SIZE } from "../../utils/constant.js";
-import { useToast } from "../../providers/ToastProvider.jsx";
-import { useTranslation } from "../../i18n/client.js";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLoading } from '../useLoading.js';
+import apiFetch from '../../lib/api/ApiFetch.js';
+import { DEFAULT_PAGE_SIZE } from '../../utils/constant.js';
+import { useToast } from '../../providers/ToastProvider.jsx';
+import { useTranslation } from '../../i18n/client.js';
 
-const MUTATION_METHODS = ["post", "put", "patch", "delete"];
+const MUTATION_METHODS = ['post', 'put', 'patch', 'delete'];
 
 function createToastId(method, url) {
   return `${method}_${url}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -25,7 +25,7 @@ function createToastId(method, url) {
 
 export function useRequest({
   url,
-  method = "get",
+  method = 'get',
   isPublic = false,
   isPaginated = false,
   autoFetch = false,
@@ -37,11 +37,12 @@ export function useRequest({
   syncToUrl = true,
   scrollLoad = false,
   skipInitialFetch = false,
+  headers,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const td = t("tableData", { returnObjects: true }) || {};
+  const td = t('tableData', { returnObjects: true }) || {};
 
   const [data, setData] = useState(initialData);
   const { isLoading, startLoading, stopLoading } = useLoading(false);
@@ -57,7 +58,7 @@ export function useRequest({
     if (!syncToUrl) return {};
     const params = {};
     searchParams.forEach((value, key) => {
-      if (value.startsWith("[") || value.startsWith("{")) {
+      if (value.startsWith('[') || value.startsWith('{')) {
         try {
           params[key] = JSON.parse(value);
           return;
@@ -86,11 +87,11 @@ export function useRequest({
   const setFilters = useCallback(
     (value) => {
       setFiltersState((prev) =>
-        typeof value === "function" ? value(prev) : value,
+        typeof value === 'function' ? value(prev) : value
       );
       if (syncToUrl) setPage(1);
     },
-    [syncToUrl],
+    [syncToUrl]
   );
 
   // Mirror filters into the URL query string.
@@ -98,8 +99,9 @@ export function useRequest({
     if (!syncToUrl) return;
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
-      if (v === undefined || v === null || v === "") return;
-      if (Array.isArray(v) || typeof v === "object") params.set(k, JSON.stringify(v));
+      if (v === undefined || v === null || v === '') return;
+      if (Array.isArray(v) || typeof v === 'object')
+        params.set(k, JSON.stringify(v));
       else params.set(k, String(v));
     });
     router.replace(`?${params.toString()}`, { scroll: false });
@@ -134,7 +136,7 @@ export function useRequest({
         showToast({
           id: currentToastId,
           message: td.requestInProgress,
-          severity: "loading",
+          severity: 'loading',
         });
       }
 
@@ -151,25 +153,42 @@ export function useRequest({
         // so the client doesn't JSON-stringify it (e.g. external-restore .enc
         // upload). Non-public client only.
         const isFormData =
-          typeof FormData !== "undefined" && params instanceof FormData;
-
-        if (method === "get") {
-          response = await client[isPaginated ? "getPaginated" : "get"](builtUrl, params);
-        } else if (method === "blob") {
+          typeof FormData !== 'undefined' && params instanceof FormData;
+        if (method === 'get') {
+          response = await client[isPaginated ? 'getPaginated' : 'get'](
+            builtUrl,
+            { ...params, customHeader: headers }
+          );
+        } else if (method === 'blob') {
           response = await client.blob(builtUrl);
           setData(response);
           if (onSuccessRef.current) onSuccessRef.current(response);
           return response;
-        } else if (isFormData && method === "post" && !isPublic) {
-          response = await apiFetch.post(builtUrl, params, false, undefined, true, {
-            suppressGlobalError: wantsAutoToast,
-          });
+        } else if (isFormData && method === 'post' && !isPublic) {
+          response = await apiFetch.post(
+            builtUrl,
+            params,
+            false,
+            undefined,
+            true,
+            {
+              suppressGlobalError: wantsAutoToast,
+            }
+          );
         } else if (wantsAutoToast && !isPublic) {
           // Auto-toasting mutation: settle the loading toast in place (one toast)
           // and suppress the global error toast to avoid a duplicate.
-          response = await apiFetch.submit(method, builtUrl, params, false, undefined, false, {
-            suppressGlobalError: true,
-          });
+          response = await apiFetch.submit(
+            method,
+            builtUrl,
+            params,
+            false,
+            undefined,
+            false,
+            {
+              suppressGlobalError: true,
+            }
+          );
         } else {
           response = await client[method](builtUrl, params);
         }
@@ -180,40 +199,44 @@ export function useRequest({
           showToast({
             id: currentToastId,
             message: response.message || td.operationSuccessful,
-            severity: "success",
+            severity: 'success',
             translationKey: response.translationKey,
           });
         }
 
-        setSuccessMessage(response.message || "OK");
+        setSuccessMessage(response.message || 'OK');
 
         if (scrollLoad) {
           setData((prev) =>
             page === 1
               ? response.data?.items || []
-              : [...(prev || []), ...(response.data?.items || [])],
+              : [...(prev || []), ...(response.data?.items || [])]
           );
         } else {
           setData(isPaginated ? response.data?.items : response.data);
         }
 
-        if (onSuccessRef.current && response.success) onSuccessRef.current(response);
+        if (onSuccessRef.current && response.success)
+          onSuccessRef.current(response);
 
         if (isPaginated && response.data) {
           setTotal(response.data.total ?? 0);
           if (!scrollLoad && response.data.page != null) {
             setPage((prev) =>
-              Number(response.data.page) === prev ? prev : Number(response.data.page),
+              Number(response.data.page) === prev
+                ? prev
+                : Number(response.data.page)
             );
           }
           if (response.data.pageSize != null) {
             setPageSize((prev) =>
               Number(response.data.pageSize) === prev
                 ? prev
-                : Number(response.data.pageSize),
+                : Number(response.data.pageSize)
             );
           }
-          if (scrollLoad) setHasMore(page * pageSize < (response.data.total ?? 0));
+          if (scrollLoad)
+            setHasMore(page * pageSize < (response.data.total ?? 0));
         }
 
         return response;
@@ -224,7 +247,7 @@ export function useRequest({
           showToast({
             id: currentToastId,
             message,
-            severity: "error",
+            severity: 'error',
             translationKey: e?.data?.translationKey || e?.translationKey,
           });
         }
@@ -257,14 +280,14 @@ export function useRequest({
       hasMore,
       scrollLoad,
       isMutationMethod,
-    ],
+    ]
   );
 
   const clearError = useCallback(() => setError(null), []);
 
   // Auto-fetch GETs on mount + whenever page/filters/refetch change.
   useEffect(() => {
-    if (autoFetch && method === "get") {
+    if (autoFetch && method === 'get') {
       if (isFirstRender.current && skipInitialFetch) {
         isFirstRender.current = false;
         return;
@@ -272,12 +295,22 @@ export function useRequest({
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFetch, method, fetchData, page, pageSize, filters, refetch, skipInitialFetch]);
+  }, [
+    autoFetch,
+    method,
+    fetchData,
+    page,
+    pageSize,
+    filters,
+    refetch,
+    skipInitialFetch,
+  ]);
 
   // Surface transport-level errors (set by ApiFetch.onError) as toasts.
   useEffect(() => {
     apiFetch.onError = (err) => {
-      const message = err?.data?.message || err?.message || td.somethingWentWrong;
+      const message =
+        err?.data?.message || err?.message || td.somethingWentWrong;
       setError(message);
       // Never toast auth/session (401) errors: on protected pages the session
       // failure already redirects to /login (onAuthFailure); on public pages an
@@ -287,15 +320,15 @@ export function useRequest({
       // Never toast subscription-inactive: it is always surfaced in place
       // (gentle student lock / actionable parent panel), never as a billing
       // toast — least of all to a child.
-      if (err?.data?.code === "SUBSCRIPTION_INACTIVE") return;
+      if (err?.data?.code === 'SUBSCRIPTION_INACTIVE') return;
       showToast({
         message,
-        severity: "error",
+        severity: 'error',
         translationKey: err?.data?.translationKey || err?.translationKey,
       });
     };
     apiFetch.onTooManyRequests = (code) => {
-      showToast({ message: code, severity: "error" });
+      showToast({ message: code, severity: 'error' });
     };
     return () => {
       apiFetch.onError = null;

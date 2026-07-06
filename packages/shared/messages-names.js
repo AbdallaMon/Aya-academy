@@ -22,4 +22,5 @@ export const messagesNames = {
   invoiceMessages: "invoice-messages",
   paymentTemplateMessages: "payment-template-messages",
   settingsMessages: "settings-messages",
+  whiteboardMessages: "whiteboard-messages",
 };

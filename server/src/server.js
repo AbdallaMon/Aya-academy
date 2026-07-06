@@ -24,6 +24,23 @@ if (ENV.backup.enabled) {
     });
 }
 
+// End-of-month subscription auto-renew cron (node-cron). Guarded so a failure
+// never crashes boot. The renewal logic itself is a stub for now (see
+// subscriptionUsecase.autoRenewSubscriptions).
+import("./infra/scheduler/subscriptionScheduler.js")
+  .then(({ startSubscriptionScheduler }) => startSubscriptionScheduler())
+  .catch((err) => {
+    console.error("[subscription-cron] failed to start:", err?.message || err);
+  });
+
+// Daily whiteboard-image retention cleanup (node-cron) — guarded so a failure
+// never crashes boot.
+import("./infra/scheduler/whiteboardRetentionScheduler.js")
+  .then(({ startWhiteboardRetentionScheduler }) => startWhiteboardRetentionScheduler())
+  .catch((err) => {
+    console.error("[whiteboard-retention] failed to start:", err?.message || err);
+  });
+
 process.on("uncaughtException", (err) => {
   console.error("Uncaught Exception:", err);
   process.exit(1);

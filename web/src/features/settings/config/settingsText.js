@@ -11,6 +11,9 @@ export const settingsText = {
     hourlyRateHint: "السعر بيتطبق على كل الباقات والفواتير.",
     currency: "العملة",
     currencyHint: "عملة واحدة تظهر في كل مكان (الباقات، الفواتير، العرض).",
+    whiteboardRetention: "مدة الاحتفاظ بصور السبورة (أيام)",
+    whiteboardRetentionHint:
+      "الصور اللي بتترفع على السبورة بتتحذف تلقائيًا بعد المدة دي لتوفير مساحة التخزين (من 1 إلى 180 يوم).",
     save: "حفظ",
     required: "هذا الحقل مطلوب",
     // currency labels
@@ -27,6 +30,9 @@ export const settingsText = {
     hourlyRateHint: "Applied to every plan and invoice.",
     currency: "Currency",
     currencyHint: "A single currency shown everywhere (plans, invoices, preview).",
+    whiteboardRetention: "Whiteboard image retention (days)",
+    whiteboardRetentionHint:
+      "Images uploaded on the whiteboard are auto-deleted after this many days to save storage (1 to 180).",
     save: "Save",
     required: "This field is required",
     USD: "US Dollar ($)",
