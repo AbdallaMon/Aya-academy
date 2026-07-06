@@ -16,19 +16,18 @@ import { uploadBoardImage, hydrateBoardFiles } from './boardImages.js';
 // opts: { sessionId, canUpload, token }
 export function useBoardPersistence(sessionKey, opts = {}) {
   const { sessionId, canUpload = false, token = null } = opts;
-
   const timer = useRef(null);
   const imageMapRef = useRef({});
   const uploadingRef = useRef(new Set());
   const lastScene = useRef({ elements: [], appState: {} });
   const [seedCount, setSeedCount] = useState(0);
   const loadingFromBackendRef = useRef(false);
-  const hasSession = !!(sessionKey && sessionId);
+  const hasSession = !!(sessionKey && sessionId) || token;
   const [isSaving, setIsSaving] = useState(false);
-  // ── Step 1: load from backend on mount, seed localStorage ──
+  const isLoadingTokenData = useRef(false);
   useEffect(() => {
     if (!hasSession) return;
-
+    if (isLoadingTokenData.current) return;
     let cancelled = false;
     (async () => {
       loadingFromBackendRef.current = true;
@@ -63,6 +62,7 @@ export function useBoardPersistence(sessionKey, opts = {}) {
 
   const initialData = useMemo(() => {
     if (!saved) return null;
+
     return {
       elements: saved.elements ?? [],
       appState: { ...(saved.appState ?? {}), collaborators: undefined },
@@ -75,6 +75,8 @@ export function useBoardPersistence(sessionKey, opts = {}) {
   // ── Step 3: persist to localStorage (fast) + backend (silent) ──
   const persistNow = useCallback(() => {
     if (!sessionKey) return;
+    if (isLoadingTokenData.current) return;
+
     const { elements, appState, files } = lastScene.current;
     const data = {
       elements,
@@ -92,9 +94,9 @@ export function useBoardPersistence(sessionKey, opts = {}) {
     boardChannel.saveScene(sessionKey, data);
     // Backend — silent, never blocks
     if (sessionId) {
-      boardChannel.saveToBackend(sessionId, data, setIsSaving);
+      boardChannel.saveToBackend(sessionId, data, setIsSaving, token);
     }
-  }, [sessionKey, canUpload, sessionId]);
+  }, [sessionKey, canUpload, sessionId, isLoadingTokenData, token]);
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (!isSaving) return;
@@ -114,7 +116,7 @@ export function useBoardPersistence(sessionKey, opts = {}) {
   const onChange = useCallback(
     (elements, appState, files) => {
       if (!sessionKey) return;
-
+      if (isLoadingTokenData.current) return;
       // if (!loadingFromBackendRef || loadingFromBackendRef.current) return;
       lastScene.current = { elements, appState, files };
       if (timer.current) clearTimeout(timer.current);
@@ -140,19 +142,20 @@ export function useBoardPersistence(sessionKey, opts = {}) {
         }
       }
     },
-    [sessionKey, canUpload, sessionId, persistNow, token]
+    [sessionKey, canUpload, sessionId, persistNow, token, isLoadingTokenData]
   );
 
   // Called once the Excalidraw API is ready — rebuild images from their URLs.
   const hydrate = useCallback(
     async (api) => {
+      if (isLoadingTokenData.current) return;
       if (!canUpload || !api?.addFiles) return;
       const map = imageMapRef.current;
       if (!map || Object.keys(map).length === 0) return;
       const files = await hydrateBoardFiles(map, token);
       if (files.length) api.addFiles(files);
     },
-    [canUpload, token]
+    [canUpload, token, isLoadingTokenData]
   );
 
   return { initialData, onChange, hydrate };

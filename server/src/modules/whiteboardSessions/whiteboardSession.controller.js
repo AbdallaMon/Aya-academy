@@ -131,6 +131,7 @@ class WhiteboardSessionController {
     const token =
       (typeof headerToken === "string" && headerToken) ||
       (typeof req.query.token === "string" ? req.query.token : null);
+    console.log(token, "token");
     const result = await whiteboardSessionUsecase.uploadImage({
       id: idParam(req.params.id),
       file: req.file,
@@ -144,9 +145,15 @@ class WhiteboardSessionController {
   // Save the full drawing scene — called silently by the client on every
   // debounced change batch. The caller is always an authenticated admin.
   async saveBoardData(req, res) {
+    const isAdmin = await resolveIsAdmin(req);
+    const headerToken = req.headers["x-whiteboard-token"];
+    const token =
+      typeof headerToken === "string" && headerToken ? headerToken : null;
     const result = await whiteboardSessionUsecase.saveBoardData({
       id: idParam(req.params.id),
       boardData: req.body.boardData,
+      token,
+      isAdmin,
     });
     return ok(res, result, whiteboardMessagesCodes.BOARD_DATA_SAVED, TK);
   }
@@ -189,7 +196,16 @@ class WhiteboardSessionController {
     res.setHeader("Cache-Control", "private, max-age=86400");
     return res.sendFile(absolutePath);
   }
+  async verifyAccessViaToken(req, res) {
+    const isAdmin = await resolveIsAdmin(req);
+    const headerToken = req.headers["x-whiteboard-token"];
+    const token =
+      typeof headerToken === "string" && headerToken ? headerToken : null;
+    const session = await whiteboardSessionUsecase.getPublicByToken({
+      token: token,
+    });
+    return ok(res, session);
+  }
 }
-
 export const whiteboardSessionController = new WhiteboardSessionController();
 export { WhiteboardSessionController };

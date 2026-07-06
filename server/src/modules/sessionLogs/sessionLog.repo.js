@@ -7,13 +7,33 @@
 
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
-import { sessionLogListSelect, sessionLogSelect, toSessionLog } from "./sessionLog.dto.js";
+import {
+  sessionLogListSelect,
+  sessionLogSelect,
+  toSessionLog,
+} from "./sessionLog.dto.js";
 
 class SessionLogRepo {
   async listSessionLogs({ where = {}, page, limit, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });
-
+    if (!where.sessionDate) {
+      const currentMonth = new Date().getMonth();
+      const firstDayOfCurrentMOnth = new Date(
+        new Date().getFullYear(),
+        currentMonth,
+        1,
+      );
+      const firstDayOfNextMonth = new Date(
+        new Date().getFullYear(),
+        currentMonth + 1,
+        1,
+      );
+      where.sessionDate = {
+        gte: firstDayOfCurrentMOnth,
+        lt: firstDayOfNextMonth,
+      };
+    }
     const [rows, total] = await Promise.all([
       db.sessionLog.findMany({
         where,
@@ -24,7 +44,12 @@ class SessionLogRepo {
       }),
       db.sessionLog.count({ where }),
     ]);
-    return { items: rows.map(toSessionLog), total, page: currentPage, pageSize: take };
+    return {
+      items: rows.map(toSessionLog),
+      total,
+      page: currentPage,
+      pageSize: take,
+    };
   }
 
   async findById({ id, client } = {}) {

@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { Box } from "@mui/material";
-import { MdOpenInNew, MdPlayArrow, MdStop, MdDelete } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
-import { usePermission } from "../../../hooks/usePermission.js";
-import { useRequest } from "../../../hooks/request/useRequest.js";
-import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
-import { useOpen } from "../../../hooks/useOpen.js";
-import { useTranslation } from "../../../i18n/client.js";
-import { localePath } from "../../../i18n/routing.js";
+import { useMemo } from 'react';
+import { Box } from '@mui/material';
+import { MdOpenInNew, MdPlayArrow, MdStop, MdDelete } from 'react-icons/md';
+import { PERMISSIONS } from '@aya/shared';
+import { usePermission } from '../../../hooks/usePermission.js';
+import { useRequest } from '../../../hooks/request/useRequest.js';
+import { useMultiRequest } from '../../../hooks/request/useMultiRequest.js';
+import { useOpen } from '../../../hooks/useOpen.js';
+import { useTranslation } from '../../../i18n/client.js';
+import { localePath } from '../../../i18n/routing.js';
 import {
   DataTable,
   PageHeader,
   RowActionsMenu,
   useConfirm,
-} from "../../../shared/components/index.js";
-import { WHITEBOARD_URL, WHITEBOARD_STATUS } from "../config/constant.js";
-import { buildWhiteboardColumns } from "../config/whiteboardColumns.js";
-import { useWhiteboardText } from "../config/whiteboardText.js";
-import CreateWhiteboardDialog from "../components/CreateWhiteboardDialog.jsx";
+} from '../../../shared/components/index.js';
+import { WHITEBOARD_URL, WHITEBOARD_STATUS } from '../config/constant.js';
+import { buildWhiteboardColumns } from '../config/whiteboardColumns.js';
+import { useWhiteboardText } from '../config/whiteboardText.js';
+import CreateWhiteboardDialog from '../components/CreateWhiteboardDialog.jsx';
 
 export default function WhiteboardListPage() {
   const txt = useWhiteboardText();
@@ -42,12 +42,15 @@ export default function WhiteboardListPage() {
     triggerRefetch,
   } = useRequest({
     url: WHITEBOARD_URL,
-    method: "get",
+    method: 'get',
     isPaginated: true,
     autoFetch: canManage,
   });
 
-  const mut = useMultiRequest({ url: WHITEBOARD_URL, onSuccess: () => triggerRefetch() });
+  const mut = useMultiRequest({
+    url: WHITEBOARD_URL,
+    onSuccess: () => triggerRefetch(),
+  });
 
   const onActivate = (row) => mut.postRequest(`${row.id}/actions/activate`);
   const onEnd = (row) => mut.postRequest(`${row.id}/actions/end`);
@@ -63,8 +66,8 @@ export default function WhiteboardListPage() {
     () => [
       ...baseColumns,
       {
-        field: "actions",
-        type: "actions",
+        field: 'actions',
+        type: 'actions',
         headerName: txt.status,
         width: 80,
         renderCell: ({ row }) => (
@@ -98,14 +101,18 @@ export default function WhiteboardListPage() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [baseColumns, txt, lng],
+    [baseColumns, txt, lng]
   );
 
   if (!canManage) return null;
 
   return (
     <Box>
-      <PageHeader title={txt.pageTitle} />
+      <PageHeader
+        title={txt.pageTitle}
+        createLabel={txt.createBtn}
+        onCreate={createDialog.open}
+      />
       <DataTable
         initialRows={data || []}
         columns={columns}

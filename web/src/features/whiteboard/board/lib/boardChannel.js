@@ -34,13 +34,16 @@ export const boardChannel = {
   // ── backend persistence (silent — never throws) ──────────
   // Save the drawing scene to the backend. sessionId is the numeric DB id.
   // Called silently; failures are swallowed so the board never breaks.
-  async saveToBackend(sessionId, boardData, setIsSaving) {
+  async saveToBackend(sessionId, boardData, setIsSaving, token) {
     if (typeof window === 'undefined' || !sessionId) return;
     setIsSaving(true);
     try {
       await fetch(`${API}/whiteboard-sessions/${sessionId}/board-data`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'X-Whiteboard-Token': token } : {}),
+        },
         credentials: 'include',
         body: JSON.stringify({ boardData }),
       });
@@ -54,7 +57,7 @@ export const boardChannel = {
   // Load the drawing scene from the backend. Returns the boardData JSON or null.
   // `token` is passed for public boards (X-Whiteboard-Token header).
   async loadFromBackend(sessionId, token) {
-    if (typeof window === 'undefined' || !sessionId) return null;
+    if (typeof window === 'undefined' || (!sessionId && !token)) return null;
     try {
       const res = await fetch(
         `${API}/whiteboard-sessions/${sessionId}/board-data`,
@@ -65,7 +68,8 @@ export const boardChannel = {
       );
       if (!res.ok) return null;
       return await res.json();
-    } catch {
+    } catch (e) {
+      console.log(e.message, 'loadFromBackend error');
       return null;
     }
   },

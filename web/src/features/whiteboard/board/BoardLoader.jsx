@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { Box, CircularProgress, Typography } from "@mui/material";
-import { useRequest } from "../../../hooks/request/useRequest.js";
-import { WHITEBOARD_URL } from "../config/constant.js";
-import { useWhiteboardText } from "../config/whiteboardText.js";
-import WhiteboardBoard from "./WhiteboardBoard.jsx";
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { useRequest } from '../../../hooks/request/useRequest.js';
+import { WHITEBOARD_URL } from '../config/constant.js';
+import { useWhiteboardText } from '../config/whiteboardText.js';
+import WhiteboardBoard from './WhiteboardBoard.jsx';
 
 // mode: "private" (authed, by id) | "public" (token, no auth).
 export default function BoardLoader({ mode, idOrToken }) {
   const txt = useWhiteboardText();
-  const isPublic = mode === "public";
+  const isPublic = mode === 'public';
   const url = isPublic
     ? `${WHITEBOARD_URL}/public/${idOrToken}`
     : `${WHITEBOARD_URL}/${idOrToken}`;
 
   const { data, isLoading, error } = useRequest({
     url,
-    method: "get",
+    method: 'get',
     isPublic,
     autoFetch: true,
     syncToUrl: false,
@@ -24,7 +24,14 @@ export default function BoardLoader({ mode, idOrToken }) {
 
   if (isLoading) {
     return (
-      <Box sx={{ position: "fixed", inset: 0, display: "grid", placeItems: "center" }}>
+      <Box
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -34,12 +41,12 @@ export default function BoardLoader({ mode, idOrToken }) {
     return (
       <Box
         sx={{
-          position: "fixed",
+          position: 'fixed',
           inset: 0,
-          display: "grid",
-          placeItems: "center",
+          display: 'grid',
+          placeItems: 'center',
           p: 3,
-          textAlign: "center",
+          textAlign: 'center',
         }}
       >
         <Typography variant="h5">{txt.unavailable}</Typography>
@@ -52,18 +59,18 @@ export default function BoardLoader({ mode, idOrToken }) {
   const students = (data.students ?? []).map((s) =>
     s.student
       ? { id: s.student.id, name: s.student.nickname || s.student.name }
-      : { id: s.id, name: s.name },
+      : { id: s.id, name: s.name }
   );
 
   return (
     <WhiteboardBoard
-      sessionKey={isPublic ? `t-${idOrToken}` : `s-${data.id}`}
+      sessionKey={isPublic ? `s-${data.id}` : `s-${data.id}`}
       title={data.title}
       students={students}
       // Private board uploads images to the backend; public board is view-only
       // (token is passed so it can still fetch a public session's images).
       sessionId={data.id}
-      canUpload={!isPublic}
+      canUpload={true}
       token={isPublic ? idOrToken : null}
     />
   );

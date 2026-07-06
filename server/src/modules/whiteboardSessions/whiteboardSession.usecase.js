@@ -170,19 +170,9 @@ class WhiteboardSessionUsecase {
   // The teacher inserts an image on the board; the file is stored on disk and we
   // keep only the reference, linked to the session.
   async uploadImage({ id, file, isAdmin, token }) {
-    if (!isAdmin) {
-      const session = token
-        ? await whiteboardSessionRepo.getByTokenHash({
-            tokenHash: hashShareToken(token),
-          })
-        : null;
-      const ok =
-        session &&
-        session.id === sessionId &&
-        session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
-      if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
-    }
-    await this.#assertExists(id);
+    console.log(id, file, isAdmin, token, "uploadImage");
+    await this.checkIfCanAccessBoardSession({ isAdmin, id, token });
+
     if (!file) throw badRequest(whiteboardMessagesCodes.IMAGE_REQUIRED);
     const image = await whiteboardSessionRepo.createImage({
       sessionId: id,
@@ -200,18 +190,9 @@ class WhiteboardSessionUsecase {
     if (!image || image.sessionId !== sessionId) {
       throw notFound(whiteboardMessagesCodes.IMAGE_NOT_FOUND);
     }
-    if (!isAdmin) {
-      const session = token
-        ? await whiteboardSessionRepo.getByTokenHash({
-            tokenHash: hashShareToken(token),
-          })
-        : null;
-      const ok =
-        session &&
-        session.id === sessionId &&
-        session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
-      if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
-    }
+
+    await this.checkIfCanAccessBoardSession({ isAdmin, id: sessionId, token });
+
     return {
       absolutePath: whiteboardImagePath(image.storageKey),
       mimeType: image.mimeType,
@@ -276,16 +257,12 @@ class WhiteboardSessionUsecase {
   // ── board data persistence ─────────────────────────────
   // Save the full drawing scene (elements, appState, imageMap) to the DB.
   // Called silently from the client on every debounced change batch.
-  async saveBoardData({ id, boardData }) {
-    await this.#assertExists(id);
+  async saveBoardData({ id, boardData, token, isAdmin }) {
+    await this.checkIfCanAccessBoardSession({ isAdmin, id, token });
     await whiteboardSessionRepo.saveBoardData({ id, boardData });
     return { id };
   }
-
-  // Load the saved drawing scene so the board can restore its state on open.
-  // Admin access (isAdmin) OR public access with a valid token.
-  async getBoardData({ id, token, isAdmin }) {
-    await this.#assertExists(id);
+  async checkIfCanAccessBoardSession({ isAdmin, id, token }) {
     if (!isAdmin) {
       const session = token
         ? await whiteboardSessionRepo.getByTokenHash({
@@ -297,7 +274,18 @@ class WhiteboardSessionUsecase {
         session.id === id &&
         session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
       if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
+      return true;
+    } else if (isAdmin) {
+      return true;
+    } else {
+      throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
     }
+    return true;
+  }
+  // Load the saved drawing scene so the board can restore its state on open.
+  // Admin access (isAdmin) OR public access with a valid token.
+  async getBoardData({ id, token, isAdmin }) {
+    await this.checkIfCanAccessBoardSession({ isAdmin, id, token });
     const row = await whiteboardSessionRepo.getBoardData({ id });
     return row?.boardData ?? null;
   }

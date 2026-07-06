@@ -30,11 +30,11 @@ export async function uploadBoardImage(sessionId, file, token) {
   const blob = dataURLtoBlob(file.dataURL);
   const form = new FormData();
   form.append('file', blob, `board-${file.id}`);
-  form.append('token', token);
   const res = await fetch(`${API}/whiteboard-sessions/${sessionId}/images`, {
     method: 'POST',
     body: form,
     credentials: 'include',
+    headers: token ? { 'X-Whiteboard-Token': token } : undefined,
   });
   if (!res.ok) throw new Error('upload failed');
   const json = await res.json();
