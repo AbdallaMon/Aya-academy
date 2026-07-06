@@ -252,7 +252,8 @@ export default function UserDetailPage({ userId }) {
         txt={txt}
         can={{
           ban: canBan,
-          sendReport: canSendReport && isStudent,
+          // Send-report button temporarily disabled in the dashboard (kept in backend). Uncomment to restore.
+          // sendReport: canSendReport && isStudent,
           sendInvite: canSendInvite && Boolean(inviteParent),
         }}
         actions={{

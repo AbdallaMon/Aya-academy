@@ -8,7 +8,7 @@ import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { uploadWhiteboardImage } from "./whiteboardImage.storage.js";
 
 const whiteboardSessionRoutes = Router();
-
+// todo the get and the image get and image upload either have token or user is authenticated
 // PUBLIC — token viewer. Declared before the authenticated routes; "/public/:token"
 // can never collide with "/:id" because "public" is a fixed segment.
 whiteboardSessionRoutes.get(
@@ -21,6 +21,12 @@ whiteboardSessionRoutes.get(
 whiteboardSessionRoutes.get(
   "/:sessionId/images/:imageId/raw",
   asyncHandler(whiteboardSessionController.serveImage),
+);
+// Upload a board image (multipart "file"). Stored on disk + linked to the session.
+whiteboardSessionRoutes.post(
+  "/:id/images",
+  uploadWhiteboardImage,
+  asyncHandler(whiteboardSessionController.uploadImage),
 );
 
 const requireManage = [
@@ -83,12 +89,20 @@ whiteboardSessionRoutes.delete(
   asyncHandler(whiteboardSessionController.removeStudent),
 );
 
-// Upload a board image (multipart "file"). Stored on disk + linked to the session.
-whiteboardSessionRoutes.post(
-  "/:id/images",
+// ── board data persistence ────────────────────────────────
+// Save the full drawing scene — admin only, called silently (debounced).
+whiteboardSessionRoutes.put(
+  "/:id/board-data",
   ...requireManage,
-  uploadWhiteboardImage,
-  asyncHandler(whiteboardSessionController.uploadImage),
+  validate(WhiteboardSessionValidation.saveBoardDataSchema),
+  asyncHandler(whiteboardSessionController.saveBoardData),
+);
+
+// Load the drawing scene — PUBLIC-mounted (admin cookie OR public token header).
+// Allows a public board viewer to restore the saved drawing state.
+whiteboardSessionRoutes.get(
+  "/:id/board-data",
+  asyncHandler(whiteboardSessionController.getBoardData),
 );
 
 export default whiteboardSessionRoutes;

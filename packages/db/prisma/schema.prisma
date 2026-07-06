@@ -330,16 +330,17 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
-// Interactive whiteboard: an admin-run live board session. Only the session
-// lifecycle + attached students are persisted (the drawing itself lives in the
-// browser's localStorage). A PUBLIC session exposes a shareable token link; only
-// the SHA-256 hash of the raw token is stored.
+// Interactive whiteboard: an admin-run live board session. The drawing scene
+// (elements, appState, imageMap) is persisted to boardData so it survives across
+// devices/browsers. localStorage acts as a fast local cache. A PUBLIC session
+// exposes a shareable token link; only the SHA-256 hash of the raw token is stored.
 model WhiteboardSession {
   id              Int                        @id @default(autoincrement())
   title           String
   status          WhiteboardSessionStatus    @default(DRAFT)
   visibility      WhiteboardVisibility       @default(PRIVATE)
   publicTokenHash String?                    @unique
+  boardData       Json?
   createdById     Int
   createdBy       User                       @relation("WhiteboardCreatedBy", fields: [createdById], references: [id])
   students        WhiteboardSessionStudent[]

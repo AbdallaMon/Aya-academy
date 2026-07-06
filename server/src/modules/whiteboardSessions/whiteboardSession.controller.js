@@ -19,12 +19,15 @@ async function resolveIsAdmin(req) {
   try {
     const cookieToken = req.cookies?.[AUTH_COOKIE];
     const header = req.headers.authorization ?? "";
-    const token = cookieToken || (header.startsWith("Bearer ") ? header.slice(7) : null);
+    const token =
+      cookieToken || (header.startsWith("Bearer ") ? header.slice(7) : null);
     if (!token) return false;
     const payload = JwtService.verifyAccess(token);
     const user = await getAuthUserById(payload.id);
     if (!user || !user.isActive) return false;
-    return getPermissionsForRole(user.role).includes(PERMISSIONS.WHITEBOARD.MANAGE);
+    return getPermissionsForRole(user.role).includes(
+      PERMISSIONS.WHITEBOARD.MANAGE,
+    );
   } catch {
     return false;
   }
@@ -121,11 +124,46 @@ class WhiteboardSessionController {
 
   // ── board images ────────────────────────────────────────
   async uploadImage(req, res) {
+    const isAdmin = await resolveIsAdmin(req);
+    // Prefer the token from a header (kept out of URLs/logs); fall back to the
+    // query param for any legacy caller.
+    const headerToken = req.headers["x-whiteboard-token"];
+    const token =
+      (typeof headerToken === "string" && headerToken) ||
+      (typeof req.query.token === "string" ? req.query.token : null);
     const result = await whiteboardSessionUsecase.uploadImage({
       id: idParam(req.params.id),
       file: req.file,
+      isAdmin,
+      token,
     });
     return created(res, result);
+  }
+
+  // ── board data persistence ──────────────────────────────
+  // Save the full drawing scene — called silently by the client on every
+  // debounced change batch. The caller is always an authenticated admin.
+  async saveBoardData(req, res) {
+    const result = await whiteboardSessionUsecase.saveBoardData({
+      id: idParam(req.params.id),
+      boardData: req.body.boardData,
+    });
+    return ok(res, result, whiteboardMessagesCodes.BOARD_DATA_SAVED, TK);
+  }
+
+  // Load the saved drawing scene so the board can restore its state on open.
+  // Admin access (cookie) OR public access with a valid token header.
+  async getBoardData(req, res) {
+    const isAdmin = await resolveIsAdmin(req);
+    const headerToken = req.headers["x-whiteboard-token"];
+    const token =
+      typeof headerToken === "string" && headerToken ? headerToken : null;
+    const data = await whiteboardSessionUsecase.getBoardData({
+      id: idParam(req.params.id),
+      token,
+      isAdmin,
+    });
+    return ok(res, data);
   }
 
   // PUBLIC-mounted: admin (cookie) OR a valid public-session token may view.
@@ -137,12 +175,13 @@ class WhiteboardSessionController {
     const token =
       (typeof headerToken === "string" && headerToken) ||
       (typeof req.query.token === "string" ? req.query.token : null);
-    const { absolutePath, mimeType } = await whiteboardSessionUsecase.serveImage({
-      sessionId: idParam(req.params.sessionId),
-      imageId: idParam(req.params.imageId),
-      token,
-      isAdmin,
-    });
+    const { absolutePath, mimeType } =
+      await whiteboardSessionUsecase.serveImage({
+        sessionId: idParam(req.params.sessionId),
+        imageId: idParam(req.params.imageId),
+        token,
+        isAdmin,
+      });
     if (mimeType) res.type(mimeType);
     // Defense-in-depth: never let the browser sniff a stored file into an
     // executable type (raster mimes are enforced at upload; SVG is disallowed).

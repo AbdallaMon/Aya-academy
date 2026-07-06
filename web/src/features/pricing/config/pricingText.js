@@ -6,7 +6,7 @@ export const pricingText = {
   ar: {
     eyebrow: "الأسعار",
     title: "باقات مرنة تناسب كل أسرة",
-    subtitle: "اختر الباقة المناسبة لطفلك وابدأ رحلة تعلّم القرآن اليوم.",
+    subtitle: "اختر الباقة المناسبة للطالب وابدأ رحلة تعلّم القرآن اليوم.",
     perMonth: "/ شهرياً",
     hours: "ساعة",
     featured: "الأكثر اختياراً",
@@ -20,7 +20,7 @@ export const pricingText = {
     // Real inclusions shared by every plan (plans differ only by hours).
     commonFeatures: [
       "حصص مباشرة ودروس موجّهة",
-      "شرح ثنائي اللغة (عربي / إنجليزي)",
+      "شرح بما يناسب لغة الطالب",
       "لوحة متابعة لولي الأمر",
       "نقاط وأوسمة ولوحة صدارة",
       "إلغاء في أي وقت",
@@ -29,7 +29,7 @@ export const pricingText = {
   en: {
     eyebrow: "Pricing",
     title: "Flexible plans for every family",
-    subtitle: "Pick the right plan for your child and start the Quran journey today.",
+    subtitle: "Pick the right plan for the student and start the Quran journey today.",
     perMonth: "/ month",
     hours: "hours",
     featured: "Most popular",
@@ -43,7 +43,7 @@ export const pricingText = {
     // Real inclusions shared by every plan (plans differ only by hours).
     commonFeatures: [
       "Live sessions & guided lessons",
-      "Bilingual explanations (Arabic / English)",
+      "Explanations in the student’s language",
       "Parent progress dashboard",
       "Points, badges & leaderboard",
       "Cancel anytime",

@@ -9,7 +9,9 @@ export class WhiteboardSessionValidation {
       .min(1, whiteboardMessagesCodes.TITLE_REQUIRED)
       .max(120),
     studentIds: z
-      .array(z.number().int().positive(whiteboardMessagesCodes.STUDENT_ID_INVALID))
+      .array(
+        z.number().int().positive(whiteboardMessagesCodes.STUDENT_ID_INVALID),
+      )
       .optional()
       .default([]),
     isPublic: z.boolean().optional().default(false),
@@ -20,5 +22,10 @@ export class WhiteboardSessionValidation {
       .number()
       .int()
       .positive(whiteboardMessagesCodes.STUDENT_ID_INVALID),
+  });
+
+  // boardData is a free-form JSON object: { elements, appState, imageMap, files }
+  static saveBoardDataSchema = z.object({
+    boardData: z.record(z.unknown()),
   });
 }

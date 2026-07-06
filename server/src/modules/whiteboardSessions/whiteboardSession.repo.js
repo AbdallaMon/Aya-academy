@@ -5,7 +5,10 @@
 
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
-import { sessionDetailSelect, sessionListSelect } from "./whiteboardSession.dto.js";
+import {
+  sessionDetailSelect,
+  sessionListSelect,
+} from "./whiteboardSession.dto.js";
 
 class WhiteboardSessionRepo {
   async list({ where, page, limit, client } = {}) {
@@ -107,7 +110,9 @@ class WhiteboardSessionRepo {
   }
 
   listImagesForSession({ sessionId, client } = {}) {
-    return (client ?? prisma).whiteboardImage.findMany({ where: { sessionId } });
+    return (client ?? prisma).whiteboardImage.findMany({
+      where: { sessionId },
+    });
   }
 
   // Images older than `cutoff` — reclaimed by the retention cron.
@@ -124,7 +129,24 @@ class WhiteboardSessionRepo {
   }
 
   deleteImagesForSession({ sessionId, client } = {}) {
-    return (client ?? prisma).whiteboardImage.deleteMany({ where: { sessionId } });
+    return (client ?? prisma).whiteboardImage.deleteMany({
+      where: { sessionId },
+    });
+  }
+
+  // ── board data persistence ─────────────────────────────
+  saveBoardData({ id, boardData, client } = {}) {
+    return (client ?? prisma).whiteboardSession.update({
+      where: { id },
+      data: { boardData },
+    });
+  }
+
+  getBoardData({ id, client } = {}) {
+    return (client ?? prisma).whiteboardSession.findUnique({
+      where: { id },
+      select: { boardData: true },
+    });
   }
 }
 

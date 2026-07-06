@@ -14,23 +14,23 @@ const HERO = {
     eyebrow: 'قرآن · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
     title: 'رحلة مُحبّبة لتعلّم القرآن والأخلاق الجميلة',
     subtitle:
-      'دروس ممتعة وآمنة للأطفال من ٥ سنوات فأكثر — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
+      'دروس ممتعة وآمنة للطلاب من ٥ سنوات فأكثر — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
     primary: 'احجز حصة مجانية',
     secondary: 'جرّب ألعابنا التفاعلية 🎮',
     freeTrial: 'بدون بطاقة دفع · بدون التزام · إلغاء في أي وقت',
-    chips: ['معلّم خاص لطفلك', 'تلاوة واضحة', 'متابعة لولي الأمر'],
-    imgAlt: 'أطفال يتعلّمون القرآن بسعادة',
+    chips: ['معلّم خاص للطالب', 'تلاوة واضحة', 'متابعة لولي الأمر'],
+    imgAlt: 'طلاب يتعلّمون القرآن بسعادة',
   },
   en: {
     eyebrow: 'Quran · Arabic · Islamic studies · Manners · Games',
     title: 'A loving journey to learn the Quran and beautiful manners',
     subtitle:
-      'Fun, safe lessons for kids aged 5 and up — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
+      'Fun, safe lessons for students aged 5 and up — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
     primary: 'Book a free session',
     secondary: 'Try our interactive games 🎮',
     freeTrial: 'No card · No commitment · Cancel anytime',
-    chips: ['Your child’s own teacher', 'Clear recitation', 'Parent tracking'],
-    imgAlt: 'Children happily learning the Quran',
+    chips: ['The student’s own teacher', 'Clear recitation', 'Parent tracking'],
+    imgAlt: 'Students happily learning the Quran',
   },
 };
 

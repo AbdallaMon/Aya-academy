@@ -1,6 +1,7 @@
-import { SESSION_SUBJECTS, USER_ROLES } from "@aya/shared";
+import { NOTIFICATION_TYPES, SESSION_SUBJECTS, USER_ROLES } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
+import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { sessionLogRepo } from "./sessionLog.repo.js";
 import { sessionLogMessagesCodes } from "./sessionLog.messages.js";
 
@@ -113,7 +114,38 @@ class SessionLogUsecase {
       createdById: authUser.id,
     };
 
-    return sessionLogRepo.create({ data });
+    const created = await sessionLogRepo.create({ data });
+
+    await this.notifyParents(created);
+
+    return created;
+  }
+
+  /** Notify the student's parent(s) that a new session was logged. Best-effort. */
+  async notifyParents(sessionLog) {
+    try {
+      const parentIds = await userRepo.getParentIdsForStudent(sessionLog.studentId);
+      if (!parentIds.length) return;
+
+      const studentName =
+        sessionLog.student?.nickname || sessionLog.student?.name || "";
+
+      await notificationUsecase.createManyForUsers(parentIds, {
+        type: NOTIFICATION_TYPES.SESSION_LOGGED,
+        titleAr: "تم تسجيل حصة جديدة",
+        titleEn: "A new session was logged",
+        bodyAr: studentName
+          ? `تم تسجيل حصة جديدة لـ ${studentName}. اضغط لعرض التفاصيل.`
+          : "تم تسجيل حصة جديدة لطفلك. اضغط لعرض التفاصيل.",
+        bodyEn: studentName
+          ? `A new session was logged for ${studentName}. Tap to view the details.`
+          : "A new session was logged for your child. Tap to view the details.",
+        link: `/dashboard/session-log`,
+        dataJson: { sessionLogId: sessionLog.id, studentId: sessionLog.studentId },
+      });
+    } catch {
+      // notification failures must not break session logging
+    }
   }
 
   async update({ id, authUser, ...input }) {

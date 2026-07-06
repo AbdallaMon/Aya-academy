@@ -8,7 +8,8 @@
 //   • Every hadith is authentic (صحيح / حسن), with its narrator (الراوي), source
 //     book (المصدر) and grade (الدرجة) — verified against the Hadith Encyclopedia
 //     of الدرر السنية (dorar.net). Each `hadith` block links back to it.
-//   • Pedagogy is practical and concrete, written for parents of young children.
+//   • Pedagogy is practical and concrete — most posts address parents of young
+//     children; posts in the `adults` category address adult learners directly.
 //
 // Body is an ordered array of typed blocks rendered by features/blog/components/
 // ArticleBody.jsx. Supported block types:
@@ -30,6 +31,7 @@
 export const blogCategories = {
   virtue: { ar: 'فضائل وأجر', en: 'Virtue & reward' },
   parenting: { ar: 'للأهل', en: 'For parents' },
+  adults: { ar: 'للكبار', en: 'For adults' },
   memorization: { ar: 'الحفظ والمراجعة', en: 'Memorization' },
   manners: { ar: 'الأخلاق', en: 'Manners' },
   dua: { ar: 'دعاء وأذكار', en: 'Dua & dhikr' },
@@ -41,6 +43,194 @@ export const blogCategories = {
 // 'warning'|'info'). Covers are composed from theme tokens so they stay crisp in
 // light/dark and RTL — no raster assets to manage.
 const articles = [
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    slug: 'adults-start-quran-journey',
+    datePublished: '2026-07-05',
+    readingTime: 8,
+    categories: ['adults', 'memorization'],
+    emoji: '🌱',
+    accent: 'secondary',
+    tags: [
+      { ar: 'للكبار', en: 'For adults' },
+      { ar: 'حفظ القرآن', en: 'Quran memorization' },
+    ],
+    title: {
+      ar: 'لم يفُت الأوان: كيف يبدأ الكبار رحلتهم مع القرآن حفظًا وفهمًا',
+      en: 'It’s Never Too Late: How Adults Can Begin Their Journey with the Quran',
+    },
+    description: {
+      ar: 'تظنّ أن الحفظ للصغار وحدهم؟ آياتٌ محكمة وأحاديث صحيحة تؤكّد أن باب القرآن مفتوحٌ لكل عمر، وأن تعثّرك في البداية أجرٌ لا نقص. هذه خطة عملية للكبار المشغولين.',
+      en: 'Think memorization is only for children? Firm verses and authentic hadiths confirm the door of the Quran is open at every age — and that your early struggle is reward, not shortcoming. Here is a practical plan for busy adults.',
+    },
+    body: [
+      {
+        type: 'p',
+        text: {
+          ar: 'كثيرٌ من الكبار يؤجّلون البدء مع القرآن بحجّةٍ واحدة: «فات الأوان، الحفظ للصغار». وهذا الظنّ يحرم صاحبه من خيرٍ عظيم لا علاقة له بالعمر. فكثيرٌ من الصحابة أسلموا كبارًا ثم صاروا حَمَلة القرآن وأئمّته، والله لم يشترط سنًّا لحامل كتابه. تعال نُزِل هذا الحاجز أولًا بالدليل، ثم نبني خطةً تناسب انشغالك.',
+          en: 'Many adults keep postponing their start with the Quran on one excuse: “it’s too late, memorization is for the young.” That assumption robs a person of an immense good that has nothing to do with age. Many Companions embraced Islam as grown adults, then became carriers and leaders of the Quran — and Allah set no age condition for the one who carries His Book. Let us remove this barrier first with evidence, then build a plan that fits a busy life.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'القرآن مُيسَّرٌ لكل عمر', en: 'The Quran is made easy for every age' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'أعظم ما يطمئن المبتدئ الكبير أنّ الله تكفّل بتيسير كتابه للحفظ والتذكّر، وكرّر هذا الوعد في سورة القمر أربع مرات كأنه يقول لك: لا تخفْ من الصعوبة، فقد يسّرتُه لك:',
+          en: 'The greatest reassurance for an adult beginner is that Allah Himself guaranteed to make His Book easy to memorize and remember — repeating this promise four times in Surah Al-Qamar, as if telling you: do not fear the difficulty, for I have made it easy for you:',
+        },
+      },
+      {
+        type: 'ayah',
+        arabic: 'وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ',
+        surah: { ar: 'سورة القمر — ١٧', en: 'Surah Al-Qamar — 17' },
+        meaning: {
+          ar: 'ولقد سهّلنا القرآن للحفظ والفهم والاتّعاظ، فهل من متّعظٍ يُقبل عليه؟ فالتيسير وعدٌ من الله، والعمر ليس عائقًا أمام من صدق في الطلب.',
+          en: 'We have indeed made the Quran easy to memorize, understand and take heed from — so is there any who will take heed? Ease is a promise from Allah, and age is no barrier for the one sincere in seeking.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'وللمتعثّر أجران — لا تخجل من بدايتك', en: 'The one who struggles has a double reward' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'ربما يثقل لسانُ الكبير بالحرف، ويطول عليه حفظ الآية القصيرة. والبشارة النبوية تقلب هذا «الضعف» إلى فضل مضاعف: فالماهر بالقرآن في منزلةٍ عالية، والذي يشقّ عليه ويتعتع فيه له أجران — أجر التلاوة وأجر المجاهدة.',
+          en: 'An adult’s tongue may stumble over the letters, and a short verse may take long to settle. The Prophetic glad tiding turns this “weakness” into a doubled virtue: the one proficient in the Quran holds a high rank, and the one for whom it is hard, who falters in it, has two rewards — for reciting and for striving.',
+        },
+      },
+      {
+        type: 'hadith',
+        arabic: 'الْمَاهِرُ بِالْقُرْآنِ مَعَ السَّفَرَةِ الْكِرَامِ الْبَرَرَةِ، وَالَّذِي يَقْرَأُ الْقُرْآنَ وَيَتَتَعْتَعُ فِيهِ وَهُوَ عَلَيْهِ شَاقٌّ لَهُ أَجْرَانِ',
+        narrator: { ar: 'عائشة رضي الله عنها', en: 'Aisha (may Allah be pleased with her)' },
+        source: { ar: 'صحيح مسلم (٧٩٨)', en: 'Sahih Muslim (798)' },
+        grade: { ar: 'صحيح', en: 'Sahih (authentic)' },
+        muhaddith: 'مسلم',
+        dorarUrl: 'https://dorar.net/hadith/search?q=%D8%A7%D9%84%D9%85%D8%A7%D9%87%D8%B1%20%D8%A8%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D9%85%D8%B9%20%D8%A7%D9%84%D8%B3%D9%81%D8%B1%D8%A9%20%D8%A7%D9%84%D9%83%D8%B1%D8%A7%D9%85%20%D8%A7%D9%84%D8%A8%D8%B1%D8%B1%D8%A9%20%D9%88%D8%A7%D9%84%D8%B0%D9%8A%20%D9%8A%D9%82%D8%B1%D8%A3%20%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D9%88%D9%8A%D8%AA%D8%AA%D8%B9%D8%AA%D8%B9%20%D9%81%D9%8A%D9%87%20%D9%88%D9%87%D9%88%20%D8%B9%D9%84%D9%8A%D9%87%20%D8%B4%D8%A7%D9%82%20%D9%84%D9%87%20%D8%A3%D8%AC%D8%B1%D8%A7%D9%86',
+        explanation: {
+          ar: 'فلا تقِس نفسك بالصغير الذي يحفظ سريعًا؛ تعثّرك اليوم مكتوبٌ لك أجرين، فداوِم ولا تيأس، فأنت أقرب إلى الأجر لا أبعد عنه.',
+          en: 'Do not measure yourself against a child who memorizes quickly; your stumbling today is recorded as two rewards. Keep going and do not despair — you are nearer to reward, not farther from it.',
+        },
+      },
+      {
+        type: 'callout',
+        tone: 'tip',
+        title: { ar: 'أعِد تأطير الصعوبة', en: 'Reframe the difficulty' },
+        text: {
+          ar: 'كلّما شعرت أن الآية عصيّة عليك، ذكّر نفسك: هذه هي اللحظة التي يتضاعف فيها أجري. حوّل الإحباط إلى وقودٍ للاستمرار، فالثبات — لا السرعة — هو ميزان النجاح.',
+          en: 'Whenever a verse feels stubborn, remind yourself: this is the very moment my reward is doubled. Turn frustration into fuel to continue — steadiness, not speed, is the true measure of success.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'كل آيةٍ تحفظها ترفع منزلتك', en: 'Every verse you learn raises your rank' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'وليس الأمر مجرّد أجرٍ يُكتب؛ بل رفعةٌ دائمة في الآخرة تتناسب مع قدر ما حفظت. فصاحب القرآن يُقال له يوم القيامة أن يرتقي في درجات الجنة بعدد آياته، ولو بدأ كبيرًا. كل آيةٍ تضيفها اليوم درجةٌ تنتظرك غدًا.',
+          en: 'And it is not merely a reward recorded; it is a lasting elevation in the Hereafter matching how much you carried. The companion of the Quran will be told on the Day of Judgment to ascend through the ranks of Paradise by the count of the verses they knew — even if they began late. Every verse you add today is a rank awaiting you tomorrow.',
+        },
+      },
+      {
+        type: 'hadith',
+        arabic: 'يُقَالُ لِصَاحِبِ الْقُرْآنِ: اقْرَأْ وَارْتَقِ وَرَتِّلْ كَمَا كُنْتَ تُرَتِّلُ فِي الدُّنْيَا، فَإِنَّ مَنْزِلَتَكَ عِنْدَ آخِرِ آيَةٍ تَقْرَؤُهَا',
+        narrator: { ar: 'عبد الله بن عمرو بن العاص رضي الله عنهما', en: 'Abdullah ibn Amr ibn al-As (may Allah be pleased with them)' },
+        source: { ar: 'سنن أبي داود (١٤٦٤)', en: 'Sunan Abi Dawud (1464)' },
+        grade: { ar: 'صحيح', en: 'Sahih (authentic)' },
+        muhaddith: 'الألباني',
+        dorarUrl: 'https://dorar.net/hadith/search?q=%D8%A7%D9%82%D8%B1%D8%A3%20%D9%88%D8%A7%D8%B1%D8%AA%D9%82%20%D9%88%D8%B1%D8%AA%D9%84%20%D9%83%D9%85%D8%A7%20%D9%83%D9%86%D8%AA%20%D8%AA%D8%B1%D8%AA%D9%84%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%AF%D9%86%D9%8A%D8%A7%20%D9%81%D8%A5%D9%86%20%D9%85%D9%86%D8%B2%D9%84%D8%AA%D9%83%20%D8%B9%D9%86%D8%AF%20%D8%A2%D8%AE%D8%B1%20%D8%A2%D9%8A%D8%A9%20%D8%AA%D9%82%D8%B1%D8%A4%D9%87%D8%A7',
+        explanation: {
+          ar: 'منزلتك في الجنة عند آخر آيةٍ تُتقنها؛ فكلّ ما تضيفه من القرآن — ولو بعد الأربعين — يرفعك درجةً باقية. ابدأ الآن، فما فاتك يمكن تعويضه، والباب مفتوح.',
+          en: 'Your rank in Paradise is at the last verse you master; everything you add of the Quran — even after forty — raises you a lasting degree. Begin now: what you missed can be made up, and the door is open.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'العلم رفعةٌ، وطلبه لا يتوقّف بعمر', en: 'Knowledge elevates, and seeking it has no age limit' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'رحلتك مع القرآن ليست حفظًا للحروف فحسب، بل علمٌ يرفع صاحبه ويميّزه، وقد سوّى الله بين الناس في كل شيء إلا في العلم:',
+          en: 'Your journey with the Quran is not merely memorizing letters; it is knowledge that raises and distinguishes its bearer. Allah made people equal in everything except in knowledge:',
+        },
+      },
+      {
+        type: 'ayah',
+        arabic: 'قُلْ هَلْ يَسْتَوِي الَّذِينَ يَعْلَمُونَ وَالَّذِينَ لَا يَعْلَمُونَ ۗ إِنَّمَا يَتَذَكَّرُ أُولُو الْأَلْبَابِ',
+        surah: { ar: 'سورة الزمر — ٩', en: 'Surah Az-Zumar — 9' },
+        meaning: {
+          ar: 'قل — أيها النبي —: لا يستوي من يعلمون ومن لا يعلمون، إنما ينتفع بالموعظة أصحاب العقول. فطلبك للقرآن كبيرًا رِفعةٌ لك في الدنيا والآخرة.',
+          en: 'Say — O Prophet —: those who know are not equal to those who do not know; only people of understanding take heed. Your pursuit of the Quran as an adult is an elevation for you in this life and the next.',
+        },
+      },
+      {
+        type: 'callout',
+        tone: 'info',
+        title: { ar: 'دعاءٌ لازِمْه', en: 'A du‘a to keep' },
+        text: {
+          ar: 'علّم اللهُ نبيَّه ﷺ أن يسأل المزيد من العلم: ﴿وَقُل رَّبِّ زِدْنِي عِلْمًا﴾ [طه: ١١٤]. اجعله دعاءك قبل كل جلسة حفظ؛ فالإخلاص والدعاء يفتحان القلب لما لا يفتحه المجهود وحده.',
+          en: 'Allah taught His Prophet ﷺ to ask for more knowledge: “My Lord, increase me in knowledge” [Ta-Ha: 114]. Make it your du‘a before every memorization session; sincerity and supplication open the heart to what effort alone cannot.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'خطة عملية للكبار المشغولين', en: 'A practical plan for busy adults' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'الفرق بين الكبير والصغير ليس في القدرة، بل في ازدحام الوقت. ولذلك تُبنى خطة الكبير على «القليل الثابت» لا على «الكثير المتقطّع»:',
+          en: 'The difference between an adult and a child is not ability, but a crowded schedule. So an adult’s plan is built on “small and steady,” not “much and scattered”:',
+        },
+      },
+      {
+        type: 'ul',
+        items: [
+          { ar: 'ثبّت موعدًا واحدًا يوميًّا لا يتغيّر — ولو خمس دقائق بعد الفجر؛ فالانتظام اليومي القصير أرسخ من ساعةٍ متقطّعة كل أسبوع.', en: 'Fix one unchanging daily slot — even five minutes after Fajr; short daily consistency roots deeper than a scattered hour once a week.' },
+          { ar: 'ابدأ من جزء عمّ من آخر المصحف؛ سوره قصيرة، وكثيرٌ منها تسمعه في الصلاة، فتحفظه بثقةٍ وتشعر بإنجازٍ مبكّر يحفّزك.', en: 'Begin with Juz’ Amma at the end of the mushaf; its surahs are short and many are heard in prayer, so you memorize with confidence and feel an early win that motivates you.' },
+          { ar: 'استثمر «الوقت الميّت»: طريق العمل، المشي، الانتظار — استمع لآيةٍ واحدة تكرارًا حتى تلتصق قبل أن تفتح المصحف.', en: 'Use “dead time”: the commute, walking, waiting — listen to a single verse on repeat until it sticks before you even open the mushaf.' },
+          { ar: 'اقرأ معنى الآية في تفسيرٍ موثوق قبل حفظها؛ فالكبير يحفظ ما فهمه أسرع بكثير من الكلمات المجرّدة.', en: 'Read the verse’s meaning in a trusted tafsir before memorizing; an adult memorizes what they understand far faster than abstract words.' },
+          { ar: 'راجِع أكثر مما تحفظ: خصّص معظم وقتك لتثبيت ما مضى، فالحفظ بلا مراجعةٍ ماءٌ في غربال.', en: 'Review more than you memorize: spend most of your time consolidating what came before — memorizing without review is water in a sieve.' },
+          { ar: 'لا تسِر وحدك: معلّمٌ يصحّح تلاوتك أو حلقةٌ تلتزم معها يضاعفان ثباتك ويقيانك أخطاء النطق التي تصعب لاحقًا.', en: 'Don’t go it alone: a teacher who corrects your recitation, or a circle you commit to, multiplies your consistency and spares you pronunciation errors that are hard to fix later.' },
+        ],
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'وابقَ على يقينٍ أن الطريق مضمون لمن صدق؛ فالله وعد المجاهدين في طلبه بالهداية والتيسير:',
+          en: 'And stay certain that the path is guaranteed for the sincere; Allah has promised those who strive toward Him guidance and ease:',
+        },
+      },
+      {
+        type: 'ayah',
+        arabic: 'وَالَّذِينَ جَاهَدُوا فِينَا لَنَهْدِيَنَّهُمْ سُبُلَنَا ۚ وَإِنَّ اللَّهَ لَمَعَ الْمُحْسِنِينَ',
+        surah: { ar: 'سورة العنكبوت — ٦٩', en: 'Surah Al-Ankabut — 69' },
+        meaning: {
+          ar: 'والذين بذلوا وسعهم في طاعتنا وطلب مرضاتنا، لنوفّقنّهم إلى طرق الخير والهدى، وإنّ الله لمع المحسنين بالعون والنصر. فاجتهد، والهداية على الله.',
+          en: 'Those who strive their utmost in obeying Us and seeking Our pleasure, We will surely guide to the ways of goodness and guidance; and Allah is indeed with those who do good. So strive — the guidance rests with Allah.',
+        },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'وهذا ما نراعيه في أكاديمية آية: برامجنا مفتوحة للكبار كما للصغار — حفظ القرآن والتجويد واللغة العربية — بحصصٍ مرنة تناسب انشغالك، وخطةٍ تبدأ من مستواك أنت لا من عمرك. الباب مفتوح، والخطوة الأولى تكفي.',
+          en: 'This is what we honor at Aya Academy: our programs are open to adults as much as to children — Quran memorization, tajweed, and Arabic — with flexible sessions that fit a busy life, and a plan that starts from your level, not your age. The door is open, and the first step is enough.',
+        },
+      },
+    ],
+    related: ['review-plan-quran-retention', 'best-way-kids-memorize-quran'],
+    sources: [
+      { ar: 'القرآن الكريم — سورة القمر: ١٧، والزمر: ٩، وطه: ١١٤، والعنكبوت: ٦٩', en: 'The Noble Qur’an — Al-Qamar: 17, Az-Zumar: 9, Ta-Ha: 114, Al-Ankabut: 69', url: 'https://quran.com/54/17' },
+      { ar: 'حديث «الماهر بالقرآن مع السفرة الكرام... وله أجران» — صحيح مسلم، عبر الموسوعة الحديثية بالدرر السنية', en: '“The one proficient in the Quran is with the noble angels… has two rewards” — Sahih Muslim, via the Dorar.net Hadith Encyclopedia', url: 'https://dorar.net/hadith/search?q=%D8%A7%D9%84%D9%85%D8%A7%D9%87%D8%B1%20%D8%A8%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D9%85%D8%B9%20%D8%A7%D9%84%D8%B3%D9%81%D8%B1%D8%A9%20%D8%A7%D9%84%D9%83%D8%B1%D8%A7%D9%85%20%D8%A7%D9%84%D8%A8%D8%B1%D8%B1%D8%A9%20%D9%88%D8%A7%D9%84%D8%B0%D9%8A%20%D9%8A%D9%82%D8%B1%D8%A3%20%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D9%88%D9%8A%D8%AA%D8%AA%D8%B9%D8%AA%D8%B9%20%D9%81%D9%8A%D9%87%20%D9%88%D9%87%D9%88%20%D8%B9%D9%84%D9%8A%D9%87%20%D8%B4%D8%A7%D9%82%20%D9%84%D9%87%20%D8%A3%D8%AC%D8%B1%D8%A7%D9%86' },
+      { ar: 'حديث «اقرأ وارتقِ ورتّل... فإن منزلتك عند آخر آية تقرؤها» — سنن أبي داود، صحّحه الألباني، الدرر السنية', en: '“Recite and ascend… your rank is at the last verse you recite” — Sunan Abi Dawud, graded authentic by al-Albani, via Dorar.net', url: 'https://dorar.net/hadith/search?q=%D8%A7%D9%82%D8%B1%D8%A3%20%D9%88%D8%A7%D8%B1%D8%AA%D9%82%20%D9%88%D8%B1%D8%AA%D9%84%20%D9%83%D9%85%D8%A7%20%D9%83%D9%86%D8%AA%20%D8%AA%D8%B1%D8%AA%D9%84%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%AF%D9%86%D9%8A%D8%A7%20%D9%81%D8%A5%D9%86%20%D9%85%D9%86%D8%B2%D9%84%D8%AA%D9%83%20%D8%B9%D9%86%D8%AF%20%D8%A2%D8%AE%D8%B1%20%D8%A2%D9%8A%D8%A9%20%D8%AA%D9%82%D8%B1%D8%A4%D9%87%D8%A7' },
+    ],
+  },
+
   // ───────────────────────────────────────────────────────────────────────────
   {
     slug: 'virtue-of-teaching-children-quran',

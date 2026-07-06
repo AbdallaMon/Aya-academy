@@ -20,17 +20,17 @@ const CONTENT = {
     eyebrow: 'الأمان أولاً',
     title: 'بيئة آمنة يطمئن إليها كل وليّ أمر',
     items: [
-      { t: 'معلّم واحد ثابت لطفلك', d: 'معلّم مخصّص يرافق طفلك في كل حصة بلطفٍ وصبر.' },
-      { t: 'حصص آمنة وموجّهة', d: 'جلسات هادئة ومناسبة للأطفال تمامًا.' },
-      { t: 'أنت المتحكّم دائمًا', d: 'تابع طفلك من لوحة ولي الأمر، وألغِ في أي وقت.' },
+      { t: 'معلّم واحد ثابت للطالب', d: 'معلّم مخصّص يرافق الطالب في كل حصة بلطفٍ وصبر.' },
+      { t: 'حصص آمنة وموجّهة', d: 'جلسات هادئة ومناسبة للطلاب تمامًا.' },
+      { t: 'أنت المتحكّم دائمًا', d: 'تابع الطالب من لوحة ولي الأمر، وألغِ في أي وقت.' },
     ],
   },
   en: {
     eyebrow: 'Safety first',
     title: 'A safe space every parent can trust',
     items: [
-      { t: 'One dedicated teacher', d: 'A consistent teacher who guides your child every session, gently and patiently.' },
-      { t: 'Safe, guided sessions', d: 'Calm, fully kid-appropriate lessons.' },
+      { t: 'One dedicated teacher', d: 'A consistent teacher who guides the student every session, gently and patiently.' },
+      { t: 'Safe, guided sessions', d: 'Calm, fully student-appropriate lessons.' },
       { t: 'You stay in control', d: 'Follow along from the parent dashboard, cancel anytime.' },
     ],
   },

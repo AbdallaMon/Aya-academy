@@ -35,9 +35,9 @@ import { localePath } from '@/i18n/routing.js';
 
 const CONTENT = {
   ar: {
-    eyebrow: 'لوحة الطفل',
+    eyebrow: 'لوحة الطالب',
     title: 'تابع كل خطوة في رحلتهم',
-    intro: 'بعد التسجيل، هذه هي اللوحة التي تراها أنت وطفلك — النقاط، المستوى، الترتيب، الأوسمة ولوحة الصدارة في مكان واحد.',
+    intro: 'بعد التسجيل، هذه هي اللوحة التي تراها أنت والطالب — النقاط، المستوى، الترتيب، الأوسمة ولوحة الصدارة في مكان واحد.',
     cta: 'احجز حصة مجانية',
     badgeOnCard: 'معاينة اللوحة',
     card: {
@@ -55,9 +55,9 @@ const CONTENT = {
     },
   },
   en: {
-    eyebrow: "Child's dashboard",
+    eyebrow: "Student's dashboard",
     title: 'See every step of their journey',
-    intro: 'After signing up, this is the dashboard you and your child see — points, level, rank, badges and the leaderboard, all in one place.',
+    intro: 'After signing up, this is the dashboard you and the student see — points, level, rank, badges and the leaderboard, all in one place.',
     cta: 'Book a free session',
     badgeOnCard: 'Dashboard preview',
     card: {

@@ -11,11 +11,11 @@ export const faqContent = {
     items: [
       {
         q: 'ما هي الأعمار المناسبة؟',
-        a: 'أكاديمية آية مصمّمة للأطفال من ٥ سنوات فأكثر، مع مستويات مرتّبة حسب العمر والخبرة ليتقدّم كل طفل بإيقاع مناسب له.',
+        a: 'أكاديمية آية مصمّمة للطلاب من ٥ سنوات فأكثر، مع مستويات مرتّبة حسب العمر والخبرة ليتقدّم كل طالب بإيقاع مناسب له.',
       },
       {
         q: 'هل الحصص مباشرة أم مسجّلة؟',
-        a: 'الاثنان معًا: جلسات مباشرة مع معلّم، بالإضافة إلى دروس قصيرة موجّهة يمكن للطفل متابعتها في أي وقت.',
+        a: 'الاثنان معًا: جلسات مباشرة مع معلّم، بالإضافة إلى دروس قصيرة موجّهة يمكن للطالب متابعتها في أي وقت.',
       },
       {
         q: 'كم تستغرق الحصة؟',
@@ -30,7 +30,7 @@ export const faqContent = {
         a: 'لا شيء تلقائيًا — لن تُدفع أي رسوم إلا إذا اخترت الاشتراك بنفسك بعد التجربة.',
       },
       {
-        q: 'كيف أتابع تقدّم طفلي؟',
+        q: 'كيف أتابع تقدّم الطالب؟',
         a: 'من خلال لوحة ولي الأمر ثنائية اللغة التي تعرض النقاط والمستوى والترتيب، مع الأوسمة ولوحة الصدارة والساعات المتبقية في الاشتراك.',
       },
       {
@@ -39,7 +39,7 @@ export const faqContent = {
       },
       {
         q: 'بأي لغة يتم الشرح؟',
-        a: 'الشرح ثنائي اللغة بالعربية والإنجليزية، ليفهم كل طفل ويشارك ولي الأمر بسهولة.',
+        a: 'الشرح يكون بما يناسب لغة الطالب، ليفهم كل طالب ويشارك ولي الأمر بسهولة.',
       },
     ],
   },
@@ -50,11 +50,11 @@ export const faqContent = {
     items: [
       {
         q: 'What ages is it for?',
-        a: 'Aya Academy is built for kids aged 5 and up, with levels organized by age and experience so every child progresses at their own pace.',
+        a: 'Aya Academy is built for students aged 5 and up, with levels organized by age and experience so every student progresses at their own pace.',
       },
       {
         q: 'Are lessons live or recorded?',
-        a: 'Both: live sessions with a teacher, plus short guided video lessons your child can follow anytime.',
+        a: 'Both: live sessions with a teacher, plus short guided video lessons the student can follow anytime.',
       },
       {
         q: 'How long is each session?',
@@ -69,7 +69,7 @@ export const faqContent = {
         a: 'Nothing automatic — you are never charged unless you choose to subscribe after the trial.',
       },
       {
-        q: 'How do I track my child’s progress?',
+        q: 'How do I track the student’s progress?',
         a: 'Through a bilingual parent dashboard that shows points, level and rank, plus badges, the leaderboard and your remaining subscription hours.',
       },
       {
@@ -78,7 +78,7 @@ export const faqContent = {
       },
       {
         q: 'What language is the teaching in?',
-        a: 'Teaching is bilingual in Arabic and English, so every child understands and parents can follow along.',
+        a: 'Teaching is in the language that suits the student, so every student understands and parents can follow along.',
       },
     ],
   },

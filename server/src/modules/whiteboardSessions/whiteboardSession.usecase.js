@@ -6,7 +6,12 @@ import {
   WHITEBOARD_SESSION_STATUSES,
   WHITEBOARD_VISIBILITIES,
 } from "@aya/shared";
-import { badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
+import {
+  badRequest,
+  conflict,
+  forbidden,
+  notFound,
+} from "../../shared/errors/AppError.js";
 import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { ENV } from "../../config/env.js";
 import { userRepo } from "../users/user.repo.js";
@@ -59,11 +64,21 @@ class WhiteboardSessionUsecase {
 
   // Create a session that is READY TO USE: it opens (ACTIVE) immediately, with
   // the chosen students attached and optionally made public in one step.
-  async create({ title, studentIds = [], isPublic = false, locale = "ar", authUser }) {
+  async create({
+    title,
+    studentIds = [],
+    isPublic = false,
+    locale = "ar",
+    authUser,
+  }) {
     const clean = typeof title === "string" ? title.trim() : "";
     if (!clean) throw badRequest(whiteboardMessagesCodes.TITLE_REQUIRED);
 
-    const ids = [...new Set((studentIds || []).filter((n) => Number.isInteger(n) && n > 0))];
+    const ids = [
+      ...new Set(
+        (studentIds || []).filter((n) => Number.isInteger(n) && n > 0),
+      ),
+    ];
     // Validate every chosen account is really a STUDENT before we write anything.
     for (const studentId of ids) {
       const role = await userRepo.getRoleById(studentId);
@@ -80,7 +95,11 @@ class WhiteboardSessionUsecase {
       });
       await Promise.all(
         ids.map((studentId) =>
-          whiteboardSessionRepo.addStudent({ sessionId: session.id, studentId, client: tx }),
+          whiteboardSessionRepo.addStudent({
+            sessionId: session.id,
+            studentId,
+            client: tx,
+          }),
         ),
       );
       // Opens immediately — the teacher can start the board right away.
@@ -98,7 +117,9 @@ class WhiteboardSessionUsecase {
       publicUrl = result.url;
     }
 
-    const detail = await whiteboardSessionRepo.getByIdWithStudents({ id: created });
+    const detail = await whiteboardSessionRepo.getByIdWithStudents({
+      id: created,
+    });
     return { ...detail, publicUrl };
   }
 
@@ -137,7 +158,9 @@ class WhiteboardSessionUsecase {
   async remove({ id }) {
     await this.#assertExists(id);
     // Reclaim the session's image files before the rows cascade away.
-    const images = await whiteboardSessionRepo.listImagesForSession({ sessionId: id });
+    const images = await whiteboardSessionRepo.listImagesForSession({
+      sessionId: id,
+    });
     await whiteboardSessionRepo.remove({ id });
     for (const img of images) unlinkQuiet(img.storageKey);
     return { id };
@@ -146,7 +169,19 @@ class WhiteboardSessionUsecase {
   // ── board images ────────────────────────────────────────
   // The teacher inserts an image on the board; the file is stored on disk and we
   // keep only the reference, linked to the session.
-  async uploadImage({ id, file }) {
+  async uploadImage({ id, file, isAdmin, token }) {
+    if (!isAdmin) {
+      const session = token
+        ? await whiteboardSessionRepo.getByTokenHash({
+            tokenHash: hashShareToken(token),
+          })
+        : null;
+      const ok =
+        session &&
+        session.id === sessionId &&
+        session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
+      if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
+    }
     await this.#assertExists(id);
     if (!file) throw badRequest(whiteboardMessagesCodes.IMAGE_REQUIRED);
     const image = await whiteboardSessionRepo.createImage({
@@ -167,7 +202,9 @@ class WhiteboardSessionUsecase {
     }
     if (!isAdmin) {
       const session = token
-        ? await whiteboardSessionRepo.getByTokenHash({ tokenHash: hashShareToken(token) })
+        ? await whiteboardSessionRepo.getByTokenHash({
+            tokenHash: hashShareToken(token),
+          })
         : null;
       const ok =
         session &&
@@ -175,7 +212,10 @@ class WhiteboardSessionUsecase {
         session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
       if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
     }
-    return { absolutePath: whiteboardImagePath(image.storageKey), mimeType: image.mimeType };
+    return {
+      absolutePath: whiteboardImagePath(image.storageKey),
+      mimeType: image.mimeType,
+    };
   }
 
   // Retention sweep — delete images older than `retentionDays` (files + rows).
@@ -231,6 +271,35 @@ class WhiteboardSessionUsecase {
       throw notFound(whiteboardMessagesCodes.SESSION_NOT_FOUND);
     }
     return toPublicSession(session);
+  }
+
+  // ── board data persistence ─────────────────────────────
+  // Save the full drawing scene (elements, appState, imageMap) to the DB.
+  // Called silently from the client on every debounced change batch.
+  async saveBoardData({ id, boardData }) {
+    await this.#assertExists(id);
+    await whiteboardSessionRepo.saveBoardData({ id, boardData });
+    return { id };
+  }
+
+  // Load the saved drawing scene so the board can restore its state on open.
+  // Admin access (isAdmin) OR public access with a valid token.
+  async getBoardData({ id, token, isAdmin }) {
+    await this.#assertExists(id);
+    if (!isAdmin) {
+      const session = token
+        ? await whiteboardSessionRepo.getByTokenHash({
+            tokenHash: hashShareToken(token),
+          })
+        : null;
+      const ok =
+        session &&
+        session.id === id &&
+        session.visibility === WHITEBOARD_VISIBILITIES.PUBLIC;
+      if (!ok) throw forbidden(whiteboardMessagesCodes.IMAGE_FORBIDDEN);
+    }
+    const row = await whiteboardSessionRepo.getBoardData({ id });
+    return row?.boardData ?? null;
   }
 
   async #assertExists(id) {

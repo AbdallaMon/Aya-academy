@@ -3,13 +3,13 @@
 // fetching those URLs. This keeps localStorage small AND makes images survive a
 // refresh (the raw base64 would blow the ~5MB quota).
 
-import { config } from "../../../../config/config.js";
+import { config } from '../../../../config/config.js';
 
 const API = config.api.baseUrl; // e.g. http://localhost:4000/api/v1
 
 function dataURLtoBlob(dataURL) {
-  const [head, body] = String(dataURL).split(",");
-  const mime = /:(.*?);/.exec(head)?.[1] || "image/png";
+  const [head, body] = String(dataURL).split(',');
+  const mime = /:(.*?);/.exec(head)?.[1] || 'image/png';
   const bin = atob(body);
   const arr = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i += 1) arr[i] = bin.charCodeAt(i);
@@ -26,16 +26,17 @@ async function blobToDataURL(blob) {
 }
 
 // Upload one Excalidraw binary file → returns { id, url } for the stored image.
-export async function uploadBoardImage(sessionId, file) {
+export async function uploadBoardImage(sessionId, file, token) {
   const blob = dataURLtoBlob(file.dataURL);
   const form = new FormData();
-  form.append("file", blob, `board-${file.id}`);
+  form.append('file', blob, `board-${file.id}`);
+  form.append('token', token);
   const res = await fetch(`${API}/whiteboard-sessions/${sessionId}/images`, {
-    method: "POST",
+    method: 'POST',
     body: form,
-    credentials: "include",
+    credentials: 'include',
   });
-  if (!res.ok) throw new Error("upload failed");
+  if (!res.ok) throw new Error('upload failed');
   const json = await res.json();
   const imageId = json?.data?.id ?? json?.id;
   return {
@@ -55,21 +56,21 @@ export async function hydrateBoardFiles(imageMap, token) {
         // Send the share token in a header (not the URL) so it can't leak via
         // access logs, Referer, or browser history.
         const res = await fetch(ref.url, {
-          credentials: "include",
-          headers: token ? { "X-Whiteboard-Token": token } : undefined,
+          credentials: 'include',
+          headers: token ? { 'X-Whiteboard-Token': token } : undefined,
         });
         if (!res.ok) return null;
         const dataURL = await blobToDataURL(await res.blob());
         return {
           id: fileId,
           dataURL,
-          mimeType: ref.mimeType || "image/png",
+          mimeType: ref.mimeType || 'image/png',
           created: 0,
         };
       } catch {
         return null;
       }
-    }),
+    })
   );
   return files.filter(Boolean);
 }

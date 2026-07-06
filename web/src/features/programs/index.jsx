@@ -37,7 +37,7 @@ const CONTENT = {
   ar: {
     eyebrow: 'برامجنا',
     title: 'المواد المتاحة للدراسة',
-    subtitle: 'برامج لكل الأعمار — أطفالًا وكبارًا — يقدّمها معلّمون مؤهّلون بخطة تناسب مستواك.',
+    subtitle: 'برامج لكل الأعمار — للصغار والكبار — يقدّمها معلّمون مؤهّلون بخطة تناسب مستواك.',
     families: { quran: 'برامج القرآن', arabic: 'اللغة العربية', islamic: 'التربية الإسلامية' },
     programs: [
       { key: 'memorization', family: 'quran', name: 'تحفيظ القرآن', desc: 'حفظ متقَن بالتكرار والمراجعة على يد معلّمين مؤهّلين.' },
@@ -51,7 +51,7 @@ const CONTENT = {
   en: {
     eyebrow: 'Our Programs',
     title: 'Subjects you can study',
-    subtitle: 'Programs for every age — children and adults — taught by qualified teachers on a plan that fits your level.',
+    subtitle: 'Programs for all ages — from young learners to adults — taught by qualified teachers on a plan that fits your level.',
     families: { quran: "Qur'an Programs", arabic: 'Arabic Language', islamic: 'Islamic Education' },
     programs: [
       { key: 'memorization', family: 'quran', name: "Qur'an Memorization", desc: 'Solid memorization through repetition and review with qualified teachers.' },

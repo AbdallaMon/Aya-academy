@@ -26,20 +26,20 @@ const STEP_ICONS = [MdOutlinePersonAddAlt, IoVideocamOutline, PiHeadphonesLight,
 const CONTENT = {
   ar: {
     eyebrow: 'لماذا آية',
-    title: 'رحلة قرآن مبسَّطة لكل طفل',
-    slogan: 'القرآن بالعربية والإنجليزية — مستويات واضحة، إيقاع لطيف، وتقدّم تراه بنفسك.',
+    title: 'رحلة قرآن مبسَّطة لكل طالب',
+    slogan: 'القرآن بما يناسب لغة الطالب — مستويات واضحة، إيقاع لطيف، وتقدّم تراه بنفسك.',
     diffs: [
-      { t: 'شرح ثنائي اللغة', d: 'كل درس يُشرح بالعربية والإنجليزية.' },
-      { t: 'إيقاع مناسب للطفل', d: 'دروس قصيرة وتكرار لطيف بلا ضغط.' },
+      { t: 'شرح بما يناسب لغة الطالب', d: 'كل درس يُشرح باللغة التي تناسب الطالب.' },
+      { t: 'إيقاع مناسب للطالب', d: 'دروس قصيرة وتكرار لطيف بلا ضغط.' },
       { t: 'المعنى لا الحفظ فقط', d: 'يفهمون ما يتلونه، لا أن يحفظوه فقط.' },
     ],
     howTitle: 'كيف نتعلّم في آية؟',
     howSub: 'أربع خطوات بسيطة من التسجيل إلى أول وسام 🌟',
     steps: [
-      { t: 'سجّل واختر المستوى', d: 'أخبرنا بعمر طفلك ونضعه في المستوى المناسب.' },
+      { t: 'سجّل واختر المستوى', d: 'أخبرنا بعمر الطالب ونضعه في المستوى المناسب.' },
       { t: 'دروس مباشرة أو موجّهة', d: 'جلسات مباشرة أو دروس قصيرة بشرح واضح.' },
       { t: 'تدرّب وكرّر وأتقِن', d: 'تلاوة بطيئة وتمارين صوتية تبني الثقة.' },
-      { t: 'اجمع النجوم والأوسمة', d: 'يفتح الأطفال أوسمة كلّما تعلّموا أكثر.' },
+      { t: 'اجمع النجوم والأوسمة', d: 'يفتح الطلاب أوسمة كلّما تعلّموا أكثر.' },
     ],
     levelsTitle: 'مستويات لكل عمر',
     levels: [
@@ -51,20 +51,20 @@ const CONTENT = {
   },
   en: {
     eyebrow: 'Why Aya',
-    title: 'Quran learning made simple for every child',
-    slogan: 'Quran in Arabic and English — clear levels, a gentle pace, and progress you can see.',
+    title: 'Quran learning made simple for every student',
+    slogan: 'Quran in the language that suits the student — clear levels, a gentle pace, and progress you can see.',
     diffs: [
-      { t: 'Bilingual explanations', d: 'Every lesson explained in Arabic and English.' },
-      { t: 'Child-friendly pacing', d: 'Short lessons, gentle repetition, no pressure.' },
+      { t: 'Taught in your language', d: 'Every lesson explained in the language that suits the student.' },
+      { t: 'Student-friendly pacing', d: 'Short lessons, gentle repetition, no pressure.' },
       { t: 'Meaning, not just memorizing', d: 'They understand what they recite, not just memorize.' },
     ],
     howTitle: 'How Aya Academy works',
     howSub: 'Four simple steps from sign-up to the first badge 🌟',
     steps: [
-      { t: 'Sign up & pick a level', d: "Tell us your child's age — we match the right level." },
+      { t: 'Sign up & pick a level', d: "Tell us the student’s age — we match the right level." },
       { t: 'Live or guided lessons', d: 'Live sessions or short lessons with clear explanations.' },
       { t: 'Practice, recite, repeat', d: 'Slow recitation and audio practice build confidence.' },
-      { t: 'Earn stars & badges', d: 'Kids unlock badges as they learn more.' },
+      { t: 'Earn stars & badges', d: 'Students unlock badges as they learn more.' },
     ],
     levelsTitle: 'Levels for every age',
     levels: [
