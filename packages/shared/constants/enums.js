@@ -106,6 +106,14 @@ export const SUBSCRIPTION_STATUSES = {
   CANCELLED: "CANCELLED",
 };
 
+// How a subscription came to exist. MANUAL = admin/parent prepaid plan pick or
+// renew. USAGE = auto-generated from logged session hours (arrears billing).
+// Keep in sync with packages/db/prisma/schema.prisma (enum SubscriptionOrigin).
+export const SUBSCRIPTION_ORIGINS = {
+  MANUAL: "MANUAL",
+  USAGE: "USAGE",
+};
+
 /**
  * Single source of truth for "currently active" subscription filtering.
  * A subscription counts as active only when its status is ACTIVE **and** now
