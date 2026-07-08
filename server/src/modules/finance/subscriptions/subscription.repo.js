@@ -1,5 +1,10 @@
 import { prisma } from "@aya/db/prisma.client.js";
-import { activeSubscriptionWhere, SUBSCRIPTION_STATUSES, USER_ROLES } from "@aya/shared";
+import {
+  activeSubscriptionWhere,
+  SUBSCRIPTION_ORIGINS,
+  SUBSCRIPTION_STATUSES,
+  USER_ROLES,
+} from "@aya/shared";
 import { userRepo } from "../../users/user.repo.js";
 import { subscriptionSelect, toSubscription } from "./subscription.dto.js";
 
@@ -148,7 +153,7 @@ class SubscriptionRepo {
   findPendingSubscriptionsByStudent({ studentId, client } = {}) {
     return (client ?? prisma).subscription.findMany({
       where: { studentId, status: SUBSCRIPTION_STATUSES.PENDING },
-      select: { id: true, couponId: true },
+      select: { id: true, couponId: true, origin: true },
     });
   }
 
@@ -168,6 +173,67 @@ class SubscriptionRepo {
       select: subscriptionSelect,
     });
     return toSubscription(row);
+  }
+
+  /** Map<studentId, hours> of UNBILLED PRESENT session hours in a month window. */
+  async sumUsageHoursByStudent({ gte, lt }) {
+    const rows = await prisma.sessionLog.groupBy({
+      by: ["studentId"],
+      where: {
+        sessionDate: { gte, lt },
+        attendance: "PRESENT",
+        billedSubscriptionId: null,
+      },
+      _sum: { durationHours: true },
+    });
+    return new Map(rows.map((r) => [r.studentId, Number(r._sum.durationHours ?? 0)]));
+  }
+
+  /** The open (UPCOMING) USAGE subscription for a student's payment month, or null. */
+  async findOpenUsageSubscription({ studentId, paymentStart, client } = {}) {
+    const row = await (client ?? prisma).subscription.findFirst({
+      where: {
+        studentId,
+        origin: SUBSCRIPTION_ORIGINS.USAGE,
+        startDate: paymentStart,
+      },
+      select: subscriptionSelect,
+    });
+    return toSubscription(row);
+  }
+
+  /** Every currently-active student + their current plan's hours (for fallback). */
+  async listActiveStudentsWithPlan(now = new Date()) {
+    const subs = await prisma.subscription.findMany({
+      where: activeSubscriptionWhere(now),
+      select: { studentId: true, plan: { select: { hours: true } } },
+      distinct: ["studentId"],
+    });
+    return subs.map((s) => ({ studentId: s.studentId, planHours: s.plan?.hours ?? null }));
+  }
+
+  /** Hours of the cheapest active plan (min hours), or null if none exist. */
+  async lowestActivePlanHours() {
+    const plan = await prisma.plan.findFirst({
+      where: { isActive: true },
+      orderBy: { hours: "asc" },
+      select: { hours: true },
+    });
+    return plan?.hours ?? null;
+  }
+
+  /** Stamp a student's unbilled PRESENT sessions in a window as billed. Returns count. */
+  async markSessionsBilled({ studentId, gte, lt, subscriptionId, client } = {}) {
+    const res = await (client ?? prisma).sessionLog.updateMany({
+      where: {
+        studentId,
+        sessionDate: { gte, lt },
+        attendance: "PRESENT",
+        billedSubscriptionId: null,
+      },
+      data: { billedSubscriptionId: subscriptionId },
+    });
+    return res.count;
   }
 }
 

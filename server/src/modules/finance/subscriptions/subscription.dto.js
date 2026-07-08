@@ -38,6 +38,7 @@ export const subscriptionSelect = {
   planId: true,
   billingPeriod: true,
   status: true,
+  origin: true,
   startDate: true,
   endDate: true,
   subsHours: true,
