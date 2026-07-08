@@ -99,6 +99,13 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+// How a subscription came to exist. Keep in sync with
+// packages/shared/constants/enums.js (SUBSCRIPTION_ORIGINS).
+enum SubscriptionOrigin {
+  MANUAL
+  USAGE
+}
+
 // Invoice lifecycle. Payment is not real yet — status is set manually; a
 // gateway can flip it to PAID later.
 enum InvoiceStatus {
@@ -469,6 +476,7 @@ model Subscription {
   plan           Plan?              @relation(fields: [planId], references: [id])
   billingPeriod  BillingPeriod      @default(MONTHLY)
   status         SubscriptionStatus @default(ACTIVE)
+  origin         SubscriptionOrigin @default(MANUAL)
   startDate      DateTime
   endDate        DateTime
   // Paid subscription hours — the billing basis (price = subsHours × hourlyRate).
@@ -483,7 +491,8 @@ model Subscription {
   createdById    Int?
   createdBy      User?              @relation("SubscriptionCreatedBy", fields: [createdById], references: [id])
 
-  invoice Invoice?
+  invoice        Invoice?
+  billedSessions SessionLog[] @relation("UsageBilledSessions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -491,6 +500,7 @@ model Subscription {
   @@index([studentId])
   @@index([status])
   @@index([endDate])
+  @@index([studentId, status, origin])
 }
 
 // ============================================================
@@ -754,12 +764,18 @@ model SessionLog {
   createdById Int?
   createdBy   User? @relation("SessionLogCreatedBy", fields: [createdById], references: [id])
 
+  // Set once at month-close when this session's hours are frozen into a USAGE
+  // subscription's bill. NULL means the session is still unbilled.
+  billedSubscriptionId Int?
+  billedSubscription   Subscription? @relation("UsageBilledSessions", fields: [billedSubscriptionId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([studentId])
   @@index([teacherId])
   @@index([sessionDate])
+  @@index([studentId, sessionDate, billedSubscriptionId])
 }
 
 // ============================================================
