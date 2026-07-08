@@ -2,28 +2,17 @@ import { Router } from "express";
 import { ok } from "./shared/http/response.js";
 import authRoutes from "./modules/auth/auth.route.js";
 import userRoutes from "./modules/users/user.route.js";
-import planRoutes from "./modules/plans/plan.route.js";
 import notificationRoutes from "./modules/notifications/notification.route.js";
-import couponRoutes from "./modules/coupons/coupon.route.js";
-import subscriptionRoutes from "./modules/subscriptions/subscription.route.js";
-import invoiceRoutes from "./modules/invoices/invoice.route.js";
-import paymentTemplateRoutes from "./modules/paymentTemplates/paymentTemplate.route.js";
-import reportRoutes from "./modules/reports/report.route.js";
-import sessionLogRoutes from "./modules/sessionLogs/sessionLog.route.js";
-import certificateRoutes from "./modules/certificates/certificate.route.js";
-import rewardRoutes from "./modules/rewards/reward.route.js";
-import badgeRoutes from "./modules/badges/badge.route.js";
-import pointRoutes from "./modules/points/point.route.js";
-import gameRoutes from "./modules/games/game.route.js";
-import quizRoutes from "./modules/quizzes/quiz.route.js";
+import financeRoutes from "./modules/finance/finance.route.js";
+import gamificationRoutes from "./modules/gamification/gamification.route.js";
+import learningRoutes from "./modules/learning/learning.route.js";
+import sessionsRoutes from "./modules/sessions/sessions.route.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.route.js";
 import backupRoutes from "./modules/backups/backups.route.js";
 import backupPublicRoutes from "./modules/backups/backups.public.routes.js";
 import encryptionKeyRoutes from "./modules/encryptionKeys/encryptionKeys.route.js";
 import attachmentRoutes from "./modules/attachments/attachment.route.js";
-import certificateTemplateRoutes from "./modules/certificateTemplates/certificateTemplate.route.js";
 import settingsRoutes from "./modules/settings/settings.route.js";
-import whiteboardSessionRoutes from "./modules/whiteboardSessions/whiteboardSession.route.js";
 
 const routes = Router();
 
@@ -33,21 +22,17 @@ routes.get("/health", (_req, res) => {
 
 routes.use("/auth", authRoutes);
 routes.use("/users", userRoutes);
-routes.use("/plans", planRoutes);
 routes.use("/notifications", notificationRoutes);
-routes.use("/coupons", couponRoutes);
-routes.use("/subscriptions", subscriptionRoutes);
-routes.use("/invoices", invoiceRoutes);
-routes.use("/payment-templates", paymentTemplateRoutes);
 routes.use("/settings", settingsRoutes);
-routes.use("/reports", reportRoutes);
-routes.use("/session-logs", sessionLogRoutes);
-routes.use("/certificates", certificateRoutes);
-routes.use("/rewards", rewardRoutes);
-routes.use("/badges", badgeRoutes);
-routes.use("/points", pointRoutes);
-routes.use("/games", gameRoutes);
-routes.use("/quizzes", quizRoutes);
+
+// Grouped module aggregators. Each mounts its children at their original
+// URL prefixes, so every final URL (e.g. /subscriptions, /payment-templates,
+// /session-logs) is byte-for-byte identical to before the reorganization.
+routes.use("/", financeRoutes);
+routes.use("/", gamificationRoutes);
+routes.use("/", learningRoutes);
+routes.use("/", sessionsRoutes);
+
 routes.use("/dashboard", dashboardRoutes);
 
 // Google Drive OAuth callback (PUBLIC, no auth — Google redirects the browser here).
@@ -57,7 +42,5 @@ routes.use("/backups", backupPublicRoutes);
 routes.use("/backups", backupRoutes);
 routes.use("/encryption-keys", encryptionKeyRoutes);
 routes.use("/attachments", attachmentRoutes);
-routes.use("/certificate-templates", certificateTemplateRoutes);
-routes.use("/whiteboard-sessions", whiteboardSessionRoutes);
 
 export default routes;

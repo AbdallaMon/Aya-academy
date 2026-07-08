@@ -13,7 +13,7 @@ import { attachmentRepo } from "../attachments/attachment.repo.js";
 import { attachmentUsecase } from "../attachments/attachment.usecase.js";
 import { hashPassword } from "../../infra/security/hash.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
-import { subscriptionRepo } from "../subscriptions/subscription.repo.js";
+import { subscriptionRepo } from "../finance/subscriptions/subscription.repo.js";
 import { toChildItem, toOverviewParents, toUserListItem } from "./user.dto.js";
 import { userRepo } from "./user.repo.js";
 

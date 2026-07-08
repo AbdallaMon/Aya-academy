@@ -13,7 +13,7 @@
 // ===========================================================================
 
 import cron from "node-cron";
-import { subscriptionUsecase } from "../../modules/subscriptions/subscription.usecase.js";
+import { subscriptionUsecase } from "../../modules/finance/subscriptions/subscription.usecase.js";
 
 // 23:00 on days 28-31 of every month. The last-day guard below narrows this to
 // exactly the final day of the current month.
