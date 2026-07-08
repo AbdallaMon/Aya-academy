@@ -346,6 +346,33 @@ class SubscriptionUsecase {
     });
   }
 
+  /**
+   * Live accumulating-bill preview for a USAGE subscription: the consumed hours
+   * in the sub's consumption month (its startDate − 1 month) and the projected
+   * price at the current hourly rate. Read-scoped exactly like getById
+   * (assertCanAccess by studentId). `frozen` is true once the sub has left the
+   * open UPCOMING phase (month-close froze the number).
+   */
+  async usagePreview({ authUser, id }) {
+    const sub = await subscriptionRepo.getById(id);
+    if (!sub || sub.origin !== SUBSCRIPTION_ORIGINS.USAGE) {
+      throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
+    }
+    await this.assertCanAccess(authUser, sub.studentId);
+
+    const consumption = monthRange(previousMonth(sub.startDate)); // start − 1 month
+    const hoursMap = await subscriptionRepo.sumUsageHoursByStudent(consumption);
+    const usageHours = hoursMap.get(sub.studentId) ?? 0;
+    const settings = await settingsUsecase.getEffective();
+
+    return {
+      usageHours,
+      projectedPrice: priceFromHours(usageHours, Number(settings.hourlyRate)),
+      currency: sub.currency,
+      frozen: sub.status !== SUBSCRIPTION_STATUSES.UPCOMING,
+    };
+  }
+
   async create({ authUser, ...input }) {
     if (input.endDate <= input.startDate) {
       throw badRequest(

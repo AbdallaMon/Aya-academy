@@ -39,6 +39,14 @@ class SubscriptionController {
     return ok(res, subscription);
   }
 
+  async usagePreview(req, res) {
+    const data = await subscriptionUsecase.usagePreview({
+      authUser: req.auth,
+      id: idParam(req.params.id),
+    });
+    return ok(res, data);
+  }
+
   async create(req, res) {
     const subscription = await subscriptionUsecase.create({
       ...req.body,

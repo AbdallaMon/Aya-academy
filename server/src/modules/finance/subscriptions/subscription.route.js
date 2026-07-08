@@ -28,6 +28,14 @@ subscriptionRoutes.get(
   asyncHandler(subscriptionController.getOne),
 );
 
+// Live accumulating-bill preview for a USAGE subscription (same read scope as
+// GET /:id — object scope is enforced in the usecase via assertCanAccess).
+subscriptionRoutes.get(
+  "/:id/usage-preview",
+  authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.VIEW]),
+  asyncHandler(subscriptionController.usagePreview),
+);
+
 subscriptionRoutes.post(
   "/",
   authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.CREATE]),
