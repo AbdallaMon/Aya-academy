@@ -141,6 +141,7 @@ class SubscriptionUsecase {
       studentId,
     });
     for (const p of pendings) {
+      if (p.origin === SUBSCRIPTION_ORIGINS.USAGE) continue; // never delete usage bills
       if (p.couponId) {
         await couponRepo.decrementCouponRedemption(p.couponId, tx);
       }
@@ -205,6 +206,33 @@ class SubscriptionUsecase {
       basePrice,
       couponId: coupon.id,
     };
+  }
+
+  /**
+   * Price a USAGE subscription (hours × rate) with an optional coupon code.
+   * Only plan-agnostic coupons validate (validateCoupon with planId: null).
+   * Mirrors computePricing but the base is hours-derived, not plan-derived.
+   */
+  async computeUsagePricing({ subsHours, couponCode, hourlyRate }) {
+    const base = priceFromHours(subsHours, hourlyRate);
+    if (!couponCode) return { priceCharged: base, couponId: null };
+
+    const result = await couponUsecase.validateCoupon({
+      code: couponCode,
+      planId: null,
+      billingPeriod: BILLING_PERIODS.MONTHLY,
+    });
+    if (!result.valid) {
+      throw badRequest(
+        subscriptionMessagesCodes.COUPON_INVALID,
+        messagesNames.subscriptionMessages,
+      );
+    }
+    const coupon = await couponRepo.getByCode(couponCode);
+    const priceCharged = roundMoney(
+      applyDiscount(base, { type: result.discount.type, value: result.discount.value }),
+    );
+    return { priceCharged, couponId: coupon.id };
   }
 
   /** End date for a billing cycle (1 month / 1 year) starting at `start`. */
@@ -1150,25 +1178,103 @@ class SubscriptionUsecase {
   }
 
   /**
-   * Automatic monthly renewal — invoked by the end-of-month cron
-   * (subscriptionScheduler) on the LAST day of every month. Meant to find the
-   * subscriptions due for the coming month and renew them (mirroring renew()),
-   * generate their demand invoices, and notify.
+   * End-of-month usage billing — invoked by subscriptionScheduler on the last
+   * day of the month. For every active student: freeze the consumed hours (or
+   * plan / lowest-plan fallback), stamp the billed sessions, generate + send the
+   * invoice, and expire the closing month's sub. Idempotent per (student, month)
+   * via the one-open-USAGE-sub invariant. Never throws over the edge.
    *
-   * INTENTIONALLY EMPTY for now — the selection + renewal logic will be filled
-   * in later. Must never throw over the edge: the cron wraps it in a .catch, but
-   * keep it self-contained and side-effect-free until implemented.
-   *
-   * @param {Date} [now] the run time (last day of the month). Defaults to now.
-   * @returns {Promise<{ renewed:number, skipped:number }>}
+   * @param {Date} [now] last day of month M (the month being closed).
+   * @returns {Promise<{ invoiced:number, skipped:number }>}
    */
-  async autoRenewSubscriptions(now = new Date()) {
-    void now;
-    // TODO: implement automatic monthly renewal:
-    //   1. select subscriptions due to renew for next month
-    //   2. renew each (reuse this.renew / createSubscription + ensureInvoice)
-    //   3. notify parents/admins
-    return { renewed: 0, skipped: 0 };
+  async generateMonthlyUsageInvoices(now = new Date()) {
+    const consumption = monthRange(now);            // [1/M, 1/(M+1)) — closing month
+    const paymentStart = consumption.lt;            // 1/(M+1)
+    const paymentEnd = endOfMonth(paymentStart);
+    const settings = await settingsUsecase.getEffective();
+    const hourlyRate = Number(settings.hourlyRate);
+
+    const [usageByStudent, activeStudents, lowestPlanHours] = await Promise.all([
+      subscriptionRepo.sumUsageHoursByStudent(consumption),
+      subscriptionRepo.listActiveStudentsWithPlan(now),
+      subscriptionRepo.lowestActivePlanHours(),
+    ]);
+
+    let invoiced = 0;
+    let skipped = 0;
+
+    for (const { studentId, planHours } of activeStudents) {
+      const usageHours = usageByStudent.get(studentId) ?? 0;
+      const subsHours = resolveUsageHours({ usageHours, planHours, lowestPlanHours });
+
+      if (!subsHours || subsHours <= 0) {
+        skipped += 1; // only when the system has no plans at all
+        continue;
+      }
+
+      // Resolve the open sub first so a coupon attached while accumulating is
+      // honored in the frozen price. Its select exposes coupon.code. Redemption
+      // was already consumed at attach time, so pricing here does NOT re-count it.
+      const openForPricing = await subscriptionRepo.findOpenUsageSubscription({
+        studentId,
+        paymentStart,
+      });
+      const attachedCouponCode = openForPricing?.coupon?.code ?? null;
+      const { priceCharged } = await this.computeUsagePricing({
+        subsHours,
+        couponCode: attachedCouponCode,
+        hourlyRate,
+      });
+
+      const sub = await prisma.$transaction(async (tx) => {
+        let open = await subscriptionRepo.findOpenUsageSubscription({
+          studentId,
+          paymentStart,
+          client: tx,
+        });
+        if (!open) {
+          open = await subscriptionRepo.createSubscription(
+            {
+              origin: SUBSCRIPTION_ORIGINS.USAGE,
+              status: SUBSCRIPTION_STATUSES.PENDING,
+              billingPeriod: BILLING_PERIODS.MONTHLY,
+              startDate: paymentStart,
+              endDate: paymentEnd,
+              currency: settings.currency,
+              student: { connect: { id: studentId } },
+            },
+            tx,
+          );
+        }
+        // freeze the final number + price, mark it awaiting payment.
+        const frozen = await subscriptionRepo.updateSubscription(
+          open.id,
+          {
+            subsHours,
+            remainingHours: subsHours,
+            priceCharged,
+            status: SUBSCRIPTION_STATUSES.PENDING,
+          },
+          tx,
+        );
+        // stamp the sessions that were just billed (only when real usage).
+        if (usageHours > 0) {
+          await subscriptionRepo.markSessionsBilled({
+            studentId,
+            gte: consumption.gte,
+            lt: consumption.lt,
+            subscriptionId: frozen.id,
+            client: tx,
+          });
+        }
+        return frozen;
+      });
+
+      await this.ensureInvoice(sub);       // existing idempotent invoice generator
+      invoiced += 1;
+    }
+
+    return { invoiced, skipped };
   }
 }
 
