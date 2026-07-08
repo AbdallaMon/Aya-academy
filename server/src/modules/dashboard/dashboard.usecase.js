@@ -102,12 +102,13 @@ class DashboardUsecase {
     const childrenWithSubscription = await Promise.all(
       children.map(async (child) => {
         const isActive = activeIds.has(child.id);
-        const [sub, rank, latest] = await Promise.all([
+        const [sub, rank, latest, subscriptions] = await Promise.all([
           dashboardRepo.activeSubscriptionForStudent({ studentId: child.id }),
           isActive
             ? dashboardRepo.studentRank({ points: child.points ?? 0 })
             : Promise.resolve(null),
           dashboardRepo.latestSubscriptionForStudent({ studentId: child.id }),
+          dashboardRepo.cardSubscriptionsForStudent({ studentId: child.id }),
         ]);
 
         let subscriptionState;
@@ -145,6 +146,7 @@ class DashboardUsecase {
                 remainingHours: sub.remainingHours,
               }
             : null,
+          subscriptions,
           subscriptionState,
           latestSubscriptionId: latest?.id ?? null,
         };

@@ -4,7 +4,21 @@
 // ===========================================================================
 
 import { prisma } from "@aya/db/prisma.client.js";
-import { USER_ROLES, activeSubscriptionWhere } from "@aya/shared";
+import {
+  USER_ROLES,
+  activeSubscriptionWhere,
+  SUBSCRIPTION_ORIGINS,
+  SUBSCRIPTION_STATUSES,
+} from "@aya/shared";
+
+const SUB_CARD_SELECT = {
+  id: true,
+  origin: true,
+  status: true,
+  planId: true,
+  endDate: true,
+  remainingHours: true,
+};
 
 class DashboardRepo {
   // ── admin ──────────────────────────────────────────────────
@@ -156,6 +170,37 @@ class DashboardRepo {
       orderBy: { id: "desc" },
       select: { id: true, status: true },
     });
+  }
+
+  // The subscriptions a parent card needs: the active one, the open USAGE
+  // accumulator, and the newest overall (for history/CTA). De-duplicated by id.
+  async cardSubscriptionsForStudent({ studentId, client } = {}) {
+    const db = client ?? prisma;
+    const now = new Date();
+    const [active, open, latest] = await Promise.all([
+      db.subscription.findFirst({
+        where: { studentId, ...activeSubscriptionWhere(now) },
+        orderBy: { endDate: "desc" },
+        select: SUB_CARD_SELECT,
+      }),
+      db.subscription.findFirst({
+        where: {
+          studentId,
+          origin: SUBSCRIPTION_ORIGINS.USAGE,
+          status: SUBSCRIPTION_STATUSES.UPCOMING,
+        },
+        orderBy: { startDate: "desc" },
+        select: SUB_CARD_SELECT,
+      }),
+      db.subscription.findFirst({
+        where: { studentId },
+        orderBy: { id: "desc" },
+        select: SUB_CARD_SELECT,
+      }),
+    ]);
+    const byId = new Map();
+    for (const s of [active, open, latest]) if (s) byId.set(s.id, s);
+    return [...byId.values()];
   }
 
   recentReports({ studentIds, limit, client } = {}) {
