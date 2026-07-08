@@ -1045,25 +1045,62 @@ class SubscriptionUsecase {
       });
     }
 
-    // 3. Recompute the price for the SAME plan + period with the new code. A
-    //    falsy code (empty/null/absent) yields couponId null = coupon removed.
-    if (!existing.planId) {
-      throw badRequest(
-        subscriptionMessagesCodes.PLAN_REQUIRED,
-        messagesNames.subscriptionMessages,
-      );
-    }
-    const plan = await planRepo.getByIdWithCoupons(existing.planId);
-    if (!plan) throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
-
-    const billingPeriod = existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+    // 3. Recompute the price with the new code. A falsy code (empty/null/absent)
+    //    yields couponId null = coupon removed. USAGE subs are hours-based and
+    //    plan-agnostic; MANUAL subs stay plan-based (unchanged).
     const settings = await settingsUsecase.getEffective();
-    const { priceCharged, couponId } = await this.computePricing(
-      plan,
-      billingPeriod,
-      input.couponCode,
-      Number(settings.hourlyRate),
-    );
+    let priceCharged;
+    let couponId;
+
+    if (existing.origin === SUBSCRIPTION_ORIGINS.USAGE) {
+      if (existing.subsHours == null) {
+        // Accumulating (not frozen): attach the coupon now; the discount is
+        // computed at month-close freeze. Validate the code so a bad code is
+        // rejected immediately; price stays null (derived until freeze).
+        if (input.couponCode) {
+          const result = await couponUsecase.validateCoupon({
+            code: input.couponCode,
+            planId: null,
+            billingPeriod: BILLING_PERIODS.MONTHLY,
+          });
+          if (!result.valid) {
+            throw badRequest(
+              subscriptionMessagesCodes.COUPON_INVALID,
+              messagesNames.subscriptionMessages,
+            );
+          }
+          const coupon = await couponRepo.getByCode(input.couponCode);
+          couponId = coupon.id;
+        } else {
+          couponId = null;
+        }
+        priceCharged = existing.priceCharged ?? null; // unchanged / still derived
+      } else {
+        // Frozen (PENDING, pre-activation): recompute hours-based price now.
+        ({ priceCharged, couponId } = await this.computeUsagePricing({
+          subsHours: existing.subsHours,
+          couponCode: input.couponCode,
+          hourlyRate: Number(settings.hourlyRate),
+        }));
+      }
+    } else {
+      // MANUAL path — unchanged (plan-based).
+      if (!existing.planId) {
+        throw badRequest(
+          subscriptionMessagesCodes.PLAN_REQUIRED,
+          messagesNames.subscriptionMessages,
+        );
+      }
+      const plan = await planRepo.getByIdWithCoupons(existing.planId);
+      if (!plan) throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+      const billingPeriod = existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+      ({ priceCharged, couponId } = await this.computePricing(
+        plan,
+        billingPeriod,
+        input.couponCode,
+        Number(settings.hourlyRate),
+      ));
+    }
 
     // 4. Persist price + coupon link and correct redemption accounting atomically.
     const updated = await prisma.$transaction(async (tx) => {
