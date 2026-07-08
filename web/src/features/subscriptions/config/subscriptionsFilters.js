@@ -16,5 +16,11 @@ export function buildSubscriptionsFilters({ txt }) {
         {},
       ),
     },
+    {
+      type: "enum",
+      key: "origin",
+      label: txt.origin,
+      options: { MANUAL: txt.originManual, USAGE: txt.originUsage },
+    },
   ];
 }

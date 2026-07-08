@@ -12,9 +12,9 @@ import {
   MdOpenInNew,
 } from "react-icons/md";
 import { RowActionsMenu } from "../../../shared/components/index.js";
+import SubscriptionStatusChip from "../../../shared/components/SubscriptionStatusChip.jsx";
 import { localePath } from "../../../i18n/routing.js";
 import { formatMoney } from "../../../shared/lib/money.js";
-import { STATUS_COLOR } from "./constant.js";
 import { INVOICE_STATUS_COLOR } from "../../invoices/config/constant.js";
 
 /**
@@ -155,16 +155,23 @@ export function buildSubscriptionsColumns({
       renderCell: ({ row }) => row.remainingHours ?? "—",
     },
     {
-      field: "status",
-      headerName: txt.status,
-      width: 150,
+      field: "origin",
+      headerName: txt.origin,
+      width: 120,
+      sortable: false,
       renderCell: ({ row }) => (
         <Chip
           size="small"
-          color={STATUS_COLOR[row.status] || "default"}
-          label={txt[row.status] || row.status}
+          variant="outlined"
+          label={row.origin === "USAGE" ? txt.originUsage : txt.originManual}
         />
       ),
+    },
+    {
+      field: "status",
+      headerName: txt.status,
+      width: 150,
+      renderCell: ({ row }) => <SubscriptionStatusChip sub={row} txt={txt} />,
     },
     {
       field: "invoicePaid",
@@ -223,15 +230,21 @@ export function buildSubscriptionsColumns({
             headerName: txt.actions,
             width: 80,
             renderCell: ({ row }) => {
+              const isUsage = row.origin === "USAGE";
               const showApprove = can.approve && row.status === "PENDING";
               const showCancel =
                 can.cancel && CANCELLABLE.includes(row.status);
-              // Renew only applies to an ended subscription (EXPIRED/CANCELLED).
-              // The backend blocks renewing an ACTIVE/PENDING sub for everyone,
-              // admins included.
+              // Renew only applies to an ended MANUAL subscription
+              // (EXPIRED/CANCELLED). USAGE bills are never renewed — a new one is
+              // auto-opened from logged sessions. The backend blocks renewing an
+              // ACTIVE/PENDING sub for everyone, admins included.
               const showRenew =
                 can.renew &&
+                !isUsage &&
                 (row.status === "EXPIRED" || row.status === "CANCELLED");
+              // An accumulating USAGE sub (UPCOMING) has derived, not-yet-frozen
+              // hours — editing opens only after the month-close freeze.
+              const showEditHours = can.edit && !(isUsage && row.status === "UPCOMING");
               return (
                 <RowActionsMenu
                   actions={[
@@ -256,7 +269,7 @@ export function buildSubscriptionsColumns({
                       label: txt.editHours,
                       icon: <MdEdit />,
                       onClick: () => actions.openEditHours(row),
-                      hidden: !can.edit,
+                      hidden: !showEditHours,
                     },
                     {
                       label: txt.renew,
