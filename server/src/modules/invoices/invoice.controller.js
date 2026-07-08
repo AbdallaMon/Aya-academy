@@ -1,8 +1,7 @@
-import { messagesNames } from "@aya/shared";
+import { invoiceMessagesCodes, messagesNames } from "@aya/shared";
 import { ok, created } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
 import { invoiceUsecase } from "./invoice.usecase.js";
-import { invoiceMessagesCodes } from "./invoice.messages.js";
 
 class InvoiceController {
   async list(req, res) {

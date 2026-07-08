@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { reportMessagesCodes } from "./report.messages.js";
+import { reportMessagesCodes } from "@aya/shared";
 
 export class ReportValidation {
   static createReportSchema = z.object({

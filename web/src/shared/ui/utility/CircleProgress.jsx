@@ -1,6 +1,6 @@
 'use client';
 import { Box, Typography } from '@mui/material';
-import { getCurrentColorScheme } from '@/shared/utlis/constants';
+import { getCurrentColorScheme } from '@/shared/utils/constants';
 
 export function ProgressBorderCircle({
   value,

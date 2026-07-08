@@ -1,7 +1,7 @@
 import { forbidden, notFound } from "../../shared/errors/AppError.js";
 import { paginatedResult } from "../../shared/utility/pagination.js";
 import { emitToUser } from "../../infra/realtime/socket.js";
-import { notificationMessagesCodes } from "./notification.messages.js";
+import { notificationMessagesCodes } from "@aya/shared";
 import { notificationRepo } from "./notification.repo.js";
 
 /** Map a public create input onto a Prisma create payload (handles JSON). */

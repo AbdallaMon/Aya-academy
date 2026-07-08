@@ -1,8 +1,7 @@
-import { generalMessagesCodes, messagesNames } from "@aya/shared";
+import { badgeMessagesCodes, generalMessagesCodes, messagesNames } from "@aya/shared";
 import { created, ok, updated } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
 import { badgeUsecase } from "./badge.usecase.js";
-import { badgeMessagesCodes } from "./badge.messages.js";
 
 class BadgeController {
   async list(req, res) {

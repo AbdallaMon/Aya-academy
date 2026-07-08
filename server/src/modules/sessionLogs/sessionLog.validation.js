@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { SESSION_ATTENDANCE, SESSION_RATINGS, SESSION_SUBJECTS } from "@aya/shared";
-import { sessionLogMessagesCodes } from "./sessionLog.messages.js";
+import {
+  SESSION_ATTENDANCE,
+  SESSION_RATINGS,
+  SESSION_SUBJECTS,
+  sessionLogMessagesCodes,
+} from "@aya/shared";
 
 const SUBJECT_VALUES = Object.values(SESSION_SUBJECTS);
 const RATING_VALUES = Object.values(SESSION_RATINGS);

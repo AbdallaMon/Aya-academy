@@ -1,6 +1,9 @@
 import { z } from "zod";
-import { BILLING_PERIODS, SUBSCRIPTION_STATUSES } from "@aya/shared";
-import { subscriptionMessagesCodes } from "./subscription.messages.js";
+import {
+  BILLING_PERIODS,
+  SUBSCRIPTION_STATUSES,
+  subscriptionMessagesCodes,
+} from "@aya/shared";
 
 const statuses = [
   SUBSCRIPTION_STATUSES.PENDING,

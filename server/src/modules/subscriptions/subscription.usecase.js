@@ -5,6 +5,7 @@ import {
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
   messagesNames,
+  subscriptionMessagesCodes,
 } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import {
@@ -31,7 +32,6 @@ import { paymentTemplateUsecase } from "../paymentTemplates/paymentTemplate.usec
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { invoiceRepo } from "../invoices/invoice.repo.js";
 import { subscriptionRepo } from "./subscription.repo.js";
-import { subscriptionMessagesCodes } from "./subscription.messages.js";
 
 /**
  * Charged price derived from the subscription's hours × the global hourly rate.

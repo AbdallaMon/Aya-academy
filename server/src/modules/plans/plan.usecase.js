@@ -1,4 +1,4 @@
-import { BILLING_PERIODS } from "@aya/shared";
+import { BILLING_PERIODS, planMessagesCodes } from "@aya/shared";
 import { notFound } from "../../shared/errors/AppError.js";
 import {
   applyDiscount,
@@ -12,7 +12,6 @@ import {
 import { settingsUsecase } from "../settings/settings.usecase.js";
 import { couponUsecase } from "../coupons/coupon.usecase.js";
 import { planRepo } from "./plan.repo.js";
-import { planMessagesCodes } from "./plan.messages.js";
 
 class PlanUsecase {
   async list({ page, limit, filters = {} }) {

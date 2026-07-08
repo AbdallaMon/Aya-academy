@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { BILLING_PERIODS } from "@aya/shared";
-import { planMessagesCodes } from "./plan.messages.js";
+import { BILLING_PERIODS, planMessagesCodes } from "@aya/shared";
 
 const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];
 

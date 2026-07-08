@@ -3,6 +3,7 @@ import {
   CERTIFICATE_TYPES,
   NOTIFICATION_TYPES,
   USER_ROLES,
+  certificateMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
@@ -11,7 +12,6 @@ import { badgeUsecase } from "../badges/badge.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { certificateTemplateUsecase } from "../certificateTemplates/certificateTemplate.usecase.js";
 import { certificateRepo } from "./certificate.repo.js";
-import { certificateMessagesCodes } from "./certificate.messages.js";
 
 class CertificateUsecase {
   /** Throws unless `authUser` may access certificates of the given student. */

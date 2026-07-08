@@ -1,8 +1,7 @@
-import { messagesNames } from "@aya/shared";
+import { messagesNames, pointMessagesCodes } from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
 import { badRequest } from "../../shared/errors/AppError.js";
 import { pointUsecase } from "./point.usecase.js";
-import { pointMessagesCodes } from "./point.messages.js";
 
 function requiredIntQuery(value) {
   const raw = Array.isArray(value) ? value[0] : value;

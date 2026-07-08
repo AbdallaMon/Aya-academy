@@ -5,6 +5,7 @@ import {
   USER_ROLES,
   WHITEBOARD_SESSION_STATUSES,
   WHITEBOARD_VISIBILITIES,
+  whiteboardMessagesCodes,
 } from "@aya/shared";
 import {
   badRequest,
@@ -17,7 +18,6 @@ import { userRepo } from "../users/user.repo.js";
 import { whiteboardSessionRepo } from "./whiteboardSession.repo.js";
 import { whiteboardImagePath } from "./whiteboardImage.storage.js";
 import { toPublicSession } from "./whiteboardSession.dto.js";
-import { whiteboardMessagesCodes } from "./whiteboardSession.messages.js";
 
 // Best-effort unlink of a stored image file (never throws — the DB row is the
 // source of truth; a missing file just means it's already gone).

@@ -1,10 +1,14 @@
-import { POINT_SOURCES, USER_ROLES, messagesNames } from "@aya/shared";
+import {
+  POINT_SOURCES,
+  USER_ROLES,
+  messagesNames,
+  pointMessagesCodes,
+} from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { badRequest, forbidden } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
 import { pointRepo } from "./point.repo.js";
 import { toLeaderboardItem } from "./point.dto.js";
-import { pointMessagesCodes } from "./point.messages.js";
 import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;

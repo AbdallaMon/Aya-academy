@@ -3,12 +3,12 @@ import {
   REWARD_TYPES,
   USER_ROLES,
   messagesNames,
+  rewardMessagesCodes,
 } from "@aya/shared";
 import { conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
 import { userRepo } from "../users/user.repo.js";
 import { rewardRepo } from "./reward.repo.js";
-import { rewardMessagesCodes } from "./reward.messages.js";
 
 class RewardUsecase {
   async assertCanAccess(authUser, userId) {

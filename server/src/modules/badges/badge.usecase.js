@@ -1,4 +1,9 @@
-import { NOTIFICATION_TYPES, USER_ROLES, messagesNames } from "@aya/shared";
+import {
+  NOTIFICATION_TYPES,
+  USER_ROLES,
+  badgeMessagesCodes,
+  messagesNames,
+} from "@aya/shared";
 import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
 import { prisma } from "@aya/db/prisma.client.js";
 import { badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
@@ -7,7 +12,6 @@ import { pointUsecase } from "../points/point.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { badgeRepo } from "./badge.repo.js";
 import { toAwardedBadgeItem } from "./badge.dto.js";
-import { badgeMessagesCodes } from "./badge.messages.js";
 
 function isUniqueViolation(err) {
   return err?.code === "P2002";

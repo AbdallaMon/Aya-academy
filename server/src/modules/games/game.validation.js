@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { gameMessagesCodes } from "./game.messages.js";
+import { gameMessagesCodes } from "@aya/shared";
 
 export class GameValidation {
   static assignSchema = z.object({

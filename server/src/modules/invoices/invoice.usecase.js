@@ -3,6 +3,7 @@ import {
   NOTIFICATION_TYPES,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
+  invoiceMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 import { AppError, badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
@@ -16,7 +17,6 @@ import { paymentTemplateUsecase } from "../paymentTemplates/paymentTemplate.usec
 import { settingsUsecase } from "../settings/settings.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { invoiceRepo } from "./invoice.repo.js";
-import { invoiceMessagesCodes } from "./invoice.messages.js";
 
 class InvoiceUsecase {
   /** Stable, human-friendly invoice number derived from the subscription id. */

@@ -1,7 +1,6 @@
-import { messagesNames } from "@aya/shared";
+import { messagesNames, settingsMessagesCodes } from "@aya/shared";
 import { ok } from "../../shared/http/response.js";
 import { settingsUsecase } from "./settings.usecase.js";
-import { settingsMessagesCodes } from "./settings.messages.js";
 
 class SettingsController {
   async get(req, res) {

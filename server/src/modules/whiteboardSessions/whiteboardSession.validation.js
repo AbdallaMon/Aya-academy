@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { whiteboardMessagesCodes } from "./whiteboardSession.messages.js";
+import { whiteboardMessagesCodes } from "@aya/shared";
 
 export class WhiteboardSessionValidation {
   static createSchema = z.object({

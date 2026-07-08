@@ -1,8 +1,11 @@
-import { generalMessagesCodes, messagesNames } from "@aya/shared";
+import {
+  generalMessagesCodes,
+  messagesNames,
+  subscriptionMessagesCodes,
+} from "@aya/shared";
 import { created, ok } from "../../shared/http/response.js";
 import { idParam, optionalIntQuery } from "../../shared/http/params.js";
 import { subscriptionUsecase } from "./subscription.usecase.js";
-import { subscriptionMessagesCodes } from "./subscription.messages.js";
 
 class SubscriptionController {
   async list(req, res) {

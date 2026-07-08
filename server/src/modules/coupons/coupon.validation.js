@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { BILLING_PERIODS, COUPON_SOURCES, DISCOUNT_TYPES } from "@aya/shared";
-import { couponMessagesCodes } from "./coupon.messages.js";
+import {
+  BILLING_PERIODS,
+  COUPON_SOURCES,
+  DISCOUNT_TYPES,
+  couponMessagesCodes,
+} from "@aya/shared";
 
 const discountTypes = [DISCOUNT_TYPES.PERCENT, DISCOUNT_TYPES.FIXED];
 

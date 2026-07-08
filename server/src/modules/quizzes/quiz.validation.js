@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { QUIZ_ITEM_SOURCES } from "@aya/shared";
-import { quizMessagesCodes } from "./quiz.messages.js";
+import { QUIZ_ITEM_SOURCES, quizMessagesCodes } from "@aya/shared";
 
 // Reusable option schema (bank questions + custom quiz items share this shape).
 const optionSchema = z.object({

@@ -1,6 +1,6 @@
 'use client';
 
-import { getCurrentColorScheme } from '@/shared/utlis/constants';
+import { getCurrentColorScheme } from '@/shared/utils/constants';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { createTheme, alpha, darken, lighten } from '@mui/material/styles';
 export function buildTheme({ direction = 'ltr', mode = 'light' }) {

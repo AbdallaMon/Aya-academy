@@ -3,6 +3,7 @@ import {
   ASSIGNMENT_STATUSES,
   NOTIFICATION_TYPES,
   USER_ROLES,
+  gameMessagesCodes,
 } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import {
@@ -14,7 +15,6 @@ import { certificateUsecase } from "../certificates/certificate.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { gameRepo } from "./game.repo.js";
-import { gameMessagesCodes } from "./game.messages.js";
 
 class GameUsecase {
   /**

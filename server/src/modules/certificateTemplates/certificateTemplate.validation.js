@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
-import { certificateMessagesCodes } from "./certificateTemplate.messages.js";
+import { CERTIFICATE_TEMPLATE_TYPES, certificateMessagesCodes } from "@aya/shared";
 
 const optionalText = z.string().trim().optional();
 

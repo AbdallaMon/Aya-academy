@@ -2,12 +2,12 @@ import {
   AUTO_CERTIFICATE_TEMPLATE_TYPES,
   CERTIFICATE_TEMPLATE_TYPES,
   USER_ROLES,
+  certificateMessagesCodes,
   messagesNames,
 } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { conflict, notFound } from "../../shared/errors/AppError.js";
 import { certificateTemplateRepo } from "./certificateTemplate.repo.js";
-import { certificateMessagesCodes } from "./certificateTemplate.messages.js";
 
 function isUniqueViolation(err) {
   return err?.code === "P2002";

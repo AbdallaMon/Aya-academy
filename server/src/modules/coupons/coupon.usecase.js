@@ -1,9 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { badRequest, conflict, notFound } from "../../shared/errors/AppError.js";
-import { messagesNames } from "@aya/shared";
+import { couponMessagesCodes, messagesNames } from "@aya/shared";
 import { couponAppliesToPeriod } from "../../shared/utility/pricing.js";
 import { couponRepo } from "./coupon.repo.js";
-import { couponMessagesCodes } from "./coupon.messages.js";
 
 class CouponUsecase {
   async list({ page, limit, filters = {} }) {

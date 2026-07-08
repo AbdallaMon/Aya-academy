@@ -1,10 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { ATTACHMENT_OWNER_TYPES, USER_ROLES, messagesNames } from "@aya/shared";
+import {
+  ATTACHMENT_OWNER_TYPES,
+  USER_ROLES,
+  attachmentMessagesCodes,
+  messagesNames,
+} from "@aya/shared";
 import { AppError, notFound } from "../../shared/errors/AppError.js";
 import { attachmentRepo } from "./attachment.repo.js";
 import { userRepo } from "../users/user.repo.js";
-import { attachmentMessagesCodes } from "./attachment.messages.js";
 import { UPLOAD_DIR, UPLOAD_URL_PREFIX } from "./storage.js";
 
 class AttachmentUsecase {

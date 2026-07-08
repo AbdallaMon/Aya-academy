@@ -1,9 +1,8 @@
-import { NOTIFICATION_TYPES, USER_ROLES } from "@aya/shared";
+import { NOTIFICATION_TYPES, USER_ROLES, reportMessagesCodes } from "@aya/shared";
 import { forbidden, notFound } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { reportRepo } from "./report.repo.js";
-import { reportMessagesCodes } from "./report.messages.js";
 
 class ReportUsecase {
   /** Throws unless `authUser` may access the given report (by its linked students). */
