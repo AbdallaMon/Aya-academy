@@ -152,6 +152,21 @@ subsHours  = usageHours > 0        ? usageHours          // (١) الفعلي د
 
 ---
 
+## 10b. الكوبونات / Coupons
+
+**القرار:** الكوبون بيتحط على **الاشتراك** (مش الفاتورة مباشرة) — بنفس آلية الـ MANUAL: `couponId` على الاشتراك → الخصم على السعر المحسوب → الفاتورة بتنعكس أوتوماتيك (بتتحسب من الاشتراك). للـ USAGE الـ **base = `subsHours × hourlyRate`** بدل سعر الخطة.
+
+- **مين:** ولي الأمر/الطالب على اشتراكهم، والأدمن. عن طريق `POST /subscriptions/:id/apply-coupon` الموجود (object-scope عبر `assertCanAccess`).
+- **إمتى:** طالما الاشتراك **مش ACTIVE** والفاتورة UNPAID (الحُرّاس موجودين في `applyCoupon` سطور 964/975). بعد التفعيل → ممنوع.
+- **الاشتراك المفتوح (UPCOMING، `subsHours = null`):** الكوبون **يتربط دلوقتي** (نخزّن `couponId` + نحسب redemption)، والسعر يفضل null؛ **الخصم يتحسب عند القفل (freeze)** من الكوبون المربوط.
+- **بعد القفل (PENDING، `subsHours` معروف، قبل التفعيل):** `applyCoupon` بيحسب `base = subsHours × rate` → خصم → يعيد توليد الفاتورة (فوراً).
+- **scope الكوبون:** الـ `validateCoupon` الحالي بيمرّر أي كوبون **مش مربوط بخطة** (`coupon.plans` فاضية) مع `planId: null` — فكوبونات الاستهلاك = الكوبونات العامة. الكوبون المربوط بخطة معينة مايتطبقش على الاستهلاك (نتيجة طبيعية).
+- **مفيش auto-apply** (مفيش مكافآت في السيستم لسه) — الأدمن يعمل الكوبون ويتحط يدوي.
+
+**EN:** Coupon lives on the subscription; for USAGE the discount base is `subsHours × hourlyRate`. Applied via the existing `applyCoupon` (parent/student/admin scope) while the sub is not ACTIVE and the invoice is UNPAID. Attaching to an accumulating (UPCOMING) sub stores the `couponId` now and the discount is computed at freeze. Only plan-agnostic coupons apply to usage. No auto-apply.
+
+---
+
 ## 11. خارج النطاق / Out of scope (لهذه المرحلة)
 
 - فوترة الغياب / per-student hourly rates / minimum-hours floor.

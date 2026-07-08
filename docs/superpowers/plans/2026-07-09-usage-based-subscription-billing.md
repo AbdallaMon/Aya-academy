@@ -648,6 +648,132 @@ git commit -m "feat(subscriptions): month-close usage billing replaces auto-rene
 
 ---
 
+## Task 7B: Coupons on USAGE subscriptions
+
+**Files:**
+- Modify: `server/src/modules/finance/subscriptions/subscription.usecase.js` (`applyCoupon`, and the freeze block in `generateMonthlyUsageInvoices`)
+
+**Interfaces:**
+- Consumes: `couponUsecase.validateCoupon`, `couponRepo.getByCode`, `applyDiscount`, `roundMoney`, `priceFromHours`, `this.swapCouponRedemption`, `SUBSCRIPTION_ORIGINS`.
+- Produces: `subscriptionUsecase.computeUsagePricing({ subsHours, couponCode, hourlyRate }) → { priceCharged, couponId }`. `applyCoupon` supports USAGE subs (hours-based base; attach-only while accumulating). The freeze honors a pre-attached coupon.
+
+- [ ] **Step 1: Add the hours-based pricing helper**
+
+Add to `class SubscriptionUsecase` (near `computePricing`):
+
+```js
+  /**
+   * Price a USAGE subscription (hours × rate) with an optional coupon code.
+   * Only plan-agnostic coupons validate (validateCoupon with planId: null).
+   * Mirrors computePricing but the base is hours-derived, not plan-derived.
+   */
+  async computeUsagePricing({ subsHours, couponCode, hourlyRate }) {
+    const base = priceFromHours(subsHours, hourlyRate);
+    if (!couponCode) return { priceCharged: base, couponId: null };
+
+    const result = await couponUsecase.validateCoupon({
+      code: couponCode,
+      planId: null,
+      billingPeriod: BILLING_PERIODS.MONTHLY,
+    });
+    if (!result.valid) {
+      throw badRequest(subscriptionMessagesCodes.COUPON_INVALID, messagesNames.subscriptionMessages);
+    }
+    const coupon = await couponRepo.getByCode(couponCode);
+    const priceCharged = roundMoney(
+      applyDiscount(base, { type: result.discount.type, value: result.discount.value }),
+    );
+    return { priceCharged, couponId: coupon.id };
+  }
+```
+
+- [ ] **Step 2: Branch `applyCoupon` for USAGE subs**
+
+Replace the `if (!existing.planId) throw PLAN_REQUIRED` guard (lines ~985-990) and the pricing block with an origin-aware branch. For a USAGE sub, do NOT require a plan; compute hours-based price (or attach-only while accumulating):
+
+```js
+    const settings = await settingsUsecase.getEffective();
+    let priceCharged;
+    let couponId;
+
+    if (existing.origin === SUBSCRIPTION_ORIGINS.USAGE) {
+      if (existing.subsHours == null) {
+        // Accumulating (not frozen): attach the coupon now; the discount is
+        // computed at month-close freeze. Validate the code so a bad code is
+        // rejected immediately; price stays null (derived until freeze).
+        if (input.couponCode) {
+          const result = await couponUsecase.validateCoupon({
+            code: input.couponCode, planId: null, billingPeriod: BILLING_PERIODS.MONTHLY,
+          });
+          if (!result.valid) {
+            throw badRequest(subscriptionMessagesCodes.COUPON_INVALID, messagesNames.subscriptionMessages);
+          }
+          const coupon = await couponRepo.getByCode(input.couponCode);
+          couponId = coupon.id;
+        } else {
+          couponId = null;
+        }
+        priceCharged = existing.priceCharged ?? null; // unchanged / still derived
+      } else {
+        // Frozen (PENDING, pre-activation): recompute hours-based price now.
+        ({ priceCharged, couponId } = await this.computeUsagePricing({
+          subsHours: existing.subsHours,
+          couponCode: input.couponCode,
+          hourlyRate: Number(settings.hourlyRate),
+        }));
+      }
+    } else {
+      // MANUAL path — unchanged (plan-based).
+      if (!existing.planId) {
+        throw badRequest(subscriptionMessagesCodes.PLAN_REQUIRED, messagesNames.subscriptionMessages);
+      }
+      const plan = await planRepo.getByIdWithCoupons(existing.planId);
+      if (!plan) throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+      const billingPeriod = existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+      ({ priceCharged, couponId } = await this.computePricing(
+        plan, billingPeriod, input.couponCode, Number(settings.hourlyRate),
+      ));
+    }
+```
+
+Then the existing transaction block (`swapCouponRedemption` + `updateSubscription({ priceCharged, coupon })`) and best-effort invoice regenerate stay as they are — they already work with the `priceCharged`/`couponId` computed above.
+
+> Keep `assertCanAccess`, the ACTIVE guard, and the invoice-UNPAID guard exactly as they are (lines 960/964/975) — they already enforce the "not after activation" rule for both origins.
+
+- [ ] **Step 3: Honor the pre-attached coupon at freeze**
+
+In `generateMonthlyUsageInvoices` (Task 7), replace the plain `const priceCharged = priceFromHours(subsHours, hourlyRate);` with a coupon-aware computation that reuses the open sub's attached coupon. Load the open sub first, then:
+
+```js
+      // If a coupon was attached while accumulating, apply its discount now.
+      const attachedCouponCode = open?.coupon?.code ?? null;
+      const { priceCharged } = await this.computeUsagePricing({
+        subsHours,
+        couponCode: attachedCouponCode,
+        hourlyRate,
+      });
+```
+
+This requires `findOpenUsageSubscription` / the sub's select to expose `coupon: { code }`. Add `coupon: { select: { code: true } }` to `subscriptionSelect` if not already present, or fetch the coupon by `open.couponId`. Do NOT double-count redemption — it was already incremented when the coupon was attached in `applyCoupon`.
+
+> Restructure Task 7's loop so `open` is resolved before the price is computed (move the `findOpenUsageSubscription` lookup above the price line, outside the transaction, for read; keep the create-if-missing inside the tx).
+
+- [ ] **Step 4: Verify (manual)**
+
+- Boot server. As a parent, apply a plan-agnostic coupon to the child's accumulating USAGE sub via `POST /subscriptions/:id/apply-coupon`. Expected: 200; sub now has `couponId`, `priceCharged` still null. Run the month-close driver → the frozen `priceCharged` reflects the discount; the invoice shows the discount snapshot.
+- Apply a coupon to a frozen PENDING USAGE sub → `priceCharged` drops immediately and the invoice regenerates.
+- Try applying to an ACTIVE sub → 409 (unchanged guard).
+- A plan-linked coupon on a USAGE sub → rejected (`COUPON_NOT_APPLICABLE`).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add server/src/modules/finance/subscriptions/subscription.usecase.js
+git commit -m "feat(subscriptions): coupon support on USAGE subscriptions (hours-based base)"
+```
+
+---
+
 ## Task 8: Wire the cron to the new method name
 
 **Files:**
@@ -1102,6 +1228,12 @@ Use `showRenew`/`showChangePlan` to gate those buttons. Add an info banner while
 ```
 
 (Import `Alert` from `@mui/material`.)
+
+Keep the existing **coupon** affordance (the `CouponDialog` trigger) available for USAGE subs too — it must show while the sub is **not ACTIVE** and its invoice is UNPAID (same rule the backend enforces), for both admin and parent/student. If the current coupon-button visibility is gated on `!isUsage` or on having a plan, relax it to `status !== "ACTIVE" && invoiceUnpaidOrNone` so a parent can apply a coupon to the accumulating/pending usage bill:
+
+```jsx
+const showCoupon = status !== "ACTIVE" && invoiceUnpaidOrNone; // works for MANUAL + USAGE
+```
 
 - [ ] **Step 2: Swap the card for the meter when the sub is open**
 
