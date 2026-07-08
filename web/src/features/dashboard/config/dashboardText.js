@@ -126,6 +126,19 @@ export const dashboardText = {
     statusNew: "جديدة",
     statusInProgress: "نكمّلها",
     statusCompleted: "تمّت",
+    // usage-based billing (multi-sub parent cards)
+    phase: {
+      accumulating: "بتتجمّع",
+      awaitingPayment: "بانتظار الدفع",
+      upcoming: "قادم",
+      active: "نشط",
+      ended: "منتهي",
+    },
+    accumulatingTitle: "فاتورة الشهر القادم (بتتجمّع)",
+    liveHint: "بيتحدّث مع كل حصة",
+    frozenHint: "اتجمّد — جاهز للفاتورة",
+    noCurrent: "لا يوجد اشتراك حالي",
+    viewAll: "كل الاشتراكات",
   },
   en: {
     appName: "Aya Academy",
@@ -243,6 +256,19 @@ export const dashboardText = {
     statusNew: "New",
     statusInProgress: "Keep going",
     statusCompleted: "Done",
+    // usage-based billing (multi-sub parent cards)
+    phase: {
+      accumulating: "Accumulating",
+      awaitingPayment: "Awaiting payment",
+      upcoming: "Upcoming",
+      active: "Active",
+      ended: "Ended",
+    },
+    accumulatingTitle: "Next month's bill (building up)",
+    liveHint: "Updates with every session",
+    frozenHint: "Frozen — ready to invoice",
+    noCurrent: "No current subscription",
+    viewAll: "All subscriptions",
   },
 };
 

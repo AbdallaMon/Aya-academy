@@ -64,6 +64,23 @@ export const subscriptionsText = {
     rejectReason: "سبب الرفض (اختياري)",
     confirmApprove: "تأكيد الموافقة على هذا الاشتراك؟",
     empty: "لا توجد اشتراكات بعد.",
+    // usage-based billing
+    phase: {
+      accumulating: "بتتجمّع",
+      awaitingPayment: "بانتظار الدفع",
+      upcoming: "قادم",
+      active: "نشط",
+      ended: "منتهي",
+    },
+    origin: "النوع",
+    originUsage: "حسب الحصص",
+    originManual: "يدوي",
+    accumulatingTitle: "فاتورة الشهر القادم (بتتجمّع)",
+    liveHint: "بيتحدّث مع كل حصة",
+    frozenHint: "اتجمّد — جاهز للفاتورة",
+    usageManagedHint: "بيتحسب تلقائياً من الحصص، ويتقفل آخر الشهر",
+    noCurrent: "لا يوجد اشتراك حالي",
+    viewAll: "كل الاشتراكات",
   },
   en: {
     pageTitle: "Subscriptions",
@@ -124,6 +141,23 @@ export const subscriptionsText = {
     rejectReason: "Rejection reason (optional)",
     confirmApprove: "Approve this subscription?",
     empty: "No subscriptions yet.",
+    // usage-based billing
+    phase: {
+      accumulating: "Accumulating",
+      awaitingPayment: "Awaiting payment",
+      upcoming: "Upcoming",
+      active: "Active",
+      ended: "Ended",
+    },
+    origin: "Type",
+    originUsage: "Usage-based",
+    originManual: "Manual",
+    accumulatingTitle: "Next month's bill (building up)",
+    liveHint: "Updates with every session",
+    frozenHint: "Frozen — ready to invoice",
+    usageManagedHint: "Auto-computed from sessions; closes at month end",
+    noCurrent: "No current subscription",
+    viewAll: "All subscriptions",
   },
 };
 

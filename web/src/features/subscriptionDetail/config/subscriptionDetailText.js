@@ -92,6 +92,23 @@ export const subscriptionDetailText = {
     reasonActivate: "الاشتراك غير قابل للتفعيل في حالته الحالية",
     reasonMarkPaid: "لا توجد فاتورة غير مدفوعة",
     reasonCancel: "لا يمكن إلغاء اشتراك منتهٍ أو ملغى بالفعل",
+    // usage-based billing
+    phase: {
+      accumulating: "بتتجمّع",
+      awaitingPayment: "بانتظار الدفع",
+      upcoming: "قادم",
+      active: "نشط",
+      ended: "منتهي",
+    },
+    origin: "النوع",
+    originUsage: "حسب الحصص",
+    originManual: "يدوي",
+    accumulatingTitle: "فاتورة الشهر القادم (بتتجمّع)",
+    liveHint: "بيتحدّث مع كل حصة",
+    frozenHint: "اتجمّد — جاهز للفاتورة",
+    usageManagedHint: "بيتحسب تلقائياً من الحصص، ويتقفل آخر الشهر",
+    noCurrent: "لا يوجد اشتراك حالي",
+    viewAll: "كل الاشتراكات",
   },
   en: {
     pageTitle: "Subscription details",
@@ -177,6 +194,23 @@ export const subscriptionDetailText = {
     reasonActivate: "The subscription can't be activated in its current state.",
     reasonMarkPaid: "There is no unpaid invoice.",
     reasonCancel: "A subscription that's already expired or cancelled can't be cancelled.",
+    // usage-based billing
+    phase: {
+      accumulating: "Accumulating",
+      awaitingPayment: "Awaiting payment",
+      upcoming: "Upcoming",
+      active: "Active",
+      ended: "Ended",
+    },
+    origin: "Type",
+    originUsage: "Usage-based",
+    originManual: "Manual",
+    accumulatingTitle: "Next month's bill (building up)",
+    liveHint: "Updates with every session",
+    frozenHint: "Frozen — ready to invoice",
+    usageManagedHint: "Auto-computed from sessions; closes at month end",
+    noCurrent: "No current subscription",
+    viewAll: "All subscriptions",
   },
 };
 
