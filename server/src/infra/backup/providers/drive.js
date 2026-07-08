@@ -19,7 +19,7 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { ENV } from "../../../config/env.js";
 import { backupMessagesCodes, messagesNames, DRIVE_ACCOUNT_TYPES } from "@aya/shared";
 import { encrypt, decrypt } from "../../../shared/crypto/crypto.js";
-import { driveAccountsRepo } from "../../../modules/backups/driveAccounts.repo.js";
+import { driveAccountsRepo } from "../../../modules/backups/driveAccount.repo.js";
 import { encryptionKeysRepo } from "../../../modules/encryptionKeys/encryptionKeys.repo.js";
 
 const TK = messagesNames.backupMessages;

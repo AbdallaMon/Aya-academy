@@ -16,7 +16,7 @@ import { AppError } from "../../shared/errors/AppError.js";
 import { DRIVE_ACCOUNT_TYPES, backupMessagesCodes, messagesNames } from "@aya/shared";
 import { encryptionKeysRepo } from "./encryptionKeys.repo.js";
 import { encryptionKeysDto } from "./encryptionKeys.dto.js";
-import { driveAccountsRepo } from "../backups/driveAccounts.repo.js";
+import { driveAccountsRepo } from "../backups/driveAccount.repo.js";
 import { driveProvider } from "../../infra/backup/providers/drive.js";
 import {
   generateKeyBytes,

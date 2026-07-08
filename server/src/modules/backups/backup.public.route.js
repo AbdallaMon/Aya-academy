@@ -1,5 +1,5 @@
 // ===========================================================================
-// backups.public.routes — the public OAuth callback route (no auth).
+// backup.public.route — the public OAuth callback route (no auth).
 //
 // Why public? Google redirects the browser to this route, which is a cross-site
 // navigation (origin accounts.google.com). Our session cookies are SameSite, so
@@ -14,8 +14,8 @@
 import { Router } from "express";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
-import { backupsController } from "./backups.controller.js";
-import { BackupsValidation } from "./backups.validation.js";
+import { backupsController } from "./backup.controller.js";
+import { BackupsValidation } from "./backup.validation.js";
 
 const router = Router();
 const c = backupsController;

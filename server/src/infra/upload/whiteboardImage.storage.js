@@ -10,9 +10,9 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import multer from "multer";
-import { AppError } from "../../../shared/errors/AppError.js";
+import { AppError } from "../../shared/errors/AppError.js";
 import { attachmentMessagesCodes, messagesNames } from "@aya/shared";
-import { UPLOAD_DIR } from "../../attachments/storage.js";
+import { UPLOAD_DIR } from "./storage.js";
 
 const TK = messagesNames.attachmentMessages;
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB

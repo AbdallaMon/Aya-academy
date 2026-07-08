@@ -1,4 +1,4 @@
-// backups.dto — output shaping. No secrets leak (no tokens, no cipher/iv/tag).
+// backup.dto — output shaping. No secrets leak (no tokens, no cipher/iv/tag).
 // driveFileId may be shown (non-sensitive id). storageKey is internal — not leaked.
 
 import { BACKUP_STATUSES, BACKUP_PROVIDERS, backupMessagesCodes } from "@aya/shared";

@@ -1,5 +1,5 @@
 // ===========================================================================
-// attachments/storage — shared local-disk upload location.
+// storage — shared local-disk upload location.
 //
 // Resolves the uploads directory once (env-overridable) and ensures it exists.
 // Exported so the express app can statically serve the same directory and the

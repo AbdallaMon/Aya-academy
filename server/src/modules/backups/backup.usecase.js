@@ -1,5 +1,5 @@
 // ===========================================================================
-// backups.usecase — module-layer orchestration over the backup/drive/scheduler
+// backup.usecase — module-layer orchestration over the backup/drive/scheduler
 // infra services.
 //
 // Heavy work (dump/encrypt/upload/download/restore/schema-check) lives in
@@ -20,9 +20,9 @@ import {
   messagesNames,
 } from "@aya/shared";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
-import { backupsRepo } from "./backups.repo.js";
-import { driveAccountsRepo } from "./driveAccounts.repo.js";
-import { backupsDto } from "./backups.dto.js";
+import { backupsRepo } from "./backup.repo.js";
+import { driveAccountsRepo } from "./driveAccount.repo.js";
+import { backupsDto } from "./backup.dto.js";
 import { backupService, BACKUPS_DIR } from "../../infra/backup/backupService.js";
 import { driveProvider } from "../../infra/backup/providers/drive.js";
 import { getScheduledTime } from "../../infra/backup/scheduler.js";

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { ATTACHMENT_PERMISSIONS } from "@aya/shared";
 import { attachmentController } from "./attachment.controller.js";
 import { AttachmentValidation } from "./attachment.validation.js";
-import { uploadImageFile } from "./attachment.upload.js";
+import { uploadImageFile } from "../../infra/upload/attachment.upload.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";

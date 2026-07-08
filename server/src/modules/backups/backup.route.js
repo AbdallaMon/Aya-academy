@@ -1,10 +1,10 @@
 // ===========================================================================
-// backups.route — all routes guarded by backup.manage (admin-only per profiles).
+// backup.route — all routes guarded by backup.manage (admin-only per profiles).
 // Static/specific routes are declared before dynamic ones. State actions go via
 // POST /actions/<kebab>.
 //
 // NOTE: GET /drive/callback is PUBLIC (no auth) and mounted in routes.js BEFORE
-// authentication — see backups.public.routes.js. Auth is mounted once here.
+// authentication — see backup.public.route.js. Auth is mounted once here.
 // ===========================================================================
 
 import { Router } from "express";
@@ -12,9 +12,9 @@ import { PERMISSIONS } from "@aya/shared";
 import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
-import { backupsController } from "./backups.controller.js";
-import { BackupsValidation } from "./backups.validation.js";
-import { uploadRestoreFile } from "./backups.upload.js";
+import { backupsController } from "./backup.controller.js";
+import { BackupsValidation } from "./backup.validation.js";
+import { uploadRestoreFile } from "../../infra/upload/backups.upload.js";
 
 const router = Router();
 const c = backupsController;

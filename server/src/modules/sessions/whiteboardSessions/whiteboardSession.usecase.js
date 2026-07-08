@@ -16,7 +16,7 @@ import {
 import { ENV } from "../../../config/env.js";
 import { userRepo } from "../../users/user.repo.js";
 import { whiteboardSessionRepo } from "./whiteboardSession.repo.js";
-import { whiteboardImagePath } from "./whiteboardImage.storage.js";
+import { whiteboardImagePath } from "../../../infra/upload/whiteboardImage.storage.js";
 import { toPublicSession } from "./whiteboardSession.dto.js";
 
 // Best-effort unlink of a stored image file (never throws — the DB row is the

@@ -1,11 +1,11 @@
-// backups.controller — thin: reads validated input, calls the usecase, responds
+// backup.controller — thin: reads validated input, calls the usecase, responds
 // via helpers. No business logic.
 
 import { ok, created } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
 import { backupMessagesCodes, generalMessagesCodes, messagesNames } from "@aya/shared";
 import { ENV } from "../../config/env.js";
-import { backupsUsecase } from "./backups.usecase.js";
+import { backupsUsecase } from "./backup.usecase.js";
 
 const TK = messagesNames.backupMessages;
 

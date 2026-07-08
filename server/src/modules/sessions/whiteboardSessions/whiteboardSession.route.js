@@ -5,7 +5,7 @@ import { WhiteboardSessionValidation } from "./whiteboardSession.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { authMiddleware } from "../../../shared/middlewares/auth.middleware.js";
-import { uploadWhiteboardImage } from "./whiteboardImage.storage.js";
+import { uploadWhiteboardImage } from "../../../infra/upload/whiteboardImage.storage.js";
 
 const whiteboardSessionRoutes = Router();
 

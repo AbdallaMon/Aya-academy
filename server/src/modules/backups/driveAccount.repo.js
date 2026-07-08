@@ -1,8 +1,8 @@
 // ===========================================================================
-// driveAccounts.repo — Prisma I/O only for the DriveAccount table. No business
+// driveAccount.repo — Prisma I/O only for the DriveAccount table. No business
 // logic, no AppError.
 //
-// Separate from backups.repo so the drive provider can import it without pulling
+// Separate from backup.repo so the drive provider can import it without pulling
 // in Backup logic.
 // ===========================================================================
 

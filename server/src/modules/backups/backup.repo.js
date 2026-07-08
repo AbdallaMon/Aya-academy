@@ -1,6 +1,6 @@
 // ===========================================================================
-// backups.repo — Prisma I/O only for the Backup table. No business logic, no
-// AppError. (DriveAccount lives in the separate driveAccounts.repo.js.)
+// backup.repo — Prisma I/O only for the Backup table. No business logic, no
+// AppError. (DriveAccount lives in the separate driveAccount.repo.js.)
 //
 // Reference idiom: single object args with optional `client` (`client ?? prisma`),
 // and `list` owns pagination and returns { items, total, page, pageSize }.

@@ -1,4 +1,4 @@
-// backups.validation — Zod schemas for the mutating routes + filters.
+// backup.validation — Zod schemas for the mutating routes + filters.
 
 import { z } from "zod";
 import { BACKUP_STATUSES, DRIVE_ACCOUNT_TYPES } from "@aya/shared";

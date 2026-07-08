@@ -9,7 +9,7 @@ import {
 import { AppError, notFound } from "../../shared/errors/AppError.js";
 import { attachmentRepo } from "./attachment.repo.js";
 import { userRepo } from "../users/user.repo.js";
-import { UPLOAD_DIR, UPLOAD_URL_PREFIX } from "./storage.js";
+import { UPLOAD_DIR, UPLOAD_URL_PREFIX } from "../../infra/upload/storage.js";
 
 class AttachmentUsecase {
   /**
