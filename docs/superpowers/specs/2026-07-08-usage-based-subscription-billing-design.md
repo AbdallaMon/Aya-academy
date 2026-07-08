@@ -35,22 +35,26 @@
 
 ## 4. حساب الساعات / Hours computation
 
-للطالب في نهاية الشهر M:
+للطالب في نهاية الشهر M — **سلسلة fallback محسومة (مفيش طالب يتخطّى):**
 
 ```
 usageHours = SUM(SessionLog.durationHours
                  WHERE studentId = X
                    AND attendance = PRESENT
-                   AND sessionDate ∈ [1/M, نهاية M])
+                   AND sessionDate ∈ [1/M, نهاية M]
+                   AND billedSubscriptionId IS NULL)   // الحصص غير المفوترة بس
 
-subsHours  = usageHours > 0 ? usageHours : planHours(X)
+subsHours  = usageHours > 0        ? usageHours          // (١) الفعلي دايماً، حتى لو أقل من الخطة
+           : planHours(X) != null  ? planHours(X)        // (٢) خطة الطالب لو صفر حصص
+           :                         lowestPlanHours()   // (٣) أقل خطة نشطة لو مفيش خطة أصلاً
 ```
 
-- `planHours(X)` = ساعات خطة الطالب المأخوذة من اشتراكه الحالي (`Subscription.planId → Plan.hours`).
-- **فرضية (محتاجة تأكيد):** لو الطالب عمل حصص أقل من خطته، بنفوتر **الحصص الفعلية** (الخطة مش حد أدنى). الـ plan fallback بيشتغل بس عند صفر حصص.
+- `planHours(X)` = ساعات خطة الطالب من اشتراكه الحالي (`Subscription.planId → Plan.hours`).
+- `lowestPlanHours()` = ساعات **أقل خطة نشطة** (`Plan.isActive = true` مرتّبة بـ `hours asc`) — الحد الأدنى المطلق فمحدش يعدّي بدون فاتورة.
+- **قرار محسوم:** الحصص الفعلية تتفوتر زي ما هي حتى لو أقل من الخطة. الخطة/أقل-خطة fallback عند **صفر** حصص فقط.
 - السعر: `priceCharged = roundMoney(subsHours × AppSetting.hourlyRate)` (نفس `priceFromHours` الموجودة).
 
-**EN:** `subsHours = usageHours if any else the student's plan hours`. Price via existing `priceFromHours`. **Assumption to confirm:** actual sessions bill as-is even if below plan; plan is a zero-sessions fallback only, not a floor.
+**EN:** Fallback chain, **no student is ever skipped**: actual unbilled `PRESENT` hours if any → else the student's plan hours → else the lowest active plan's hours. Actual bills as-is even below plan. Price via existing `priceFromHours`.
 
 ---
 
@@ -61,7 +65,7 @@ subsHours  = usageHours > 0 ? usageHours : planHours(X)
 1. **`Subscription.origin`** — enum جديد `SubscriptionOrigin { MANUAL, USAGE }`, default `MANUAL`.
    - `MANUAL` = المسار الحالي (prepaid/plan pick/renew). `USAGE` = المتولّد من الاستهلاك.
    - additive + default → **مفيش backfill** لازم.
-2. **(اختياري / hardening)** `SessionLog.billedSubscriptionId Int?` (FK → Subscription, `onDelete: SetNull`) — يتحدد لما الحصة تتضم لفاتورة USAGE متصدّرة. يمنع الازدواج ويسمح بكنس الحصص المتأخرة. **مش ضروري للـ MVP** طالما الكرون بيبكتة بالتاريخ ويشتغل مرة واحدة/شهر مع قيد تفرّد.
+2. **`SessionLog.billedSubscriptionId Int?`** (FK → Subscription, `onDelete: SetNull`) — يتحدد لما الحصة تتضم لفاتورة USAGE متجمّدة. المجموع الشهري بيعُدّ الحصص **غير المفوترة** بس (`billedSubscriptionId IS NULL`) → يمنع الازدواج ويكنس أي حصة اتضافت متأخر (بتروح لأقرب فاتورة جاية). **مُفعّل من البداية** (قرار محسوم).
 3. مفيش status جديد — بنعيد استخدام `SubscriptionStatus` الموجود (شوف §7).
 
 > **قرار الترحيل:** الاشتراكات الحالية كلها تبقى `origin = MANUAL` تلقائياً. لا migration بيانات. (زي عرف [[project-aya-subscription-hours-renewal]] مع `subsHours @map`.)
@@ -141,8 +145,8 @@ subsHours  = usageHours > 0 ? usageHours : planHours(X)
 
 - **مسارات المانيوال/prepaid** (`POST /subscriptions`, `/request`, `/renew`, `changePlan`) **زي ما هي** — بتتعلّم `origin = MANUAL`.
 - **`prepareForNewSubscription`** لازم يتظبط **يتجاهل اشتراكات USAGE** (ماياخدش مكانها ولا يحذفها كـ PENDING) عشان الاتنين يتعايشوا من غير تعارض. (حالياً بيحذف أي PENDING ويمنع ثاني ACTIVE.)
-- **طالب من غير خطة ومن غير حصص:** يتخطّى (مفيش فاتورة) — أو يتسجّل للمراجعة. **قرار مفتوح.**
-- **حصة تتضاف متأخر بعد القفل** (لشهر قفل): تروح لاشتراك الشهر الجاي، أو تتعالج يدوي عبر `previousDebt`/`previousCredit` الموجودين على الفاتورة. (لو فعّلنا `billedSubscriptionId` بتتكنس تلقائياً.)
+- **طالب من غير خطة ومن غير حصص:** يتحط في **أقل خطة نشطة** ويتحسب عليها (§4، محدش يتخطّى).
+- **حصة تتضاف متأخر بعد القفل** (لشهر قفل): بما إن `billedSubscriptionId` بيتحدد عند القفل، الحصة المتأخرة `billedSubscriptionId IS NULL` فبتتكنس تلقائياً في فاتورة الشهر اللي بعده.
 
 **EN:** Manual/prepaid paths unchanged (tagged `MANUAL`). `prepareForNewSubscription` must **ignore USAGE subs**. A student with no plan and no sessions → skipped (open decision). Late sessions after close → next month or manual credit/debit adjustment (or auto-swept if `billedSubscriptionId` enabled).
 
@@ -156,11 +160,11 @@ subsHours  = usageHours > 0 ? usageHours : planHours(X)
 
 ---
 
-## 12. قرارات مفتوحة للمراجعة / Open decisions to confirm
+## 12. قرارات محسومة / Resolved decisions
 
-1. الحصص الفعلية الأقل من الخطة → نفوتر الفعلي (فرضية §4). ✅/❌؟
-2. طالب من غير خطة ومن غير حصص → نتخطّاه؟ (§10)
-3. نفعّل `SessionLog.billedSubscriptionId` من دلوقتي ولا نأجّله؟ (§5)
+1. ✅ الحصص الفعلية الأقل من الخطة → **نفوتر الفعلي** (الخطة fallback عند الصفر بس). (§4)
+2. ✅ طالب من غير خطة ومن غير حصص → **يتحط في أقل خطة نشطة** ويتحسب عليها؛ محدش يتخطّى. (§4، §10)
+3. ✅ `SessionLog.billedSubscriptionId` → **مُفعّل من البداية**. (§5)
 
 ---
 
@@ -230,7 +234,8 @@ async sumUsageHoursByStudent({ gte, lt }) {
     by: ["studentId"],
     where: {
       sessionDate: { gte, lt },
-      attendance: "PRESENT", // ATTENDANCE.PRESENT من @aya/shared
+      attendance: "PRESENT",     // ATTENDANCE.PRESENT من @aya/shared
+      billedSubscriptionId: null, // غير المفوترة بس
     },
     _sum: { durationHours: true },
   });
