@@ -5,10 +5,7 @@ import {
   messagesNames,
 } from "@aya/shared";
 import { conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
-import {
-  assertActiveForStudent,
-  filterActiveStudentIds,
-} from "../../shared/access/subscriptionAccess.js";
+import { assertActiveForStudent } from "../../shared/access/subscriptionAccess.js";
 import { userRepo } from "../users/user.repo.js";
 import { rewardRepo } from "./reward.repo.js";
 import { rewardMessagesCodes } from "./reward.messages.js";
@@ -30,26 +27,9 @@ class RewardUsecase {
     throw forbidden(rewardMessagesCodes.CANNOT_ACCESS_REWARD);
   }
 
-  async buildListWhere(authUser, { userId, status }) {
-    const where = {};
-    if (status) where.status = status;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (userId) where.userId = userId;
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      const ids = await userRepo.getStudentIdsForParent(authUser.id);
-      const activeIds = await filterActiveStudentIds(ids);
-      const scope = [...activeIds, authUser.id];
-      where.userId =
-        userId && scope.includes(userId) ? userId : { in: scope };
-    } else {
-      where.userId = authUser.id;
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
-    const where = await this.buildListWhere(authUser, filters);
+    // Where-building now lives in the repo (reference convention).
+    const where = await rewardRepo.buildListWhere(authUser, filters);
     return rewardRepo.list({ page, limit, where });
   }
 

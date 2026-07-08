@@ -13,6 +13,7 @@
 
 import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
+import { buildSearchQuery, parseBooleanFilter } from "../../shared/utility/helper.js";
 import {
   childUserSelect,
   overviewChildSelect,
@@ -23,7 +24,44 @@ import {
 } from "./user.dto.js";
 
 class UserRepo {
-  // Internal-only — low-level page fetch; the usecase owns pagination/scope.
+  /**
+   * Build the scoped Prisma `where` for the users list.
+   * Where-building lives in the repo (reference convention) — the usecase only
+   * forwards the raw filters + the auth context.
+   *   ADMIN   → optional role filter over everyone
+   *   PARENT  → their linked students only
+   *   other   → just themselves
+   */
+  async buildListWhere(authUser, { search, role, isActive } = {}) {
+    const where = {};
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["name", "email", "nickname"],
+    });
+    if (or) where.OR = or;
+
+    const active = parseBooleanFilter(isActive);
+    if (active !== undefined) where.isActive = active;
+
+    if (authUser.role === USER_ROLES.ADMIN) {
+      if (role && role !== "ALL") where.role = role;
+    } else if (authUser.role === USER_ROLES.PARENT) {
+      const studentIds = await this.getStudentIdsForParent(authUser.id);
+      where.id = { in: studentIds };
+      where.role = USER_ROLES.STUDENT;
+    } else {
+      where.id = authUser.id;
+    }
+    return where;
+  }
+
+  // Scoped list — builds the where from (authUser, filters) then pages.
+  async listScoped({ authUser, filters = {}, skip, take } = {}) {
+    const where = await this.buildListWhere(authUser, filters);
+    return this.listUsers({ where, skip, take });
+  }
+
+  // Internal-only — low-level page fetch; the caller owns pagination.
   async listUsers({ where, skip, take, client } = {}) {
     const db = client ?? prisma;
     const [items, total] = await Promise.all([

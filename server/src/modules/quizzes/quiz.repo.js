@@ -5,8 +5,12 @@
 // ===========================================================================
 
 import { prisma } from "@aya/db/prisma.client.js";
-import { activeSubscriptionWhere } from "@aya/shared";
+import { activeSubscriptionWhere, USER_ROLES } from "@aya/shared";
 import { paginate } from "../../shared/utility/pagination.js";
+import {
+  buildSearchQuery,
+  parseBooleanFilter,
+} from "../../shared/utility/helper.js";
 import {
   attemptSelect,
   bankQuestionSelect,
@@ -65,6 +69,21 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // BANK
   // ════════════════════════════════════════════════════════
+  // Build the Prisma `where` for the admin question-bank list (reference
+  // convention: where-building lives in the repo).
+  buildBankWhere({ search, categoryId, isActive }) {
+    const where = {};
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["textAr", "textEn"],
+    });
+    if (or) where.OR = or;
+    if (categoryId) where.categoryId = categoryId;
+    const active = parseBooleanFilter(isActive);
+    if (active !== undefined) where.isActive = active;
+    return where;
+  }
+
   async listBankQuestions({ where, page, limit, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });
@@ -152,6 +171,14 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // INVITES
   // ════════════════════════════════════════════════════════
+  // Scope the invite list: ADMIN sees all; PARENT only invites addressed to
+  // them (reference convention: where-building lives in the repo).
+  buildInviteListWhere(authUser) {
+    if (authUser.role === USER_ROLES.ADMIN) return {};
+    // PARENT sees only invites addressed to them.
+    return { parentId: authUser.id };
+  }
+
   async listInvites({ where, page, limit, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });
@@ -310,6 +337,76 @@ class QuizRepo {
   // ════════════════════════════════════════════════════════
   // QUIZ READ
   // ════════════════════════════════════════════════════════
+  /** Role scope for the quiz list (which quizzes the viewer may see at all). */
+  buildQuizScopeWhere(authUser) {
+    if (authUser.role === USER_ROLES.ADMIN) return {};
+    if (authUser.role === USER_ROLES.PARENT) {
+      return { createdByParentId: authUser.id };
+    }
+    // STUDENT: quizzes where they are a participant.
+    return { participants: { some: { studentId: authUser.id } } };
+  }
+
+  /** The child an admin/parent is focusing the list on (the "أطفالي" filter). */
+  resolveFocusStudentId(authUser, studentId) {
+    if (authUser.role === USER_ROLES.STUDENT) return undefined;
+    const id = Number(studentId);
+    return Number.isInteger(id) && id > 0 ? id : undefined;
+  }
+
+  /**
+   * Compose the full list `where`: role scope + title search + an optional
+   * per-child ("أطفالي") narrowing + done/pending status filter. `status`
+   * semantics depend on whose lens we're using:
+   *  - STUDENT, or ADMIN/PARENT focused on ONE child: done = that child has an
+   *    attempt; pending = they don't.
+   *  - ADMIN/PARENT (no child focus): done = EVERY assigned child completed.
+   */
+  async buildQuizListWhere(authUser, { search, status, studentId } = {}) {
+    const where = this.buildQuizScopeWhere(authUser);
+    const ands = [];
+
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["title"],
+    });
+    if (or) ands.push({ OR: or });
+
+    // "أطفالي" filter — narrow to quizzes that include the chosen child.
+    const focusStudentId = this.resolveFocusStudentId(authUser, studentId);
+    if (focusStudentId) {
+      ands.push({ participants: { some: { studentId: focusStudentId } } });
+    }
+
+    const normalized =
+      typeof status === "string" ? status.toLowerCase() : undefined;
+    if (normalized === "done" || normalized === "pending") {
+      // A single-child lens (the student themself, or a focused child) checks
+      // that one child's attempt; the manager overview checks full completion.
+      const lensStudentId =
+        authUser.role === USER_ROLES.STUDENT ? authUser.id : focusStudentId;
+      if (lensStudentId) {
+        ands.push(
+          normalized === "done"
+            ? { attempts: { some: { studentId: lensStudentId } } }
+            : { attempts: { none: { studentId: lensStudentId } } },
+        );
+      } else {
+        const parentId =
+          authUser.role === USER_ROLES.PARENT ? authUser.id : null;
+        const doneIds = await this.getFullyCompletedQuizIds({ parentId });
+        ands.push(
+          normalized === "done"
+            ? { id: { in: doneIds } }
+            : { id: { notIn: doneIds } },
+        );
+      }
+    }
+
+    if (ands.length) where.AND = ands;
+    return where;
+  }
+
   async listQuizzes({ where, page, limit, select, orderBy, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });

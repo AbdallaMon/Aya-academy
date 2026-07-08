@@ -1,6 +1,5 @@
 import { NOTIFICATION_TYPES, USER_ROLES } from "@aya/shared";
 import { forbidden, notFound } from "../../shared/errors/AppError.js";
-import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { userRepo } from "../users/user.repo.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { reportRepo } from "./report.repo.js";
@@ -20,34 +19,9 @@ class ReportUsecase {
     throw forbidden(reportMessagesCodes.CANNOT_ACCESS_REPORT);
   }
 
-  async buildListWhere(authUser, { search, studentId }) {
-    const where = {};
-    const term = typeof search === "string" ? search.trim() : "";
-    const searchWhere = buildSearchQuery({
-      searchType: "multiKeySearch",
-      keysValues: [{ key: "title", value: term || undefined }],
-    });
-    if (searchWhere.OR) where.OR = searchWhere.OR;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (studentId) where.students = { some: { studentId } };
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      const scoped =
-        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
-      where.students = { some: { studentId: { in: scoped } } };
-    } else {
-      where.students = { some: { studentId: authUser.id } };
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
-    const where = await this.buildListWhere(authUser, {
-      search: filters.search,
-      studentId: filters.studentId,
-    });
-    return reportRepo.listReports({ where, page, limit });
+    // Where-building now lives in the repo (reference convention).
+    return reportRepo.listScoped({ authUser, filters, page, limit });
   }
 
   async getById({ id, authUser }) {

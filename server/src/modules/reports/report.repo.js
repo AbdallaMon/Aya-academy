@@ -4,11 +4,45 @@
 // pagination and returns { items, total, page, pageSize }.)
 // ===========================================================================
 
+import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
+import { buildSearchQuery } from "../../shared/utility/helper.js";
+import { userRepo } from "../users/user.repo.js";
 import { reportListSelect, reportSelect } from "./report.dto.js";
 
 class ReportRepo {
+  async buildListWhere(authUser, { search, studentId } = {}) {
+    const where = {};
+    const term = typeof search === "string" ? search.trim() : "";
+    const searchWhere = buildSearchQuery({
+      searchType: "multiKeySearch",
+      keysValues: [{ key: "title", value: term || undefined }],
+    });
+    if (searchWhere.OR) where.OR = searchWhere.OR;
+
+    if (authUser.role === USER_ROLES.ADMIN) {
+      if (studentId) where.students = { some: { studentId } };
+    } else if (authUser.role === USER_ROLES.PARENT) {
+      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
+      const scoped =
+        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
+      where.students = { some: { studentId: { in: scoped } } };
+    } else {
+      where.students = { some: { studentId: authUser.id } };
+    }
+    return where;
+  }
+
+  // Scoped list — builds the where from (authUser, filters) then pages.
+  async listScoped({ authUser, filters = {}, page, limit, client } = {}) {
+    const where = await this.buildListWhere(authUser, {
+      search: filters.search,
+      studentId: filters.studentId,
+    });
+    return this.listReports({ where, page, limit, client });
+  }
+
   async listReports({ where = {}, page, limit, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });

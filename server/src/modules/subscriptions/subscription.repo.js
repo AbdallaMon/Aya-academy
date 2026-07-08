@@ -1,8 +1,42 @@
 import { prisma } from "@aya/db/prisma.client.js";
-import { activeSubscriptionWhere, SUBSCRIPTION_STATUSES } from "@aya/shared";
+import { activeSubscriptionWhere, SUBSCRIPTION_STATUSES, USER_ROLES } from "@aya/shared";
+import { userRepo } from "../users/user.repo.js";
 import { subscriptionSelect, toSubscription } from "./subscription.dto.js";
 
 class SubscriptionRepo {
+  /**
+   * Build the scoped Prisma `where` for the subscription list.
+   * Where-building lives in the repo (reference convention) — the usecase only
+   * forwards the raw filters + the auth context.
+   *   ADMIN  → optional studentId filter over everyone
+   *   PARENT → their linked students (narrowed to studentId when it's theirs)
+   *   other  → just themselves
+   */
+  async buildListWhere(authUser, { studentId, status } = {}) {
+    const where = {};
+
+    if (status) where.status = status;
+
+    if (authUser.role === USER_ROLES.ADMIN) {
+      if (studentId) where.studentId = studentId;
+    } else if (authUser.role === USER_ROLES.PARENT) {
+      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
+      const scoped =
+        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
+      where.studentId = { in: scoped };
+    } else {
+      where.studentId = authUser.id;
+    }
+    return where;
+  }
+
+  // Scoped list — builds the where from (authUser, filters) then pages the
+  // latest-per-student query.
+  async listScoped({ authUser, filters = {}, skip, take } = {}) {
+    const where = await this.buildListWhere(authUser, filters);
+    return this.listLatestPerStudent({ where, skip, take });
+  }
+
   async listSubscriptions(where, skip, take) {
     const [rows, total] = await Promise.all([
       prisma.subscription.findMany({

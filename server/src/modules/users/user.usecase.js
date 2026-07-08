@@ -12,7 +12,6 @@ import { AppError, badRequest, conflict, forbidden, notFound } from "../../share
 import { attachmentRepo } from "../attachments/attachment.repo.js";
 import { attachmentUsecase } from "../attachments/attachment.usecase.js";
 import { hashPassword } from "../../infra/security/hash.js";
-import { buildSearchQuery, parseBooleanFilter } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { subscriptionRepo } from "../subscriptions/subscription.repo.js";
 import { toChildItem, toOverviewParents, toUserListItem } from "./user.dto.js";
@@ -31,37 +30,18 @@ class UserUsecase {
     throw forbidden(userMessagesCodes.CANNOT_ACCESS_USER);
   }
 
-  async buildListWhere(authUser, { search, role, isActive }) {
-    const where = {};
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["name", "email", "nickname"],
-    });
-    if (or) where.OR = or;
-
-    const active = parseBooleanFilter(isActive);
-    if (active !== undefined) where.isActive = active;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (role && role !== "ALL") where.role = role;
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      // FROZEN positional call — cross-module userRepo signature.
-      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      where.id = { in: studentIds };
-      where.role = USER_ROLES.STUDENT;
-    } else {
-      where.id = authUser.id;
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
     const { skip, take, page: currentPage, limit: pageLimit } = paginate({
       page,
       limit,
     });
-    const where = await this.buildListWhere(authUser, filters);
-    const { items, total } = await userRepo.listUsers({ where, skip, take });
+    // Where-building now lives in the repo (reference convention).
+    const { items, total } = await userRepo.listScoped({
+      authUser,
+      filters,
+      skip,
+      take,
+    });
 
     // Batch the "subscribed this month" lookup for the student rows on this
     // page only — one query, no N+1.

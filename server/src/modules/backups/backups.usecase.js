@@ -31,22 +31,11 @@ const TK = messagesNames.backupMessages;
 
 class BackupsUsecase {
   async list({ query }) {
-    const where = {};
-    const driveAccountId = Number(query.driveAccountId);
-    if (Number.isInteger(driveAccountId) && driveAccountId > 0) {
-      where.driveAccountId = driveAccountId;
-    }
-    if (query.status) where.status = query.status;
-    if (query.dateFrom || query.dateTo) {
-      where.createdAt = {};
-      if (query.dateFrom) where.createdAt.gte = new Date(`${query.dateFrom}T00:00:00`);
-      if (query.dateTo) where.createdAt.lte = new Date(`${query.dateTo}T23:59:59.999`);
-    }
-
     const { page, limit } = paginate({ page: query.page, limit: query.limit });
-    // Repo `list` returns the reference shape { items, total, page, pageSize };
+    // Filter `where` building now lives in the repo (reference convention).
+    // Repo `listScoped` returns the reference shape { items, total, page, pageSize };
     // alias `items` → `rows` here so the local enrichment below is unchanged.
-    const { items: rows, total } = await backupsRepo.list({ page, limit, where });
+    const { items: rows, total } = await backupsRepo.listScoped({ query, page, limit });
 
     const localPresenceMap = {};
     for (const r of rows) {

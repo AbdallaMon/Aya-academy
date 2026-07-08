@@ -273,24 +273,11 @@ class InvoiceUsecase {
 
   /**
    * Paginated invoice list. The auth-scoped `where` (parent → their students,
-   * student → self, admin → all) is built here; generic pagination lives in the
-   * repo.
+   * student → self, admin → all) now lives in the repo (reference convention);
+   * generic pagination lives in the repo too.
    */
   async list({ page, limit, filters = {}, authUser }) {
-    const where = {};
-    if (filters.status) where.status = filters.status;
-
-    if (authUser.role === USER_ROLES.PARENT) {
-      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      where.subscription = { studentId: { in: studentIds } };
-      // Non-admins only see invoices the teacher has requested payment for.
-      where.sentAt = { not: null };
-    } else if (authUser.role === USER_ROLES.STUDENT) {
-      where.subscription = { studentId: authUser.id };
-      where.sentAt = { not: null };
-    }
-
-    return invoiceRepo.list({ page, limit, where });
+    return invoiceRepo.listScoped({ authUser, filters, page, limit });
   }
 
   /**

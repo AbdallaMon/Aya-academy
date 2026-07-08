@@ -15,10 +15,8 @@ import {
 } from "../../../shared/components/index.js";
 import { BANK_URL, CATEGORIES_URL } from "../config/constant.js";
 import { useQuizBankText } from "../config/quizBankText.js";
-import {
-  buildQuizBankColumns,
-  buildQuizBankFilters,
-} from "../config/quizBankColumns.js";
+import { buildQuizBankColumns } from "../config/quizBankColumns.js";
+import { buildQuizBankFilters } from "../config/quizBankFilters.js";
 import QuestionFormDialog from "../components/QuestionFormDialog.jsx";
 import CategoriesDialog from "../components/CategoriesDialog.jsx";
 

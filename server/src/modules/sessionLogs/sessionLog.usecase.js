@@ -7,20 +7,6 @@ import { sessionLogMessagesCodes } from "./sessionLog.messages.js";
 
 const SUBJECT_VALUES = Object.values(SESSION_SUBJECTS);
 
-/** Parse "YYYY-MM" into a { gte, lt } UTC month range; null when malformed. */
-function parseMonthRange(month) {
-  if (typeof month !== "string") return null;
-  const match = /^(\d{4})-(\d{2})$/.exec(month.trim());
-  if (!match) return null;
-  const year = Number(match[1]);
-  const monthIndex = Number(match[2]) - 1;
-  if (monthIndex < 0 || monthIndex > 11) return null;
-  const gte = new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0, 0));
-  const lt = new Date(Date.UTC(year, monthIndex + 1, 1, 0, 0, 0, 0));
-  if (Number.isNaN(gte.getTime()) || Number.isNaN(lt.getTime())) return null;
-  return { gte, lt };
-}
-
 class SessionLogUsecase {
   /** Throws unless `authUser` may access the given session log (by its student). */
   async assertCanAccess(authUser, sessionLog) {
@@ -32,31 +18,9 @@ class SessionLogUsecase {
     throw forbidden(sessionLogMessagesCodes.CANNOT_ACCESS_SESSION_LOG);
   }
 
-  async buildListWhere(authUser, { month, studentId }) {
-    const where = {};
-    const range = parseMonthRange(month);
-    if (range) where.sessionDate = { gte: range.gte, lt: range.lt };
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (studentId) where.studentId = studentId;
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      const scoped =
-        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
-      where.studentId = { in: scoped };
-    } else {
-      // Students (and any other role) are never exposed to session logs.
-      where.studentId = { in: [] };
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
-    const where = await this.buildListWhere(authUser, {
-      month: filters.month,
-      studentId: filters.studentId,
-    });
-    return sessionLogRepo.listSessionLogs({ where, page, limit });
+    // Where-building now lives in the repo (reference convention).
+    return sessionLogRepo.listScoped({ authUser, filters, page, limit });
   }
 
   async getById({ id, authUser }) {

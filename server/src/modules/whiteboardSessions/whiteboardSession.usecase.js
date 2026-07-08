@@ -12,7 +12,6 @@ import {
   forbidden,
   notFound,
 } from "../../shared/errors/AppError.js";
-import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { ENV } from "../../config/env.js";
 import { userRepo } from "../users/user.repo.js";
 import { whiteboardSessionRepo } from "./whiteboardSession.repo.js";
@@ -39,21 +38,9 @@ function hashShareToken(raw) {
 }
 
 class WhiteboardSessionUsecase {
-  buildListWhere(authUser, { search } = {}) {
-    const where = {};
-    // ADMIN scope: for now admins manage every session. (Scope hook kept here so
-    // a future "own sessions only" rule slots in cleanly.)
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["title"],
-    });
-    if (or) where.OR = or;
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
-    const where = this.buildListWhere(authUser, filters);
-    return whiteboardSessionRepo.list({ where, page, limit });
+    // Where-building now lives in the repo (reference convention).
+    return whiteboardSessionRepo.listScoped({ authUser, filters, page, limit });
   }
 
   async getById({ id }) {

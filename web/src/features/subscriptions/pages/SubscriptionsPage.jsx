@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Button, Chip, Link as MuiLink, Stack, TextField, Typography } from "@mui/material";
-import Link from "next/link";
+import { Box, Button, Stack, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { MdCheck, MdClose, MdCancel, MdReceiptLong, MdEdit, MdAutorenew, MdOpenInNew, MdAdd } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
@@ -12,27 +11,21 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { localePath } from "../../../i18n/routing.js";
 import {
   DataTable,
   FormDialog,
   PageHeader,
-  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
-import {
-  SUBSCRIPTIONS_URL,
-  SUBSCRIPTION_STATUSES,
-  STATUS_COLOR,
-} from "../config/constant.js";
-import { formatMoney } from "../../../shared/lib/money.js";
+import { SUBSCRIPTIONS_URL } from "../config/constant.js";
 import { useSubscriptionsText } from "../config/subscriptionsText.js";
+import { buildSubscriptionsColumns } from "../config/subscriptionsColumns.js";
+import { buildSubscriptionsFilters } from "../config/subscriptionsFilters.js";
 import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
 import EditHoursDialog from "../components/EditHoursDialog.jsx";
 import InvoiceDialog from "../../invoices/components/InvoiceDialog.jsx";
 import RenewDialog from "../../subscriptionDetail/components/RenewDialog.jsx";
 import { useInvoicesText } from "../../invoices/config/invoicesText.js";
-import { INVOICE_STATUS_COLOR } from "../../invoices/config/constant.js";
 
 /**
  * Subscriptions list. Standalone at /dashboard/subscriptions, and ALSO embedded
@@ -151,8 +144,6 @@ export default function SubscriptionsPage({
     renewDialog.open();
   }
 
-  const CANCELLABLE = ["PENDING", "UPCOMING", "ACTIVE"];
-
   const description = isAdmin
     ? txt.pageDescriptionAdmin
     : user?.role === USER_ROLES.PARENT
@@ -160,272 +151,28 @@ export default function SubscriptionsPage({
       : txt.pageDescriptionStudent;
 
   const columns = useMemo(
-    () => [
-      {
-        field: "student",
-        headerName: txt.student,
-        width: 180,
-        renderCell: ({ row }) =>
-          row.student?.id ? (
-            <MuiLink
-              component={Link}
-              href={localePath(lng, `/dashboard/users/${row.student.id}`)}
-              underline="hover"
-              fontWeight={700}
-            >
-              {row.student.name || `#${row.student.id}`}
-            </MuiLink>
-          ) : (
-            row.student?.name || `#${row.studentId}`
-          ),
-      },
-      {
-        field: "studentEmail",
-        headerName: txt.studentEmail,
-        width: 220,
-        sortable: false,
-        renderCell: ({ row }) => row.student?.email || "—",
-      },
-      {
-        field: "parents",
-        headerName: txt.parents,
-        width: 200,
-        sortable: false,
-        renderCell: ({ row }) => {
-          const parents = row.student?.parents || [];
-          if (parents.length === 0) return "—";
-          return (
-            <Stack spacing={0.25}>
-              {parents.map((p) => (
-                <MuiLink
-                  key={p.id}
-                  component={Link}
-                  href={localePath(lng, `/dashboard/users/${p.id}`)}
-                  underline="hover"
-                  variant="body2"
-                >
-                  {p.name || `#${p.id}`}
-                </MuiLink>
-              ))}
-            </Stack>
-          );
+    () =>
+      buildSubscriptionsColumns({
+        txt,
+        lng,
+        invoiceTxt,
+        router,
+        can: {
+          approve: canApprove,
+          cancel: canCancel,
+          edit: canEdit,
+          renew: canRenew,
+          viewInvoice: canViewInvoice,
         },
-      },
-      {
-        field: "parentPhone",
-        headerName: txt.parentPhone,
-        width: 150,
-        sortable: false,
-        renderCell: ({ row }) => {
-          const parents = row.student?.parents || [];
-          if (parents.length === 0) return "—";
-          return (
-            <Stack spacing={0.25}>
-              {parents.map((p) => (
-                <Typography key={p.id} variant="body2">
-                  {p.phone || "—"}
-                </Typography>
-              ))}
-            </Stack>
-          );
-        },
-      },
-      {
-        field: "parentEmail",
-        headerName: txt.parentEmail,
-        width: 220,
-        sortable: false,
-        renderCell: ({ row }) => {
-          const parents = row.student?.parents || [];
-          if (parents.length === 0) return "—";
-          return (
-            <Stack spacing={0.25}>
-              {parents.map((p) => (
-                <Typography key={p.id} variant="body2" noWrap>
-                  {p.email || "—"}
-                </Typography>
-              ))}
-            </Stack>
-          );
-        },
-      },
-      {
-        field: "plan",
-        headerName: txt.plan,
-        width: 170,
-        renderCell: ({ row }) =>
-          row.plan ? (lng === "en" ? row.plan.titleEn : row.plan.titleAr) : "—",
-      },
-      {
-        field: "subsHours",
-        headerName: txt.subsHours,
-        width: 110,
-        sortable: false,
-        renderCell: ({ row }) => row.subsHours ?? "—",
-      },
-      {
-        field: "remainingHours",
-        headerName: txt.remainingHours,
-        width: 120,
-        sortable: false,
-        renderCell: ({ row }) => row.remainingHours ?? "—",
-      },
-      {
-        field: "status",
-        headerName: txt.status,
-        width: 150,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={STATUS_COLOR[row.status] || "default"}
-            label={txt[row.status] || row.status}
-          />
-        ),
-      },
-      {
-        field: "invoicePaid",
-        headerName: invoiceTxt.paymentStatus,
-        width: 140,
-        sortable: false,
-        renderCell: ({ row }) =>
-          row.invoice ? (
-            <Chip
-              size="small"
-              color={INVOICE_STATUS_COLOR[row.invoice.status] || "default"}
-              label={invoiceTxt[row.invoice.status] || row.invoice.status}
-            />
-          ) : (
-            "—"
-          ),
-      },
-      {
-        field: "price",
-        headerName: txt.price,
-        width: 150,
-        sortable: false,
-        renderCell: ({ row }) => (
-          <Stack spacing={0.25} alignItems="flex-start">
-            <Typography variant="body2" fontWeight={700}>
-              {formatMoney(row.priceCharged, row.currency)}
-            </Typography>
-            {row.coupon && (
-              <Chip
-                size="small"
-                color="success"
-                variant="outlined"
-                label={`${txt.discount} ${
-                  row.coupon.type === "PERCENT"
-                    ? `${Number(row.coupon.value)}%`
-                    : formatMoney(row.coupon.value, row.currency)
-                }`}
-                sx={{ height: 18, fontSize: "0.65rem" }}
-              />
-            )}
-          </Stack>
-        ),
-      },
-      {
-        field: "end",
-        headerName: txt.end,
-        width: 120,
-        renderCell: ({ row }) =>
-          row.endDate ? new Date(row.endDate).toLocaleDateString() : "—",
-      },
-      ...(hasRowActions
-        ? [
-            {
-              field: "actions",
-              type: "actions",
-              headerName: txt.actions,
-              width: 80,
-              renderCell: ({ row }) => {
-                const showApprove = canApprove && row.status === "PENDING";
-                const showCancel =
-                  canCancel && CANCELLABLE.includes(row.status);
-                // Renew only applies to an ended subscription (EXPIRED/CANCELLED).
-                // The backend blocks renewing an ACTIVE/PENDING sub for everyone,
-                // admins included.
-                const showRenew =
-                  canRenew &&
-                  (row.status === "EXPIRED" || row.status === "CANCELLED");
-                return (
-                  <RowActionsMenu
-                    actions={[
-                      {
-                        label: txt.view,
-                        icon: <MdOpenInNew />,
-                        onClick: () =>
-                          router.push(
-                            localePath(
-                              lng,
-                              `/dashboard/subscriptions/${row.id}`,
-                            ),
-                          ),
-                      },
-                      {
-                        label: invoiceTxt.invoice,
-                        icon: <MdReceiptLong />,
-                        onClick: () => openInvoice(row),
-                        hidden: !canViewInvoice,
-                      },
-                      {
-                        label: txt.editHours,
-                        icon: <MdEdit />,
-                        onClick: () => openEditHours(row),
-                        hidden: !canEdit,
-                      },
-                      {
-                        label: txt.renew,
-                        icon: <MdAutorenew />,
-                        color: "primary",
-                        onClick: () => openRenew(row),
-                        hidden: !showRenew,
-                      },
-                      {
-                        label: txt.approve,
-                        icon: <MdCheck />,
-                        color: "success",
-                        onClick: () => approve(row),
-                        hidden: !showApprove,
-                      },
-                      {
-                        label: txt.reject,
-                        icon: <MdClose />,
-                        color: "error",
-                        onClick: () => openReject(row),
-                        hidden: !showApprove,
-                      },
-                      {
-                        label: txt.cancelSubscription,
-                        icon: <MdCancel />,
-                        color: "warning",
-                        onClick: () => cancel(row),
-                        hidden: !showCancel,
-                      },
-                    ]}
-                  />
-                );
-              },
-            },
-          ]
-        : []),
-    ],
+        hasRowActions,
+        actions: { openInvoice, openEditHours, openRenew, approve, openReject, cancel },
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [txt, lng, canApprove, canCancel, canEdit, canRenew, hasRowActions, canViewInvoice, invoiceTxt],
   );
 
   const filterConfig = useMemo(
-    () => [
-      {
-        type: "enum",
-        key: "status",
-        label: txt.status,
-        options: SUBSCRIPTION_STATUSES.reduce(
-          (acc, s) => ({ ...acc, [s]: txt[s] }),
-          {},
-        ),
-      },
-    ],
+    () => buildSubscriptionsFilters({ txt }),
     [txt],
   );
 

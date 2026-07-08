@@ -210,24 +210,6 @@ class SubscriptionUsecase {
     return d;
   }
 
-  async buildListWhere(authUser, { studentId, status }) {
-    const where = {};
-
-    if (status) where.status = status;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (studentId) where.studentId = studentId;
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      const scoped =
-        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
-      where.studentId = { in: scoped };
-    } else {
-      where.studentId = authUser.id;
-    }
-    return where;
-  }
-
   /**
    * Hide an unsent demand invoice from non-admins. A parent/student must not see
    * the invoice until the teacher has requested payment for it (sentAt set), so
@@ -244,9 +226,10 @@ class SubscriptionUsecase {
 
   async list({ authUser, page, limit, studentId, status }) {
     const { skip, take, page: p, limit: l } = paginate({ page, limit });
-    const where = await this.buildListWhere(authUser, { studentId, status });
-    const { items, total } = await subscriptionRepo.listLatestPerStudent({
-      where,
+    // Where-building now lives in the repo (reference convention).
+    const { items, total } = await subscriptionRepo.listScoped({
+      authUser,
+      filters: { studentId, status },
       skip,
       take,
     });

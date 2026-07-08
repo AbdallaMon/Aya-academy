@@ -5,12 +5,31 @@
 
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
+import { buildSearchQuery } from "../../shared/utility/helper.js";
 import {
   sessionDetailSelect,
   sessionListSelect,
 } from "./whiteboardSession.dto.js";
 
 class WhiteboardSessionRepo {
+  buildListWhere(authUser, { search } = {}) {
+    const where = {};
+    // ADMIN scope: for now admins manage every session. (Scope hook kept here so
+    // a future "own sessions only" rule slots in cleanly.)
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["title"],
+    });
+    if (or) where.OR = or;
+    return where;
+  }
+
+  // Scoped list — builds the where from (authUser, filters) then pages.
+  listScoped({ authUser, filters = {}, page, limit, client } = {}) {
+    const where = this.buildListWhere(authUser, filters);
+    return this.list({ where, page, limit, client });
+  }
+
   async list({ where, page, limit, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });

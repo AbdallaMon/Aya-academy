@@ -2,22 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  Box,
-  Chip,
-  CircularProgress,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { MdEdit, MdDelete, MdVisibility } from "react-icons/md";
+import { Box, CircularProgress, Grid, Stack } from "@mui/material";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { localePath } from "../../../i18n/routing.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
 import {
   DataTable,
@@ -26,17 +17,13 @@ import {
   PageHeader,
   RHFTextArea,
   RHFTextField,
-  RowActionsMenu,
   applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
-import {
-  REPORTS_URL,
-  USERS_URL,
-  toDateInput,
-  studentLabel,
-} from "../config/constant.js";
+import { REPORTS_URL, USERS_URL, toDateInput } from "../config/constant.js";
 import { useReportsText } from "../config/reportsText.js";
+import { buildReportsColumns } from "../config/reportsColumns.js";
+import { buildReportsFilters } from "../config/reportsFilters.js";
 import StudentsMultiSelect from "../components/StudentsMultiSelect.jsx";
 import ReportCard from "../components/ReportCard.jsx";
 
@@ -55,9 +42,6 @@ export default function ReportsPage() {
   // Management = anyone who can author/manage reports (admin/manager). Parents
   // hold only LIST/VIEW, so they get the read-only card grid instead of the table.
   const isManagement = canCreate || canEdit || canDelete;
-
-  const reportHref = (id) =>
-    localePath(lng, `/dashboard/${REPORTS_URL}/${id}`);
 
   const {
     data,
@@ -175,91 +159,18 @@ export default function ReportsPage() {
   }
 
   const columns = useMemo(
-    () => [
-      {
-        field: "title",
-        headerName: txt.title,
-        width: 260,
-        renderCell: ({ row }) => (
-          <Typography fontWeight={700}>{row.title}</Typography>
-        ),
-      },
-      {
-        field: "students",
-        headerName: txt.students,
-        width: 280,
-        renderCell: ({ row }) => {
-          const list = row.students || [];
-          if (!list.length) return txt.noStudents;
-          const shown = list.slice(0, 2);
-          const rest = list.length - shown.length;
-          return (
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-              {shown.map((s) => (
-                <Chip
-                  key={s.id}
-                  size="small"
-                  label={studentLabel(s.student)}
-                />
-              ))}
-              {rest > 0 && (
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label={txt.moreStudents.replace("{count}", rest)}
-                />
-              )}
-            </Stack>
-          );
-        },
-      },
-      {
-        field: "reportDate",
-        headerName: txt.reportDate,
-        width: 140,
-        renderCell: ({ row }) =>
-          row.reportDate
-            ? new Date(row.reportDate).toLocaleDateString(
-                lng === "en" ? "en-GB" : "ar-EG",
-              )
-            : "—",
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: txt.actions,
-        width: 80,
-        renderCell: ({ row }) => (
-          <RowActionsMenu
-            actions={[
-              {
-                label: txt.view,
-                icon: <MdVisibility />,
-                href: reportHref(row.id),
-              },
-              {
-                label: txt.edit,
-                icon: <MdEdit />,
-                onClick: () => onEdit(row),
-                hidden: !canEdit,
-              },
-              {
-                label: txt.delete,
-                icon: <MdDelete />,
-                color: "error",
-                onClick: () => onDelete(row),
-                hidden: !canDelete,
-              },
-            ]}
-          />
-        ),
-      },
-    ],
+    () =>
+      buildReportsColumns({
+        txt,
+        lng,
+        can: { edit: canEdit, delete: canDelete },
+        actions: { onEdit, onDelete },
+      }),
     [txt, lng, canEdit, canDelete],
   );
 
   const filterConfig = useMemo(
-    () => [{ type: "search", key: "search", label: txt.title }],
+    () => buildReportsFilters({ txt }),
     [txt],
   );
 

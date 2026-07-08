@@ -5,11 +5,36 @@
 // usecase and threaded in.)
 // ===========================================================================
 
+import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
+import { userRepo } from "../users/user.repo.js";
 import { certificateSelect } from "./certificate.dto.js";
 
 class CertificateRepo {
+  /** Auth-scoped `where` for the certificate list. */
+  async buildListWhere(authUser, { studentId, type } = {}) {
+    const where = {};
+    if (type) where.type = type;
+
+    if (authUser.role === USER_ROLES.ADMIN) {
+      if (studentId) where.studentId = studentId;
+    } else if (authUser.role === USER_ROLES.PARENT) {
+      const ids = await userRepo.getStudentIdsForParent(authUser.id);
+      where.studentId =
+        studentId && ids.includes(studentId) ? studentId : { in: ids };
+    } else {
+      where.studentId = authUser.id;
+    }
+    return where;
+  }
+
+  // Scoped list — builds the where from (authUser, filters) then pages.
+  async listScoped({ authUser, filters = {}, page, limit, client } = {}) {
+    const where = await this.buildListWhere(authUser, filters);
+    return this.list({ page, limit, where, client });
+  }
+
   async list({ page, limit, where = {}, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });

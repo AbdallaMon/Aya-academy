@@ -25,26 +25,9 @@ class CertificateUsecase {
     throw forbidden(certificateMessagesCodes.CANNOT_ACCESS_CERTIFICATE);
   }
 
-  /** Auth-scoped `where` for the certificate list (kept in the usecase). */
-  async buildListWhere(authUser, { studentId, type }) {
-    const where = {};
-    if (type) where.type = type;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (studentId) where.studentId = studentId;
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      const ids = await userRepo.getStudentIdsForParent(authUser.id);
-      where.studentId =
-        studentId && ids.includes(studentId) ? studentId : { in: ids };
-    } else {
-      where.studentId = authUser.id;
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
-    const where = await this.buildListWhere(authUser, filters);
-    return certificateRepo.list({ page, limit, where });
+    // Where-building now lives in the repo (reference convention).
+    return certificateRepo.listScoped({ authUser, filters, page, limit });
   }
 
   async getById({ id, authUser }) {

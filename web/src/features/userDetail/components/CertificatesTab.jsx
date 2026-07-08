@@ -23,7 +23,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { DataTable } from "../../../shared/components/index.js";
 import { CERTIFICATES_URL } from "../config/constant.js";
-import { buildCertificateColumns } from "../../certificates/config/certificatesColumns.js";
+import { buildCertificatesTabColumns } from "../config/certificatesTabColumns.js";
 import { useCertificatesText } from "../../certificates/config/certificatesText.js";
 import CertificateCard from "../../certificates/components/CertificateCard.jsx";
 import CreateCertificateDialog from "../../certificates/components/CreateCertificateDialog.jsx";
@@ -61,7 +61,7 @@ export default function CertificatesTab({ studentId, studentName, txt, canCreate
   };
 
   const columns = useMemo(
-    () => buildCertificateColumns({ txt: certTxt, lng, onView }),
+    () => buildCertificatesTabColumns({ txt: certTxt, lng, onView }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [certTxt, lng],
   );

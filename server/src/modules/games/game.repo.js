@@ -6,12 +6,45 @@
 // ===========================================================================
 
 import { prisma } from "@aya/db/prisma.client.js";
-import { ASSIGNMENT_STATUSES } from "@aya/shared";
+import { ASSIGNMENT_STATUSES, USER_ROLES } from "@aya/shared";
 import { paginate } from "../../shared/utility/pagination.js";
+import {
+  buildSearchQuery,
+  parseBooleanFilter,
+} from "../../shared/utility/helper.js";
 import { gameFullSelect, gameListSelect } from "./game.dto.js";
 
 class GameRepo {
   // ── games ───────────────────────────────────────────────
+  // Build the scoped Prisma `where` for the authenticated games list
+  // (reference convention: where-building lives in the repo).
+  //   ADMIN → optional active/public/type filters over everything
+  //   PARENT / STUDENT → only active games (content is global), optional type
+  buildListWhere(authUser, { search, isActive, isPublic, type }) {
+    const where = {};
+
+    const or = buildSearchQuery({
+      search: typeof search === "string" ? search : undefined,
+      keys: ["titleAr", "titleEn", "slug"],
+    });
+    if (or) where.OR = or;
+
+    if (authUser.role === USER_ROLES.ADMIN) {
+      const active = parseBooleanFilter(isActive);
+      if (active !== undefined) where.isActive = active;
+
+      const isPub = parseBooleanFilter(isPublic);
+      if (isPub !== undefined) where.isPublic = isPub;
+
+      if (type && type !== "ALL") where.type = type;
+    } else {
+      // PARENT / STUDENT only ever see active games (content is global).
+      where.isActive = true;
+      if (type && type !== "ALL") where.type = type;
+    }
+    return where;
+  }
+
   async listGames({ where, page, limit, client } = {}) {
     const db = client ?? prisma;
     const { skip, take, page: currentPage } = paginate({ page, limit });

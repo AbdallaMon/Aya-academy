@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Chip, Typography } from "@mui/material";
-import { MdEdit, MdDelete } from "react-icons/md";
+import { Box } from "@mui/material";
 import { PERMISSIONS } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -12,12 +11,12 @@ import { useTranslation } from "../../../i18n/client.js";
 import {
   DataTable,
   PageHeader,
-  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
-import BadgeChip from "../../userDetail/components/BadgeChip.jsx";
 import { BADGES_URL } from "../config/constant.js";
 import { useBadgesAdminText } from "../config/badgesAdminText.js";
+import { buildBadgesAdminColumns } from "../config/badgesAdminColumns.js";
+import { buildBadgesAdminFilters } from "../config/badgesAdminFilters.js";
 import BadgeFormDialog from "../components/BadgeFormDialog.jsx";
 
 /** Admin management surface for badge definitions. */
@@ -73,77 +72,19 @@ export default function BadgesAdminPage() {
   }
 
   const columns = useMemo(
-    () => [
-      {
-        field: "preview",
-        headerName: txt.preview,
-        width: 200,
-        sortable: false,
-        renderCell: ({ row }) => <BadgeChip badge={row} lng={lng} size="sm" />,
-      },
-      {
-        field: "code",
-        headerName: txt.code,
-        width: 160,
-        renderCell: ({ row }) => <Typography variant="body2">{row.code}</Typography>,
-      },
-      {
-        field: "name",
-        headerName: txt.name,
-        width: 200,
-        renderCell: ({ row }) => (lng === "en" ? row.nameEn || row.nameAr : row.nameAr || row.nameEn),
-      },
-      {
-        field: "score",
-        headerName: txt.score,
-        width: 100,
-        renderCell: ({ row }) => row.score ?? 0,
-      },
-      {
-        field: "isActive",
-        headerName: txt.active,
-        width: 120,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={row.isActive ? "success" : "default"}
-            variant={row.isActive ? "filled" : "outlined"}
-            label={row.isActive ? txt.activeYes : txt.activeNo}
-          />
-        ),
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: txt.actions,
-        width: 80,
-        renderCell: ({ row }) => (
-          <RowActionsMenu
-            actions={[
-              {
-                label: txt.edit,
-                icon: <MdEdit />,
-                onClick: () => onEdit(row),
-                hidden: !canEdit,
-              },
-              {
-                label: txt.delete,
-                icon: <MdDelete />,
-                color: "error",
-                onClick: () => onDelete(row),
-                hidden: !canDelete,
-              },
-            ]}
-          />
-        ),
-      },
-    ],
+    () =>
+      buildBadgesAdminColumns({
+        txt,
+        lng,
+        can: { edit: canEdit, delete: canDelete },
+        actions: { onEdit, onDelete },
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [txt, lng, canEdit, canDelete],
   );
 
   const filterConfig = useMemo(
-    () => [{ type: "search", key: "search", label: txt.code }],
+    () => buildBadgesAdminFilters({ txt }),
     [txt],
   );
 

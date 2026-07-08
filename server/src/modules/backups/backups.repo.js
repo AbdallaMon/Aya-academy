@@ -10,6 +10,31 @@ import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
 
 class BackupsRepo {
+  /**
+   * Filter `where` for the backup list, built from the raw query
+   * (driveAccountId / status / dateFrom / dateTo).
+   */
+  buildListWhere(query = {}) {
+    const where = {};
+    const driveAccountId = Number(query.driveAccountId);
+    if (Number.isInteger(driveAccountId) && driveAccountId > 0) {
+      where.driveAccountId = driveAccountId;
+    }
+    if (query.status) where.status = query.status;
+    if (query.dateFrom || query.dateTo) {
+      where.createdAt = {};
+      if (query.dateFrom) where.createdAt.gte = new Date(`${query.dateFrom}T00:00:00`);
+      if (query.dateTo) where.createdAt.lte = new Date(`${query.dateTo}T23:59:59.999`);
+    }
+    return where;
+  }
+
+  // Scoped list — builds the where from the raw query then pages.
+  listScoped({ query = {}, page, limit, client } = {}) {
+    const where = this.buildListWhere(query);
+    return this.list({ page, limit, where, client });
+  }
+
   create({ data, client } = {}) {
     return (client ?? prisma).backup.create({ data });
   }

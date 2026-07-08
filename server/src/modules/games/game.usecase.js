@@ -9,10 +9,6 @@ import {
   hasActiveSubscription,
   assertActiveForStudent,
 } from "../../shared/access/subscriptionAccess.js";
-import {
-  buildSearchQuery,
-  parseBooleanFilter,
-} from "../../shared/utility/helper.js";
 import { badgeUsecase } from "../badges/badge.usecase.js";
 import { certificateUsecase } from "../certificates/certificate.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
@@ -105,33 +101,9 @@ class GameUsecase {
   }
 
   // ── authenticated list ──────────────────────────────────
-  buildListWhere(authUser, { search, isActive, isPublic, type }) {
-    const where = {};
-
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["titleAr", "titleEn", "slug"],
-    });
-    if (or) where.OR = or;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      const active = parseBooleanFilter(isActive);
-      if (active !== undefined) where.isActive = active;
-
-      const isPub = parseBooleanFilter(isPublic);
-      if (isPub !== undefined) where.isPublic = isPub;
-
-      if (type && type !== "ALL") where.type = type;
-    } else {
-      // PARENT / STUDENT only ever see active games (content is global).
-      where.isActive = true;
-      if (type && type !== "ALL") where.type = type;
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
-    const where = this.buildListWhere(authUser, filters);
+    // Where-building now lives in the repo (reference convention).
+    const where = gameRepo.buildListWhere(authUser, filters);
     return gameRepo.listGames({ where, page, limit });
   }
 
