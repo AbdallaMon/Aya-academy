@@ -7,6 +7,7 @@ import {
 import { badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { userRepo } from "../../users/user.repo.js";
 import { notificationUsecase } from "../../notifications/notification.usecase.js";
+import { subscriptionUsecase } from "../../finance/subscriptions/subscription.usecase.js";
 import { sessionLogRepo } from "./sessionLog.repo.js";
 
 const SUBJECT_VALUES = Object.values(SESSION_SUBJECTS);
@@ -83,6 +84,16 @@ class SessionLogUsecase {
     };
 
     const created = await sessionLogRepo.create({ data });
+
+    // Open the accumulating next-month USAGE subscription (best-effort).
+    try {
+      await subscriptionUsecase.ensureOpenUsageSubscription({
+        studentId: created.studentId,
+        sessionDate: created.sessionDate,
+      });
+    } catch {
+      // swallow — opening the accumulator must never fail session logging
+    }
 
     await this.notifyParents(created);
 

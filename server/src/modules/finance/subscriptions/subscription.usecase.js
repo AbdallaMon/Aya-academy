@@ -2,12 +2,20 @@ import {
   BILLING_PERIODS,
   INVOICE_STATUSES,
   NOTIFICATION_TYPES,
+  SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
   messagesNames,
   subscriptionMessagesCodes,
 } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
+import {
+  endOfMonth,
+  firstOfNextMonth,
+  monthRange,
+  previousMonth,
+} from "../../../shared/utility/dates.js";
+import { resolveUsageHours } from "./usageBilling.js";
 import {
   AppError,
   badRequest,
@@ -279,6 +287,35 @@ class SubscriptionUsecase {
     }
     await this.assertCanAccess(authUser, subscription.studentId);
     return this.gateInvoiceForViewer(subscription, authUser);
+  }
+
+  /**
+   * Ensure an open (UPCOMING) USAGE subscription exists for the payment month
+   * (M+1) of a session dated in month M. Called best-effort when a session is
+   * logged. Hours are NOT written here — they are derived until month-close
+   * freeze. Idempotent: returns the existing open sub if present.
+   */
+  async ensureOpenUsageSubscription({ studentId, sessionDate }) {
+    const paymentStart = firstOfNextMonth(new Date(sessionDate));
+    const existing = await subscriptionRepo.findOpenUsageSubscription({
+      studentId,
+      paymentStart,
+    });
+    if (existing) return existing;
+
+    const settings = await settingsUsecase.getEffective();
+    return subscriptionRepo.createSubscription({
+      origin: SUBSCRIPTION_ORIGINS.USAGE,
+      status: SUBSCRIPTION_STATUSES.UPCOMING,
+      billingPeriod: BILLING_PERIODS.MONTHLY,
+      startDate: paymentStart,
+      endDate: endOfMonth(paymentStart),
+      subsHours: null,
+      remainingHours: null,
+      priceCharged: null,
+      currency: settings.currency,
+      student: { connect: { id: studentId } },
+    });
   }
 
   async create({ authUser, ...input }) {
