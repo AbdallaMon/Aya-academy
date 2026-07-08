@@ -1249,7 +1249,7 @@ class SubscriptionUsecase {
    * via the one-open-USAGE-sub invariant. Never throws over the edge.
    *
    * @param {Date} [now] last day of month M (the month being closed).
-   * @returns {Promise<{ invoiced:number, skipped:number }>}
+   * @returns {Promise<{ invoiced:number, skipped:number, failed:number }>}
    */
   async generateMonthlyUsageInvoices(now = new Date()) {
     const consumption = monthRange(now);            // [1/M, 1/(M+1)) — closing month
@@ -1266,79 +1266,111 @@ class SubscriptionUsecase {
 
     let invoiced = 0;
     let skipped = 0;
+    let failed = 0;
 
     for (const { studentId, planHours } of activeStudents) {
-      const usageHours = usageByStudent.get(studentId) ?? 0;
-      const subsHours = resolveUsageHours({ usageHours, planHours, lowestPlanHours });
+      try {
+        const usageHours = usageByStudent.get(studentId) ?? 0;
+        const subsHours = resolveUsageHours({ usageHours, planHours, lowestPlanHours });
 
-      if (!subsHours || subsHours <= 0) {
-        skipped += 1; // only when the system has no plans at all
-        continue;
-      }
+        if (!subsHours || subsHours <= 0) {
+          skipped += 1; // only when the system has no plans at all
+          continue;
+        }
 
-      // Resolve the open sub first so a coupon attached while accumulating is
-      // honored in the frozen price. Its select exposes coupon.code. Redemption
-      // was already consumed at attach time, so pricing here does NOT re-count it.
-      const openForPricing = await subscriptionRepo.findOpenUsageSubscription({
-        studentId,
-        paymentStart,
-      });
-      const attachedCouponCode = openForPricing?.coupon?.code ?? null;
-      const { priceCharged } = await this.computeUsagePricing({
-        subsHours,
-        couponCode: attachedCouponCode,
-        hourlyRate,
-      });
-
-      const sub = await prisma.$transaction(async (tx) => {
-        let open = await subscriptionRepo.findOpenUsageSubscription({
+        // Resolve the open sub first — this drives BOTH idempotency and pricing.
+        // Idempotency: a re-run sees the closing month's sessions already stamped
+        // billed (sumUsageHoursByStudent → 0) and would fall back to plan hours,
+        // clobbering the already-frozen number and reverting an ACTIVE/paid sub
+        // back to PENDING. So freeze ONLY subs that are still open (UPCOMING) or
+        // are freshly created in this run: an existing open sub that has already
+        // left UPCOMING was frozen by a prior run → skip it (true no-op).
+        const existingOpen = await subscriptionRepo.findOpenUsageSubscription({
           studentId,
           paymentStart,
-          client: tx,
         });
-        if (!open) {
-          open = await subscriptionRepo.createSubscription(
+        if (
+          existingOpen &&
+          existingOpen.status !== SUBSCRIPTION_STATUSES.UPCOMING
+        ) {
+          skipped += 1; // already billed by a prior run
+          continue;
+        }
+
+        // Freeze price from the coupon ALREADY attached to the open sub. Its
+        // redemption was booked at attach time, so we do NOT re-validate it here:
+        // re-validating can now return invalid (redemption consumed / window
+        // elapsed) and abort the whole run. Apply the stored discount directly.
+        const base = priceFromHours(subsHours, hourlyRate);
+        const storedCoupon = existingOpen?.coupon ?? null;
+        const priceCharged = storedCoupon
+          ? roundMoney(
+              applyDiscount(base, {
+                type: storedCoupon.type,
+                value: storedCoupon.value,
+              }),
+            )
+          : base;
+
+        const sub = await prisma.$transaction(async (tx) => {
+          let open = await subscriptionRepo.findOpenUsageSubscription({
+            studentId,
+            paymentStart,
+            client: tx,
+          });
+          if (!open) {
+            open = await subscriptionRepo.createSubscription(
+              {
+                origin: SUBSCRIPTION_ORIGINS.USAGE,
+                status: SUBSCRIPTION_STATUSES.PENDING,
+                billingPeriod: BILLING_PERIODS.MONTHLY,
+                startDate: paymentStart,
+                endDate: paymentEnd,
+                currency: settings.currency,
+                student: { connect: { id: studentId } },
+              },
+              tx,
+            );
+          }
+          // freeze the final number + price, mark it awaiting payment.
+          const frozen = await subscriptionRepo.updateSubscription(
+            open.id,
             {
-              origin: SUBSCRIPTION_ORIGINS.USAGE,
+              subsHours,
+              remainingHours: subsHours,
+              priceCharged,
               status: SUBSCRIPTION_STATUSES.PENDING,
-              billingPeriod: BILLING_PERIODS.MONTHLY,
-              startDate: paymentStart,
-              endDate: paymentEnd,
-              currency: settings.currency,
-              student: { connect: { id: studentId } },
             },
             tx,
           );
-        }
-        // freeze the final number + price, mark it awaiting payment.
-        const frozen = await subscriptionRepo.updateSubscription(
-          open.id,
-          {
-            subsHours,
-            remainingHours: subsHours,
-            priceCharged,
-            status: SUBSCRIPTION_STATUSES.PENDING,
-          },
-          tx,
-        );
-        // stamp the sessions that were just billed (only when real usage).
-        if (usageHours > 0) {
-          await subscriptionRepo.markSessionsBilled({
-            studentId,
-            gte: consumption.gte,
-            lt: consumption.lt,
-            subscriptionId: frozen.id,
-            client: tx,
-          });
-        }
-        return frozen;
-      });
+          // stamp the sessions that were just billed (only when real usage).
+          if (usageHours > 0) {
+            await subscriptionRepo.markSessionsBilled({
+              studentId,
+              gte: consumption.gte,
+              lt: consumption.lt,
+              subscriptionId: frozen.id,
+              client: tx,
+            });
+          }
+          return frozen;
+        });
 
-      await this.ensureInvoice(sub);       // existing idempotent invoice generator
-      invoiced += 1;
+        await this.ensureInvoice(sub);     // existing idempotent invoice generator
+        invoiced += 1;
+      } catch (err) {
+        // Per-student isolation: one student's failure must not abort the whole
+        // month-close run. Count it, log the studentId + code/message, move on.
+        failed += 1;
+        console.error(
+          `generateMonthlyUsageInvoices: student ${studentId} failed`,
+          err?.code || err?.message,
+        );
+        continue;
+      }
     }
 
-    return { invoiced, skipped };
+    return { invoiced, skipped, failed };
   }
 }
 
