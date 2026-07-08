@@ -3,19 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  Box,
-  Button,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-  alpha,
-} from "@mui/material";
-import { MdCheck, MdAdd } from "react-icons/md";
-import ChildEnrollCard from "./ChildEnrollCard.jsx";
-import EnrollSummaryTable from "./EnrollSummaryTable.jsx";
-import ParentDetailsForm from "./ParentDetailsForm.jsx";
+import { Box, Container, Stack, Typography, alpha } from "@mui/material";
+import WizardStepper from "./WizardStepper.jsx";
+import ChildrenStep from "./ChildrenStep.jsx";
+import ReviewStep from "./ReviewStep.jsx";
 import { useAuthText } from "../config/authText.js";
 import { ENROLL_URL, PLANS_PUBLIC_URL } from "../config/constant.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
@@ -220,172 +211,37 @@ export default function RegisterWizard() {
         </Stack>
 
         {/* ── Modern segmented progress ──────────────────────────────────── */}
-        <Stack
-          direction="row"
-          spacing={{ xs: 1.5, sm: 2.5 }}
-          justifyContent="center"
-          sx={{ mb: 4 }}
-        >
-          {steps.map((label, i) => {
-            const active = i === step;
-            const done = i < step;
-            return (
-              <Stack
-                key={label}
-                direction="row"
-                alignItems="center"
-                spacing={1}
-                sx={{ opacity: active || done ? 1 : 0.55 }}
-              >
-                <Box
-                  sx={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: "50%",
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
-                    fontWeight: 900,
-                    fontSize: 14,
-                    color: active || done ? "primary.contrastText" : "text.secondary",
-                    bgcolor: (th) =>
-                      active || done ? "primary.main" : alpha(th.palette.text.primary, 0.08),
-                    boxShadow: (th) =>
-                      active ? `0 0 0 5px ${alpha(th.palette.primary.main, 0.18)}` : "none",
-                    transition: "all .2s ease",
-                  }}
-                >
-                  {done ? <MdCheck size={18} /> : i + 1}
-                </Box>
-                <Typography
-                  variant="body2"
-                  fontWeight={active ? 800 : 600}
-                  sx={{ display: { xs: "none", sm: "block" } }}
-                >
-                  {label}
-                </Typography>
-                {i < steps.length - 1 && (
-                  <Box
-                    sx={{
-                      width: { xs: 24, sm: 48 },
-                      height: 3,
-                      borderRadius: 2,
-                      ml: { xs: 0.5, sm: 1 },
-                      bgcolor: (th) =>
-                        done ? "primary.main" : alpha(th.palette.text.primary, 0.12),
-                    }}
-                  />
-                )}
-              </Stack>
-            );
-          })}
-        </Stack>
+        <WizardStepper steps={steps} step={step} />
 
         {step === 0 && (
-          <Stack spacing={3}>
-            {children.map((child, i) => (
-              <ChildEnrollCard
-                key={i}
-                index={i}
-                child={child}
-                plans={plans}
-                onChange={(patch) => patchChild(i, patch)}
-                onRemove={() => removeChild(i)}
-                canRemove={children.length > 1}
-                errors={childErrors[i] || {}}
-                txt={txt}
-                lng={lng}
-              />
-            ))}
-            <Button
-              variant="outlined"
-              onClick={addChild}
-              startIcon={<MdAdd />}
-              fullWidth
-              sx={{
-                borderStyle: "dashed",
-                borderWidth: 2,
-                py: 1.5,
-                fontWeight: 700,
-                "&:hover": { borderStyle: "dashed", borderWidth: 2 },
-              }}
-            >
-              {txt.addChild}
-            </Button>
-            {formError && (
-              <Typography color="error" variant="body2">
-                {formError}
-              </Typography>
-            )}
-            <Box>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={goNext}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                {txt.next}
-              </Button>
-            </Box>
-          </Stack>
+          <ChildrenStep
+            childrenList={children}
+            plans={plans}
+            childErrors={childErrors}
+            patchChild={patchChild}
+            removeChild={removeChild}
+            addChild={addChild}
+            formError={formError}
+            goNext={goNext}
+            txt={txt}
+            lng={lng}
+          />
         )}
 
         {step === 1 && (
-          <Stack spacing={3}>
-            <Typography variant="h6" fontWeight={800}>
-              {txt.summaryTitle}
-            </Typography>
-            <EnrollSummaryTable
-              items={children}
-              plans={plans}
-              lng={lng}
-              txt={txt}
-            />
-
-            <Paper
-              variant="outlined"
-              sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}
-            >
-              <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>
-                {txt.parentTitle}
-              </Typography>
-              <ParentDetailsForm
-                parent={parent}
-                onChange={patchParent}
-                errors={parentErrors}
-                txt={txt}
-              />
-            </Paper>
-
-            {formError && (
-              <Typography color="error" variant="body2">
-                {formError}
-              </Typography>
-            )}
-
-            <Stack
-              direction={{ xs: "column-reverse", sm: "row" }}
-              spacing={2}
-            >
-              <Button
-                variant="text"
-                onClick={goBack}
-                disabled={enrollReq.isLoading}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                {txt.back}
-              </Button>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={submit}
-                disabled={enrollReq.isLoading}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                {enrollReq.isLoading ? txt.submitting : txt.submit}
-              </Button>
-            </Stack>
-          </Stack>
+          <ReviewStep
+            childrenList={children}
+            plans={plans}
+            parent={parent}
+            parentErrors={parentErrors}
+            patchParent={patchParent}
+            formError={formError}
+            goBack={goBack}
+            submit={submit}
+            isSubmitting={enrollReq.isLoading}
+            txt={txt}
+            lng={lng}
+          />
         )}
 
         <Stack spacing={1} alignItems="center" sx={{ mt: 4 }}>
