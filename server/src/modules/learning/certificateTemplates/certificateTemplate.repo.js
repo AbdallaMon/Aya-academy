@@ -7,7 +7,7 @@
 import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import { paginate } from "../../../shared/utility/pagination.js";
-import { buildIsActiveFilter } from "../../../shared/utility/helper.js";
+import { buildIsActiveFilter } from "../../../shared/utility/queryBuilders.js";
 import { certificateTemplateSelect } from "./certificateTemplate.dto.js";
 
 class CertificateTemplateRepo {

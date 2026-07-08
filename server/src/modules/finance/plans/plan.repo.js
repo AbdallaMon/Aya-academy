@@ -13,7 +13,7 @@ import { paginate } from "../../../shared/utility/pagination.js";
 import {
   buildSearchQuery,
   buildIsActiveFilter,
-} from "../../../shared/utility/helper.js";
+} from "../../../shared/utility/queryBuilders.js";
 import { planListInclude, planWithCouponsInclude } from "./plan.dto.js";
 
 class PlanRepo {

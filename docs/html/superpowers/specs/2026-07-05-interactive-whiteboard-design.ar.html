@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 07 05 Interactive Whiteboard Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 07 05 Interactive Whiteboard Design</h1>
+        <p class="lead"></p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align aya-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html" class="active">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Interactive Whiteboard — Design Spec</span></nav>
+          <section class="doc-hero">
+            <h2>Interactive Whiteboard — Design Spec</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p>Date: 2026-07-05 Status: Approved (design), pending implementation plan</p></div></div>
+
+          
+    <section class="doc-section" id="goal" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Goal</h2>
+        </div>
+        <div class="content-block"><p>An interactive, full-screen whiteboard for teachers (admins only, for now) to run a live-feel lesson: create a session, attach the students who will attend, open the board full-screen, draw/write/erase, and fire playful kid-friendly reactions (balloons, stars, &quot;شاطر&quot;, claps, fireworks) with sounds — optionally targeted at a named student.</p></div><div class="content-block"><p>Only the <strong>session lifecycle</strong> is persisted on the backend (so we can reopen a session after a disconnect and later evolve it into a real-time, multi-participant board over socket.io). The <strong>drawing content itself is NOT persisted server-side</strong> — it lives in the browser&#39;s <code>localStorage</code>, keyed by session.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="scope-what-we-build-now-what-we-defer" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Scope (what we build now / what we defer)</h2>
+        </div>
+        <div class="content-block"><p>In scope now:</p></div><div class="content-block"><ul><li>Backend <code>whiteboardSessions</code> module: session CRUD + student attach/detach + activate/end<ul><li>public/private link with token. Admin-only.</li></ul></li><li>Frontend: list page, session detail page (manage students, public/private link, open</li></ul></div><div class="content-block"><p>board), and the full-screen board itself (Excalidraw + custom reaction overlay + sounds).</p></div><div class="content-block"><ul><li>Public share link (token) that renders the board outside the dashboard, no login.</li><li>Drawing persisted to <code>localStorage</code> only.</li></ul></div><div class="content-block"><p>Deferred (design accommodates, we do NOT build now):</p></div><div class="content-block"><ul><li>Real-time multi-participant sync (drawing + reactions) over socket.io. The board talks to</li></ul></div><div class="content-block"><p>a thin <code>boardChannel</code> abstraction that writes locally today; socket emit/subscribe is a later swap.</p></div><div class="content-block"><ul><li>Non-admin roles (students/parents) joining a session.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="key-decisions" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Key decisions</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>Students = real accounts only.</strong> A &quot;student&quot; is an existing <code>User</code> with</li></ul></div><div class="content-block"><p><code>role = STUDENT</code>. Attaching a student to a session uses the existing users listing endpoint (filtered <code>role=STUDENT</code>) — no new picker endpoint. No ad-hoc/guest names.</p></div><div class="content-block"><ul><li><strong>Drawing engine = Excalidraw</strong> (<code>@excalidraw/excalidraw</code>), dynamically imported with</li></ul></div><div class="content-block"><p><code>ssr: false</code>. Chosen for a professional, battle-tested, kid-friendly hand-drawn board with pen/highlighter/eraser/Arabic text/shapes/colors/undo-redo out of the box.</p></div><div class="content-block"><ul><li><strong>Reactions = our own overlay layer</strong> rendered above the Excalidraw canvas, driven by</li></ul></div><div class="content-block"><p>React + the existing games sound engine. Reactions are ephemeral animations, never part of the Excalidraw scene.</p></div><div class="content-block"><ul><li><strong>Admin-only</strong> gating via a single new permission <code>WHITEBOARD<em>SESSION</em>MANAGE</code> granted to</li></ul></div><div class="content-block"><p>the <code>ADMIN</code> role profile.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="backend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Backend</h2>
+        </div>
+        <div class="content-block"><p>New module: <code>server/src/modules/whiteboardSessions/</code> with the standard layering (route → controller → usecase → repo → validation → dto → messages), Prisma only in the repo, business logic only in the usecase, <code>AppError</code> + message codes, audit on important actions. Registered in <code>server/src/routes.js</code> at <code>/whiteboard-sessions</code> (public sub-router mounted before the guarded router on the same prefix).</p></div><div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>4.1 Data model (Prisma)</h3><div class="content-block"><p>New enums (add to <code>schema.prisma</code> AND mirror in <code>packages/shared/constants/enums.js</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>enum WhiteboardSessionStatus { DRAFT ACTIVE ENDED }
+enum WhiteboardVisibility    { PRIVATE PUBLIC }</code></pre></div></div><div class="content-block"><p>New models:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>model WhiteboardSession {
+  id              Int         @id @default(autoincrement())
+  title           String
+  status          WhiteboardSessionStatus @default(DRAFT)
+  visibility      WhiteboardVisibility    @default(PRIVATE)
+  publicTokenHash String?     @unique       // SHA-256 of the raw share token; null when private
+  createdById     Int
+  createdBy       User        @relation(&quot;WhiteboardCreatedBy&quot;, fields: [createdById], references: [id])
+  students        WhiteboardSessionStudent[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  @@index([createdById])
+  @@index([status])
+}
+
+model WhiteboardSessionStudent {
+  id        Int   @id @default(autoincrement())
+  sessionId Int
+  studentId Int
+  session   WhiteboardSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   User              @relation(&quot;WhiteboardStudent&quot;, fields: [studentId], references: [id])
+  createdAt DateTime @default(now())
+  @@unique([sessionId, studentId])
+  @@index([studentId])
+}</code></pre></div></div><div class="content-block"><p>Corresponding back-relations added to <code>User</code>. Migration is authored but NOT auto-run — the <code>prisma migrate</code> command is handed to Abdalla (per project rule).</p></div></section><section class="subsection-card"><h3>4.2 Endpoints (all admin-only unless marked public)</h3><div class="content-block"><p>Guarded router (<code>requireAuth</code> + <code>requirePermissions([WHITEBOARD<em>SESSION</em>MANAGE])</code>):</p></div><div class="content-block"><ul><li><code>GET  /whiteboard-sessions</code> — paginated list (own/all per admin scope).</li><li><code>POST /whiteboard-sessions</code> — create <code>{ title }</code> → status <code>DRAFT</code>, visibility <code>PRIVATE</code>.</li><li><code>GET  /whiteboard-sessions/:id</code> — detail incl. attached students (dto: id, name only).</li><li><code>DELETE /whiteboard-sessions/:id</code> — hard delete (cascades join rows).</li><li><code>POST /whiteboard-sessions/:id/students</code> — <code>{ studentId }</code> attach (validates the user is</li></ul></div><div class="content-block"><p>role STUDENT; idempotent-safe via unique constraint → conflict code).</p></div><div class="content-block"><ul><li><code>DELETE /whiteboard-sessions/:id/students/:studentId</code> — detach.</li><li><code>POST /whiteboard-sessions/:id/actions/activate</code> — <code>DRAFT|ENDED → ACTIVE</code>.</li><li><code>POST /whiteboard-sessions/:id/actions/end</code> — <code>ACTIVE → ENDED</code>.</li><li><code>POST /whiteboard-sessions/:id/actions/make-public</code> — set <code>PUBLIC</code>, generate raw token,</li></ul></div><div class="content-block"><p>store only its hash, return <code>{ token, url }</code> (<code>/{lng}/w/{token}</code>).</p></div><div class="content-block"><ul><li><code>POST /whiteboard-sessions/:id/actions/make-private</code> — set <code>PRIVATE</code>, clear token hash.</li></ul></div><div class="content-block"><p>Public router (mounted BEFORE <code>requireAuth</code>):</p></div><div class="content-block"><ul><li><code>GET /whiteboard-sessions/public/:token</code> — hash the incoming token, look up the session;</li></ul></div><div class="content-block"><p>return minimal payload (title + student names) ONLY if <code>visibility=PUBLIC</code>. Otherwise <code>notFound</code>. Does not require it to be <code>ACTIVE</code> to render (teacher may open before activating); status is returned so the client can show state.</p></div></section><section class="subsection-card"><h3>4.3 Messages / codes</h3><div class="content-block"><p><code>packages/shared/messages-codes/whiteboardSession.js</code> (bilingual ar+en on the web side per project rule), namespace registered in <code>packages/shared/messages-names.js</code>, thin re-export in <code>whiteboardSession.messages.js</code>. Codes: created, deleted, activated, ended, made-public, made-private, student-added, student-removed, not-found, student-already-added, not-a-student, forbidden.</p></div></section><section class="subsection-card"><h3>4.4 Permissions</h3><div class="content-block"><p>Add <code>WHITEBOARD<em>SESSION</em>MANAGE</code> to <code>packages/shared/constants/permissions.js</code> and to the <code>ADMIN</code> role profile only. No wildcards.</p></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="frontend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Frontend</h2>
+        </div>
+        <div class="content-block"><p>Feature folder: <code>web/src/features/whiteboard/</code></p></div><div class="content-block"><ul><li><code>config/constant.js</code> — endpoint constants (<code>WHITEBOARD_URL = &quot;whiteboard-sessions&quot;</code>),</li></ul></div><div class="content-block"><p>status/visibility option constants, <code>buildPublicBoardUrl(lng, token)</code>, <code>buildPrivateBoardUrl(lng, id)</code>.</p></div><div class="content-block"><ul><li><code>config/whiteboardText.js</code> — <code>useWhiteboardText()</code> localized labels.</li><li><code>config/whiteboardColumns.js</code> — DataTable columns (title, status chip, visibility,</li></ul></div><div class="content-block"><p>#students, createdAt, actions).</p></div><div class="content-block"><ul><li><code>pages/WhiteboardListPage.jsx</code> — <code>PageHeader</code> + <code>DataTable</code> + <code>useRequest</code> (paginated),</li></ul></div><div class="content-block"><p>create dialog, row actions (open detail, activate/end, delete, copy public link), <code>usePermission</code> gate.</p></div><div class="content-block"><ul><li><code>pages/WhiteboardSessionDetailPage.jsx</code> — session meta, student management (add via</li></ul></div><div class="content-block"><p>existing STUDENT user picker / remove), Public↔Private switch + copy-link, activate/end, a prominent <strong>&quot;افتح السبورة (ملء الشاشة)&quot;</strong> button linking to the private board route.</p></div><div class="content-block"><ul><li><code>components/CreateWhiteboardDialog.jsx</code> — <code>AppForm</code> + RHF (<code>{ title }</code>).</li><li><code>components/SessionStudentsPanel.jsx</code> — attached students list + add/remove.</li><li><code>board/</code> — the board itself:<ul><li><code>WhiteboardBoard.jsx</code> — orchestrator: dynamic <code>Excalidraw</code> (<code>ssr:false</code>) +</li></ul></li></ul></div><div class="content-block"><p><code>ReactionOverlay</code> + <code>ReactionBar</code> + Fullscreen toggle. Props: <code>{ sessionKey, students, title }</code>. Source-agnostic (works for private and public).</p></div><div class="content-block"><ul><li><code>ReactionBar.jsx</code> — bottom, collapsible; buttons per reaction + optional student</li></ul></div><div class="content-block"><p><code>Select</code> (from session students; selection optional).</p></div><div class="content-block"><ul><li><code>ReactionOverlay.jsx</code> — absolutely-positioned layer above the canvas; renders active</li></ul></div><div class="content-block"><p>reaction animations (balloons rising, star burst, hearts, fireworks, praise text).</p></div><div class="content-block"><ul><li><code>config/reactions.js</code> — reaction registry: `{ key, emoji/visual, labelKey, sound,</li></ul></div><div class="content-block"><p>render }`. Reactions: balloons, &quot;شاطر&quot;/stars, clap, hearts, fireworks, &quot;ما شاء الله / برافو / أحسنت&quot;.</p></div><div class="content-block"><ul><li><code>lib/boardChannel.js</code> — thin abstraction: <code>saveScene</code>, <code>loadScene</code>, <code>emitReaction</code>.</li></ul></div><div class="content-block"><p>Today: <code>localStorage</code> (key <code>whiteboard:&lt;sessionKey&gt;</code>) + local event. Later: socket.</p></div><div class="content-block"><ul><li><code>lib/useBoardPersistence.js</code> — debounced Excalidraw <code>onChange</code> → <code>boardChannel.saveScene</code>;</li></ul></div><div class="content-block"><p>restores via <code>initialData</code> on mount.</p></div><div class="content-block"><ul><li>sound: reuse the games engine sound API; if not directly importable, a small</li></ul></div><div class="content-block"><p><code>lib/boardSounds.js</code> wrapper.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="routes" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Routes</h2>
+        </div>
+        <div class="content-block"><p>Dashboard (inside <code>DashboardShell</code>):</p></div><div class="content-block"><ul><li><code>app/[lng]/dashboard/whiteboard/page.jsx</code> → <code>WhiteboardListPage</code>.</li><li><code>app/[lng]/dashboard/whiteboard/[id]/page.jsx</code> → <code>WhiteboardSessionDetailPage</code> (Next 16</li></ul></div><div class="content-block"><p>async <code>params</code>).</p></div><div class="content-block"><p>Full-screen board (OUTSIDE the dashboard shell so it fills the screen with no sidebar):</p></div><div class="content-block"><ul><li>Private: <code>app/[lng]/board/[id]/page.jsx</code> → <code>WhiteboardBoard</code> fed by the authed</li></ul></div><div class="content-block"><p><code>GET /whiteboard-sessions/:id</code>. Add <code>&#39;/board&#39;</code> to <code>PROTECTED_PREFIXES</code> in <code>web/src/utils/constant.js</code> so an unauthenticated visitor is redirected to login.</p></div><div class="content-block"><ul><li>Public: <code>app/[lng]/w/[token]/page.jsx</code> → <code>WhiteboardBoard</code> fed by the public</li></ul></div><div class="content-block"><p><code>GET /whiteboard-sessions/public/:token</code> via <code>apiFetch.public</code>.</p></div><div class="content-block"><p>Nav: add a whiteboard item to the ADMIN group in <code>web/src/features/dashboard/config/navModel.js</code>, gated on <code>WHITEBOARD<em>SESSION</em>MANAGE</code>.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="persistence-realtime" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Persistence &amp; realtime</h2>
+        </div>
+        <div class="content-block"><ul><li>Drawing scene → <code>localStorage</code> key <code>whiteboard:&lt;sessionId | token&gt;</code>. Restored on refresh /</li></ul></div><div class="content-block"><p>reconnect. Never sent to the backend.</p></div><div class="content-block"><ul><li>Reactions are ephemeral (fire-and-forget animations); not persisted.</li><li>Realtime is deferred: <code>boardChannel</code> is the seam. When we add socket, <code>emitReaction</code> and</li></ul></div><div class="content-block"><p>scene deltas publish to a <code>session:&lt;id&gt;</code> room (infra already exists in <code>server/src/infra/realtime/socket.js</code>), and the public board becomes a live viewer.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="error-handling" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Error handling</h2>
+        </div>
+        <div class="content-block"><ul><li>Backend: <code>AppError</code> factories + module message codes; scope check ensures an admin can</li></ul></div><div class="content-block"><p>only manage sessions they&#39;re allowed to (mirror the users-module scoping pattern — ADMIN sees all for now). Adding a non-STUDENT user → <code>not-a-student</code> (400). Duplicate attach → <code>student-already-added</code> (409). Missing session/token → <code>not-found</code> (404).</p></div><div class="content-block"><ul><li>Frontend: <code>useRequest</code> code-based auto-toasts. Public board: on invalid/expired token,</li></ul></div><div class="content-block"><p>render a friendly &quot;الجلسة غير متاحة&quot; state. Board: if Excalidraw fails to load, show a retry; if <code>localStorage</code> unavailable, board still works in-memory (warn once).</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="testing" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">9</span>
+          <h2>Testing</h2>
+        </div>
+        <div class="content-block"><ul><li>Usecase tests: create/activate/end transitions, make-public generates+hashes token and</li></ul></div><div class="content-block"><p>make-private clears it, attach rejects non-STUDENT and duplicate, public lookup returns only PUBLIC sessions.</p></div><div class="content-block"><ul><li>Authorization tests: non-admin (no <code>WHITEBOARD<em>SESSION</em>MANAGE</code>) is forbidden on all</li></ul></div><div class="content-block"><p>guarded routes; public route needs no auth but leaks nothing for PRIVATE sessions.</p></div><div class="content-block"><ul><li>Frontend: list renders + create dialog submits; detail add/remove student; nav item</li></ul></div><div class="content-block"><p>hidden without permission; board persists to and restores from localStorage.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="out-of-scope-explicit" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">10</span>
+          <h2>Out of scope (explicit)</h2>
+        </div>
+        <div class="content-block"><ul><li>Real-time sync, student/parent participation, saving drawings server-side, recording/</li></ul></div><div class="content-block"><p>playback, exporting the board to the reports module.</p></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"goal","title":"1. Goal"},{"id":"scope-what-we-build-now-what-we-defer","title":"2. Scope (what we build now / what we defer)"},{"id":"key-decisions","title":"3. Key decisions"},{"id":"backend","title":"4. Backend"},{"id":"frontend","title":"5. Frontend"},{"id":"routes","title":"6. Routes"},{"id":"persistence-realtime","title":"7. Persistence & realtime"},{"id":"error-handling","title":"8. Error handling"},{"id":"testing","title":"9. Testing"},{"id":"out-of-scope-explicit","title":"10. Out of scope (explicit)"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

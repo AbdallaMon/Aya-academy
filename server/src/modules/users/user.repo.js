@@ -13,7 +13,7 @@
 
 import { USER_ROLES } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
-import { buildSearchQuery, parseBooleanFilter } from "../../shared/utility/helper.js";
+import { buildSearchQuery, parseBooleanFilter } from "../../shared/utility/queryBuilders.js";
 import {
   childUserSelect,
   overviewChildSelect,

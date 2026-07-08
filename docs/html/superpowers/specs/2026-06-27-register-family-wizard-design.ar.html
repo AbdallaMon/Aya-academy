@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 27 Register Family Wizard Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 27 Register Family Wizard Design</h1>
+        <p class="lead">Goal</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html" class="active">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align aya-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Family Registration Wizard — Design Spec</span></nav>
+          <section class="doc-hero">
+            <h2>Family Registration Wizard — Design Spec</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p>Date: 2026-06-27 Status: Approved (design)</p></div><div class="content-block"><p>Replace the simple parent-only <code>/register</code> form with a professional <strong>two-step wizard</strong> that, in a single submission, registers a parent, one or more children (students), picks a plan per child (monthly/yearly) with an optional per-child coupon, creates a <strong>PENDING subscription + UNPAID invoice</strong> per child, and notifies the admin (the &quot;teacher&quot;).</p></div><div class="content-block"><p>No payment happens at registration. The UI communicates: &quot;first session free&quot; and &quot;no payment required until after the first session — the plan is selected for reference only.&quot;</p></div></div>
+
+          
+    <section class="doc-section" id="context-existing-building-blocks-reused" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Context (existing building blocks reused)</h2>
+        </div>
+        <div class="content-block"><ul><li><code>USER_ROLES</code>: <code>ADMIN</code> (= the teacher), <code>PARENT</code>, <code>STUDENT</code>. Every <code>User</code></li></ul></div><div class="content-block"><p>requires a <strong>unique <code>email</code> + <code>passwordHash</code></strong> (schema constraint). Login is by email. → Each child needs explicit email + password (user decision).</p></div><div class="content-block"><ul><li><code>ParentStudent</code> M:N link with a <code>ParentRelation</code> (default <code>GUARDIAN</code>).</li><li><code>subscription.usecase.js</code>:<ul><li><code>request(authUser, input)</code> — creates a PENDING subscription, computes price</li></ul></li></ul></div><div class="content-block"><p>for the cycle, validates + consumes a coupon atomically, derives dates/hours, notifies admins. <strong>This is the template for per-child enrollment.</strong></p></div><div class="content-block"><ul><li><code>computePricing(plan, billingPeriod, couponCode, hourlyRate)</code> — authoritative</li></ul></div><div class="content-block"><p>pricing with best plan-linked coupon and/or coupon code.</p></div><div class="content-block"><ul><li><code>computeEndDate</code>, <code>resolveStatus</code>.</li></ul></div><div class="content-block"><ul><li><code>coupon.usecase.js</code> <code>validateCoupon({code, planId, billingPeriod})</code> →</li></ul></div><div class="content-block"><p><code>{valid, reason, discount}</code>.</p></div><div class="content-block"><ul><li><code>invoice.usecase.js</code> <code>generate(authUser, subscriptionId)</code> — admin-gated, reads</li></ul></div><div class="content-block"><p>the global payment template + settings, creates an UNPAID invoice. We extract a system-level variant (no admin gate) for the public flow.</p></div><div class="content-block"><ul><li><code>plan.usecase.js</code> <code>listPublic()</code> → <code>GET /plans/public</code> (already public) returns</li></ul></div><div class="content-block"><p>plans with <code>monthly</code>/<code>yearly</code> <code>{base, effective, discount}</code>.</p></div><div class="content-block"><ul><li>Frontend reference UI: <code>web/src/features/children/components/PlanPickerDialog.jsx</code></li></ul></div><div class="content-block"><p>(plan cards + billing toggle + coupon) — reused as the per-child plan picker.</p></div><div class="content-block"><ul><li>Frontend infra: <code>useRequest</code> (supports <code>isPublic</code>), <code>RHFTextField</code>,</li></ul></div><div class="content-block"><p><code>RHFPhoneField</code>, <code>AuthShell</code>, <code>formatMoney</code>, i18n <code>messagesCodes.js</code>.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="user-decisions" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>User decisions</h2>
+        </div>
+        <div class="content-block"><ol><li><strong>Child credentials</strong>: parent enters <code>email + password</code> per child explicitly.</li><li><strong>Billing period</strong>: per-child monthly/yearly toggle (affects price + coupon).</li><li><strong>Register outcome</strong>: PENDING subscription + UNPAID invoice per child.</li><li>Default relation <code>GUARDIAN</code>; at least one child required.</li></ol></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="ux-flow" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>UX flow</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Step 1 — Children &amp; plans</h3><div class="content-block"><p>Repeatable child cards. Each card:</p></div><div class="content-block"><ul><li>Child fields: name, email, password, birthDate, nickname (optional).</li><li>Billing toggle (MONTHLY/YEARLY).</li><li>Plan cards as <strong>single-select (radio)</strong> — pick exactly one plan. Same visual</li></ul></div><div class="content-block"><p>language as <code>PlanPickerDialog</code> (price, hours, description, discount chip).</p></div><div class="content-block"><ul><li>Coupon field + <strong>&quot;تحقق&quot; (verify)</strong> button:<ul><li>Valid → green &quot;تم تطبيق الخصم&quot; + discounted price shown.</li><li>Invalid → red error + <strong>&quot;إزالة الكوبون&quot;</strong> button to clear and retry.</li><li>Coupon is <strong>per child</strong> (applies to that child&#39;s plan + cycle).</li></ul></li><li>Gift banner 🎁 &quot;أول حصة مجانية&quot; + notice &quot;الاشتراك لا يتطلب دفع الآن — الدفع</li></ul></div><div class="content-block"><p>بعد أول حصة. الاختيار للتسجيل فقط.&quot;</p></div><div class="content-block"><ul><li>&quot;➕ إضافة ابن آخر&quot; adds another card. &quot;التالي&quot; validates each child is complete</li></ul></div><div class="content-block"><p>and has a selected plan.</p></div></section><section class="subsection-card"><h3>Step 2 — Summary &amp; parent</h3><div class="content-block"><ul><li>Summary <strong>table</strong>: per child → name | plan | cycle | base price | discount |</li></ul></div><div class="content-block"><p>net | &quot;أول حصة مجانية&quot;.</p></div><div class="content-block"><ul><li>Parent form: name, email, password, phone (same fields as current register).</li><li>&quot;تسجيل&quot; submits everything.</li></ul></div><div class="content-block"><p>On success: toast <code>ENROLLED_SUCCESS</code>, redirect to <code>/login</code> (registration does not set session cookies, matching current behaviour).</p></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="backend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Backend</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>New public endpoint: `POST /auth/enroll`</h3><div class="content-block"><p>No auth. Zod-validated. Payload:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>{
+  parent:   { name, email, password, phone, locale },
+  children: [
+    { name, email, password, birthDate, nickname?,
+      planId, billingPeriod, couponCode? }
+  ] // min 1
+}</code></pre></div></div><div class="content-block"><p><code>AuthValidation.enrollSchema</code> — reuse field rules from <code>registerSchema</code>; <code>children</code> is <code>z.array(childSchema).min(1, ...)</code>; <code>billingPeriod</code> enum from <code>BILLING_PERIODS</code>.</p></div></section><section class="subsection-card"><h3>`authUsecase.enrollFamily(input)`</h3><div class="content-block"><ol><li><strong>Pre-checks (before tx, fail fast):</strong><ul><li>Collect all emails (parent + children). Reject if any child email is</li></ul></li></ol></div><div class="content-block"><p>duplicated within the payload (<code>CHILD<em>EMAIL</em>DUPLICATE</code>).</p></div><div class="content-block"><ul><li><code>authRepo.findByEmail</code> for parent → <code>EMAIL<em>ALREADY</em>EXISTS</code>.</li><li>For each child email → <code>CHILD<em>EMAIL</em>EXISTS</code> if taken.</li><li>Load each referenced plan (<code>planRepo.getByIdWithCoupons</code>); reject if</li></ul></div><div class="content-block"><p>missing/inactive (<code>PLAN<em>NOT</em>FOUND</code>).</p></div><div class="content-block"><ul><li>Load global <code>settings</code> (hourlyRate, currency) and payment <code>template</code> once.</li></ul></div><div class="content-block"><ol><li><strong>Per-child pricing (authoritative, server-side):</strong> for each child, reuse</li></ol></div><div class="content-block"><p><code>subscriptionUsecase.computePricing(plan, billingPeriod, couponCode, hourlyRate)</code> to get <code>{priceCharged, couponId}</code>, derive <code>hours</code> (×12 for yearly), <code>startDate=now</code>, <code>endDate=computeEndDate(...)</code>.</p></div><div class="content-block"><ul><li>Invalid coupon → <code>COUPON<em>INVALID</em>FOR_PLAN</code> (the verify step already guards</li></ul></div><div class="content-block"><p>this on the client, but the server is authoritative).</p></div><div class="content-block"><ol><li><strong>Transaction (<code>prisma.$transaction</code>) — all-or-nothing:</strong><ul><li>Create parent (<code>role: PARENT</code>, hashed password).</li><li>For each child:<ul><li>Create student (<code>role: STUDENT</code>, hashed password, birthDate, nickname,</li></ul></li></ul></li></ol></div><div class="content-block"><p><code>createdById: parent.id</code>).</p></div><div class="content-block"><ul><li><code>linkParentStudent(parent.id, child.id, GUARDIAN, tx)</code>.</li><li>Create PENDING subscription (status PENDING, billingPeriod, dates, hours,</li></ul></div><div class="content-block"><p>priceCharged, currency, plan connect, createdBy=parent, coupon connect if any), then <code>incrementCouponRedemption(couponId, tx)</code> if used.</p></div><div class="content-block"><ul><li>Create UNPAID invoice via the new system-level invoice method (below),</li></ul></div><div class="content-block"><p>passing <code>tx</code>.</p></div><div class="content-block"><ul><li>Return <code>{ parent, children:[{studentId, subscriptionId, invoiceId}] }</code>.</li></ul></div><div class="content-block"><ol><li><strong>After tx (best-effort, must not fail the request):</strong> notify all admins</li></ol></div><div class="content-block"><p>(<code>userRepo.findAdminIds</code> + <code>createManyForUsers</code>) — one notification: &quot;طلب تسجيل جديد: ولي أمر + N طلاب بانتظار المراجعة&quot;, link <code>/dashboard/subscriptions</code>.</p></div></section><section class="subsection-card"><h3>System-level invoice creation</h3><div class="content-block"><p>Extract the core of <code>invoice.generate</code> into <code>invoiceUsecase.generateForSubscription(subscriptionId, { tx } = {})</code>:</p></div><div class="content-block"><ul><li>No admin gate (system-initiated).</li><li>Reads payment template + settings, computes amounts + discount snapshot,</li></ul></div><div class="content-block"><p>creates the UNPAID invoice (using <code>tx</code> when provided).</p></div><div class="content-block"><ul><li>If <strong>no payment template</strong> exists, skip invoice creation gracefully (return</li></ul></div><div class="content-block"><p>null) — enrollment still succeeds.</p></div><div class="content-block"><ul><li><code>invoice.generate(authUser, ...)</code> keeps its admin gate and delegates to this</li></ul></div><div class="content-block"><p>core after the role check (no behaviour change for the admin path).</p></div></section><section class="subsection-card"><h3>New public pricing endpoint: `POST /plans/quote`</h3><div class="content-block"><p>No auth. Input <code>{ planId, billingPeriod, couponCode? }</code>. Returns <code>{ base, net, discount: {type,value,code}|null, valid, reason }</code>.</p></div><div class="content-block"><ul><li>Implemented in <code>plan.usecase.quote()</code> (or <code>subscriptionUsecase</code> pricing reuse):</li></ul></div><div class="content-block"><p>load plan with coupons, compute base for cycle, validate the coupon code, return computed <code>net</code>. <strong>Money math stays server-authoritative</strong>; the client only previews. Drives the per-child &quot;verify coupon&quot; button.</p></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="message-codes-bilingual-ar-en" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Message codes (bilingual ar + en)</h2>
+        </div>
+        <div class="content-block"><p>Add to <code>packages/shared/messages-codes/auth.js</code> and the web mapping <code>web/src/i18n/locales/messagesCodes.js</code> (ar + en for each):</p></div><div class="content-block"><ul><li><code>ENROLLED_SUCCESS</code> — &quot;تم التسجيل بنجاح&quot; / &quot;Registered successfully&quot;</li><li><code>CHILD<em>EMAIL</em>DUPLICATE</code> — duplicate child email within the same request</li><li><code>CHILD<em>EMAIL</em>EXISTS</code> — a child email is already registered</li><li><code>NO_CHILDREN</code> — at least one child is required</li><li><code>PLAN_REQUIRED</code> — a plan must be selected for each child</li><li><code>COUPON<em>INVALID</em>FOR_PLAN</code> — coupon not valid for the chosen plan/cycle</li></ul></div><div class="content-block"><p>(Reuse existing: <code>EMAIL<em>ALREADY</em>EXISTS</code>, <code>INVALID<em>EMAIL</code>, <code>PASSWORD</em>TOO<em>SHORT</code>, <code>PHONE</em>REQUIRED</code>, <code>NAME_REQUIRED</code>, plan/coupon codes.)</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="frontend-files-follow-project-conventions" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Frontend files (follow project conventions)</h2>
+        </div>
+        <div class="content-block"><ul><li><code>web/src/features/auth/components/RegisterWizard.jsx</code> — replaces <code>RegisterForm</code></li></ul></div><div class="content-block"><p>as the page body; owns wizard state (array of children + parent), step control.</p></div><div class="content-block"><ul><li><code>web/src/features/auth/components/ChildEnrollCard.jsx</code> — one child: fields +</li></ul></div><div class="content-block"><p>billing toggle + plan radio cards + coupon + gift/notice banners.</p></div><div class="content-block"><ul><li><code>web/src/features/auth/components/PlanRadioCards.jsx</code> — plan cards as</li></ul></div><div class="content-block"><p>single-select (extracted/adapted from <code>PlanPickerDialog</code>).</p></div><div class="content-block"><ul><li><code>web/src/features/auth/components/CouponField.jsx</code> — coupon input + verify +</li></ul></div><div class="content-block"><p>remove, calls <code>POST /plans/quote</code>.</p></div><div class="content-block"><ul><li><code>web/src/features/auth/components/EnrollSummaryTable.jsx</code> — Step 2 summary.</li><li><code>web/src/features/auth/components/ParentDetailsForm.jsx</code> — parent fields.</li><li><code>web/src/app/[lng]/register/page.jsx</code> — render <code>RegisterWizard</code>.</li><li>Auth copy added to <code>web/src/features/auth/config/authText.js</code>.</li></ul></div><div class="content-block"><p>State shape (client):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>children: [{ name,email,password,birthDate,nickname,
+             billingPeriod, planId,
+             coupon: { code, status: &#39;idle&#39;|&#39;valid&#39;|&#39;invalid&#39;, quote } }]
+parent:   { name,email,password,phone }</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="edge-cases-resolved" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Edge cases (resolved)</h2>
+        </div>
+        <div class="content-block"><ul><li>At least one child required (<code>NO_CHILDREN</code>).</li><li>Duplicate emails (within payload or already existing) rejected before any</li></ul></div><div class="content-block"><p>write; the transaction guarantees all-or-nothing.</p></div><div class="content-block"><ul><li>Default relation <code>GUARDIAN</code> (no father/mother prompt).</li><li>Final pricing recomputed server-side at enroll (client price is preview only).</li><li>No payment template → invoice skipped, enrollment still succeeds.</li><li>Coupon redemption incremented only inside the successful transaction.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="out-of-scope" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Out of scope</h2>
+        </div>
+        <div class="content-block"><ul><li>Real payment processing (none exists yet).</li><li>Father/mother relation selection.</li><li>Editing children after submission (existing dashboards handle that).</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"context-existing-building-blocks-reused","title":"Context (existing building blocks reused)"},{"id":"user-decisions","title":"User decisions"},{"id":"ux-flow","title":"UX flow"},{"id":"backend","title":"Backend"},{"id":"message-codes-bilingual-ar-en","title":"Message codes (bilingual ar + en)"},{"id":"frontend-files-follow-project-conventions","title":"Frontend files (follow project conventions)"},{"id":"edge-cases-resolved","title":"Edge cases (resolved)"},{"id":"out-of-scope","title":"Out of scope"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

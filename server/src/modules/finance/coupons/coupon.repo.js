@@ -3,7 +3,7 @@ import { paginate } from "../../../shared/utility/pagination.js";
 import {
   buildSearchQuery,
   buildIsActiveFilter,
-} from "../../../shared/utility/helper.js";
+} from "../../../shared/utility/queryBuilders.js";
 
 const planInclude = {
   plans: { include: { plan: { select: { id: true, titleAr: true, titleEn: true } } } },

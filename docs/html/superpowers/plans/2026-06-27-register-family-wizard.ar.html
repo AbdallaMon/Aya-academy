@@ -1,0 +1,1553 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 27 Register Family Wizard</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 27 Register Family Wizard</h1>
+        <p class="lead">Global Constraints</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Plans</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges.ar.html">Admin Dashboard: Family Detail, Levels, Badges &amp; Points — Implementation Plan</a></li><li><a href="./2026-06-24-quran-progress-tracking.ar.html">Quran Progress Tracking + Lesson Next-Plan — Implementation Plan</a></li><li><a href="./2026-06-25-global-settings-and-billing-rework.ar.html">Global Settings &amp; Billing Rework — Implementation Plan</a></li><li><a href="./2026-06-27-register-family-wizard.ar.html" class="active">Family Registration Wizard — Implementation Plan</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow.ar.html">Subscription Renewal &amp; Invoice Flow — Implementation Plan</a></li><li><a href="./2026-06-29-subscription-gating.ar.html">Subscription Gating Implementation Plan</a></li><li><a href="./2026-07-05-interactive-whiteboard.ar.html">Interactive Whiteboard Implementation Plan</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Plans</a><span class="crumb-sep">›</span><span class="crumb current">Family Registration Wizard — Implementation Plan</span></nav>
+          <section class="doc-hero">
+            <h2>Family Registration Wizard — Implementation Plan</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p></div><div class="content-block"><p><strong>Goal:</strong> Replace the parent-only <code>/register</code> form with a two-step public wizard that registers a parent + N children, picks a plan (monthly/yearly) + optional coupon per child, creates a PENDING subscription + UNPAID invoice per child atomically, and notifies the admin.</p></div><div class="content-block"><p><strong>Architecture:</strong> New public <code>POST /auth/enroll</code> runs everything in one Prisma transaction, reusing existing <code>subscriptionUsecase.computePricing</code> (authoritative pricing + coupon) and a new system-level invoice generator. A new public <code>POST /plans/quote</code> powers the live per-child coupon &quot;verify&quot;. The frontend becomes a multi-step wizard built from small presentational components.</p></div><div class="content-block"><p><strong>Tech Stack:</strong> Express + Prisma (backend, layered route→controller→usecase→repo→validation), Zod validation, Next.js App Router + MUI + <code>useRequest</code> (frontend), <code>@aya/shared</code> for codes/enums.</p></div><div class="content-block"><ul><li>App source is <strong>JavaScript only</strong> (<code>.js</code>/<code>.jsx</code>) — never TypeScript.</li><li><strong>Layering:</strong> Prisma only in <code><em>.repo.js</code>; controllers stay thin; business logic in <code></em>.usecase.js</code>.</li><li><strong>Message codes are language-neutral</strong>: backend throws CODES + a <code>translationKey</code>; <strong>every new code MUST have an <code>ar</code> and <code>en</code> entry</strong> in <code>web/src/i18n/locales/messagesCodes.js</code> under the right namespace.</li><li><strong>Money is server-authoritative.</strong> The client only previews prices; the server recomputes at enroll.</li><li><strong>Public endpoints</strong> mount with <strong>no auth middleware</strong>.</li><li>Default parent↔student relation = <code>PARENT_RELATIONS.GUARDIAN</code>. <strong>At least one child required.</strong></li><li>Currency comes from global settings; format on the web with <code>formatMoney(value, currency)</code>.</li><li><strong>No test runner exists in this repo</strong> (no vitest/jest, zero test files). Do <strong>not</strong> add a test framework. Each backend task is verified with the dev server + <code>curl</code>; each frontend task with a manual browser check. Verification commands are written into each task.</li></ul></div><div class="content-block"><ul><li>Backend: <code>npm run dev:server</code> (from repo root) → listens per <code>Server/src/server.js</code> (assume <code>http://localhost:4000</code>; confirm the printed port and substitute below if different).</li><li>Web: <code>npm run dev:web</code> → <code>http://localhost:3000</code>.</li><li>DB client must be generated: <code>npm run db:generate</code> (only if Prisma client is stale; this plan adds <strong>no</strong> schema changes).</li></ul></div><div class="content-block"><hr /></div></div>
+
+          
+    <section class="doc-section" id="task-1-backend-message-codes-shared-web-localization" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Task 1: Backend message codes (shared + web localization)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/shared/messages-codes/auth.js</code></li><li>Modify: <code>web/src/i18n/locales/messagesCodes.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: new <code>authMessagesCodes</code> keys <code>ENROLLED<em>SUCCESS</code>, <code>CHILD</em>EMAIL<em>DUPLICATE</code>, <code>CHILD</em>EMAIL<em>EXISTS</code>, <code>NO</em>CHILDREN</code>, <code>PLAN<em>REQUIRED</code>, <code>COUPON</em>INVALID<em>FOR</em>PLAN</code>. Used by Task 4 (enroll) and the frontend.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add the codes to <code>@aya/shared</code></strong></li></ul></div><div class="content-block"><p>In <code>packages/shared/messages-codes/auth.js</code>, inside the <code>authMessagesCodes</code> object, add to the <code>// success</code> group and a new <code>// enroll</code> group:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>export const authMessagesCodes = {
+  // success
+  REGISTERED_SUCCESS: &quot;REGISTERED_SUCCESS&quot;,
+  ENROLLED_SUCCESS: &quot;ENROLLED_SUCCESS&quot;,
+  LOGIN_SUCCESS: &quot;LOGIN_SUCCESS&quot;,
+  LOGOUT_SUCCESS: &quot;LOGOUT_SUCCESS&quot;,
+  TOKEN_REFRESHED: &quot;TOKEN_REFRESHED&quot;,
+  // ... (existing keys unchanged) ...
+  // enroll (family registration wizard)
+  CHILD_EMAIL_DUPLICATE: &quot;AUTH_CHILD_EMAIL_DUPLICATE&quot;,
+  CHILD_EMAIL_EXISTS: &quot;AUTH_CHILD_EMAIL_EXISTS&quot;,
+  NO_CHILDREN: &quot;AUTH_NO_CHILDREN&quot;,
+  PLAN_REQUIRED: &quot;AUTH_PLAN_REQUIRED&quot;,
+  COUPON_INVALID_FOR_PLAN: &quot;AUTH_COUPON_INVALID_FOR_PLAN&quot;,
+};</code></pre></div></div><div class="content-block"><p>(Leave all existing keys exactly as they are; only insert <code>ENROLLED_SUCCESS</code> and the five enroll keys.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add <code>ar</code> + <code>en</code> strings to the web mapping</strong></li></ul></div><div class="content-block"><p>In <code>web/src/i18n/locales/messagesCodes.js</code>, inside <code>const ar = { ... [messagesNames.authMessages]: { ... } }</code>, add after <code>REGISTERED_SUCCESS</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    [authMessagesCodes.ENROLLED_SUCCESS]: &quot;تم التسجيل بنجاح، يمكنك تسجيل الدخول الآن&quot;,
+    [authMessagesCodes.CHILD_EMAIL_DUPLICATE]: &quot;هناك بريد إلكتروني مكرر بين الأبناء في نفس الطلب&quot;,
+    [authMessagesCodes.CHILD_EMAIL_EXISTS]: &quot;البريد الإلكتروني لأحد الأبناء مستخدم بالفعل&quot;,
+    [authMessagesCodes.NO_CHILDREN]: &quot;يجب إضافة ابن واحد على الأقل&quot;,
+    [authMessagesCodes.PLAN_REQUIRED]: &quot;يجب اختيار خطة لكل ابن&quot;,
+    [authMessagesCodes.COUPON_INVALID_FOR_PLAN]: &quot;الكوبون غير صالح للخطة أو الدورة المختارة&quot;,</code></pre></div></div><div class="content-block"><p>In the same file inside <code>const en = { ... [messagesNames.authMessages]: { ... } }</code>, add after <code>REGISTERED_SUCCESS</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    [authMessagesCodes.ENROLLED_SUCCESS]: &quot;Registered successfully — you can sign in now&quot;,
+    [authMessagesCodes.CHILD_EMAIL_DUPLICATE]: &quot;A child email is duplicated within the same request&quot;,
+    [authMessagesCodes.CHILD_EMAIL_EXISTS]: &quot;A child email is already registered&quot;,
+    [authMessagesCodes.NO_CHILDREN]: &quot;Add at least one child&quot;,
+    [authMessagesCodes.PLAN_REQUIRED]: &quot;Select a plan for each child&quot;,
+    [authMessagesCodes.COUPON_INVALID_FOR_PLAN]: &quot;The coupon is not valid for the chosen plan or cycle&quot;,</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Verify the shared barrel still imports cleanly</strong></li></ul></div><div class="content-block"><p>Run: <code>node -e &quot;import(&#39;@aya/shared&#39;).then(m=&gt;console.log(m.authMessagesCodes.ENROLLED<em>SUCCESS, m.authMessagesCodes.COUPON</em>INVALID<em>FOR</em>PLAN))&quot;</code> (Run from <code>Server/</code> so the workspace resolves <code>@aya/shared</code>; if it does not resolve there, run from repo root.) Expected: prints <code>ENROLLED<em>SUCCESS AUTH</em>COUPON<em>INVALID</em>FOR_PLAN</code></p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/shared/messages-codes/auth.js web/src/i18n/locales/messagesCodes.js
+git commit -m &quot;feat(shared): enroll message codes (ar+en)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-2-backend-—-tx-aware-invoice-repo-system-invoice-generator" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Task 2: Backend — tx-aware invoice repo + system invoice generator</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>Server/src/modules/invoices/invoice.repo.js</code></li><li>Modify: <code>Server/src/modules/invoices/invoice.usecase.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>invoiceRepo.create(data, client?)</code> (now accepts a Prisma tx client); <code>invoiceUsecase.generateForSubscription(subscription, { template, settings, plan, createdById, tx })</code> → <code>Promise&lt;invoice|null&gt;</code>. Consumed by Task 4.</li><li>Consumes: existing <code>computeAmounts</code>, <code>computeDiscountSnapshot</code>, <code>invoiceNumberFor</code>, <code>computeDueDate</code>, <code>INVOICE_STATUSES</code>, <code>priceForPeriod</code>, <code>roundMoney</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Make <code>invoiceRepo.create</code> accept a tx client</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/invoices/invoice.repo.js</code>, replace the <code>create</code> method:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async create(data, client) {
+    const row = await (client ?? prisma).invoice.create({
+      data,
+      select: invoiceSelect,
+    });
+    return toInvoice(row);
+  }</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Let <code>computeDiscountSnapshot</code> accept a preloaded plan (avoids a DB read inside the enroll tx)</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/invoices/invoice.usecase.js</code>, change the signature + first lines of <code>computeDiscountSnapshot</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async computeDiscountSnapshot(subscription, hourlyRate, plan) {
+    if (!subscription?.planId || subscription.priceCharged == null) return null;
+    const planRow = plan ?? (await planRepo.getById(subscription.planId));
+    if (!planRow) return null;
+
+    const base = roundMoney(
+      priceForPeriod(planRow, subscription.billingPeriod, hourlyRate),
+    );</code></pre></div></div><div class="content-block"><p>Then replace the remaining references to <code>plan</code> in that method&#39;s body with <code>planRow</code> (the <code>coupon</code> part stays as <code>subscription.coupon</code>). The admin path (<code>generate</code>) calls it with two args, so <code>plan</code> is <code>undefined</code> and it still loads — no behaviour change.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Add the system-level generator</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/invoices/invoice.usecase.js</code>, add this method to the <code>InvoiceUsecase</code> class (e.g. right after <code>generate</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  /**
+   * System-initiated invoice creation (no admin gate) — used by the public
+   * family-enrollment flow. Always creates a fresh UNPAID invoice for a
+   * just-created subscription. `template` + `settings` are passed in (loaded
+   * once by the caller); `plan` lets us skip a DB read inside the caller&#39;s tx.
+   * Pass `tx` to run inside the caller&#39;s transaction.
+   */
+  async generateForSubscription(
+    subscription,
+    { template, settings, plan, createdById = null, tx } = {},
+  ) {
+    if (!subscription || subscription.priceCharged == null) return null;
+
+    const amounts = await this.computeAmounts(
+      subscription,
+      { previousCredit: 0, previousDebt: 0 },
+      template,
+      settings,
+    );
+    const discount = await this.computeDiscountSnapshot(
+      subscription,
+      Number(settings.hourlyRate),
+      plan,
+    );
+    const configJson = { ...template.configJson, discount };
+    const issueDate = new Date();
+
+    return invoiceRepo.create(
+      {
+        subscriptionId: subscription.id,
+        invoiceNumber: this.invoiceNumberFor(subscription.id),
+        status: INVOICE_STATUSES.UNPAID,
+        ...amounts,
+        configJson,
+        issueDate,
+        dueDate: this.computeDueDate(issueDate, template),
+        createdById,
+      },
+      tx,
+    );
+  }</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Verify the module loads (no syntax/import errors)</strong></li></ul></div><div class="content-block"><p>Run: <code>node -e &quot;import(&#39;./src/modules/invoices/invoice.usecase.js&#39;).then(m=&gt;console.log(typeof m.invoiceUsecase.generateForSubscription))&quot;</code> (from <code>Server/</code>) Expected: prints <code>function</code></p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add Server/src/modules/invoices/invoice.repo.js Server/src/modules/invoices/invoice.usecase.js
+git commit -m &quot;feat(invoices): system-level generateForSubscription + tx-aware create&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-3-backend-—-public-post-plansquote-coupon-verify-authoritative-price" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Task 3: Backend — public <code>POST /plans/quote</code> (coupon verify + authoritative price)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>Server/src/modules/plans/plan.usecase.js</code></li><li>Modify: <code>Server/src/modules/plans/plan.controller.js</code></li><li>Modify: <code>Server/src/modules/plans/plan.validation.js</code></li><li>Modify: <code>Server/src/modules/plans/plan.route.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>POST /plans/quote</code> (public). Body <code>{ planId:number, billingPeriod:&quot;MONTHLY&quot;|&quot;YEARLY&quot;, couponCode?:string }</code>. Response <code>data</code>: <code>{ currency, base, net, discount: {type,value,code}|null, couponValid: boolean|null, reason: string|null }</code>. Consumed by the frontend <code>CouponField</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add imports + <code>quote()</code> to <code>plan.usecase.js</code></strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/plans/plan.usecase.js</code>, extend the pricing-util import to include <code>priceForPeriod</code>, and add a <code>couponUsecase</code> import:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import {
+  applyDiscount,
+  couponAppliesToPeriod,
+  effectiveMonthlyPrice,
+  effectiveYearlyPrice,
+  isCouponActive,
+  priceForPeriod,
+  roundMoney,
+} from &quot;../../shared/utility/pricing.js&quot;;
+import { couponUsecase } from &quot;../coupons/coupon.usecase.js&quot;;</code></pre></div></div><div class="content-block"><p>Add this method to the <code>PlanUsecase</code> class (e.g. after <code>pricingFor</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  /**
+   * Public price quote for one plan/cycle with an optional coupon code. Mirrors
+   * `subscriptionUsecase.computePricing` (best of auto plan-coupon vs typed code)
+   * but NEVER throws on an invalid code — it reports `{couponValid:false,reason}`
+   * so the registration wizard can show an inline error. Money stays
+   * server-authoritative; the client only previews.
+   */
+  async quote({ planId, billingPeriod, couponCode }) {
+    const plan = await planRepo.getByIdWithCoupons(planId);
+    if (!plan || !plan.isActive) throw notFound(planMessagesCodes.PLAN_NOT_FOUND);
+
+    const settings = await settingsUsecase.getEffective();
+    const hourlyRate = Number(settings.hourlyRate);
+    const now = new Date();
+    const base = roundMoney(priceForPeriod(plan, billingPeriod, hourlyRate));
+
+    // (1) best active plan-linked coupon for this cycle (auto-applied)
+    const linked = (plan.coupons ?? [])
+      .map((link) =&gt; link.coupon)
+      .filter(Boolean);
+    let net = base;
+    let applied = null;
+    for (const coupon of linked) {
+      if (!isCouponActive(coupon, now)) continue;
+      if (!couponAppliesToPeriod(coupon, billingPeriod)) continue;
+      const candidate = roundMoney(applyDiscount(base, coupon));
+      if (candidate &lt; net) {
+        net = candidate;
+        applied = { type: coupon.type, value: Number(coupon.value), code: coupon.code };
+      }
+    }
+
+    // (2) typed coupon code, if supplied
+    let couponValid = null;
+    let reason = null;
+    if (couponCode) {
+      const result = await couponUsecase.validateCoupon({
+        code: couponCode,
+        planId,
+        billingPeriod,
+      });
+      if (!result.valid) {
+        couponValid = false;
+        reason = result.reason;
+      } else {
+        couponValid = true;
+        const candidate = roundMoney(
+          applyDiscount(base, {
+            type: result.discount.type,
+            value: result.discount.value,
+          }),
+        );
+        if (candidate &lt; net) {
+          net = candidate;
+          applied = {
+            type: result.discount.type,
+            value: result.discount.value,
+            code: couponCode,
+          };
+        }
+      }
+    }
+
+    return { currency: settings.currency, base, net: roundMoney(net), discount: applied, couponValid, reason };
+  }</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add the controller handler</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/plans/plan.controller.js</code>, add to <code>PlanController</code> (after <code>listPublic</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  quote = async (req, res) =&gt; {
+    const result = await planUsecase.quote(req.body);
+    return ok(res, result);
+  };</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Add the validation schema</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/plans/plan.validation.js</code>, add the <code>BILLING_PERIODS</code> import and a <code>quoteSchema</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { z } from &quot;zod&quot;;
+import { BILLING_PERIODS } from &quot;@aya/shared&quot;;
+import { planMessagesCodes } from &quot;./plan.messages.js&quot;;
+
+const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];</code></pre></div></div><div class="content-block"><p>Add to the <code>PlanValidation</code> class:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  static quoteSchema = z.object({
+    planId: z.coerce.number().int().positive(planMessagesCodes.PLAN_NOT_FOUND),
+    billingPeriod: z.enum(billingPeriods),
+    couponCode: z.string().trim().min(1).optional(),
+  });</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Mount the public route</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/plans/plan.route.js</code>, add directly under the existing <code>&quot;/public&quot;</code> line (still <strong>before</strong> <code>&quot;/:id&quot;</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// PUBLIC — price quote for the registration wizard (coupon verify).
+planRoutes.post(
+  &quot;/quote&quot;,
+  validate(PlanValidation.quoteSchema),
+  asyncHandler(planController.quote),
+);</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Verify with the dev server</strong></li></ul></div><div class="content-block"><p>Start the backend (<code>npm run dev:server</code>). Pick a real active <code>planId</code> (check the DB or the <code>/plans/public</code> response). Then:</p></div><div class="content-block"><p>Run (substitute a real plan id):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>curl -s -X POST http://localhost:4000/api/plans/quote -H &quot;Content-Type: application/json&quot; -d &#39;{&quot;planId&quot;:1,&quot;billingPeriod&quot;:&quot;MONTHLY&quot;}&#39;</code></pre></div></div><div class="content-block"><p>(If the API base path is not <code>/api</code>, check <code>Server/src/server.js</code> / app router mount and adjust.) Expected: JSON <code>{&quot;success&quot;:true,...,&quot;data&quot;:{&quot;currency&quot;:...,&quot;base&quot;:&lt;number&gt;,&quot;net&quot;:&lt;number&gt;,&quot;discount&quot;:...,&quot;couponValid&quot;:null,&quot;reason&quot;:null}}</code></p></div><div class="content-block"><p>Run with a bogus coupon:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>curl -s -X POST http://localhost:4000/api/plans/quote -H &quot;Content-Type: application/json&quot; -d &#39;{&quot;planId&quot;:1,&quot;billingPeriod&quot;:&quot;MONTHLY&quot;,&quot;couponCode&quot;:&quot;NOPE123&quot;}&#39;</code></pre></div></div><div class="content-block"><p>Expected: <code>data.couponValid</code> is <code>false</code> and <code>data.reason</code> is a coupon code string (e.g. <code>COUPON<em>NOT</em>FOUND</code>).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add Server/src/modules/plans/
+git commit -m &quot;feat(plans): public POST /plans/quote for coupon verify&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-4-backend-—-public-post-authenroll-family-enrollment" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Task 4: Backend — public <code>POST /auth/enroll</code> (family enrollment)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>Server/src/modules/auth/auth.validation.js</code></li><li>Modify: <code>Server/src/modules/auth/auth.usecase.js</code></li><li>Modify: <code>Server/src/modules/auth/auth.controller.js</code></li><li>Modify: <code>Server/src/modules/auth/auth.route.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>invoiceUsecase.generateForSubscription</code> (Task 2), <code>subscriptionUsecase.computePricing</code>/<code>computeEndDate</code>, <code>couponRepo.incrementCouponRedemption</code>, <code>userRepo.{findByEmail,createUser,linkParentStudent,findAdminIds}</code>, <code>authRepo.findByEmail</code>, <code>planRepo.getByIdWithCoupons</code>, <code>settingsUsecase.getEffective</code>, <code>paymentTemplateUsecase.get</code>, <code>notificationUsecase.createManyForUsers</code>, <code>hashPassword</code>.</li><li>Produces: <code>POST /auth/enroll</code> (public). Response <code>data</code>: <code>{ parentId, children: [{studentId, subscriptionId, invoiceId}] }</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add <code>enrollSchema</code></strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/auth/auth.validation.js</code>, add the imports + schema:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { z } from &quot;zod&quot;;
+import { authMessagesCodes, BILLING_PERIODS } from &quot;@aya/shared&quot;;
+
+const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];
+
+export class AuthValidation {
+  // ... existing registerSchema, loginSchema unchanged ...
+
+  static enrollChildSchema = z.object({
+    name: z.string().min(1, authMessagesCodes.NAME_REQUIRED),
+    email: z.string().email(authMessagesCodes.INVALID_EMAIL),
+    password: z.string().min(6, authMessagesCodes.PASSWORD_TOO_SHORT),
+    birthDate: z.coerce.date().optional(),
+    nickname: z.string().trim().optional(),
+    planId: z.coerce.number().int().positive(authMessagesCodes.PLAN_REQUIRED),
+    billingPeriod: z.enum(billingPeriods),
+    couponCode: z.string().trim().min(1).optional(),
+  });
+
+  static enrollSchema = z.object({
+    parent: z.object({
+      name: z.string().min(1, authMessagesCodes.NAME_REQUIRED),
+      email: z.string().email(authMessagesCodes.INVALID_EMAIL),
+      password: z.string().min(6, authMessagesCodes.PASSWORD_TOO_SHORT),
+      phone: z
+        .string()
+        .trim()
+        .min(1, authMessagesCodes.PHONE_REQUIRED)
+        .regex(/^\+?[0-9\s\-()]{6,20}$/, authMessagesCodes.INVALID_PHONE),
+      locale: z.enum([&quot;ar&quot;, &quot;en&quot;]).optional(),
+    }),
+    children: z
+      .array(AuthValidation.enrollChildSchema)
+      .min(1, authMessagesCodes.NO_CHILDREN),
+  });
+}</code></pre></div></div><div class="content-block"><p>(Note: <code>AuthValidation.enrollChildSchema</code> is referenced inside the class static initializer — define <code>enrollChildSchema</code> <strong>before</strong> <code>enrollSchema</code> in the class body, as shown.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Implement <code>enrollFamily</code> in the usecase</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/auth/auth.usecase.js</code>, replace the imports block and add the method. New imports:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import {
+  BILLING_PERIODS,
+  NOTIFICATION_TYPES,
+  PARENT_RELATIONS,
+  SUBSCRIPTION_STATUSES,
+  USER_ROLES,
+  authMessagesCodes,
+  messagesNames,
+  planMessagesCodes,
+} from &quot;@aya/shared&quot;;
+import { prisma } from &quot;@aya/db/prisma.client.js&quot;;
+import { AppError, badRequest, conflict, notFound } from &quot;../../shared/errors/AppError.js&quot;;
+import { comparePassword, hashPassword } from &quot;../../infra/security/hash.js&quot;;
+import { userRepo } from &quot;../users/user.repo.js&quot;;
+import { planRepo } from &quot;../plans/plan.repo.js&quot;;
+import { couponRepo } from &quot;../coupons/coupon.repo.js&quot;;
+import { settingsUsecase } from &quot;../settings/settings.usecase.js&quot;;
+import { paymentTemplateUsecase } from &quot;../paymentTemplates/paymentTemplate.usecase.js&quot;;
+import { subscriptionRepo } from &quot;../subscriptions/subscription.repo.js&quot;;
+import { subscriptionUsecase } from &quot;../subscriptions/subscription.usecase.js&quot;;
+import { invoiceUsecase } from &quot;../invoices/invoice.usecase.js&quot;;
+import { notificationUsecase } from &quot;../notifications/notification.usecase.js&quot;;
+import { authRepo } from &quot;./auth.repo.js&quot;;</code></pre></div></div><div class="content-block"><p>Add this method to the <code>AuthUsecase</code> class (after <code>register</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  /**
+   * Public family enrollment. Creates a PARENT + N STUDENT children, links them,
+   * and for each child a PENDING subscription + UNPAID invoice — all atomically.
+   * Pricing (incl. coupon) is recomputed server-side. Admins are notified.
+   */
+  async enrollFamily({ parent, children }) {
+    // 1. Reject duplicate emails within the payload (children + parent).
+    const seen = new Set();
+    for (const child of children) {
+      const key = child.email.trim().toLowerCase();
+      if (seen.has(key) || key === parent.email.trim().toLowerCase()) {
+        throw badRequest(
+          authMessagesCodes.CHILD_EMAIL_DUPLICATE,
+          messagesNames.authMessages,
+        );
+      }
+      seen.add(key);
+    }
+
+    // 2. Reject already-registered emails (parent first, then each child).
+    if (await authRepo.findByEmail(parent.email)) {
+      throw new AppError({
+        statusCode: 409,
+        code: authMessagesCodes.EMAIL_ALREADY_EXISTS,
+        message: authMessagesCodes.EMAIL_ALREADY_EXISTS,
+        translationKey: messagesNames.authMessages,
+      });
+    }
+    for (const child of children) {
+      if (await userRepo.findByEmail(child.email)) {
+        throw new AppError({
+          statusCode: 409,
+          code: authMessagesCodes.CHILD_EMAIL_EXISTS,
+          message: authMessagesCodes.CHILD_EMAIL_EXISTS,
+          translationKey: messagesNames.authMessages,
+        });
+      }
+    }
+
+    // 3. Load global settings + payment template once.
+    const settings = await settingsUsecase.getEffective();
+    const template = await paymentTemplateUsecase.get(null);
+    const hourlyRate = Number(settings.hourlyRate);
+    const now = new Date();
+
+    // 4. Price each child authoritatively (also validates the coupon).
+    const priced = [];
+    for (const child of children) {
+      const plan = await planRepo.getByIdWithCoupons(child.planId);
+      if (!plan || !plan.isActive) {
+        throw notFound(planMessagesCodes.PLAN_NOT_FOUND);
+      }
+      const billingPeriod = child.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+      let pricing;
+      try {
+        pricing = await subscriptionUsecase.computePricing(
+          plan,
+          billingPeriod,
+          child.couponCode,
+          hourlyRate,
+        );
+      } catch {
+        throw badRequest(
+          authMessagesCodes.COUPON_INVALID_FOR_PLAN,
+          messagesNames.authMessages,
+        );
+      }
+      const hours =
+        billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
+      const startDate = now;
+      const endDate = subscriptionUsecase.computeEndDate(startDate, billingPeriod);
+      priced.push({ child, plan, billingPeriod, hours, startDate, endDate, ...pricing });
+    }
+
+    // 5. Pre-hash passwords outside the tx (keeps the tx short).
+    const parentHash = await hashPassword(parent.password);
+    const childHashes = await Promise.all(
+      children.map((c) =&gt; hashPassword(c.password)),
+    );
+
+    // 6. Atomic write: parent + children + links + subscriptions + invoices.
+    const result = await prisma.$transaction(async (tx) =&gt; {
+      const parentUser = await userRepo.createUser(
+        {
+          name: parent.name,
+          email: parent.email,
+          passwordHash: parentHash,
+          role: USER_ROLES.PARENT,
+          phone: parent.phone,
+          locale: parent.locale ?? &quot;ar&quot;,
+        },
+        tx,
+      );
+
+      const createdChildren = [];
+      for (let i = 0; i &lt; priced.length; i += 1) {
+        const p = priced[i];
+        const studentUser = await userRepo.createUser(
+          {
+            name: p.child.name,
+            email: p.child.email,
+            passwordHash: childHashes[i],
+            role: USER_ROLES.STUDENT,
+            nickname: p.child.nickname,
+            birthDate: p.child.birthDate,
+            locale: parent.locale ?? &quot;ar&quot;,
+            createdById: parentUser.id,
+          },
+          tx,
+        );
+        await userRepo.linkParentStudent(
+          parentUser.id,
+          studentUser.id,
+          PARENT_RELATIONS.GUARDIAN,
+          tx,
+        );
+
+        const subData = {
+          status: SUBSCRIPTION_STATUSES.PENDING,
+          billingPeriod: p.billingPeriod,
+          startDate: p.startDate,
+          endDate: p.endDate,
+          totalHours: p.hours,
+          remainingHours: p.hours,
+          priceCharged: p.priceCharged,
+          currency: settings.currency,
+          student: { connect: { id: studentUser.id } },
+          plan: { connect: { id: p.plan.id } },
+          createdBy: { connect: { id: parentUser.id } },
+        };
+        if (p.couponId) subData.coupon = { connect: { id: p.couponId } };
+
+        const subscription = await subscriptionRepo.createSubscription(subData, tx);
+        if (p.couponId) {
+          await couponRepo.incrementCouponRedemption(p.couponId, tx);
+        }
+
+        const invoice = await invoiceUsecase.generateForSubscription(subscription, {
+          template,
+          settings,
+          plan: p.plan,
+          createdById: parentUser.id,
+          tx,
+        });
+
+        createdChildren.push({
+          studentId: studentUser.id,
+          subscriptionId: subscription.id,
+          invoiceId: invoice?.id ?? null,
+        });
+      }
+
+      return { parentId: parentUser.id, children: createdChildren };
+    });
+
+    // 7. Notify admins (the teacher) — best-effort, must not fail the request.
+    try {
+      const adminIds = await userRepo.findAdminIds();
+      if (adminIds.length) {
+        await notificationUsecase.createManyForUsers(adminIds, {
+          type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
+          titleAr: `طلب تسجيل جديد: ${children.length} طالب بانتظار المراجعة`,
+          titleEn: `New enrollment: ${children.length} student(s) pending review`,
+          link: &quot;/dashboard/subscriptions&quot;,
+        });
+      }
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return result;
+  }</code></pre></div></div><div class="content-block"><p>(Keep the existing <code>register</code>, <code>login</code>, <code>getById</code> methods. Only the imports block is rewritten and <code>enrollFamily</code> added. The new imports are a superset of the old ones — <code>AppError</code>, <code>comparePassword</code>, <code>hashPassword</code>, <code>authRepo</code>, <code>USER_ROLES</code>, <code>authMessagesCodes</code>, <code>messagesNames</code> were already used by <code>register</code>/<code>login</code>.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Add the controller handler</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/auth/auth.controller.js</code>, add to <code>AuthController</code> (after <code>register</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  enroll = async (req, res) =&gt; {
+    const result = await authUsecase.enrollFamily(req.body);
+    return created(
+      res,
+      result,
+      authMessagesCodes.ENROLLED_SUCCESS,
+      messagesNames.authMessages,
+    );
+  };</code></pre></div></div><div class="content-block"><p>(<code>created</code>, <code>authMessagesCodes</code>, <code>messagesNames</code>, <code>authUsecase</code> are already imported in this file.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Mount the public route</strong></li></ul></div><div class="content-block"><p>In <code>Server/src/modules/auth/auth.route.js</code>, add after the <code>/register</code> route:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>authRoutes.post(
+  &quot;/enroll&quot;,
+  validate(AuthValidation.enrollSchema),
+  asyncHandler(authController.enroll),
+);</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Verify with the dev server</strong></li></ul></div><div class="content-block"><p>Restart the backend. Use a unique parent email and one child with a real active <code>planId</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>curl -s -X POST http://localhost:4000/api/auth/enroll -H &quot;Content-Type: application/json&quot; -d &#39;{
+  &quot;parent&quot;:{&quot;name&quot;:&quot;اب تجريبي&quot;,&quot;email&quot;:&quot;parent.test+1@example.com&quot;,&quot;password&quot;:&quot;secret123&quot;,&quot;phone&quot;:&quot;+201000000000&quot;,&quot;locale&quot;:&quot;ar&quot;},
+  &quot;children&quot;:[{&quot;name&quot;:&quot;ابن تجريبي&quot;,&quot;email&quot;:&quot;child.test+1@example.com&quot;,&quot;password&quot;:&quot;secret123&quot;,&quot;birthDate&quot;:&quot;2016-05-01&quot;,&quot;planId&quot;:1,&quot;billingPeriod&quot;:&quot;MONTHLY&quot;}]
+}&#39;</code></pre></div></div><div class="content-block"><p>Expected: HTTP 201, <code>{&quot;success&quot;:true,&quot;message&quot;:&quot;ENROLLED_SUCCESS&quot;,...,&quot;data&quot;:{&quot;parentId&quot;:&lt;id&gt;,&quot;children&quot;:[{&quot;studentId&quot;:&lt;id&gt;,&quot;subscriptionId&quot;:&lt;id&gt;,&quot;invoiceId&quot;:&lt;id&gt;}]}}</code></p></div><div class="content-block"><p>Re-run the same command. Expected: HTTP 409 with <code>message:&quot;AUTH<em>EMAIL</em>ALREADY_EXISTS&quot;</code> (parent email taken — nothing else created).</p></div><div class="content-block"><p>Verify the side effects (Prisma Studio <code>npm run db:studio</code>, or a quick query): the parent + child exist, a <code>ParentStudent</code> link exists, a PENDING <code>Subscription</code>, and an UNPAID <code>Invoice</code>.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add Server/src/modules/auth/
+git commit -m &quot;feat(auth): public POST /auth/enroll family registration&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-5-frontend-—-auth-copy-registration-url-constants" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Task 5: Frontend — auth copy + registration URL constants</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/features/auth/config/authText.js</code></li><li>Create: <code>web/src/features/auth/config/constant.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: new <code>authText</code> keys (listed below) for <code>ar</code> + <code>en</code>; exported URL constants <code>ENROLL<em>URL</code>, <code>PLAN</em>QUOTE<em>URL</code>, <code>PLANS</em>PUBLIC_URL</code>. Consumed by Tasks 6–10.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create the URL constants</strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/config/constant.js</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>export const PLANS_PUBLIC_URL = &quot;plans/public&quot;;
+export const PLAN_QUOTE_URL = &quot;plans/quote&quot;;
+export const ENROLL_URL = &quot;auth/enroll&quot;;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add wizard copy to <code>authText.js</code></strong></li></ul></div><div class="content-block"><p>In <code>web/src/features/auth/config/authText.js</code>, add these keys to <strong>both</strong> the <code>ar</code> and <code>en</code> objects (alongside the existing keys).</p></div><div class="content-block"><p><code>ar</code> additions:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    // wizard
+    wizardTitle: &quot;التسجيل في أكاديمية آية&quot;,
+    wizardSubtitle: &quot;أضف أبناءك واختر الخطة المناسبة&quot;,
+    stepChildren: &quot;الأبناء والخطط&quot;,
+    stepReview: &quot;المراجعة وبيانات ولي الأمر&quot;,
+    childTitle: &quot;بيانات الابن&quot;,
+    childNumber: &quot;الابن&quot;,
+    nickname: &quot;اسم الدلع (اختياري)&quot;,
+    birthDate: &quot;تاريخ الميلاد&quot;,
+    monthly: &quot;شهري&quot;,
+    yearly: &quot;سنوي&quot;,
+    perMonth: &quot;/ شهر&quot;,
+    perYear: &quot;/ سنة&quot;,
+    hours: &quot;ساعة&quot;,
+    was: &quot;كان&quot;,
+    choosePlan: &quot;اختر الخطة&quot;,
+    noPlans: &quot;لا توجد خطط متاحة حالياً&quot;,
+    couponLabel: &quot;كود الخصم&quot;,
+    couponPlaceholder: &quot;أدخل كود الخصم إن وجد&quot;,
+    verifyCoupon: &quot;تحقق&quot;,
+    verifying: &quot;جارٍ التحقق…&quot;,
+    removeCoupon: &quot;إزالة الكوبون&quot;,
+    couponApplied: &quot;تم تطبيق الخصم 🎉&quot;,
+    couponInvalid: &quot;كود الخصم غير صالح&quot;,
+    couponExpired: &quot;انتهت صلاحية كود الخصم&quot;,
+    couponNotApplicable: &quot;الكوبون لا ينطبق على هذه الخطة أو الدورة&quot;,
+    couponNotFound: &quot;كود الخصم غير موجود&quot;,
+    selectPlanFirst: &quot;اختر خطة أولاً قبل التحقق من الكوبون&quot;,
+    giftBanner: &quot;🎁 أول حصة مجانية لكل ابن&quot;,
+    paymentNotice: &quot;الاشتراك لا يتطلب دفعاً الآن — الدفع يكون بعد أول حصة. الاختيار للتسجيل فقط.&quot;,
+    addChild: &quot;➕ إضافة ابن آخر&quot;,
+    removeChild: &quot;حذف هذا الابن&quot;,
+    next: &quot;التالي&quot;,
+    back: &quot;السابق&quot;,
+    summaryTitle: &quot;ملخص الطلب&quot;,
+    colChild: &quot;الابن&quot;,
+    colPlan: &quot;الخطة&quot;,
+    colCycle: &quot;الدورة&quot;,
+    colBase: &quot;السعر&quot;,
+    colDiscount: &quot;الخصم&quot;,
+    colNet: &quot;الصافي&quot;,
+    colGift: &quot;هدية&quot;,
+    firstSessionFree: &quot;أول حصة مجانية&quot;,
+    parentTitle: &quot;بيانات ولي الأمر&quot;,
+    submit: &quot;تسجيل&quot;,
+    submitting: &quot;جارٍ التسجيل…&quot;,
+    fixErrors: &quot;بعض البيانات غير مكتملة، يرجى المراجعة&quot;,
+    planRequired: &quot;اختر خطة لهذا الابن&quot;,</code></pre></div></div><div class="content-block"><p><code>en</code> additions:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    wizardTitle: &quot;Join Aya Academy&quot;,
+    wizardSubtitle: &quot;Add your children and choose a plan&quot;,
+    stepChildren: &quot;Children &amp; plans&quot;,
+    stepReview: &quot;Review &amp; parent details&quot;,
+    childTitle: &quot;Child details&quot;,
+    childNumber: &quot;Child&quot;,
+    nickname: &quot;Nickname (optional)&quot;,
+    birthDate: &quot;Date of birth&quot;,
+    monthly: &quot;Monthly&quot;,
+    yearly: &quot;Yearly&quot;,
+    perMonth: &quot;/ mo&quot;,
+    perYear: &quot;/ yr&quot;,
+    hours: &quot;hours&quot;,
+    was: &quot;was&quot;,
+    choosePlan: &quot;Choose a plan&quot;,
+    noPlans: &quot;No plans available right now&quot;,
+    couponLabel: &quot;Coupon code&quot;,
+    couponPlaceholder: &quot;Enter a coupon code if you have one&quot;,
+    verifyCoupon: &quot;Verify&quot;,
+    verifying: &quot;Verifying…&quot;,
+    removeCoupon: &quot;Remove coupon&quot;,
+    couponApplied: &quot;Discount applied 🎉&quot;,
+    couponInvalid: &quot;Invalid coupon code&quot;,
+    couponExpired: &quot;Coupon code expired&quot;,
+    couponNotApplicable: &quot;Coupon does not apply to this plan or cycle&quot;,
+    couponNotFound: &quot;Coupon code not found&quot;,
+    selectPlanFirst: &quot;Select a plan first before verifying a coupon&quot;,
+    giftBanner: &quot;🎁 First session free for every child&quot;,
+    paymentNotice: &quot;No payment is required now — you pay after the first session. The selection is for registration only.&quot;,
+    addChild: &quot;➕ Add another child&quot;,
+    removeChild: &quot;Remove this child&quot;,
+    next: &quot;Next&quot;,
+    back: &quot;Back&quot;,
+    summaryTitle: &quot;Order summary&quot;,
+    colChild: &quot;Child&quot;,
+    colPlan: &quot;Plan&quot;,
+    colCycle: &quot;Cycle&quot;,
+    colBase: &quot;Price&quot;,
+    colDiscount: &quot;Discount&quot;,
+    colNet: &quot;Net&quot;,
+    colGift: &quot;Gift&quot;,
+    firstSessionFree: &quot;First session free&quot;,
+    parentTitle: &quot;Parent details&quot;,
+    submit: &quot;Register&quot;,
+    submitting: &quot;Registering…&quot;,
+    fixErrors: &quot;Some details are incomplete, please review&quot;,
+    planRequired: &quot;Choose a plan for this child&quot;,</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Verify the web app still compiles</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run dev:web</code> and confirm it boots without a module/parse error (Ctrl-C after it compiles). (No UI yet uses these keys — this is just a parse/import check.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/auth/config/
+git commit -m &quot;feat(web/auth): wizard copy + enroll URL constants&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-6-frontend-—-planradiocards-single-select-plan-cards" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Task 6: Frontend — <code>PlanRadioCards</code> (single-select plan cards)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/auth/components/PlanRadioCards.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>&lt;PlanRadioCards plans billingPeriod selectedPlanId onSelect lng txt /&gt;</code>.<ul><li><code>plans</code>: array from <code>GET /plans/public</code> (each: <code>{id,titleAr,titleEn,descriptionAr,descriptionEn,hours,currency,isFeatured,monthly:{base,effective,discount},yearly:{...}}</code>).</li><li><code>billingPeriod</code>: <code>&quot;MONTHLY&quot;|&quot;YEARLY&quot;</code>. <code>selectedPlanId</code>: number|null. <code>onSelect(planId)</code>. <code>txt</code>: <code>useAuthText()</code> object. <code>lng</code>: <code>&quot;ar&quot;|&quot;en&quot;</code>.</li></ul></li><li>Consumed by Task 8 (<code>ChildEnrollCard</code>).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write the component</strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/components/PlanRadioCards.jsx</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import {
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Grid,
+  Stack,
+  Typography,
+} from &quot;@mui/material&quot;;
+import { formatMoney } from &quot;../../../shared/lib/money.js&quot;;
+
+/** Plans as single-select (radio) cards for one billing cycle. */
+export default function PlanRadioCards({
+  plans,
+  billingPeriod,
+  selectedPlanId,
+  onSelect,
+  lng,
+  txt,
+}) {
+  if (!plans || plans.length === 0) {
+    return (
+      &lt;Typography color=&quot;text.secondary&quot; sx={{ py: 2, textAlign: &quot;center&quot; }}&gt;
+        {txt.noPlans}
+      &lt;/Typography&gt;
+    );
+  }
+
+  const isYearly = billingPeriod === &quot;YEARLY&quot;;
+
+  return (
+    &lt;Grid container spacing={2}&gt;
+      {plans.map((p) =&gt; {
+        const cycle = isYearly ? p.yearly : p.monthly;
+        const base = cycle?.base;
+        const effective = cycle?.effective;
+        const discount = cycle?.discount || null;
+        const hasDiscount =
+          discount != null &amp;&amp; effective != null &amp;&amp; effective &lt; base;
+        const discountLabel =
+          discount &amp;&amp;
+          (discount.type === &quot;PERCENT&quot;
+            ? `-${discount.value}%`
+            : `-${formatMoney(discount.value, p.currency)}`);
+        const selected = selectedPlanId === p.id;
+
+        return (
+          &lt;Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}&gt;
+            &lt;Card
+              variant=&quot;outlined&quot;
+              onClick={() =&gt; onSelect(p.id)}
+              role=&quot;radio&quot;
+              aria-checked={selected}
+              tabIndex={0}
+              onKeyDown={(e) =&gt; {
+                if (e.key === &quot;Enter&quot; || e.key === &quot; &quot;) {
+                  e.preventDefault();
+                  onSelect(p.id);
+                }
+              }}
+              sx={{
+                height: &quot;100%&quot;,
+                cursor: &quot;pointer&quot;,
+                borderColor: selected ? &quot;primary.main&quot; : &quot;divider&quot;,
+                borderWidth: selected ? 2 : 1,
+                boxShadow: selected ? 4 : 0,
+                transition: &quot;all .15s ease&quot;,
+                display: &quot;flex&quot;,
+                flexDirection: &quot;column&quot;,
+              }}
+            &gt;
+              &lt;CardContent sx={{ flex: 1 }}&gt;
+                &lt;Stack
+                  direction=&quot;row&quot;
+                  justifyContent=&quot;space-between&quot;
+                  alignItems=&quot;center&quot;
+                  mb={1}
+                &gt;
+                  &lt;Typography variant=&quot;h6&quot; fontWeight={800}&gt;
+                    {lng === &quot;en&quot; ? p.titleEn : p.titleAr}
+                  &lt;/Typography&gt;
+                  {selected &amp;&amp; &lt;Chip size=&quot;small&quot; color=&quot;primary&quot; label=&quot;✓&quot; /&gt;}
+                &lt;/Stack&gt;
+
+                &lt;Stack direction=&quot;row&quot; alignItems=&quot;baseline&quot; spacing={1}&gt;
+                  &lt;Typography variant=&quot;h4&quot; fontWeight={900} color=&quot;primary&quot;&gt;
+                    {formatMoney(hasDiscount ? effective : base, p.currency)}
+                  &lt;/Typography&gt;
+                  &lt;Typography variant=&quot;caption&quot; color=&quot;text.secondary&quot;&gt;
+                    {isYearly ? txt.perYear : txt.perMonth}
+                  &lt;/Typography&gt;
+                &lt;/Stack&gt;
+
+                {hasDiscount &amp;&amp; (
+                  &lt;Stack direction=&quot;row&quot; alignItems=&quot;center&quot; spacing={1} mt={0.5}&gt;
+                    &lt;Typography
+                      variant=&quot;caption&quot;
+                      color=&quot;text.secondary&quot;
+                      sx={{ textDecoration: &quot;line-through&quot; }}
+                    &gt;
+                      {txt.was} {formatMoney(base, p.currency)}
+                    &lt;/Typography&gt;
+                    {discountLabel &amp;&amp; (
+                      &lt;Chip size=&quot;small&quot; color=&quot;error&quot; label={discountLabel} /&gt;
+                    )}
+                  &lt;/Stack&gt;
+                )}
+
+                &lt;Typography variant=&quot;body2&quot; color=&quot;text.secondary&quot; mt={1}&gt;
+                  {p.hours} {txt.hours}
+                &lt;/Typography&gt;
+                {(lng === &quot;en&quot; ? p.descriptionEn : p.descriptionAr) &amp;&amp; (
+                  &lt;Typography variant=&quot;body2&quot; mt={1}&gt;
+                    {lng === &quot;en&quot; ? p.descriptionEn : p.descriptionAr}
+                  &lt;/Typography&gt;
+                )}
+              &lt;/CardContent&gt;
+              &lt;Box sx={{ px: 2, pb: 2 }}&gt;
+                &lt;Chip
+                  size=&quot;small&quot;
+                  variant={selected ? &quot;filled&quot; : &quot;outlined&quot;}
+                  color={selected ? &quot;primary&quot; : &quot;default&quot;}
+                  label={selected ? txt.choosePlan + &quot; ✓&quot; : txt.choosePlan}
+                  sx={{ width: &quot;100%&quot; }}
+                /&gt;
+              &lt;/Box&gt;
+            &lt;/Card&gt;
+          &lt;/Grid&gt;
+        );
+      })}
+    &lt;/Grid&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/auth/components/PlanRadioCards.jsx
+git commit -m &quot;feat(web/auth): PlanRadioCards single-select plan cards&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-7-frontend-—-couponfield-verify-apply-remove" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Task 7: Frontend — <code>CouponField</code> (verify / apply / remove)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/auth/components/CouponField.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>&lt;CouponField code status reason net currency disabled verifying onCodeChange onVerify onRemove txt /&gt;</code>.<ul><li><code>status</code>: <code>&quot;idle&quot;|&quot;valid&quot;|&quot;invalid&quot;</code>. <code>reason</code>: coupon reason code string|null (e.g. <code>COUPON<em>NOT</em>FOUND</code>). <code>net</code>: number|null (discounted price when valid). <code>currency</code>: string. <code>disabled</code>: boolean (true when no plan selected). <code>verifying</code>: boolean.</li><li>Callbacks: <code>onCodeChange(string)</code>, <code>onVerify()</code>, <code>onRemove()</code>.</li></ul></li><li>Consumed by Task 8.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write the component</strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/components/CouponField.jsx</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  TextField,
+} from &quot;@mui/material&quot;;
+import { formatMoney } from &quot;../../../shared/lib/money.js&quot;;
+
+/** Maps a backend coupon reason code to a localized message. */
+function reasonText(reason, txt) {
+  switch (reason) {
+    case &quot;COUPON_EXPIRED&quot;:
+      return txt.couponExpired;
+    case &quot;COUPON_NOT_APPLICABLE&quot;:
+      return txt.couponNotApplicable;
+    case &quot;COUPON_NOT_FOUND&quot;:
+      return txt.couponNotFound;
+    default:
+      return txt.couponInvalid;
+  }
+}
+
+export default function CouponField({
+  code,
+  status,
+  reason,
+  net,
+  currency,
+  disabled,
+  verifying,
+  onCodeChange,
+  onVerify,
+  onRemove,
+  txt,
+}) {
+  const isValid = status === &quot;valid&quot;;
+  const isInvalid = status === &quot;invalid&quot;;
+
+  return (
+    &lt;Stack spacing={1}&gt;
+      &lt;Stack direction=&quot;row&quot; spacing={1} alignItems=&quot;flex-start&quot;&gt;
+        &lt;TextField
+          label={txt.couponLabel}
+          placeholder={txt.couponPlaceholder}
+          value={code}
+          onChange={(e) =&gt; onCodeChange(e.target.value)}
+          size=&quot;small&quot;
+          fullWidth
+          disabled={isValid || verifying}
+        /&gt;
+        {isValid ? (
+          &lt;Button color=&quot;error&quot; variant=&quot;outlined&quot; onClick={onRemove} sx={{ whiteSpace: &quot;nowrap&quot; }}&gt;
+            {txt.removeCoupon}
+          &lt;/Button&gt;
+        ) : (
+          &lt;Button
+            variant=&quot;outlined&quot;
+            onClick={onVerify}
+            disabled={disabled || verifying || !code.trim()}
+            startIcon={verifying ? &lt;CircularProgress size={16} /&gt; : undefined}
+            sx={{ whiteSpace: &quot;nowrap&quot; }}
+          &gt;
+            {verifying ? txt.verifying : txt.verifyCoupon}
+          &lt;/Button&gt;
+        )}
+      &lt;/Stack&gt;
+
+      {disabled &amp;&amp; (
+        &lt;Box component=&quot;span&quot; sx={{ fontSize: 12, color: &quot;text.secondary&quot; }}&gt;
+          {txt.selectPlanFirst}
+        &lt;/Box&gt;
+      )}
+
+      {isValid &amp;&amp; (
+        &lt;Alert severity=&quot;success&quot; sx={{ py: 0 }}&gt;
+          {txt.couponApplied}
+          {net != null ? ` — ${formatMoney(net, currency)}` : &quot;&quot;}
+        &lt;/Alert&gt;
+      )}
+
+      {isInvalid &amp;&amp; (
+        &lt;Alert severity=&quot;error&quot; sx={{ py: 0 }} action={
+          &lt;Button color=&quot;inherit&quot; size=&quot;small&quot; onClick={onRemove}&gt;
+            {txt.removeCoupon}
+          &lt;/Button&gt;
+        }&gt;
+          {reasonText(reason, txt)}
+        &lt;/Alert&gt;
+      )}
+    &lt;/Stack&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/auth/components/CouponField.jsx
+git commit -m &quot;feat(web/auth): CouponField verify/apply/remove&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-8-frontend-—-childenrollcard-one-child-fields-plan-coupon-banners" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Task 8: Frontend — <code>ChildEnrollCard</code> (one child: fields + plan + coupon + banners)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/auth/components/ChildEnrollCard.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>PlanRadioCards</code> (Task 6), <code>CouponField</code> (Task 7), <code>PLAN<em>QUOTE</em>URL</code> (Task 5), <code>useRequest</code>, <code>formatMoney</code>.</li><li>Produces: <code>&lt;ChildEnrollCard index child plans onChange onRemove canRemove errors txt lng /&gt;</code>.<ul><li><code>child</code>: <code>{name,email,password,nickname,birthDate,billingPeriod,planId,coupon:{code,status,reason,quote}}</code>.</li><li><code>onChange(patch)</code>: merge a partial child into the wizard state at <code>index</code>.</li><li><code>errors</code>: <code>{name?,email?,password?,planId?}</code> strings to show under fields.</li></ul></li><li>Used by Task 10.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write the component</strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/components/ChildEnrollCard.jsx</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Divider,
+  Grid,
+  Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from &quot;@mui/material&quot;;
+import PlanRadioCards from &quot;./PlanRadioCards.jsx&quot;;
+import CouponField from &quot;./CouponField.jsx&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { PLAN_QUOTE_URL } from &quot;../config/constant.js&quot;;
+
+export default function ChildEnrollCard({
+  index,
+  child,
+  plans,
+  onChange,
+  onRemove,
+  canRemove,
+  errors = {},
+  txt,
+  lng,
+}) {
+  const quoteReq = useRequest({
+    url: PLAN_QUOTE_URL,
+    method: &quot;post&quot;,
+    isPublic: true,
+    syncToUrl: false,
+  });
+
+  const coupon = child.coupon || { code: &quot;&quot;, status: &quot;idle&quot;, reason: null, quote: null };
+
+  const setField = (key) =&gt; (e) =&gt; onChange({ [key]: e.target.value });
+
+  const handleBilling = (_e, value) =&gt; {
+    if (!value) return;
+    // Changing the cycle invalidates any applied coupon.
+    onChange({
+      billingPeriod: value,
+      coupon: { ...coupon, status: &quot;idle&quot;, reason: null, quote: null },
+    });
+  };
+
+  const handleSelectPlan = (planId) =&gt; {
+    // Changing the plan invalidates any applied coupon.
+    onChange({
+      planId,
+      coupon: { ...coupon, status: &quot;idle&quot;, reason: null, quote: null },
+    });
+  };
+
+  const verifyCoupon = async () =&gt; {
+    if (!child.planId) return;
+    try {
+      const res = await quoteReq.fetchData(null, {
+        planId: child.planId,
+        billingPeriod: child.billingPeriod,
+        couponCode: coupon.code.trim(),
+      });
+      const data = res?.data;
+      if (data?.couponValid) {
+        onChange({ coupon: { ...coupon, status: &quot;valid&quot;, reason: null, quote: data } });
+      } else {
+        onChange({
+          coupon: { ...coupon, status: &quot;invalid&quot;, reason: data?.reason || null, quote: null },
+        });
+      }
+    } catch {
+      onChange({ coupon: { ...coupon, status: &quot;invalid&quot;, reason: null, quote: null } });
+    }
+  };
+
+  const removeCoupon = () =&gt;
+    onChange({ coupon: { code: &quot;&quot;, status: &quot;idle&quot;, reason: null, quote: null } });
+
+  return (
+    &lt;Card variant=&quot;outlined&quot; sx={{ borderRadius: 3 }}&gt;
+      &lt;CardContent&gt;
+        &lt;Stack
+          direction=&quot;row&quot;
+          justifyContent=&quot;space-between&quot;
+          alignItems=&quot;center&quot;
+          mb={2}
+        &gt;
+          &lt;Typography variant=&quot;h6&quot; fontWeight={800}&gt;
+            {txt.childTitle} — {txt.childNumber} {index + 1}
+          &lt;/Typography&gt;
+          {canRemove &amp;&amp; (
+            &lt;Button color=&quot;error&quot; size=&quot;small&quot; onClick={onRemove}&gt;
+              {txt.removeChild}
+            &lt;/Button&gt;
+          )}
+        &lt;/Stack&gt;
+
+        &lt;Grid container spacing={2}&gt;
+          &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+            &lt;TextField
+              label={txt.name}
+              value={child.name}
+              onChange={setField(&quot;name&quot;)}
+              error={Boolean(errors.name)}
+              helperText={errors.name}
+              fullWidth
+              size=&quot;small&quot;
+            /&gt;
+          &lt;/Grid&gt;
+          &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+            &lt;TextField
+              label={txt.nickname}
+              value={child.nickname}
+              onChange={setField(&quot;nickname&quot;)}
+              fullWidth
+              size=&quot;small&quot;
+            /&gt;
+          &lt;/Grid&gt;
+          &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+            &lt;TextField
+              label={txt.email}
+              type=&quot;email&quot;
+              value={child.email}
+              onChange={setField(&quot;email&quot;)}
+              error={Boolean(errors.email)}
+              helperText={errors.email}
+              fullWidth
+              size=&quot;small&quot;
+            /&gt;
+          &lt;/Grid&gt;
+          &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+            &lt;TextField
+              label={txt.password}
+              type=&quot;password&quot;
+              value={child.password}
+              onChange={setField(&quot;password&quot;)}
+              error={Boolean(errors.password)}
+              helperText={errors.password}
+              fullWidth
+              size=&quot;small&quot;
+            /&gt;
+          &lt;/Grid&gt;
+          &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+            &lt;TextField
+              label={txt.birthDate}
+              type=&quot;date&quot;
+              value={child.birthDate}
+              onChange={setField(&quot;birthDate&quot;)}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+              size=&quot;small&quot;
+            /&gt;
+          &lt;/Grid&gt;
+        &lt;/Grid&gt;
+
+        &lt;Divider sx={{ my: 2 }} /&gt;
+
+        &lt;Alert severity=&quot;success&quot; icon={false} sx={{ mb: 1 }}&gt;
+          {txt.giftBanner}
+        &lt;/Alert&gt;
+        &lt;Alert severity=&quot;info&quot; icon={false} sx={{ mb: 2 }}&gt;
+          {txt.paymentNotice}
+        &lt;/Alert&gt;
+
+        &lt;Stack direction=&quot;row&quot; justifyContent=&quot;center&quot; mb={2}&gt;
+          &lt;ToggleButtonGroup
+            value={child.billingPeriod}
+            exclusive
+            color=&quot;primary&quot;
+            size=&quot;small&quot;
+            onChange={handleBilling}
+          &gt;
+            &lt;ToggleButton value=&quot;MONTHLY&quot;&gt;{txt.monthly}&lt;/ToggleButton&gt;
+            &lt;ToggleButton value=&quot;YEARLY&quot;&gt;{txt.yearly}&lt;/ToggleButton&gt;
+          &lt;/ToggleButtonGroup&gt;
+        &lt;/Stack&gt;
+
+        &lt;PlanRadioCards
+          plans={plans}
+          billingPeriod={child.billingPeriod}
+          selectedPlanId={child.planId}
+          onSelect={handleSelectPlan}
+          lng={lng}
+          txt={txt}
+        /&gt;
+        {errors.planId &amp;&amp; (
+          &lt;Typography color=&quot;error&quot; variant=&quot;caption&quot; sx={{ mt: 1, display: &quot;block&quot; }}&gt;
+            {errors.planId}
+          &lt;/Typography&gt;
+        )}
+
+        &lt;Box sx={{ mt: 2 }}&gt;
+          &lt;CouponField
+            code={coupon.code}
+            status={coupon.status}
+            reason={coupon.reason}
+            net={coupon.quote?.net ?? null}
+            currency={coupon.quote?.currency}
+            disabled={!child.planId}
+            verifying={quoteReq.isLoading}
+            onCodeChange={(value) =&gt;
+              onChange({ coupon: { ...coupon, code: value } })
+            }
+            onVerify={verifyCoupon}
+            onRemove={removeCoupon}
+            txt={txt}
+          /&gt;
+        &lt;/Box&gt;
+      &lt;/CardContent&gt;
+    &lt;/Card&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/auth/components/ChildEnrollCard.jsx
+git commit -m &quot;feat(web/auth): ChildEnrollCard (fields + plan + coupon + banners)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-9-frontend-—-enrollsummarytable-parentdetailsform" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">9</span>
+          <h2>Task 9: Frontend — <code>EnrollSummaryTable</code> + <code>ParentDetailsForm</code></h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/auth/components/EnrollSummaryTable.jsx</code></li><li>Create: <code>web/src/features/auth/components/ParentDetailsForm.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li><code>EnrollSummaryTable</code>: <code>&lt;EnrollSummaryTable children plans lng txt /&gt;</code>. Computes per-child base/discount/net from <code>plans</code> (<code>/plans/public</code> shape) + each child&#39;s selected plan/cycle/coupon quote.</li><li><code>ParentDetailsForm</code>: <code>&lt;ParentDetailsForm parent onChange errors txt /&gt;</code>. Controlled fields name/email/password/phone (plain <code>TextField</code>s — phone as a normal text input to keep the wizard dependency-free).</li><li>Both consumed by Task 10.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write <code>EnrollSummaryTable.jsx</code></strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/components/EnrollSummaryTable.jsx</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import {
+  Chip,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from &quot;@mui/material&quot;;
+import { formatMoney } from &quot;../../../shared/lib/money.js&quot;;
+
+/** Resolve the {base, net, discountAmount, currency} a child will be charged. */
+function priceFor(child, plans) {
+  const plan = plans.find((p) =&gt; p.id === child.planId);
+  if (!plan) return null;
+  const cycle = child.billingPeriod === &quot;YEARLY&quot; ? plan.yearly : plan.monthly;
+  const base = cycle?.base ?? 0;
+  // valid typed coupon → its quoted net; otherwise the plan&#39;s auto-effective.
+  const net =
+    child.coupon?.status === &quot;valid&quot; &amp;&amp; child.coupon.quote?.net != null
+      ? child.coupon.quote.net
+      : cycle?.effective ?? base;
+  return {
+    plan,
+    base,
+    net,
+    discountAmount: Math.max(0, base - net),
+    currency: plan.currency,
+  };
+}
+
+export default function EnrollSummaryTable({ children, plans, lng, txt }) {
+  return (
+    &lt;TableContainer component={Paper} variant=&quot;outlined&quot;&gt;
+      &lt;Table size=&quot;small&quot;&gt;
+        &lt;TableHead&gt;
+          &lt;TableRow&gt;
+            &lt;TableCell&gt;{txt.colChild}&lt;/TableCell&gt;
+            &lt;TableCell&gt;{txt.colPlan}&lt;/TableCell&gt;
+            &lt;TableCell&gt;{txt.colCycle}&lt;/TableCell&gt;
+            &lt;TableCell align=&quot;right&quot;&gt;{txt.colBase}&lt;/TableCell&gt;
+            &lt;TableCell align=&quot;right&quot;&gt;{txt.colDiscount}&lt;/TableCell&gt;
+            &lt;TableCell align=&quot;right&quot;&gt;{txt.colNet}&lt;/TableCell&gt;
+            &lt;TableCell&gt;{txt.colGift}&lt;/TableCell&gt;
+          &lt;/TableRow&gt;
+        &lt;/TableHead&gt;
+        &lt;TableBody&gt;
+          {children.map((child, i) =&gt; {
+            const p = priceFor(child, plans);
+            return (
+              &lt;TableRow key={i}&gt;
+                &lt;TableCell&gt;{child.name || `${txt.childNumber} ${i + 1}`}&lt;/TableCell&gt;
+                &lt;TableCell&gt;
+                  {p ? (lng === &quot;en&quot; ? p.plan.titleEn : p.plan.titleAr) : &quot;—&quot;}
+                &lt;/TableCell&gt;
+                &lt;TableCell&gt;
+                  {child.billingPeriod === &quot;YEARLY&quot; ? txt.yearly : txt.monthly}
+                &lt;/TableCell&gt;
+                &lt;TableCell align=&quot;right&quot;&gt;
+                  {p ? formatMoney(p.base, p.currency) : &quot;—&quot;}
+                &lt;/TableCell&gt;
+                &lt;TableCell align=&quot;right&quot;&gt;
+                  {p &amp;&amp; p.discountAmount &gt; 0
+                    ? `-${formatMoney(p.discountAmount, p.currency)}`
+                    : &quot;—&quot;}
+                &lt;/TableCell&gt;
+                &lt;TableCell align=&quot;right&quot;&gt;
+                  {p ? formatMoney(p.net, p.currency) : &quot;—&quot;}
+                &lt;/TableCell&gt;
+                &lt;TableCell&gt;
+                  &lt;Chip size=&quot;small&quot; color=&quot;success&quot; label={txt.firstSessionFree} /&gt;
+                &lt;/TableCell&gt;
+              &lt;/TableRow&gt;
+            );
+          })}
+        &lt;/TableBody&gt;
+      &lt;/Table&gt;
+    &lt;/TableContainer&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Write <code>ParentDetailsForm.jsx</code></strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/components/ParentDetailsForm.jsx</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { Grid, TextField } from &quot;@mui/material&quot;;
+
+export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }) {
+  const setField = (key) =&gt; (e) =&gt; onChange({ [key]: e.target.value });
+
+  return (
+    &lt;Grid container spacing={2}&gt;
+      &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+        &lt;TextField
+          label={txt.name}
+          value={parent.name}
+          onChange={setField(&quot;name&quot;)}
+          error={Boolean(errors.name)}
+          helperText={errors.name}
+          fullWidth
+          size=&quot;small&quot;
+        /&gt;
+      &lt;/Grid&gt;
+      &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+        &lt;TextField
+          label={txt.phone}
+          value={parent.phone}
+          onChange={setField(&quot;phone&quot;)}
+          error={Boolean(errors.phone)}
+          helperText={errors.phone}
+          fullWidth
+          size=&quot;small&quot;
+        /&gt;
+      &lt;/Grid&gt;
+      &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+        &lt;TextField
+          label={txt.email}
+          type=&quot;email&quot;
+          value={parent.email}
+          onChange={setField(&quot;email&quot;)}
+          error={Boolean(errors.email)}
+          helperText={errors.email}
+          fullWidth
+          size=&quot;small&quot;
+        /&gt;
+      &lt;/Grid&gt;
+      &lt;Grid size={{ xs: 12, sm: 6 }}&gt;
+        &lt;TextField
+          label={txt.password}
+          type=&quot;password&quot;
+          value={parent.password}
+          onChange={setField(&quot;password&quot;)}
+          error={Boolean(errors.password)}
+          helperText={errors.password}
+          fullWidth
+          size=&quot;small&quot;
+        /&gt;
+      &lt;/Grid&gt;
+    &lt;/Grid&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/auth/components/EnrollSummaryTable.jsx web/src/features/auth/components/ParentDetailsForm.jsx
+git commit -m &quot;feat(web/auth): EnrollSummaryTable + ParentDetailsForm&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-10-frontend-—-registerwizard-wire-the-page" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">10</span>
+          <h2>Task 10: Frontend — <code>RegisterWizard</code> + wire the page</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/auth/components/RegisterWizard.jsx</code></li><li>Modify: <code>web/src/app/[lng]/register/page.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>ChildEnrollCard</code>, <code>EnrollSummaryTable</code>, <code>ParentDetailsForm</code>, <code>useAuthText</code>, <code>useRequest</code>, <code>PLANS<em>PUBLIC</em>URL</code>, <code>ENROLL_URL</code>, i18n routing helpers.</li><li>Produces: the full registration screen.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write <code>RegisterWizard.jsx</code></strong></li></ul></div><div class="content-block"><p>Create <code>web/src/features/auth/components/RegisterWizard.jsx</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useEffect, useState } from &quot;react&quot;;
+import { useRouter } from &quot;next/navigation&quot;;
+import Link from &quot;next/link&quot;;
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+} from &quot;@mui/material&quot;;
+import ChildEnrollCard from &quot;./ChildEnrollCard.jsx&quot;;
+import EnrollSummaryTable from &quot;./EnrollSummaryTable.jsx&quot;;
+import ParentDetailsForm from &quot;./ParentDetailsForm.jsx&quot;;
+import { useAuthText } from &quot;../config/authText.js&quot;;
+import { ENROLL_URL, PLANS_PUBLIC_URL } from &quot;../config/constant.js&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { useTranslation } from &quot;../../../i18n/client.js&quot;;
+import { localePath } from &quot;../../../i18n/routing.js&quot;;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function emptyChild() {
+  return {
+    name: &quot;&quot;,
+    email: &quot;&quot;,
+    password: &quot;&quot;,
+    nickname: &quot;&quot;,
+    birthDate: &quot;&quot;,
+    billingPeriod: &quot;MONTHLY&quot;,
+    planId: null,
+    coupon: { code: &quot;&quot;, status: &quot;idle&quot;, reason: null, quote: null },
+  };
+}
+
+export default function RegisterWizard() {
+  const txt = useAuthText();
+  const router = useRouter();
+  const { lng } = useTranslation();
+
+  const [step, setStep] = useState(0);
+  const [children, setChildren] = useState([emptyChild()]);
+  const [parent, setParent] = useState({ name: &quot;&quot;, email: &quot;&quot;, password: &quot;&quot;, phone: &quot;&quot; });
+  const [childErrors, setChildErrors] = useState([]);
+  const [parentErrors, setParentErrors] = useState({});
+  const [formError, setFormError] = useState(null);
+
+  const plansReq = useRequest({
+    url: PLANS_PUBLIC_URL,
+    method: &quot;get&quot;,
+    isPublic: true,
+    autoFetch: false,
+    syncToUrl: false,
+  });
+
+  useEffect(() =&gt; {
+    plansReq.fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const plans = plansReq.data || [];
+
+  const enrollReq = useRequest({
+    url: ENROLL_URL,
+    method: &quot;post&quot;,
+    isPublic: true,
+    shouldAutoToast: true,
+    onSuccess: () =&gt; router.replace(localePath(lng, &quot;/login&quot;)),
+  });
+
+  const patchChild = (index, patch) =&gt;
+    setChildren((prev) =&gt;
+      prev.map((c, i) =&gt; (i === index ? { ...c, ...patch } : c)),
+    );
+
+  const addChild = () =&gt; setChildren((prev) =&gt; [...prev, emptyChild()]);
+  const removeChild = (index) =&gt;
+    setChildren((prev) =&gt; prev.filter((_, i) =&gt; i !== index));
+
+  const patchParent = (patch) =&gt; setParent((prev) =&gt; ({ ...prev, ...patch }));
+
+  const validateChildren = () =&gt; {
+    const errs = children.map((c) =&gt; {
+      const e = {};
+      if (!c.name.trim()) e.name = txt.required;
+      if (!EMAIL_RE.test(c.email.trim())) e.email = txt.invalidEmail;
+      if ((c.password || &quot;&quot;).length &lt; 6) e.password = txt.passwordShort;
+      if (!c.planId) e.planId = txt.planRequired;
+      return e;
+    });
+    setChildErrors(errs);
+    return errs.every((e) =&gt; Object.keys(e).length === 0);
+  };
+
+  const validateParent = () =&gt; {
+    const e = {};
+    if (!parent.name.trim()) e.name = txt.required;
+    if (!EMAIL_RE.test(parent.email.trim())) e.email = txt.invalidEmail;
+    if ((parent.password || &quot;&quot;).length &lt; 6) e.password = txt.passwordShort;
+    if (!parent.phone.trim()) e.phone = txt.required;
+    setParentErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const goNext = () =&gt; {
+    setFormError(null);
+    if (validateChildren()) setStep(1);
+    else setFormError(txt.fixErrors);
+  };
+
+  const goBack = () =&gt; {
+    setFormError(null);
+    setStep(0);
+  };
+
+  const submit = async () =&gt; {
+    setFormError(null);
+    if (!validateParent()) {
+      setFormError(txt.fixErrors);
+      return;
+    }
+    const payload = {
+      parent: {
+        name: parent.name.trim(),
+        email: parent.email.trim(),
+        password: parent.password,
+        phone: parent.phone.trim(),
+        locale: lng === &quot;en&quot; ? &quot;en&quot; : &quot;ar&quot;,
+      },
+      children: children.map((c) =&gt; ({
+        name: c.name.trim(),
+        email: c.email.trim(),
+        password: c.password,
+        nickname: c.nickname.trim() || undefined,
+        birthDate: c.birthDate || undefined,
+        planId: c.planId,
+        billingPeriod: c.billingPeriod,
+        couponCode:
+          c.coupon?.status === &quot;valid&quot; &amp;&amp; c.coupon.code.trim()
+            ? c.coupon.code.trim()
+            : undefined,
+      })),
+    };
+    try {
+      await enrollReq.fetchData(null, payload);
+    } catch {
+      // toast already shown by useRequest (shouldAutoToast)
+    }
+  };
+
+  return (
+    &lt;Box sx={{ py: { xs: 4, md: 6 } }}&gt;
+      &lt;Container maxWidth=&quot;md&quot;&gt;
+        &lt;Stack spacing={1} alignItems=&quot;center&quot; sx={{ mb: 3 }}&gt;
+          &lt;Box component={Link} href={localePath(lng, &quot;/&quot;)} aria-label=&quot;Aya Academy&quot;&gt;
+            &lt;Box component=&quot;img&quot; src=&quot;/logos/logo.png&quot; alt=&quot;Aya Academy&quot; sx={{ height: 56 }} /&gt;
+          &lt;/Box&gt;
+          &lt;Typography variant=&quot;h4&quot; fontWeight={800} textAlign=&quot;center&quot;&gt;
+            {txt.wizardTitle}
+          &lt;/Typography&gt;
+          &lt;Typography variant=&quot;body2&quot; color=&quot;text.secondary&quot; textAlign=&quot;center&quot;&gt;
+            {txt.wizardSubtitle}
+          &lt;/Typography&gt;
+        &lt;/Stack&gt;
+
+        &lt;Stepper activeStep={step} sx={{ mb: 4 }}&gt;
+          &lt;Step&gt;&lt;StepLabel&gt;{txt.stepChildren}&lt;/StepLabel&gt;&lt;/Step&gt;
+          &lt;Step&gt;&lt;StepLabel&gt;{txt.stepReview}&lt;/StepLabel&gt;&lt;/Step&gt;
+        &lt;/Stepper&gt;
+
+        {step === 0 &amp;&amp; (
+          &lt;Stack spacing={3}&gt;
+            {children.map((child, i) =&gt; (
+              &lt;ChildEnrollCard
+                key={i}
+                index={i}
+                child={child}
+                plans={plans}
+                onChange={(patch) =&gt; patchChild(i, patch)}
+                onRemove={() =&gt; removeChild(i)}
+                canRemove={children.length &gt; 1}
+                errors={childErrors[i] || {}}
+                txt={txt}
+                lng={lng}
+              /&gt;
+            ))}
+            &lt;Button variant=&quot;outlined&quot; onClick={addChild}&gt;
+              {txt.addChild}
+            &lt;/Button&gt;
+            {formError &amp;&amp; (
+              &lt;Typography color=&quot;error&quot; variant=&quot;body2&quot;&gt;{formError}&lt;/Typography&gt;
+            )}
+            &lt;Box&gt;
+              &lt;Button variant=&quot;contained&quot; size=&quot;large&quot; onClick={goNext}&gt;
+                {txt.next}
+              &lt;/Button&gt;
+            &lt;/Box&gt;
+          &lt;/Stack&gt;
+        )}
+
+        {step === 1 &amp;&amp; (
+          &lt;Stack spacing={3}&gt;
+            &lt;Typography variant=&quot;h6&quot; fontWeight={800}&gt;{txt.summaryTitle}&lt;/Typography&gt;
+            &lt;EnrollSummaryTable children={children} plans={plans} lng={lng} txt={txt} /&gt;
+
+            &lt;Paper variant=&quot;outlined&quot; sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}&gt;
+              &lt;Typography variant=&quot;h6&quot; fontWeight={800} sx={{ mb: 2 }}&gt;
+                {txt.parentTitle}
+              &lt;/Typography&gt;
+              &lt;ParentDetailsForm
+                parent={parent}
+                onChange={patchParent}
+                errors={parentErrors}
+                txt={txt}
+              /&gt;
+            &lt;/Paper&gt;
+
+            {formError &amp;&amp; (
+              &lt;Typography color=&quot;error&quot; variant=&quot;body2&quot;&gt;{formError}&lt;/Typography&gt;
+            )}
+
+            &lt;Stack direction=&quot;row&quot; spacing={2}&gt;
+              &lt;Button variant=&quot;text&quot; onClick={goBack} disabled={enrollReq.isLoading}&gt;
+                {txt.back}
+              &lt;/Button&gt;
+              &lt;Button
+                variant=&quot;contained&quot;
+                size=&quot;large&quot;
+                onClick={submit}
+                disabled={enrollReq.isLoading}
+              &gt;
+                {enrollReq.isLoading ? txt.submitting : txt.submit}
+              &lt;/Button&gt;
+            &lt;/Stack&gt;
+          &lt;/Stack&gt;
+        )}
+
+        &lt;Stack spacing={1} alignItems=&quot;center&quot; sx={{ mt: 4 }}&gt;
+          &lt;Typography variant=&quot;body2&quot; color=&quot;text.secondary&quot;&gt;
+            {txt.haveAccount}{&quot; &quot;}
+            &lt;Box component={Link} href={localePath(lng, &quot;/login&quot;)} sx={{ color: &quot;primary.main&quot;, fontWeight: 600 }}&gt;
+              {txt.goLogin}
+            &lt;/Box&gt;
+          &lt;/Typography&gt;
+        &lt;/Stack&gt;
+      &lt;/Container&gt;
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Point the page at the wizard</strong></li></ul></div><div class="content-block"><p>Replace <code>web/src/app/[lng]/register/page.jsx</code> body to render <code>RegisterWizard</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { Suspense } from &#39;react&#39;;
+import RegisterWizard from &#39;@/features/auth/components/RegisterWizard.jsx&#39;;
+import { buildMetadata } from &#39;@/shared/lib/seo&#39;;
+
+export async function generateMetadata({ params }) {
+  const { lng } = await params;
+  return buildMetadata({ lng, page: &#39;register&#39;, path: &#39;/register&#39; });
+}
+
+export default function RegisterPage() {
+  return (
+    &lt;Suspense&gt;
+      &lt;RegisterWizard /&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Leave the old <code>RegisterForm.jsx</code> file in place — unused now, removable in a later cleanup. The <code>@/</code> alias resolves to <code>web/src</code> per the existing import in the current page.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Manual end-to-end verification</strong></li></ul></div><div class="content-block"><p>Start both servers (<code>npm run dev:server</code>, <code>npm run dev:web</code>). In the browser at <code>http://localhost:3000/ar/register</code>:</p></div><div class="content-block"><ol><li>Step 1 shows one child card with fields, billing toggle, plan cards, coupon field, gift + payment banners.</li><li>Select a plan → card highlights. Type a known-good coupon → &quot;تحقق&quot; → success + discounted price; &quot;إزالة الكوبون&quot; clears it. Type a bad coupon → red error + remove button.</li><li>&quot;➕ إضافة ابن آخر&quot; adds a second card; fill it; remove works (only when &gt;1).</li><li>&quot;التالي&quot; with an incomplete child shows inline errors; with all complete → Step 2.</li><li>Step 2 shows the summary table (one row per child, price/discount/net/first-session-free) + parent form.</li><li>Submit with valid parent data → success toast → redirect to <code>/login</code>.</li><li>Confirm in Prisma Studio: parent + children created, <code>ParentStudent</code> links, PENDING subscriptions, UNPAID invoices.</li><li>Switch to <code>http://localhost:3000/en/register</code> and confirm English copy + LTR.</li></ol></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/auth/components/RegisterWizard.jsx &quot;web/src/app/[lng]/register/page.jsx&quot;
+git commit -m &quot;feat(web/auth): family registration wizard wired to /register&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="self-review" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">11</span>
+          <h2>Self-Review</h2>
+        </div>
+        <div class="content-block"><p><strong>Spec coverage:</strong></p></div><div class="content-block"><ul><li>Two-step wizard → Task 10. ✓</li><li>Child-first cards with fields + plan radio + per-child coupon → Tasks 6, 7, 8. ✓</li><li>Coupon verify/apply/remove + invalid error with remove button → Task 7 + 8 (<code>verifyCoupon</code>/<code>removeCoupon</code>) + Task 3 (<code>/plans/quote</code>). ✓</li><li>Per-child coupon (applies to that child&#39;s plan/cycle) → quote + <code>computePricing</code> are per child. ✓</li><li>Free-session gift + &quot;no payment until first session&quot; messaging → Task 8 banners (<code>giftBanner</code>, <code>paymentNotice</code>). ✓</li><li>Add another child → Task 10 <code>addChild</code>. ✓</li><li>Summary table → Task 9 <code>EnrollSummaryTable</code>. ✓</li><li>Parent form → Task 9 <code>ParentDetailsForm</code>. ✓</li><li>One submit creates parent + children + links + subscriptions + invoices + notify admin → Task 4 <code>enrollFamily</code>. ✓</li><li>PENDING subscription + UNPAID invoice per child → Task 4 + Task 2. ✓</li><li>Bilingual codes → Task 1; copy → Task 5. ✓</li><li>At least one child / duplicate-email / plan-required edge cases → Task 4 (server) + Task 10 (client). ✓</li></ul></div><div class="content-block"><p><strong>Placeholder scan:</strong> No TBD/TODO; all steps contain real code or concrete commands. ✓</p></div><div class="content-block"><p><strong>Type/name consistency:</strong></p></div><div class="content-block"><ul><li><code>generateForSubscription(subscription, {template, settings, plan, createdById, tx})</code> defined in Task 2, called identically in Task 4. ✓</li><li><code>quote()</code> returns <code>{currency, base, net, discount, couponValid, reason}</code> (Task 3), consumed as <code>data.couponValid</code>/<code>data.net</code>/<code>data.reason</code> in Task 8 + <code>quote.net</code>/<code>quote.currency</code> in Tasks 8/9. ✓</li><li>Child state shape (<code>coupon:{code,status,reason,quote}</code>, <code>planId</code>, <code>billingPeriod</code>) consistent across Tasks 8, 9, 10. ✓</li><li><code>enrollFamily({parent, children})</code> payload matches <code>enrollSchema</code> (Task 4 step 1) and the client payload (Task 10 <code>submit</code>). ✓</li><li>URL constants <code>ENROLL<em>URL</code>/<code>PLAN</em>QUOTE<em>URL</code>/<code>PLANS</em>PUBLIC_URL</code> defined in Task 5, used in Tasks 8 + 10. ✓</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="notes-assumptions" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">12</span>
+          <h2>Notes / assumptions</h2>
+        </div>
+        <div class="content-block"><ul><li>API base path assumed <code>/api</code>; if <code>Server/src/server.js</code> mounts routes elsewhere, adjust the curl URLs in Tasks 3–4 (frontend uses <code>useRequest</code>, which already knows the base).</li><li>Backend dev port assumed <code>4000</code>; substitute the printed port.</li><li><code>paymentTemplateUsecase.get(null)</code> auto-creates the default template, so an invoice is always produced (no &quot;skip invoice&quot; branch needed).</li><li>Wizard uses plain controlled MUI inputs (not RHF) because of the dynamic per-child array + async coupon state; validation is a small inline helper. This is intentional and self-contained.</li><li>Old <code>RegisterForm.jsx</code> is left unused (not deleted) to keep this change reversible; delete in a follow-up if desired.</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"task-1-backend-message-codes-shared-web-localization","title":"Task 1: Backend message codes (shared + web localization)"},{"id":"task-2-backend-—-tx-aware-invoice-repo-system-invoice-generator","title":"Task 2: Backend — tx-aware invoice repo + system invoice generator"},{"id":"task-3-backend-—-public-post-plansquote-coupon-verify-authoritative-price","title":"Task 3: Backend — public `POST /plans/quote` (coupon verify + authoritative price)"},{"id":"task-4-backend-—-public-post-authenroll-family-enrollment","title":"Task 4: Backend — public `POST /auth/enroll` (family enrollment)"},{"id":"task-5-frontend-—-auth-copy-registration-url-constants","title":"Task 5: Frontend — auth copy + registration URL constants"},{"id":"task-6-frontend-—-planradiocards-single-select-plan-cards","title":"Task 6: Frontend — `PlanRadioCards` (single-select plan cards)"},{"id":"task-7-frontend-—-couponfield-verify-apply-remove","title":"Task 7: Frontend — `CouponField` (verify / apply / remove)"},{"id":"task-8-frontend-—-childenrollcard-one-child-fields-plan-coupon-banners","title":"Task 8: Frontend — `ChildEnrollCard` (one child: fields + plan + coupon + banners)"},{"id":"task-9-frontend-—-enrollsummarytable-parentdetailsform","title":"Task 9: Frontend — `EnrollSummaryTable` + `ParentDetailsForm`"},{"id":"task-10-frontend-—-registerwizard-wire-the-page","title":"Task 10: Frontend — `RegisterWizard` + wire the page"},{"id":"self-review","title":"Self-Review"},{"id":"notes-assumptions","title":"Notes / assumptions"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

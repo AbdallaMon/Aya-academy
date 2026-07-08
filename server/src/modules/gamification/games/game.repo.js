@@ -11,7 +11,7 @@ import { paginate } from "../../../shared/utility/pagination.js";
 import {
   buildSearchQuery,
   parseBooleanFilter,
-} from "../../../shared/utility/helper.js";
+} from "../../../shared/utility/queryBuilders.js";
 import { gameFullSelect, gameListSelect } from "./game.dto.js";
 
 class GameRepo {

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 07 08 Usage Based Subscription Billing Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 07 08 Usage Based Subscription Billing Design</h1>
+        <p class="lead"></p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align aya-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html" class="active">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</span></nav>
+          <section class="doc-hero">
+            <h2>Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>Date:</strong> 2026-07-08 <strong>Status:</strong> Draft (pending user review) <strong>Related:</strong> <a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">2026-06-28 subscription renewal + invoice flow</a>, memory <code>project-aya-subscription-hours-renewal</code></p></div><div class="content-block"><hr /></div></div>
+
+          
+    <section class="doc-section" id="الهدف-goal" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>الهدف / Goal</h2>
+        </div>
+        <div class="content-block"><p><strong>عربي:</strong> نحوّل الفوترة من &quot;دفع مقدّم لعدد ساعات نختاره&quot; إلى <strong>فوترة بأثر رجعي حسب الاستهلاك الفعلي</strong>: نجمع ساعات الحصص المسجّلة خلال الشهر، ونصدر بيها اشتراك + فاتورة للشهر اللي بعده. المسار المقدّم (الخطط) يفضل موجود كـ fallback ولمسار يدوي، فالنظامين يتعايشوا.</p></div><div class="content-block"><p><strong>EN:</strong> Shift billing from prepaid-hours to <strong>arrears usage-based billing</strong>: sum the session hours a student consumed during a month, and issue a subscription + invoice for the <strong>following</strong> month. The prepaid/plan path remains as a fallback and for manual use — the two models coexist.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="المبدأ-الأساسي-core-principle" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>المبدأ الأساسي / Core principle</h2>
+        </div>
+        <div class="content-block"><p><strong>المصدر الوحيد للحقيقة = صفوف <code>SessionLog</code>.</strong> رقم ساعات الاشتراك المفتوح <strong>محسوب (derived)</strong> من الحصص وقت العرض — مش مكتوب فيزيائياً مع كل حصة. ده بيمنع أي عدم تطابق (drift) بين الحصص الفعلية والرقم المخزّن، وبيلغي الحاجة لأي hooks على إضافة/تعديل/حذف الحصص. الرقم <strong>يتجمّد (freeze)</strong> مرة واحدة بس: لحظة قفل الشهر.</p></div><div class="content-block"><p><strong>EN:</strong> Single source of truth = <code>SessionLog</code> rows. The open subscription&#39;s hours are <strong>derived</strong> (<code>SUM</code> computed on read), never mutated per session. This eliminates drift and removes any need for session-mutation hooks. The value is <strong>frozen</strong> exactly once — at month close.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="القاعدة-والفترة-bucketing-rule-period" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>القاعدة والفترة / Bucketing rule &amp; period</h2>
+        </div>
+        <div class="content-block"><ul><li>الحصة اللي <code>sessionDate</code> بتاعها في الشهر <strong>M</strong> بتتجمّع على اشتراك الشهر <strong>M+1</strong> (شهر الدفع).<ul><li>مثال: حصة <code>15/7/2026</code> → اشتراك <code>1/8/2026 – 31/8/2026</code>.</li></ul></li><li>الفترة <strong>شهر ميلادي</strong> كامل.</li><li>الحصص المحسوبة = <code>attendance = PRESENT</code> <strong>فقط</strong> (الغياب ماينحسبش دلوقتي).</li></ul></div><div class="content-block"><p><strong>EN:</strong> A session dated in month <strong>M</strong> accumulates into the <strong>M+1</strong> (payment-month) subscription. Calendar month. Only <code>PRESENT</code> sessions count (ABSENT not billed for now).</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="حساب-الساعات-hours-computation" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>حساب الساعات / Hours computation</h2>
+        </div>
+        <div class="content-block"><p>للطالب في نهاية الشهر M:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>usageHours = SUM(SessionLog.durationHours
+                 WHERE studentId = X
+                   AND attendance = PRESENT
+                   AND sessionDate ∈ [1/M, نهاية M])
+
+subsHours  = usageHours &gt; 0 ? usageHours : planHours(X)</code></pre></div></div><div class="content-block"><ul><li><code>planHours(X)</code> = ساعات خطة الطالب المأخوذة من اشتراكه الحالي (<code>Subscription.planId → Plan.hours</code>).</li><li><strong>فرضية (محتاجة تأكيد):</strong> لو الطالب عمل حصص أقل من خطته، بنفوتر <strong>الحصص الفعلية</strong> (الخطة مش حد أدنى). الـ plan fallback بيشتغل بس عند صفر حصص.</li><li>السعر: <code>priceCharged = roundMoney(subsHours × AppSetting.hourlyRate)</code> (نفس <code>priceFromHours</code> الموجودة).</li></ul></div><div class="content-block"><p><strong>EN:</strong> <code>subsHours = usageHours if any else the student&#39;s plan hours</code>. Price via existing <code>priceFromHours</code>. <strong>Assumption to confirm:</strong> actual sessions bill as-is even if below plan; plan is a zero-sessions fallback only, not a floor.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="تعديلات-الداتا-data-model-changes" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>تعديلات الداتا / Data model changes</h2>
+        </div>
+        <div class="content-block"><p><code>packages/db/prisma/schema.prisma</code>:</p></div><div class="content-block"><ol><li><strong><code>Subscription.origin</code></strong> — enum جديد <code>SubscriptionOrigin { MANUAL, USAGE }</code>, default <code>MANUAL</code>.<ul><li><code>MANUAL</code> = المسار الحالي (prepaid/plan pick/renew). <code>USAGE</code> = المتولّد من الاستهلاك.</li><li>additive + default → <strong>مفيش backfill</strong> لازم.</li></ul></li><li><strong>(اختياري / hardening)</strong> <code>SessionLog.billedSubscriptionId Int?</code> (FK → Subscription, <code>onDelete: SetNull</code>) — يتحدد لما الحصة تتضم لفاتورة USAGE متصدّرة. يمنع الازدواج ويسمح بكنس الحصص المتأخرة. <strong>مش ضروري للـ MVP</strong> طالما الكرون بيبكتة بالتاريخ ويشتغل مرة واحدة/شهر مع قيد تفرّد.</li><li>مفيش status جديد — بنعيد استخدام <code>SubscriptionStatus</code> الموجود (شوف §7).</li></ol></div><div class="content-block"><p><strong>قرار الترحيل:</strong> الاشتراكات الحالية كلها تبقى <code>origin = MANUAL</code> تلقائياً. لا migration بيانات. (زي عرف [[project-aya-subscription-hours-renewal]] مع <code>subsHours @map</code>.)</p></div><div class="content-block"><p><strong>EN:</strong> Add <code>Subscription.origin (MANUAL|USAGE)</code>, default MANUAL — additive, no backfill. Optional <code>SessionLog.billedSubscriptionId</code> for idempotency hardening (skip for MVP). Reuse existing statuses.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="الاشتراك-المفتوح-والعرض-اللحظي-the-open-sub-live-view" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>الاشتراك المفتوح والعرض اللحظي / The open sub &amp; live view</h2>
+        </div>
+        <div class="content-block"><ul><li>لكل طالب نشط بيتولّد اشتراك USAGE للشهر الجاي (<code>startDate = 1/(M+1)</code>, <code>endDate = نهاية (M+1)</code>) <strong>أول ما تتسجّل أول حصة في الشهر M</strong> (لا اشتراكات فاضية).</li><li>بما إن تاريخه في المستقبل → حالته <code>UPCOMING</code> طبيعياً (<code>resolveStatus</code>)، وده معناه &quot;مفتوح/بيتجمّع&quot;.</li><li>في الداشبورد بيظهر رقم ساعاته = <code>SUM(حصص الشهر M)</code> <strong>محسوب لحظياً</strong>. كل حصة تتضاف → يعلى؛ تتحذف → يقلّ. من غير أي كتابة.</li><li>endpoint قراءة جديد: <code>GET /subscriptions/:id/usage-preview</code> (أو حقل محسوب في الـ DTO) يرجّع المجموع الحي + عدد الحصص.</li></ul></div><div class="content-block"><p><strong>EN:</strong> An open <code>USAGE</code> sub for month M+1 is created when the <strong>first</strong> session of month M is logged. It&#39;s future-dated → naturally <code>UPCOMING</code> = &quot;open/accumulating.&quot; Dashboard shows its hours as a <strong>live-computed</strong> <code>SUM</code>. New read endpoint exposes the running total + session count.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="دورة-الحياة-والحالات-lifecycle-statuses" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>دورة الحياة والحالات / Lifecycle &amp; statuses</h2>
+        </div>
+        <div class="content-block"><p>بنعيد استخدام <code>SubscriptionStatus</code> الموجود — <strong>مفيش enum جديد</strong>:</p></div><div class="content-block"><div class="table-wrapper"><table><thead><tr><th>مرحلة</th><th>الحالة</th><th>ملاحظة</th></tr></thead><tbody><tr><td>بيتجمّع خلال الشهر M</td><td><code>UPCOMING</code></td><td>origin=USAGE، تاريخه (M+1)، لسه مفيش فاتورة/freeze</td></tr><tr><td>الكرون يقفل الشهر M</td><td><code>PENDING</code></td><td>تجمّد الساعات + اتبعتت الفاتورة، مستني الدفع</td></tr><tr><td>اتدفع</td><td><code>ACTIVE</code></td><td>عبر <code>activateSubscription</code> الموجود</td></tr><tr><td>عدّى شهره</td><td><code>EXPIRED</code></td><td>date-driven</td></tr></tbody></table></div></div><div class="content-block"><p><strong>Timeline (مثال يوليو):</strong></p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>طول يوليو:
+  • اشتراك يوليو  [ACTIVE]   — فاتورته اتدفعت، مانتلمسوش
+  • اشتراك أغسطس [UPCOMING] — origin=USAGE، عدّاد حي = SUM(حصص يوليو)
+
+31 يوليو 11م — cron (subscriptionScheduler، آخر يوم بالشهر، متوصّل أصلاً):
+  1. freeze: subsHours = SUM(حصص يوليو) أو planHours لو صفر
+  2. generateForSubscription → فاتورة UNPAID + send
+  3. اشتراك يوليو → EXPIRED
+  4. اشتراك أغسطس → PENDING
+  5. (عند تسجيل أول حصة في أغسطس) يتفتح اشتراك سبتمبر [UPCOMING]</code></pre></div></div><div class="content-block"><p><strong>EN:</strong> Reuse existing statuses — <code>UPCOMING</code> (accumulating) → <code>PENDING</code> (frozen + invoiced) → <code>ACTIVE</code> (paid) → <code>EXPIRED</code>. No new enum. The already-wired month-end cron performs freeze → invoice+send → expire old → set next PENDING.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="الكرون-the-cron-job" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>الكرون / The cron job</h2>
+        </div>
+        <div class="content-block"><ul><li>بيملأ الـ stub الموجود: <code>subscriptionUsecase.autoRenewSubscriptions(now)</code> → نعيد تسميته/نكتبه كـ <code>generateMonthlyUsageInvoices(now)</code>.</li><li>الكرون متوصّل أصلاً: <code>subscriptionScheduler.js</code>, <code>CRON_EXPR = &quot;0 23 28-31 <em> </em>&quot;</code> + حارس <code>isLastDayOfMonth</code>.</li><li>لكل طالب نشط:<ol><li>احسب <code>subsHours</code> (§4).</li><li>لاقي اشتراك USAGE المفتوح لـ (M+1) أو اعمله لو مش موجود (حالة صفر حصص/الخطة).</li><li>freeze <code>subsHours</code> + <code>priceCharged</code>، حوّل لـ <code>PENDING</code>.</li><li><code>invoiceUsecase.generateForSubscription</code> (موجودة) + <code>send</code>.</li><li>اقفل اشتراك M → <code>EXPIRED</code> لو محتاج.</li></ol></li><li><strong>Idempotent:</strong> قيد تفرّد &quot;اشتراك USAGE واحد لكل طالب لكل شهر دفع&quot;؛ إعادة التشغيل ماتعملش تكرار.</li></ul></div><div class="content-block"><p><strong>EN:</strong> Fill the existing <code>autoRenewSubscriptions</code> stub (rename → <code>generateMonthlyUsageInvoices</code>). Cron already wired (last-day guard). Per active student: compute hours → find/create the M+1 USAGE sub → freeze + invoice + send → expire month-M sub. Idempotent via a one-USAGE-sub-per-student-per-month guard.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="التعديل-اليدوي-manual-override" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">9</span>
+          <h2>التعديل اليدوي / Manual override</h2>
+        </div>
+        <div class="content-block"><ul><li>طول الشهر مفتوح: التصحيح يتم على <strong>الحصة نفسها</strong> (المصدر) — الرقم المحسوب يتحدّث لوحده.</li><li>عند/بعد القفل: <code>subsHours</code> اتجمّد وبقى <strong>قابل للتعديل اليدوي</strong> عبر مسار <code>update()</code> الموجود، اللي بيعيد حساب السعر ويولّد الفاتورة UNPAID تاني — <strong>بس طالما الفاتورة لسه UNPAID/مش متبعتة</strong> (مايعيدش كتابة فاتورة PAID/VOID).</li><li>الحساب واحد (المعلمة = الأدمن)، فمفيش تقسيم صلاحيات إرسال.</li></ul></div><div class="content-block"><p><strong>EN:</strong> During the open month, correct the <strong>session</strong> (source). At/after freeze, <code>subsHours</code> is editable via the existing <code>update()</code> (recomputes price + regenerates the UNPAID invoice only while unpaid). Teacher == admin, so no send-permission split.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="التعايش-والحواف-coexistence-edge-cases" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">10</span>
+          <h2>التعايش والحواف / Coexistence &amp; edge cases</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>مسارات المانيوال/prepaid</strong> (<code>POST /subscriptions</code>, <code>/request</code>, <code>/renew</code>, <code>changePlan</code>) <strong>زي ما هي</strong> — بتتعلّم <code>origin = MANUAL</code>.</li><li><strong><code>prepareForNewSubscription</code></strong> لازم يتظبط <strong>يتجاهل اشتراكات USAGE</strong> (ماياخدش مكانها ولا يحذفها كـ PENDING) عشان الاتنين يتعايشوا من غير تعارض. (حالياً بيحذف أي PENDING ويمنع ثاني ACTIVE.)</li><li><strong>طالب من غير خطة ومن غير حصص:</strong> يتخطّى (مفيش فاتورة) — أو يتسجّل للمراجعة. <strong>قرار مفتوح.</strong></li><li><strong>حصة تتضاف متأخر بعد القفل</strong> (لشهر قفل): تروح لاشتراك الشهر الجاي، أو تتعالج يدوي عبر <code>previousDebt</code>/<code>previousCredit</code> الموجودين على الفاتورة. (لو فعّلنا <code>billedSubscriptionId</code> بتتكنس تلقائياً.)</li></ul></div><div class="content-block"><p><strong>EN:</strong> Manual/prepaid paths unchanged (tagged <code>MANUAL</code>). <code>prepareForNewSubscription</code> must <strong>ignore USAGE subs</strong>. A student with no plan and no sessions → skipped (open decision). Late sessions after close → next month or manual credit/debit adjustment (or auto-swept if <code>billedSubscriptionId</code> enabled).</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="خارج-النطاق-out-of-scope-لهذه-المرحلة" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">11</span>
+          <h2>خارج النطاق / Out of scope (لهذه المرحلة)</h2>
+        </div>
+        <div class="content-block"><ul><li>فوترة الغياب / per-student hourly rates / minimum-hours floor.</li><li>المسار A (تخزين الرقم وتحديثه مع كل حصة) — <strong>مرفوض</strong> لصالح derived.</li><li>أي تغيير في موديل الحصص نفسه (بيفضل منفصل تماماً).</li></ul></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="قرارات-مفتوحة-للمراجعة-open-decisions-to-confirm" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">12</span>
+          <h2>قرارات مفتوحة للمراجعة / Open decisions to confirm</h2>
+        </div>
+        <div class="content-block"><ol><li>الحصص الفعلية الأقل من الخطة → نفوتر الفعلي (فرضية §4). ✅/❌؟</li><li>طالب من غير خطة ومن غير حصص → نتخطّاه؟ (§10)</li><li>نفعّل <code>SessionLog.billedSubscriptionId</code> من دلوقتي ولا نأجّله؟ (§5)</li></ol></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="ملفات-متأثرة-مبدئي-affected-files-indicative" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">13</span>
+          <h2>ملفات متأثرة (مبدئي) / Affected files (indicative)</h2>
+        </div>
+        <div class="content-block"><ul><li><code>packages/db/prisma/schema.prisma</code> — <code>SubscriptionOrigin</code> enum + <code>origin</code> field (+ optional <code>billedSubscriptionId</code>). <strong>(migration يدوي — بيتسلّم لعبدالله، مش auto)</strong></li><li><code>server/src/modules/subscriptions/subscription.usecase.js</code> — <code>generateMonthlyUsageInvoices</code>, hours compute, freeze, <code>prepareForNewSubscription</code> USAGE guard, tag <code>origin</code>.</li><li><code>server/src/modules/subscriptions/subscription.repo.js</code> — queries: active students, open USAGE sub lookup, session-sum-per-student-per-month.</li><li><code>server/src/modules/subscriptions/subscription.route.js</code> + controller — <code>usage-preview</code> read endpoint.</li><li><code>server/src/infra/scheduler/subscriptionScheduler.js</code> — يستدعي الاسم الجديد.</li><li><code>server/src/modules/invoices/invoice.usecase.js</code> — إعادة استخدام <code>generateForSubscription</code>/<code>send</code> (غالباً بدون تغيير).</li><li><code>web/</code> — عرض الاشتراك المفتوح + العدّاد الحي في الداشبورد.</li><li><code>@aya/shared</code> message codes (لو فيه رسائل/إشعارات جديدة، بلغتين ar+en — عرف [[feedback-message-codes-bilingual]]).</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"الهدف-goal","title":"1. الهدف / Goal"},{"id":"المبدأ-الأساسي-core-principle","title":"2. المبدأ الأساسي / Core principle"},{"id":"القاعدة-والفترة-bucketing-rule-period","title":"3. القاعدة والفترة / Bucketing rule & period"},{"id":"حساب-الساعات-hours-computation","title":"4. حساب الساعات / Hours computation"},{"id":"تعديلات-الداتا-data-model-changes","title":"5. تعديلات الداتا / Data model changes"},{"id":"الاشتراك-المفتوح-والعرض-اللحظي-the-open-sub-live-view","title":"6. الاشتراك المفتوح والعرض اللحظي / The open sub & live view"},{"id":"دورة-الحياة-والحالات-lifecycle-statuses","title":"7. دورة الحياة والحالات / Lifecycle & statuses"},{"id":"الكرون-the-cron-job","title":"8. الكرون / The cron job"},{"id":"التعديل-اليدوي-manual-override","title":"9. التعديل اليدوي / Manual override"},{"id":"التعايش-والحواف-coexistence-edge-cases","title":"10. التعايش والحواف / Coexistence & edge cases"},{"id":"خارج-النطاق-out-of-scope-لهذه-المرحلة","title":"11. خارج النطاق / Out of scope (لهذه المرحلة)"},{"id":"قرارات-مفتوحة-للمراجعة-open-decisions-to-confirm","title":"12. قرارات مفتوحة للمراجعة / Open decisions to confirm"},{"id":"ملفات-متأثرة-مبدئي-affected-files-indicative","title":"13. ملفات متأثرة (مبدئي) / Affected files (indicative)"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

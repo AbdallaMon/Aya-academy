@@ -10,12 +10,12 @@
 // NEVER call ApiFetch directly from a component — always go through this hook.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useLoading } from '../useLoading.js';
 import apiFetch from '../../lib/api/ApiFetch.js';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constant.js';
 import { useToast } from '../../providers/ToastProvider.jsx';
 import { useTranslation } from '../../i18n/client.js';
+import { useUrlFilters } from './useUrlFilters.js';
 
 const MUTATION_METHODS = ['post', 'put', 'patch', 'delete'];
 
@@ -39,8 +39,6 @@ export function useRequest({
   skipInitialFetch = false,
   headers,
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const td = t('tableData', { returnObjects: true }) || {};
 
@@ -54,20 +52,7 @@ export function useRequest({
   const [hasMore, setHasMore] = useState(true);
   const isFirstRender = useRef(true);
 
-  const [filters, setFiltersState] = useState(() => {
-    if (!syncToUrl) return {};
-    const params = {};
-    searchParams.forEach((value, key) => {
-      if (value.startsWith('[') || value.startsWith('{')) {
-        try {
-          params[key] = JSON.parse(value);
-          return;
-        } catch {}
-      }
-      params[key] = value;
-    });
-    return params;
-  });
+  const [filters, setFiltersState] = useUrlFilters(syncToUrl);
 
   const [refetch, setRefetch] = useState(false);
   const { showToast } = useToast();
@@ -91,21 +76,8 @@ export function useRequest({
       );
       if (syncToUrl) setPage(1);
     },
-    [syncToUrl]
+    [syncToUrl, setFiltersState]
   );
-
-  // Mirror filters into the URL query string.
-  useEffect(() => {
-    if (!syncToUrl) return;
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v === undefined || v === null || v === '') return;
-      if (Array.isArray(v) || typeof v === 'object')
-        params.set(k, JSON.stringify(v));
-      else params.set(k, String(v));
-    });
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [filters, syncToUrl, router]);
 
   function triggerRefetch() {
     setRefetch((prev) => !prev);

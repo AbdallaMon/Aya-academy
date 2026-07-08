@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 29 Subscription Gating</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 29 Subscription Gating</h1>
+        <p class="lead">Global Constraints</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Plans</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges.ar.html">Admin Dashboard: Family Detail, Levels, Badges &amp; Points — Implementation Plan</a></li><li><a href="./2026-06-24-quran-progress-tracking.ar.html">Quran Progress Tracking + Lesson Next-Plan — Implementation Plan</a></li><li><a href="./2026-06-25-global-settings-and-billing-rework.ar.html">Global Settings &amp; Billing Rework — Implementation Plan</a></li><li><a href="./2026-06-27-register-family-wizard.ar.html">Family Registration Wizard — Implementation Plan</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow.ar.html">Subscription Renewal &amp; Invoice Flow — Implementation Plan</a></li><li><a href="./2026-06-29-subscription-gating.ar.html" class="active">Subscription Gating Implementation Plan</a></li><li><a href="./2026-07-05-interactive-whiteboard.ar.html">Interactive Whiteboard Implementation Plan</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Plans</a><span class="crumb-sep">›</span><span class="crumb current">Subscription Gating Implementation Plan</span></nav>
+          <section class="doc-hero">
+            <h2>Subscription Gating Implementation Plan</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p></div><div class="content-block"><p><strong>Goal:</strong> Gate gamified/progress features by subscription status — an inactive student cannot see the leaderboard or badges or play games (but still sees the games list, locked); a parent cannot see an inactive child&#39;s stats/achievements (identity, subscription state, certificates, and old reports stay visible).</p></div><div class="content-block"><p><strong>Architecture:</strong> Subscription is a STATUS gate, orthogonal to role permissions. A single backend helper (<code>subscriptionAccess</code>) is the one place that answers &quot;is this student currently subscribed?&quot;, built on the existing <code>subscriptionRepo.getCurrentlySubscribedStudentIds</code>. Backend usecases call it to throw <code>SUBSCRIPTION_INACTIVE</code> or to null out fields; the API surfaces capability flags (<code>hasActiveSubscription</code>, per-game <code>locked</code>, per-child <code>isActive</code>) so the React client renders locked states without trial-and-error 403s. The student locked state is gentle/kid-appropriate; the parent locked state is actionable (renew CTA).</p></div><div class="content-block"><p><strong>Tech Stack:</strong> Express + Prisma (ESM JS, layered route→controller→usecase→repo), <code>@aya/shared</code> constants, Next.js App Router + MUI + self-built i18n.</p></div><div class="content-block"><ul><li><strong>JavaScript/ESM only</strong> — no TypeScript anywhere (front or back).</li><li><strong>Active = single source of truth:</strong> <code>activeSubscriptionWhere()</code> in <code>packages/shared/constants/enums.js</code> (<code>status === ACTIVE</code> AND <code>startDate &lt;= now &lt;= endDate</code>). Never re-derive. Use <code>subscriptionRepo.getCurrentlySubscribedStudentIds(ids)</code>.</li><li><strong>ADMIN always bypasses</strong> subscription gating.</li><li><strong>Per-child scope</strong> for parents (active child shown, inactive child gated).</li><li><strong>The free game stays playable for everyone</strong> (the game with <code>isFree &amp;&amp; isPublic</code>). Never gate <code>GET /games/public/*</code> or <code>GET /games/my/free</code>.</li><li><strong>No redirect.</strong> <code>AppError</code> carries <code>dontRedirect: true</code> (already the default).</li><li><strong>Error/message-code contract:</strong> throw <code>AppError({ statusCode, code, translationKey: messagesNames.subscriptionMessages })</code>; every new code gets ar + en in <code>web/src/i18n/locales/messagesCodes.js</code>.</li><li><strong>Message codes referenced via constants</strong> (<code>subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE</code>), never raw strings.</li><li><strong>Commit after each task.</strong></li><li><strong>⚠️ ENVIRONMENT OVERRIDE (supersedes the <code>npm test</code> steps in each task):</strong> this repo has <strong>NO JS test runner</strong> (no vitest/jest in <code>server</code>) and <strong>no running MySQL</strong> in this environment. Do <strong>NOT</strong> add a test-runner dependency. Instead:<ul><li><strong>Backend tasks:</strong> verify each changed file with <code>node --check &lt;file&gt;</code> (must exit 0). After the last backend task, boot once with <code>npm run dev -w server</code> and confirm <code>/api/v1/health</code> → 200, then stop. Do <strong>not</strong> write vitest <code>vi.mock</code> tests — they cannot run here. Where a task shows a vitest test block, treat it as the <strong>behavior contract to implement against</strong> (read it, satisfy it), and instead, where a function is pure and importable without the DB client (e.g. <code>isFreeGame</code>), add a tiny <code>node:test</code>/<code>node:assert</code> file runnable with <code>node --test &lt;file&gt;</code>. For logic that requires mocking the repo/DB, skip the executable test and note in the report that it was verified by <code>node --check</code> + reasoning + (later) runtime E2E.</li><li><strong>Frontend tasks:</strong> verify with <code>npm run build -w web</code> (exit 0).</li><li><strong>Report honestly</strong> what was and wasn&#39;t runtime-verified (DB-dependent paths are not runtime-tested here).</li></ul></li><li><strong>Verification commands:</strong> <code>node --check &lt;file&gt;</code> (backend parse), <code>npm run dev -w server</code> + <code>/api/v1/health</code> (backend boot), <code>npm run build -w web</code> (frontend build).</li></ul></div><div class="content-block"><hr /></div></div>
+
+          
+    <section class="doc-section" id="file-structure" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>File Structure</h2>
+        </div>
+        <div class="content-block"><p><strong>Backend (create):</strong></p></div><div class="content-block"><ul><li><code>server/src/shared/access/subscriptionAccess.js</code> — the reusable status guard.</li></ul></div><div class="content-block"><p><strong>Backend (modify):</strong></p></div><div class="content-block"><ul><li><code>packages/shared/messages-codes/subscription.js</code> — add <code>SUBSCRIPTION_INACTIVE</code>.</li><li><code>server/src/modules/points/point.usecase.js</code> — gate leaderboard for inactive student.</li><li><code>server/src/modules/rewards/reward.usecase.js</code> — gate student rewards; scope parent rewards to active children.</li><li><code>server/src/modules/badges/badge.usecase.js</code> — gate <code>listStudentBadges</code> for inactive student/child.</li><li><code>server/src/modules/games/game.usecase.js</code> — gate <code>getBySlugAuth</code> + <code>attempt</code> (free game exempt); add <code>locked</code> to <code>myAssignments</code>.</li><li><code>server/src/modules/dashboard/dashboard.usecase.js</code> — null inactive child&#39;s stats/achievements in parent dashboard; null inactive student&#39;s badges/rank in student dashboard.</li><li><code>server/src/modules/auth/auth.controller.js</code> — add <code>hasActiveSubscription</code> to <code>/auth/me</code> and login payload (STUDENT only).</li></ul></div><div class="content-block"><p><strong>Frontend (create):</strong></p></div><div class="content-block"><ul><li><code>web/src/shared/components/SubscriptionLockedState.jsx</code> — reusable locked panel (student | parent variants).</li></ul></div><div class="content-block"><p><strong>Frontend (modify):</strong></p></div><div class="content-block"><ul><li><code>web/src/i18n/locales/messagesCodes.js</code> — ar/en for <code>SUBSCRIPTION_INACTIVE</code>.</li><li><code>web/src/i18n/locales/&lt;ar|en&gt;/*</code> — locked-state copy (student gentle + parent actionable).</li><li><code>web/src/features/leaderboard/pages/LeaderboardPage.jsx</code> — student gate.</li><li><code>web/src/features/badges/pages/BadgesPage.jsx</code> — student gate.</li><li><code>web/src/features/games/pages/MyGamesPage.jsx</code> + <code>components/GameCard.jsx</code> — locked cards.</li><li><code>web/src/features/games/hooks/useGame.js</code> + <code>pages/GamePlayPage.jsx</code> — surface <code>SUBSCRIPTION_INACTIVE</code> as locked state.</li><li><code>web/src/features/dashboard/components/ParentOverview.jsx</code> — per-child gating + parent message.</li><li><code>web/src/features/dashboard/components/StudentOverview.jsx</code> — hide badges/rank when inactive.</li><li><code>web/src/features/userDetail/pages/UserDetailPage.jsx</code> (+ its tabs) — lock overview/badges/games tabs for inactive child; keep certificates/reports.</li><li>dashboard nav (<code>web/src/shared/ui/navigation/...</code> dashboard nav / <code>NavbarDrawer</code>) — hide leaderboard + badges links for inactive student.</li></ul></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-1-—-backend-foundation" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>PHASE 1 — Backend foundation</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Task 1: Add the `SUBSCRIPTION_INACTIVE` message code</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/shared/messages-codes/subscription.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>subscriptionMessagesCodes.SUBSCRIPTION<em>INACTIVE === &quot;SUBSCRIPTION</em>INACTIVE&quot;</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add the code</strong></li></ul></div><div class="content-block"><p>In <code>packages/shared/messages-codes/subscription.js</code>, add inside the object (after <code>CANNOT<em>ACCESS</em>SUBSCRIPTION</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  // Feature blocked because the student has no ACTIVE subscription.
+  SUBSCRIPTION_INACTIVE: &quot;SUBSCRIPTION_INACTIVE&quot;,</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Verify it parses</strong></li></ul></div><div class="content-block"><p>Run: <code>node --check packages/shared/messages-codes/subscription.js</code> Expected: no output (exit 0).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/shared/messages-codes/subscription.js
+git commit -m &quot;feat(shared): add SUBSCRIPTION_INACTIVE message code&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 2: Create the reusable subscription access guard</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>server/src/shared/access/subscriptionAccess.js</code></li><li>Test: <code>server/src/shared/access/subscriptionAccess.test.js</code> (or the repo&#39;s test location/runner)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>subscriptionRepo.getCurrentlySubscribedStudentIds(studentIds, now?)</code> → <code>number[]</code>; <code>AppError</code>; <code>subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE</code>; <code>messagesNames.subscriptionMessages</code>.</li><li>Produces:<ul><li><code>hasActiveSubscription(studentId: number): Promise&lt;boolean&gt;</code></li><li><code>assertActiveForStudent(studentId: number): Promise&lt;void&gt;</code> — throws <code>AppError</code> 403 <code>SUBSCRIPTION_INACTIVE</code> when not active.</li><li><code>filterActiveStudentIds(studentIds: number[]): Promise&lt;number[]&gt;</code></li></ul></li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write the failing test</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// server/src/shared/access/subscriptionAccess.test.js
+import { describe, it, expect, vi, beforeEach } from &quot;vitest&quot;;
+
+vi.mock(&quot;../../modules/subscriptions/subscription.repo.js&quot;, () =&gt; ({
+  subscriptionRepo: { getCurrentlySubscribedStudentIds: vi.fn() },
+}));
+
+import { subscriptionRepo } from &quot;../../modules/subscriptions/subscription.repo.js&quot;;
+import {
+  hasActiveSubscription,
+  assertActiveForStudent,
+  filterActiveStudentIds,
+} from &quot;./subscriptionAccess.js&quot;;
+
+describe(&quot;subscriptionAccess&quot;, () =&gt; {
+  beforeEach(() =&gt; vi.clearAllMocks());
+
+  it(&quot;hasActiveSubscription is true when repo returns the id&quot;, async () =&gt; {
+    subscriptionRepo.getCurrentlySubscribedStudentIds.mockResolvedValue([7]);
+    expect(await hasActiveSubscription(7)).toBe(true);
+  });
+
+  it(&quot;hasActiveSubscription is false when repo returns nothing&quot;, async () =&gt; {
+    subscriptionRepo.getCurrentlySubscribedStudentIds.mockResolvedValue([]);
+    expect(await hasActiveSubscription(7)).toBe(false);
+  });
+
+  it(&quot;assertActiveForStudent throws 403 SUBSCRIPTION_INACTIVE when inactive&quot;, async () =&gt; {
+    subscriptionRepo.getCurrentlySubscribedStudentIds.mockResolvedValue([]);
+    await expect(assertActiveForStudent(7)).rejects.toMatchObject({
+      statusCode: 403,
+      code: &quot;SUBSCRIPTION_INACTIVE&quot;,
+    });
+  });
+
+  it(&quot;assertActiveForStudent resolves when active&quot;, async () =&gt; {
+    subscriptionRepo.getCurrentlySubscribedStudentIds.mockResolvedValue([7]);
+    await expect(assertActiveForStudent(7)).resolves.toBeUndefined();
+  });
+
+  it(&quot;filterActiveStudentIds passes the array through the repo&quot;, async () =&gt; {
+    subscriptionRepo.getCurrentlySubscribedStudentIds.mockResolvedValue([2]);
+    expect(await filterActiveStudentIds([1, 2, 3])).toEqual([2]);
+  });
+});</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Run the test, verify it fails</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- subscriptionAccess</code> (or the repo&#39;s runner). Expected: FAIL — <code>subscriptionAccess.js</code> does not exist. <em>(If the server has no test runner configured, skip the runner and instead verify by the <code>node --check</code> in Step 4 plus a throwaway <code>node</code> REPL import; note this in the commit.)</em></p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Implement the guard</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// server/src/shared/access/subscriptionAccess.js
+// Subscription STATUS gate — the single place that answers &quot;is this student
+// currently subscribed?&quot;. Orthogonal to role permissions. Built on the existing
+// activeSubscriptionWhere() (via subscriptionRepo) so &quot;active&quot; has one definition.
+import { messagesNames, subscriptionMessagesCodes } from &quot;@aya/shared&quot;;
+import { AppError } from &quot;../errors/AppError.js&quot;;
+import { subscriptionRepo } from &quot;../../modules/subscriptions/subscription.repo.js&quot;;
+
+/** True when the student has a currently-ACTIVE subscription. */
+export async function hasActiveSubscription(studentId) {
+  if (!studentId) return false;
+  const ids = await subscriptionRepo.getCurrentlySubscribedStudentIds([studentId]);
+  return ids.includes(studentId);
+}
+
+/** Throws 403 SUBSCRIPTION_INACTIVE unless the student is currently subscribed. */
+export async function assertActiveForStudent(studentId) {
+  if (await hasActiveSubscription(studentId)) return;
+  throw new AppError({
+    statusCode: 403,
+    code: subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE,
+    message: subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE,
+    translationKey: messagesNames.subscriptionMessages,
+    dontRedirect: true,
+  });
+}
+
+/** Subset of `studentIds` that are currently subscribed. */
+export async function filterActiveStudentIds(studentIds) {
+  if (!studentIds?.length) return [];
+  return subscriptionRepo.getCurrentlySubscribedStudentIds(studentIds);
+}</code></pre></div></div><div class="content-block"><p><strong>Confirmed:</strong> <code>@aya/shared</code> exports both <code>subscriptionMessagesCodes</code> and <code>messagesNames</code> (the subscriptions module re-exports the codes from there). Use the single <code>@aya/shared</code> import shown above.  <strong>Confirmed — <code>forbidden()</code> signature:</strong> <code>forbidden(message)</code> in <code>AppError.js</code> takes ONE arg and always sets <code>translationKey</code> to the auth namespace. It CANNOT carry the subscription translationKey. Therefore, every other gate in this plan must <strong>reuse <code>assertActiveForStudent(studentId)</code></strong> (which throws the correct <code>AppError</code> with <code>translationKey: messagesNames.subscriptionMessages</code> and <code>dontRedirect: true</code>) rather than calling <code>forbidden(SUBSCRIPTION<em>INACTIVE, ...)</code>. Where a task below shows <code>forbidden(subscriptionMessagesCodes.SUBSCRIPTION</em>INACTIVE, ...)</code>, replace it with <code>await assertActiveForStudent(studentId)</code>.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Run the test + parse check</strong></li></ul></div><div class="content-block"><p>Run: <code>node --check server/src/shared/access/subscriptionAccess.js</code> → exit 0. Run: <code>npm test -w server -- subscriptionAccess</code> → PASS (or REPL import if no runner).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/shared/access/subscriptionAccess.js server/src/shared/access/subscriptionAccess.test.js
+git commit -m &quot;feat(server): subscriptionAccess status guard (hasActive/assertActive/filterActive)&quot;</code></pre></div></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-2-—-backend-enforcement" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>PHASE 2 — Backend enforcement</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Task 3: Gate the leaderboard for inactive students</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/modules/points/point.usecase.js:38</code> (the <code>leaderboard</code> method)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>assertActiveForStudent</code> (Task 2); <code>USER_ROLES</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write the failing test</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// add to server/src/modules/points/point.usecase.test.js (or create it)
+it(&quot;leaderboard throws SUBSCRIPTION_INACTIVE for an inactive student&quot;, async () =&gt; {
+  // arrange: mock subscriptionAccess.hasActiveSubscription -&gt; false
+  // act/assert:
+  await expect(
+    pointUsecase.leaderboard({ id: 5, role: &quot;STUDENT&quot; }, { range: &quot;all&quot; }),
+  ).rejects.toMatchObject({ code: &quot;SUBSCRIPTION_INACTIVE&quot; });
+});
+it(&quot;leaderboard returns rows for an active student&quot;, async () =&gt; {
+  // mock hasActiveSubscription -&gt; true and repo top lists -&gt; []
+  await expect(
+    pointUsecase.leaderboard({ id: 5, role: &quot;STUDENT&quot; }, { range: &quot;all&quot; }),
+  ).resolves.toEqual([]);
+});
+it(&quot;leaderboard does not gate ADMIN / PARENT&quot;, async () =&gt; {
+  await expect(
+    pointUsecase.leaderboard({ id: 1, role: &quot;ADMIN&quot; }, { range: &quot;all&quot; }),
+  ).resolves.toBeDefined();
+});</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Run, verify it fails</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- point.usecase</code> Expected: FAIL (no gating yet → inactive student does not throw).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Implement the gate</strong></li></ul></div><div class="content-block"><p>In <code>point.usecase.js</code>, add the import at top:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { assertActiveForStudent } from &quot;../../shared/access/subscriptionAccess.js&quot;;</code></pre></div></div><div class="content-block"><p>Change the <code>leaderboard</code> signature to use the auth user and gate students. Replace:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async leaderboard(_authUser, { range }) {
+    const since = new Date(Date.now() - WEEK_MS);</code></pre></div></div><div class="content-block"><p>with:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async leaderboard(authUser, { range }) {
+    // Students must have an ACTIVE subscription to view the leaderboard.
+    // Admins/parents are unaffected.
+    if (authUser?.role === USER_ROLES.STUDENT) {
+      await assertActiveForStudent(authUser.id);
+    }
+    const since = new Date(Date.now() - WEEK_MS);</code></pre></div></div><div class="content-block"><p>(The controller already passes <code>authUser(req)</code> as the first arg — no controller change needed.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Run, verify PASS</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- point.usecase</code> → PASS. Run: <code>node --check server/src/modules/points/point.usecase.js</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/points/point.usecase.js server/src/modules/points/point.usecase.test.js
+git commit -m &quot;feat(points): gate leaderboard behind active subscription for students&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 4: Gate student rewards/badges; scope parent rewards to active children</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/modules/rewards/reward.usecase.js</code> (<code>assertCanAccess</code>, <code>buildListWhere</code>)</li><li>Modify: <code>server/src/modules/badges/badge.usecase.js</code> (<code>assertCanAccess</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>hasActiveSubscription</code>, <code>filterActiveStudentIds</code> (Task 2); <code>USER_ROLES</code>; <code>userRepo.isStudentOfParent</code>.</li></ul></div><div class="content-block"><p>Rationale: badges/rewards are the &quot;achievements&quot; category. A student sees their own only when active; a parent sees rewards only for their <strong>active</strong> children.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write failing tests</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// reward.usecase.test.js
+it(&quot;student cannot list own rewards when inactive&quot;, async () =&gt; {
+  // mock hasActiveSubscription(student.id) -&gt; false
+  await expect(
+    rewardUsecase.assertCanAccess({ id: 5, role: &quot;STUDENT&quot; }, 5),
+  ).rejects.toMatchObject({ code: &quot;SUBSCRIPTION_INACTIVE&quot; });
+});
+it(&quot;parent reward scope excludes inactive children&quot;, async () =&gt; {
+  // userRepo.getStudentIdsForParent -&gt; [10, 11]; filterActiveStudentIds -&gt; [10]
+  const where = await rewardUsecase.buildListWhere({ id: 2, role: &quot;PARENT&quot; }, {});
+  expect(where.userId).toEqual({ in: [10, 2] }); // active child + self
+});</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// badge.usecase.test.js
+it(&quot;listStudentBadges throws for an inactive student/child&quot;, async () =&gt; {
+  // hasActiveSubscription -&gt; false
+  await expect(
+    badgeUsecase.assertCanAccess({ id: 5, role: &quot;STUDENT&quot; }, 5),
+  ).rejects.toMatchObject({ code: &quot;SUBSCRIPTION_INACTIVE&quot; });
+});</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Run, verify they fail</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- reward.usecase badge.usecase</code> Expected: FAIL.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Implement — rewards</strong></li></ul></div><div class="content-block"><p>In <code>reward.usecase.js</code> add import:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import {
+  assertActiveForStudent,
+  filterActiveStudentIds,
+} from &quot;../../shared/access/subscriptionAccess.js&quot;;</code></pre></div></div><div class="content-block"><p>Extend <code>assertCanAccess</code> — after the existing role checks pass for a student/linked child, require active subscription on the <em>target</em> student via <code>assertActiveForStudent</code> (it throws the correct 403 SUBSCRIPTION_INACTIVE):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async assertCanAccess(authUser, userId) {
+    if (authUser.role === USER_ROLES.ADMIN) return;
+    const isSelfStudent = userId === authUser.id &amp;&amp; authUser.role === USER_ROLES.STUDENT;
+    const isLinkedChild =
+      authUser.role === USER_ROLES.PARENT &amp;&amp;
+      userId &amp;&amp;
+      (await userRepo.isStudentOfParent(authUser.id, userId));
+    if (isSelfStudent || isLinkedChild) {
+      // Achievements are hidden when the student&#39;s subscription is not active.
+      await assertActiveForStudent(userId);
+      return;
+    }
+    if (userId === authUser.id) return; // parent&#39;s own (non-student) rewards, if any
+    throw forbidden(rewardMessagesCodes.CANNOT_ACCESS_REWARD);
+  }</code></pre></div></div><div class="content-block"><p>Scope the parent list to active children in <code>buildListWhere</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    } else if (authUser.role === USER_ROLES.PARENT) {
+      const ids = await userRepo.getStudentIdsForParent(authUser.id);
+      const activeIds = await filterActiveStudentIds(ids);
+      const scope = [...activeIds, authUser.id];
+      where.userId =
+        userId &amp;&amp; scope.includes(userId) ? userId : { in: scope };
+    } else {</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Implement — badges</strong></li></ul></div><div class="content-block"><p>In <code>badge.usecase.js</code> add the import and gate the student/child branch of <code>assertCanAccess</code> via <code>assertActiveForStudent</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { assertActiveForStudent } from &quot;../../shared/access/subscriptionAccess.js&quot;;</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async assertCanAccess(authUser, studentId) {
+    if (authUser.role === USER_ROLES.ADMIN) return;
+    let allowed = false;
+    if (authUser.role === USER_ROLES.STUDENT) {
+      allowed = authUser.id === studentId;
+    } else if (authUser.role === USER_ROLES.PARENT) {
+      allowed = await userRepo.isStudentOfParent(authUser.id, studentId);
+    }
+    if (!allowed) throw forbidden(badgeMessagesCodes.CANNOT_ACCESS_BADGE);
+    // Achievements hidden when the student&#39;s subscription is not active.
+    await assertActiveForStudent(studentId);
+  }</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Run tests, parse checks, PASS</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- reward.usecase badge.usecase</code> → PASS. Run: <code>node --check server/src/modules/rewards/reward.usecase.js server/src/modules/badges/badge.usecase.js</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/rewards/reward.usecase.js server/src/modules/badges/badge.usecase.js server/src/modules/rewards/reward.usecase.test.js server/src/modules/badges/badge.usecase.test.js
+git commit -m &quot;feat(rewards,badges): gate achievements behind active subscription (per-child for parents)&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 5: Gate game play + attempt (free game exempt); add `locked` to assignments</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/modules/games/game.usecase.js</code> (<code>getBySlugAuth</code>, <code>attempt</code>, <code>myAssignments</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>hasActiveSubscription</code> (Task 2); <code>subscriptionMessagesCodes</code>.</li><li>Produces: each item from <code>myAssignments</code> gains <code>locked: boolean</code>.</li><li>Note: a game is &quot;free/exempt&quot; when <code>game.isFree &amp;&amp; game.isPublic</code>. Confirm <code>gameFullSelect</code>/<code>gameListSelect</code> include <code>isFree</code> and <code>isPublic</code>; if <code>isFree</code> is missing from a select, add it (it already exists on the model and is used by <code>getPublicFree</code>).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write failing tests</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// game.usecase.test.js
+it(&quot;getBySlugAuth blocks an inactive student for a non-free game&quot;, async () =&gt; {
+  // gameRepo.getBySlug -&gt; { isActive: true, isFree: false, isPublic: false, questions: [] }
+  // hasActiveSubscription -&gt; false
+  await expect(
+    gameUsecase.getBySlugAuth({ id: 5, role: &quot;STUDENT&quot; }, &quot;wudu-steps&quot;),
+  ).rejects.toMatchObject({ code: &quot;SUBSCRIPTION_INACTIVE&quot; });
+});
+it(&quot;getBySlugAuth allows the free game for an inactive student&quot;, async () =&gt; {
+  // gameRepo.getBySlug -&gt; { isActive: true, isFree: true, isPublic: true, questions: [] }
+  await expect(
+    gameUsecase.getBySlugAuth({ id: 5, role: &quot;STUDENT&quot; }, &quot;phone-manners&quot;),
+  ).resolves.toBeDefined();
+});
+it(&quot;attempt blocks an inactive student on a non-free game&quot;, async () =&gt; {
+  await expect(
+    gameUsecase.attempt({ id: 5, role: &quot;STUDENT&quot;, name: &quot;x&quot; }, 9, {
+      correctCount: 1, totalQuestions: 1,
+    }),
+  ).rejects.toMatchObject({ code: &quot;SUBSCRIPTION_INACTIVE&quot; });
+});
+it(&quot;myAssignments marks non-free games locked when student inactive&quot;, async () =&gt; {
+  // listAssignmentsForStudent -&gt; [{ game: { isFree:false, isPublic:false } }]
+  // hasActiveSubscription -&gt; false
+  const out = await gameUsecase.myAssignments({ id: 5, role: &quot;STUDENT&quot; });
+  expect(out[0].locked).toBe(true);
+});</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Run, verify fail</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- game.usecase</code> → FAIL.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Implement</strong></li></ul></div><div class="content-block"><p>Add import to <code>game.usecase.js</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import {
+  hasActiveSubscription,
+  assertActiveForStudent,
+} from &quot;../../shared/access/subscriptionAccess.js&quot;;</code></pre></div></div><div class="content-block"><p>Add a small private helper inside the class:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  // A game is exempt from subscription gating when it is the public free game.
+  isFreeGame(game) {
+    return Boolean(game?.isFree &amp;&amp; game?.isPublic);
+  }</code></pre></div></div><div class="content-block"><p>In <code>getBySlugAuth</code>, after the not-found/active checks and before returning, gate students:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async getBySlugAuth(authUser, slug) {
+    const game = await gameRepo.getBySlug(slug);
+    if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
+
+    if (authUser.role === USER_ROLES.ADMIN) return game;
+    if (!game.isActive) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
+
+    // Students need an ACTIVE subscription to play — except the free game.
+    if (authUser.role === USER_ROLES.STUDENT &amp;&amp; !this.isFreeGame(game)) {
+      await assertActiveForStudent(authUser.id);
+    }
+    return this.stripAnswers(game);
+  }</code></pre></div></div><div class="content-block"><p>In <code>attempt</code>, after the existing <code>GAME<em>NOT</em>ACTIVE</code> check, add:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    if (!game.isActive) throw badRequest(gameMessagesCodes.GAME_NOT_ACTIVE);
+
+    // Submitting a result requires an active subscription — except the free game.
+    if (!this.isFreeGame(game)) {
+      await assertActiveForStudent(authUser.id);
+    }</code></pre></div></div><div class="content-block"><p>In <code>myAssignments</code>, compute <code>locked</code> per item:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  /** The signed-in student&#39;s own game assignments (empty for non-students). */
+  async myAssignments(authUser) {
+    if (authUser.role !== USER_ROLES.STUDENT) return [];
+    const assignments = await gameRepo.listAssignmentsForStudent(authUser.id);
+    const active = await hasActiveSubscription(authUser.id);
+    return assignments.map((a) =&gt; ({
+      ...a,
+      // Cards stay visible but are locked when the student is inactive,
+      // unless the game itself is the public free game.
+      locked: !active &amp;&amp; !this.isFreeGame(a.game),
+    }));
+  }</code></pre></div></div><div class="content-block"><p>(No <code>messagesNames</code> import is needed here — <code>assertActiveForStudent</code> carries the translationKey itself.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Run, PASS + parse</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- game.usecase</code> → PASS. Run: <code>node --check server/src/modules/games/game.usecase.js</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/games/game.usecase.js server/src/modules/games/game.usecase.test.js
+git commit -m &quot;feat(games): gate play+attempt behind active subscription (free game exempt); mark locked assignments&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 6: Parent + student dashboards — null inactive stats/achievements</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/modules/dashboard/dashboard.usecase.js</code> (<code>getParentDashboard</code>, <code>getStudentDashboard</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>hasActiveSubscription</code>, <code>filterActiveStudentIds</code> (Task 2).</li><li>Produces: parent children gain <code>isActive: boolean</code>; when <code>false</code>, <code>points/level/rank/badgeCount</code> are <code>null</code> (identity + <code>activeSubscription</code> kept). Student dashboard: when inactive, <code>badges: []</code>, <code>rank: null</code> (profile + <code>activeSubscription</code> kept).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write failing tests</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// dashboard.usecase.test.js
+it(&quot;parent dashboard nulls stats for an inactive child but keeps identity&quot;, async () =&gt; {
+  // getStudentIdsForParent -&gt; [10]; filterActiveStudentIds -&gt; []
+  const out = await dashboardUsecase.getParentDashboard({ id: 2, role: &quot;PARENT&quot; });
+  const child = out.children[0];
+  expect(child.isActive).toBe(false);
+  expect(child.points).toBeNull();
+  expect(child.badgeCount).toBeNull();
+  expect(child.name).toBeTruthy();
+});
+it(&quot;student dashboard hides badges/rank when inactive&quot;, async () =&gt; {
+  // hasActiveSubscription -&gt; false
+  const out = await dashboardUsecase.getStudentDashboard({ id: 5, role: &quot;STUDENT&quot; });
+  expect(out.badges).toEqual([]);
+  expect(out.rank).toBeNull();
+  expect(out.profile).toBeTruthy();
+});</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Run, verify fail</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- dashboard.usecase</code> → FAIL.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Implement — parent</strong></li></ul></div><div class="content-block"><p>Add import:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import {
+  hasActiveSubscription,
+  filterActiveStudentIds,
+} from &quot;../../shared/access/subscriptionAccess.js&quot;;</code></pre></div></div><div class="content-block"><p>In <code>getParentDashboard</code>, compute the active set once and gate per child. Replace the <code>childrenWithSubscription</code> map body:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    const activeIds = new Set(await filterActiveStudentIds(studentIds));
+
+    const childrenWithSubscription = await Promise.all(
+      children.map(async (child) =&gt; {
+        const isActive = activeIds.has(child.id);
+        const [sub, rank] = await Promise.all([
+          dashboardRepo.activeSubscriptionForStudent(child.id),
+          isActive ? dashboardRepo.studentRank(child.points ?? 0) : Promise.resolve(null),
+        ]);
+        return {
+          id: child.id,
+          name: child.name,
+          nickname: child.nickname,
+          isActive,
+          // Stats/achievements hidden for an inactive child; identity +
+          // subscription state remain so the parent can renew.
+          points: isActive ? child.points : null,
+          level: isActive ? child.level : null,
+          rank,
+          badgeCount: isActive ? child._count?.studentBadges ?? 0 : null,
+          activeSubscription: sub
+            ? {
+                id: sub.id,
+                planId: sub.planId,
+                endDate: sub.endDate,
+                remainingHours: sub.remainingHours,
+              }
+            : null,
+        };
+      }),
+    );</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Implement — student</strong></li></ul></div><div class="content-block"><p>In <code>getStudentDashboard</code>, after fetching, gate badges/rank:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    const active = await hasActiveSubscription(studentId);</code></pre></div></div><div class="content-block"><p>Then in the returned object, replace <code>rank</code> and <code>badges</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>      rank: active ? rank : null,
+      ...
+      badges: active
+        ? badges.map((b) =&gt; ({
+            id: b.badge.id,
+            code: b.badge.code,
+            nameAr: b.badge.nameAr,
+            nameEn: b.badge.nameEn,
+            icon: b.badge.icon,
+            awardedAt: b.awardedAt,
+          }))
+        : [],</code></pre></div></div><div class="content-block"><p>(Leave <code>assignedGames</code> returned as-is; the games list stays visible. <code>activeSubscription</code> stays so the UI knows the state.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Run, PASS + parse</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- dashboard.usecase</code> → PASS. Run: <code>node --check server/src/modules/dashboard/dashboard.usecase.js</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/dashboard/dashboard.usecase.js server/src/modules/dashboard/dashboard.usecase.test.js
+git commit -m &quot;feat(dashboard): null inactive child/student stats+achievements; surface isActive&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 7: Surface `hasActiveSubscription` on `/auth/me` and login (students)</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/modules/auth/auth.controller.js</code> (<code>me</code>, <code>login</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>hasActiveSubscription</code> (Task 2); <code>USER_ROLES</code>.</li><li>Produces: <code>/auth/me</code> and <code>/auth/login</code> <code>user</code> payload includes <code>hasActiveSubscription: boolean</code> (always <code>true</code> for non-students so they are never gated client-side).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Write the failing test</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// auth.controller.test.js (or an integration test that hits /auth/me)
+it(&quot;/auth/me includes hasActiveSubscription=false for an inactive student&quot;, async () =&gt; {
+  // req.auth = { id: 5, role: &quot;STUDENT&quot;, ... }; hasActiveSubscription -&gt; false
+  // expect response.data.user.hasActiveSubscription === false
+});
+it(&quot;/auth/me sets hasActiveSubscription=true for non-students&quot;, async () =&gt; {
+  // req.auth = { id: 1, role: &quot;ADMIN&quot; }
+  // expect true without calling the subscription repo
+});</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Run, verify fail</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- auth.controller</code> → FAIL.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Implement</strong></li></ul></div><div class="content-block"><p>Add imports:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { USER_ROLES } from &quot;@aya/shared&quot;;
+import { hasActiveSubscription } from &quot;../../shared/access/subscriptionAccess.js&quot;;</code></pre></div></div><div class="content-block"><p>Add a helper and use it in <code>me</code> and <code>login</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  // Students are gated by subscription; everyone else is always &quot;active&quot;.
+  async withSubscriptionFlag(user) {
+    const hasActive =
+      user.role === USER_ROLES.STUDENT
+        ? await hasActiveSubscription(user.id)
+        : true;
+    return { ...user, hasActiveSubscription: hasActive };
+  }</code></pre></div></div><div class="content-block"><p><code>me</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  me = async (req, res) =&gt; {
+    const user = await this.withSubscriptionFlag(req.auth);
+    return ok(res, { user });
+  };</code></pre></div></div><div class="content-block"><p><code>login</code> — wrap the existing payload:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>    const { passwordHash: _drop, ...safe } = user;
+    const payload = await this.withSubscriptionFlag({
+      ...safe,
+      permissions: getPermissionsForRole(user.role),
+    });
+    return ok(res, { user: payload }, authMessagesCodes.LOGIN_SUCCESS, messagesNames.authMessages);</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Run, PASS + parse + boot</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server -- auth.controller</code> → PASS. Run: <code>node --check server/src/modules/auth/auth.controller.js</code> → exit 0. Run: boot <code>npm run dev -w server</code>, hit <code>/api/v1/health</code> → 200. Stop.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/auth/auth.controller.js server/src/modules/auth/auth.controller.test.js
+git commit -m &quot;feat(auth): expose hasActiveSubscription on /auth/me and login (students)&quot;</code></pre></div></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-3-—-frontend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>PHASE 3 — Frontend</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Task 8: Reusable `SubscriptionLockedState` component + i18n</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/shared/components/SubscriptionLockedState.jsx</code></li><li>Modify: <code>web/src/shared/components/index.js</code> (barrel export, if one exists)</li><li>Modify: <code>web/src/i18n/locales/messagesCodes.js</code> (ar/en for <code>SUBSCRIPTION_INACTIVE</code>)</li><li>Modify: <code>web/src/i18n/locales/ar/<em></code> and <code>web/src/i18n/locales/en/</em></code> (locked-state copy)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>&lt;SubscriptionLockedState variant=&quot;student&quot; | &quot;parent&quot; childName? renewHref? /&gt;</code>.<ul><li><code>student</code>: gentle, kid copy, no billing/CTA.</li><li><code>parent</code>: clear copy + renew button linking <code>renewHref</code> (default <code>/dashboard/children</code>).</li></ul></li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add i18n strings</strong></li></ul></div><div class="content-block"><p>In <code>web/src/i18n/locales/messagesCodes.js</code>, add under <code>messagesNames.subscriptionMessages</code> in both <code>ar</code> and <code>en</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// ar
+[subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]: &quot;انتهى الاشتراك أو غير مفعّل&quot;,
+// en
+[subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]: &quot;Subscription expired or inactive&quot;,</code></pre></div></div><div class="content-block"><p>(Import <code>subscriptionMessagesCodes</code> at the top of that file if not already imported — match how other code namespaces are imported there.)</p></div><div class="content-block"><p>Add a <code>subscriptionLock</code> block to the locale dictionaries used by <code>useTranslation</code>. In <code>web/src/i18n/locales/ar/&lt;common-or-dashboard&gt;.json</code> (match where other shared UI copy lives) add:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="json"><code>&quot;subscriptionLock&quot;: {
+  &quot;studentTitle&quot;: &quot;القسم ده مقفول دلوقتي 🔒&quot;,
+  &quot;studentBody&quot;: &quot;كلّم بابا أو ماما عشان تكمل اللعب والمغامرات 😊&quot;,
+  &quot;parentTitle&quot;: &quot;اشتراك {name} منتهي&quot;,
+  &quot;parentBody&quot;: &quot;جدّد الاشتراك عشان يرجع يشوف نقاطه وأوسمته ويلعب الألعاب.&quot;,
+  &quot;renewCta&quot;: &quot;تجديد الاشتراك&quot;
+}</code></pre></div></div><div class="content-block"><p>English equivalent in <code>web/src/i18n/locales/en/...</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="json"><code>&quot;subscriptionLock&quot;: {
+  &quot;studentTitle&quot;: &quot;This section is locked right now 🔒&quot;,
+  &quot;studentBody&quot;: &quot;Ask your mom or dad so you can keep playing 😊&quot;,
+  &quot;parentTitle&quot;: &quot;{name}&#39;s subscription has expired&quot;,
+  &quot;parentBody&quot;: &quot;Renew the subscription so they can see their points and badges and play games again.&quot;,
+  &quot;renewCta&quot;: &quot;Renew subscription&quot;
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create the component</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>// web/src/shared/components/SubscriptionLockedState.jsx
+&quot;use client&quot;;
+
+import Link from &quot;next/link&quot;;
+import { Box, Button, Stack, Typography } from &quot;@mui/material&quot;;
+import { MdLock } from &quot;react-icons/md&quot;;
+import { useTranslation } from &quot;../../i18n/client.js&quot;;
+import { localePath } from &quot;../../i18n/routing.js&quot;;
+
+// Shown in place (no redirect) when a feature is blocked by subscription status.
+// variant=&quot;student&quot; → gentle, kid-appropriate, NO billing/CTA.
+// variant=&quot;parent&quot;  → clear + actionable, with a renew CTA.
+export default function SubscriptionLockedState({
+  variant = &quot;student&quot;,
+  childName = &quot;&quot;,
+  renewHref = &quot;/dashboard/children&quot;,
+}) {
+  const { t, lng } = useTranslation();
+  const c = t(&quot;subscriptionLock&quot;, { returnObjects: true }) || {};
+  const isParent = variant === &quot;parent&quot;;
+
+  const title = isParent
+    ? (c.parentTitle || &quot;&quot;).replace(&quot;{name}&quot;, childName || &quot;&quot;)
+    : c.studentTitle;
+  const body = isParent ? c.parentBody : c.studentBody;
+
+  return (
+    &lt;Box
+      sx={{
+        display: &quot;grid&quot;,
+        placeItems: &quot;center&quot;,
+        textAlign: &quot;center&quot;,
+        py: { xs: 6, md: 8 },
+        px: 2,
+      }}
+    &gt;
+      &lt;Stack spacing={2} alignItems=&quot;center&quot; sx={{ maxWidth: 460 }}&gt;
+        &lt;Box
+          sx={{
+            width: 84,
+            height: 84,
+            borderRadius: &quot;50%&quot;,
+            display: &quot;grid&quot;,
+            placeItems: &quot;center&quot;,
+            bgcolor: &quot;action.hover&quot;,
+          }}
+        &gt;
+          &lt;MdLock size={40} color=&quot;#94A3B8&quot; /&gt;
+        &lt;/Box&gt;
+        &lt;Typography variant=&quot;h5&quot; fontWeight={900}&gt;
+          {title}
+        &lt;/Typography&gt;
+        &lt;Typography color=&quot;text.secondary&quot;&gt;{body}&lt;/Typography&gt;
+        {isParent &amp;&amp; (
+          &lt;Button
+            component={Link}
+            href={localePath(lng, renewHref)}
+            variant=&quot;contained&quot;
+            size=&quot;large&quot;
+            sx={{ borderRadius: 999, px: 4, fontWeight: 800, mt: 1 }}
+          &gt;
+            {c.renewCta}
+          &lt;/Button&gt;
+        )}
+      &lt;/Stack&gt;
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>If <code>web/src/shared/components/index.js</code> exists, add:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>export { default as SubscriptionLockedState } from &quot;./SubscriptionLockedState.jsx&quot;;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Verify build</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run build -w web</code> Expected: exit 0 (component compiles, unused for now).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/shared/components/SubscriptionLockedState.jsx web/src/shared/components/index.js web/src/i18n/locales
+git commit -m &quot;feat(web): SubscriptionLockedState component + locked-state i18n (student/parent)&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 9: Student gates — Leaderboard, Badges, dashboard nav</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/features/leaderboard/pages/LeaderboardPage.jsx</code></li><li>Modify: <code>web/src/features/badges/pages/BadgesPage.jsx</code></li><li>Modify: the dashboard nav file that lists leaderboard + badges links (find it: <code>grep -r &quot;dashboard/leaderboard&quot; web/src/shared/ui/navigation web/src/features/dashboard</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>useAuth().user.hasActiveSubscription</code>; <code>user.role</code>; <code>SubscriptionLockedState</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Gate LeaderboardPage</strong></li></ul></div><div class="content-block"><p>Add near the top of the component (after <code>usePermission</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { useAuth } from &quot;../../../hooks/useAuth.js&quot;;
+import { USER_ROLES } from &quot;@aya/shared&quot;;
+import { SubscriptionLockedState } from &quot;../../../shared/components/index.js&quot;;</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  const { user } = useAuth();
+  const blocked =
+    user?.role === USER_ROLES.STUDENT &amp;&amp; user?.hasActiveSubscription === false;</code></pre></div></div><div class="content-block"><p>Change the fetch <code>autoFetch</code> to also require <code>!blocked</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>    autoFetch: canView &amp;&amp; !blocked,</code></pre></div></div><div class="content-block"><p>And before the main return, after <code>if (!canView) return null;</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  if (blocked) return &lt;SubscriptionLockedState variant=&quot;student&quot; /&gt;;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Gate BadgesPage</strong></li></ul></div><div class="content-block"><p>Same imports. Add:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  const { user } = useAuth();
+  const blocked =
+    user?.role === USER_ROLES.STUDENT &amp;&amp; user?.hasActiveSubscription === false;</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>    autoFetch: canList &amp;&amp; !blocked,</code></pre></div></div><div class="content-block"><p>After <code>if (!canList) return null;</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  if (blocked) return &lt;SubscriptionLockedState variant=&quot;student&quot; /&gt;;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Hide nav links for inactive students</strong></li></ul></div><div class="content-block"><p>In the dashboard nav config/component, where the leaderboard + badges nav items are built, filter them out when <code>user.role === STUDENT &amp;&amp; user.hasActiveSubscription === false</code>. Read the file first; apply the same <code>blocked</code> guard to the items whose hrefs are <code>/dashboard/leaderboard</code> and <code>/dashboard/badges</code>. Keep them for admin/parent.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Verify build</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run build -w web</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/leaderboard web/src/features/badges web/src/shared/ui/navigation
+git commit -m &quot;feat(web): student subscription gate on leaderboard + badges (page + nav)&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 10: Locked game cards + locked play page</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/features/games/components/GameCard.jsx</code></li><li>Modify: <code>web/src/features/games/pages/MyGamesPage.jsx</code></li><li>Modify: <code>web/src/features/games/hooks/useGame.js</code></li><li>Modify: <code>web/src/features/games/pages/GamePlayPage.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>assignment.locked</code> (Task 5) on cards; backend <code>SUBSCRIPTION_INACTIVE</code> 403 on play.</li><li>Produces: <code>useGame</code> returns <code>locked: boolean</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Pass <code>locked</code> into GameCard</strong></li></ul></div><div class="content-block"><p>In <code>MyGamesPage.jsx</code>, include <code>locked</code> when building cards (the free card is never locked):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>    const list = assignments.map((a) =&gt; ({
+      key: `a-${a.id}`,
+      game: a.game,
+      assignment: a,
+      locked: Boolean(a.locked),
+    }));</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>        list.unshift({ key: `free-${freeGame.id}`, game: freeGame, assignment: null, locked: false });</code></pre></div></div><div class="content-block"><p>Pass it to the card:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>            &lt;GameCard
+              key={c.key}
+              game={c.game}
+              basePath=&quot;/dashboard/games&quot;
+              assignment={c.assignment}
+              locked={c.locked}
+            /&gt;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Render the lock on GameCard</strong></li></ul></div><div class="content-block"><p>In <code>GameCard.jsx</code>, accept <code>locked</code> and, when true, render a non-link locked card (gentle, no navigation). Add prop <code>locked = false</code>. Wrap: when <code>locked</code>, render the same <code>Box</code> (no <code>&lt;Link&gt;</code>), dim it, overlay a lock chip, and replace the &quot;playNow&quot; footer with a locked label; clicking shows the student message via a small inline state or a toast. Minimal approach — when <code>locked</code>, do not wrap in <code>&lt;Link&gt;</code> and add:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  if (locked) {
+    return (
+      &lt;Box sx={{ position: &quot;relative&quot;, opacity: 0.65, pointerEvents: &quot;none&quot; }}&gt;
+        {/* same visual card body as below, but the footer reads gd.locked */}
+        {/* ...card markup... */}
+        &lt;Box sx={{ position: &quot;absolute&quot;, top: 12, insetInlineEnd: 12, fontSize: 24 }}&gt;🔒&lt;/Box&gt;
+      &lt;/Box&gt;
+    );
+  }</code></pre></div></div><div class="content-block"><p>Implementer: factor the inner card <code>Box</code> into a local <code>CardBody</code> so locked + unlocked share markup (DRY). Add <code>gd.locked</code> copy (ar: &quot;مقفول 🔒&quot;, en: &quot;Locked 🔒&quot;) to the gamesData dictionary. Tapping a locked card should not navigate; the clear &quot;renew&quot; message lives with the parent, so the card itself just shows the lock (kid-appropriate).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Surface <code>SUBSCRIPTION_INACTIVE</code> in useGame</strong></li></ul></div><div class="content-block"><p>In <code>useGame.js</code>, add a <code>locked</code> state and set it in <code>onError</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  const [locked, setLocked] = useState(false);</code></pre></div></div><div class="content-block"><p>In <code>onError</code>, before the fallback handling:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>      // ApiFetch attaches the full response body to err.data (incl. `code`).
+      if (err?.status === 403 &amp;&amp; err?.data?.code === &quot;SUBSCRIPTION_INACTIVE&quot;) {
+        setLocked(true);
+        return;
+      }</code></pre></div></div><div class="content-block"><p>Return it:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  return {
+    game: rateLimited || locked ? null : game,
+    isLoading: isLoading &amp;&amp; !game &amp;&amp; !rateLimited &amp;&amp; !locked,
+    error: isFallback || rateLimited || locked ? null : error,
+    isFallback,
+    rateLimited,
+    locked,
+    refetch: triggerRefetch,
+  };</code></pre></div></div><div class="content-block"><p><strong>Confirmed:</strong> <code>web/src/lib/api/ApiFetch.js</code> throws an <code>Error</code> with <code>.status</code>, <code>.data</code> (the full parsed body, including <code>code</code>), and <code>.translationKey</code>. Match on <code>err?.data?.code</code>.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Render locked state on GamePlayPage (dashboard)</strong></li></ul></div><div class="content-block"><p>In <code>GamePlayPage.jsx</code>, destructure <code>locked</code> and render the student locked state for the dashboard variant:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { SubscriptionLockedState } from &quot;../../../shared/components/index.js&quot;;</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>  const { game, isLoading, error, rateLimited, locked } = useGame({ slug, auth: isDashboard, free });</code></pre></div></div><div class="content-block"><p>In the render branch (before the <code>isLoading</code> check, inside the content area):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>      {locked ? (
+        &lt;SubscriptionLockedState variant=&quot;student&quot; /&gt;
+      ) : rateLimited ? (
+        /* existing rateLimited block */</code></pre></div></div><div class="content-block"><p>(Keep the existing chain; just add the <code>locked</code> branch first.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Verify build</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run build -w web</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/games
+git commit -m &quot;feat(web): lock game cards + play page for inactive students (free game stays playable)&quot;</code></pre></div></div><div class="content-block"><hr /></div></section><section class="subsection-card"><h3>Task 11: Parent views — dashboard child cards + child detail tabs</h3><div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/features/dashboard/components/ParentOverview.jsx</code></li><li>Modify: <code>web/src/features/dashboard/components/StudentOverview.jsx</code></li><li>Modify: <code>web/src/features/userDetail/pages/UserDetailPage.jsx</code> (+ overview/badges/games tab components)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: per-child <code>isActive</code> (Task 6); <code>SubscriptionLockedState variant=&quot;parent&quot;</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: ParentOverview per-child gating</strong></li></ul></div><div class="content-block"><p>Read the file. For each child card, when <code>child.isActive === false</code>:</p></div><div class="content-block"><ul><li>keep name/nickname + subscription status chip + a <strong>renew</strong> action,</li><li>replace the points/level/rank/badges block with a compact parent message (use <code>SubscriptionLockedState variant=&quot;parent&quot; childName={child.nickname || child.name}</code> inside the card, or a slimmer inline variant if the card is small).</li></ul></div><div class="content-block"><p>When <code>child.points</code>/<code>badgeCount</code> are <code>null</code>, render the locked treatment (do not show <code>0</code>).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: StudentOverview (the student&#39;s own dashboard home)</strong></li></ul></div><div class="content-block"><p>Read the file. When the logged-in student is inactive (<code>user.hasActiveSubscription === false</code> or the dashboard payload&#39;s <code>badges</code> is empty + <code>rank</code> null), hide the badges widget and leaderboard-rank widget; keep the subscription/renew prompt area. The assigned-games widget stays (cards locked as in Task 10).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: UserDetailPage tabs (parent viewing a child)</strong></li></ul></div><div class="content-block"><p>Read the file. Determine the child&#39;s active state (from the overview payload — ensure the overview endpoint returns the child&#39;s <code>isActive</code>/active subscription; if not present, derive from the subscriptions tab data or add <code>isActive</code> to the overview DTO in a tiny follow-up). For an inactive child:</p></div><div class="content-block"><ul><li><code>overview</code> (stats), <code>badges</code>, <code>games</code> tabs → render <code>SubscriptionLockedState variant=&quot;parent&quot; childName={...}</code>,</li><li><code>certificates</code> and <code>reports/evaluations</code> tabs → render normally.</li></ul></div><div class="content-block"><p>If the child-detail overview endpoint does not yet expose <code>isActive</code>, add it the same way Task 6 added it to the parent dashboard (compute via <code>hasActiveSubscription</code> in the user-overview usecase) and surface it in the overview DTO. Keep this within this task.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Verify build</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run build -w web</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/dashboard web/src/features/userDetail server/src/modules/users
+git commit -m &quot;feat(web): parent sees inactive child identity+renew, not stats/achievements; certificates/reports remain&quot;</code></pre></div></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-4-—-verification" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>PHASE 4 — Verification</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Task 12: End-to-end verification + cleanup</h3><div class="content-block"><p><strong>Files:</strong> none (verification only).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Backend boots + module imports</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run dev -w server</code>, GET <code>/api/v1/health</code> → 200. Stop the server.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Backend tests green</strong></li></ul></div><div class="content-block"><p>Run: <code>npm test -w server</code> → all PASS (or the targeted suites added: subscriptionAccess, point/reward/badge/game/dashboard/auth usecases).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Frontend build</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run build -w web</code> → exit 0.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Manual smoke (if a seeded DB is available)</strong></li></ul></div><div class="content-block"><p>Per the testing skill, verify by behavior:</p></div><div class="content-block"><ul><li>Inactive student: <code>/dashboard/leaderboard</code> and <code>/dashboard/badges</code> show the gentle student lock (no redirect); game cards show locks; the free game still plays; opening a locked game shows the student lock.</li><li>Active student: everything works as before.</li><li>Parent with one active + one inactive child: active child shows full stats; inactive child shows identity + subscription status + renew CTA, no stats/achievements; certificates + old reports still visible; child-detail overview/badges/games tabs locked, certificates/reports open.</li><li>Admin: unaffected everywhere.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Final commit / branch wrap</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add -A
+git commit -m &quot;chore: subscription gating verification notes&quot; --allow-empty</code></pre></div></div><div class="content-block"><p>Then use <code>superpowers:finishing-a-development-branch</code> to open a PR / merge.</p></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="self-review-completed-by-plan-author" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Self-Review (completed by plan author)</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>Spec coverage:</strong> leaderboard (Task 3), badges/awards (Task 4, 9), play blocked + list visible (Task 5, 10), free game exempt (Task 5, 10), parent hides stats/achievements only, keeps certificates/reports (Task 6, 11), no-redirect reason (Task 8 <code>dontRedirect</code> + locked states), student gentle vs parent actionable (Task 8), admin bypass (every backend gate is role-guarded), per-child scope (Task 4, 6, 11), capability surfacing (Task 5, 6, 7). All covered.</li><li><strong>Placeholders:</strong> the few &quot;read the file first&quot; frontend edits (Tasks 9 step 3, 11) are unavoidable for files not quoted here; each gives the exact gate condition, the capability field to read, and the component to render — not &quot;implement later&quot;.</li><li><strong>Type/name consistency:</strong> <code>hasActiveSubscription</code> / <code>assertActiveForStudent</code> / <code>filterActiveStudentIds</code> used identically across tasks; <code>locked</code> (games) and <code>isActive</code> (children) consistent backend→frontend; <code>SUBSCRIPTION_INACTIVE</code> consistent.</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"file-structure","title":"File Structure"},{"id":"phase-1-—-backend-foundation","title":"PHASE 1 — Backend foundation"},{"id":"phase-2-—-backend-enforcement","title":"PHASE 2 — Backend enforcement"},{"id":"phase-3-—-frontend","title":"PHASE 3 — Frontend"},{"id":"phase-4-—-verification","title":"PHASE 4 — Verification"},{"id":"self-review-completed-by-plan-author","title":"Self-Review (completed by plan author)"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

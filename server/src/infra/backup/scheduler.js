@@ -12,7 +12,8 @@
 import cron from "node-cron";
 import { BACKUP_TRIGGERS } from "@aya/shared";
 import { ENV } from "../../config/env.js";
-import { backupService, sweepStaleExternalTempDirs } from "./backupService.js";
+import { backupService } from "./backupService.js";
+import { sweepStaleExternalTempDirs } from "./fsUtils.js";
 
 // System user id for automatic operations (the seeded admin id=1). null is fine.
 const SYSTEM_USER_ID = 1;

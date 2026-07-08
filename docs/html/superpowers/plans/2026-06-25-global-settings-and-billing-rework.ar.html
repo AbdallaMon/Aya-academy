@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 25 Global Settings And Billing Rework</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 25 Global Settings And Billing Rework</h1>
+        <p class="lead">Global Constraints</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Plans</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges.ar.html">Admin Dashboard: Family Detail, Levels, Badges &amp; Points — Implementation Plan</a></li><li><a href="./2026-06-24-quran-progress-tracking.ar.html">Quran Progress Tracking + Lesson Next-Plan — Implementation Plan</a></li><li><a href="./2026-06-25-global-settings-and-billing-rework.ar.html" class="active">Global Settings &amp; Billing Rework — Implementation Plan</a></li><li><a href="./2026-06-27-register-family-wizard.ar.html">Family Registration Wizard — Implementation Plan</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow.ar.html">Subscription Renewal &amp; Invoice Flow — Implementation Plan</a></li><li><a href="./2026-06-29-subscription-gating.ar.html">Subscription Gating Implementation Plan</a></li><li><a href="./2026-07-05-interactive-whiteboard.ar.html">Interactive Whiteboard Implementation Plan</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Plans</a><span class="crumb-sep">›</span><span class="crumb current">Global Settings &amp; Billing Rework — Implementation Plan</span></nav>
+          <section class="doc-hero">
+            <h2>Global Settings &amp; Billing Rework — Implementation Plan</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>For agentic workers:</strong> phase-level plan. Each phase ends with a verifiable deliverable (lint/build/prisma validate + manual check). Steps use checkbox (<code>- [ ]</code>) syntax.</p></div><div class="content-block"><p><strong>Goal:</strong> Introduce a global app-settings singleton (hourly rate + single currency), reprice plans off the global hourly rate, unify currency everywhere, simplify the invoice (no free hours; logo auto; header bg+text colors; show coupon discount), and link a coupon to a subscription with a &quot;generate invoice&quot; action.</p></div><div class="content-block"><p><strong>Architecture:</strong> Mirror the existing singleton <code>PaymentTemplate</code> module for a new <code>AppSetting</code> singleton. Pricing becomes a pure function of <code>plan.hours × settings.hourlyRate</code>. Currency is read once from settings and threaded through formatters. Invoice/plan/subscription UIs read settings via a small client hook/provider.</p></div><div class="content-block"><p><strong>Tech Stack:</strong> Express + Prisma (MySQL) backend (layered route→controller→usecase→repo→validation→dto); Next.js App Router + MUI + react-hook-form frontend; <code>@aya/shared</code> for permission/message codes.</p></div><div class="content-block"><ul><li>Hourly rate default = <strong>8</strong>, currency default = <strong>USD</strong>.</li><li>One currency for the whole system (no per-plan / per-subscription currency selection).</li><li>Plan stores <strong>hours only</strong> (+ title/desc/active/featured/sortOrder). Price = <code>hours × settings.hourlyRate</code> (monthly); yearly = monthly × 12.</li><li>No &quot;free hours&quot; anywhere.</li><li>Backend message codes are language-neutral CODES with ar+en localization on the web.</li><li>No TypeScript in app source. Prisma only in repos.</li></ul></div><div class="content-block"><hr /></div></div>
+
+          
+    <section class="doc-section" id="decisions-confirmed-with-user" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Decisions (confirmed with user)</h2>
+        </div>
+        <div class="content-block"><ul><li>Plan pricing: <strong>hours only</strong>, computed from global hourly rate.</li><li>Currency: <strong>single global currency</strong>.</li><li>Invoice: remove free hours; rely on <strong>discount</strong> (coupon) display; previous balance stays admin-entered.</li><li>Coupon can be <strong>linked to a subscription</strong> at creation; invoice shows the discount.</li><li>Subscription has a <strong>Generate Invoice</strong> button; generating before activation is allowed/preferred (already supported by the endpoint).</li></ul></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-1-—-global-settings-foundation-keystone" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Phase 1 — Global Settings foundation (KEYSTONE)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>packages/db/prisma/schema.prisma</code> → <code>model AppSetting</code> (singleton)</li><li>Create: migration via <code>prisma migrate dev</code></li><li>Modify: <code>packages/shared/constants/permissions.js</code> (add <code>SETTINGS_PERMISSIONS</code>, register in <code>PERMISSIONS</code>)</li><li>Create: <code>packages/shared/messages-codes/settings.js</code>; Modify: <code>messages-codes/index.js</code>, <code>messages-names.js</code></li><li>Create: <code>packages/shared/constants/settings.js</code> (DEFAULT<em>APP</em>SETTINGS, CURRENCY list reuse)</li><li>Create: <code>Server/src/modules/settings/{settings.route,settings.controller,settings.usecase,settings.repo,settings.dto,settings.validation,settings.messages}.js</code></li><li>Modify: <code>Server/src/routes.js</code> (mount <code>/settings</code>)</li><li>Create: <code>web/src/app/[lng]/dashboard/settings/page.jsx</code></li><li>Create: <code>web/src/features/settings/{pages/SettingsPage.jsx,config/settingsText.js,config/constant.js,hooks/useAppSettings.js}</code></li><li>Modify: <code>web/src/features/dashboard/config/navModel.js</code> (add Settings tab) + nav labels</li></ul></div><div class="content-block"><p><strong>Model:</strong></p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="prisma"><code>model AppSetting {
+  id          Int      @id @default(autoincrement())
+  hourlyRate  Decimal  @default(8) @db.Decimal(10, 2)
+  currency    String   @default(&quot;USD&quot;)
+  updatedById Int?
+  updatedBy   User?    @relation(&quot;AppSettingUpdatedBy&quot;, fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}</code></pre></div></div><div class="content-block"><p>(+ back-relation on User: <code>appSettingUpdates AppSetting[] @relation(&quot;AppSettingUpdatedBy&quot;)</code>)</p></div><div class="content-block"><ul><li>[ ] Add model + User back-relation; <code>npx prisma migrate dev -n app_settings</code></li><li>[ ] shared: <code>SETTINGS_PERMISSIONS = { VIEW: &quot;settings.view&quot;, MANAGE: &quot;settings.manage&quot; }</code>, register</li><li>[ ] shared: settings message codes (<code>SETTINGS<em>UPDATED</code>) + names + DEFAULT</em>APP_SETTINGS</li><li>[ ] backend module mirroring paymentTemplates singleton (get auto-creates default; put updates). Routes: <code>GET /</code> (VIEW), <code>PUT /</code> (MANAGE)</li><li>[ ] mount in routes.js</li><li>[ ] frontend: <code>useAppSettings</code> hook (GET /settings, cached), SettingsPage form (hourlyRate number + currency select), nav tab &quot;الإعدادات/Settings&quot;</li><li>[ ] Verify: <code>prisma validate</code>, server boots, <code>GET/PUT /settings</code> work, tab renders</li></ul></div><div class="content-block"><p><strong>Deliverable:</strong> Admin can view/edit global hourly rate + currency.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-2-—-currency-unification" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Phase 2 — Currency unification</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong> <code>web/src/features/invoices/config/constant.js</code> (<code>formatMoney</code>), <code>web/src/features/plans/config/constant.js</code> (<code>formatGBP</code>→<code>formatMoney</code>), any <code>Intl...GBP</code> hardcodes; backend invoice/subscription/plan usecases that snapshot currency.</p></div><div class="content-block"><ul><li>[ ] Replace hardcoded <code>GBP</code> formatters with a currency-param formatter; feed currency from <code>useAppSettings</code></li><li>[ ] Remove per-plan currency column/display</li><li>[ ] Backend: invoice/subscription read currency from settings at generate time</li><li>[ ] Verify: amounts render with the configured currency symbol (USD → <code>$</code>)</li></ul></div><div class="content-block"><p><strong>Deliverable:</strong> Changing the settings currency changes it everywhere; USD shows correctly.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-3-—-plan-repricing" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Phase 3 — Plan repricing</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong> <code>schema.prisma</code> (Plan), migration, <code>Server/src/shared/utility/pricing.js</code>, <code>Server/src/modules/plans/<em></code>, <code>web/src/features/plans/</em></code> (form, list, PlanPriceFields).</p></div><div class="content-block"><ul><li>[ ] Prisma: drop <code>hourlyRate</code>, <code>monthlyPrice</code>, <code>yearlyPrice</code>, <code>currency</code> from <code>Plan</code> (keep <code>hours</code>). Migrate.</li><li>[ ] <code>pricing.js</code>: <code>effectiveMonthlyPrice(plan, settings) = hours × settings.hourlyRate</code>; yearly ×12. Thread settings into callers (coupon/subscription/invoice).</li><li>[ ] plan validation/usecase/repo/dto: hours-only</li><li>[ ] plan form: hours + meta only; live price preview from settings hourly rate</li><li>[ ] Verify: plan list/cards show computed price; coupon discount applies to computed price</li></ul></div><div class="content-block"><p><strong>Deliverable:</strong> Plans store only hours; price derives from settings.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-4-—-invoice-simplification" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Phase 4 — Invoice simplification</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong> <code>schema.prisma</code> (Invoice: drop <code>freeHours</code>), migration, <code>packages/shared/constants/paymentTemplate.js</code> (theme <code>headerTextColor</code>, drop <code>showFreeHours</code>), invoice usecase/validation/dto, <code>web/src/features/invoices/components/{InvoiceDocument,InvoiceEditForm}.jsx</code>, <code>web/src/features/paymentTemplate/pages/PaymentTemplateSettingsPage.jsx</code>, <code>invoicesText.js</code>, <code>paymentTemplateText.js</code>.</p></div><div class="content-block"><ul><li>[ ] Remove <code>freeHours</code> from model + computeAmounts + form + preview + <code>showFreeHours</code></li><li>[ ] Logo: remove upload control; render app logo (<code>/logos/logo.png</code> via public) automatically</li><li>[ ] Theme: add <code>headerTextColor</code> (header band text); keep <code>headerColor</code> (bg), <code>accentColor</code>, <code>textColor</code></li><li>[ ] Invoice preview shows the <strong>discount</strong> (coupon) line from <code>configJson.discount</code></li><li>[ ] Verify: preview renders logo, header bg+text colors, discount; no free-hours anywhere</li></ul></div><div class="content-block"><p><strong>Deliverable:</strong> Simplified invoice with auto logo, header bg/text colors, discount line, no free hours.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phase-5-—-subscription-↔-coupon-generate-invoice-button" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Phase 5 — Subscription ↔ coupon + Generate Invoice button</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong> <code>Server/src/modules/subscriptions/<em></code> (already has <code>couponId</code>), subscription create validation/usecase, <code>web/src/features/subscriptions/</em></code> (create form: coupon code field; row action: Generate Invoice), invoice generate wiring.</p></div><div class="content-block"><ul><li>[ ] Subscription create/edit: optional coupon code → validate → link <code>couponId</code>; snapshot discount onto invoice config at generate time</li><li>[ ] Subscriptions list/detail: prominent <strong>Generate Invoice</strong> action (works before activation)</li><li>[ ] Verify: create subscription with coupon → generate invoice → discount shows</li></ul></div><div class="content-block"><p><strong>Deliverable:</strong> Coupon linked at subscription creation, invoice generated (pre-activation) showing the discount.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="verification-per-phase" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Verification per phase</h2>
+        </div>
+        <div class="content-block"><ul><li>Backend: <code>npx prisma validate</code>, server boots, hit endpoints.</li><li>Frontend: <code>npx eslint &lt;changed files&gt;</code>; manual render of the page.</li><li>Never claim done without running the check.</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"decisions-confirmed-with-user","title":"Decisions (confirmed with user)"},{"id":"phase-1-—-global-settings-foundation-keystone","title":"Phase 1 — Global Settings foundation (KEYSTONE)"},{"id":"phase-2-—-currency-unification","title":"Phase 2 — Currency unification"},{"id":"phase-3-—-plan-repricing","title":"Phase 3 — Plan repricing"},{"id":"phase-4-—-invoice-simplification","title":"Phase 4 — Invoice simplification"},{"id":"phase-5-—-subscription-↔-coupon-generate-invoice-button","title":"Phase 5 — Subscription ↔ coupon + Generate Invoice button"},{"id":"verification-per-phase","title":"Verification per phase"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

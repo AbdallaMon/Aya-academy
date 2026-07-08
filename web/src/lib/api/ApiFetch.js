@@ -16,6 +16,8 @@
 import { authMessagesCodes, generalMessagesCodes } from '@aya/shared';
 import { config } from '../../config/config.js';
 import { EXCLUDED_FROM_ERROR_REDIRECT } from '../../utils/constant.js';
+import { buildUrl, buildPaginatedPath } from './urlBuilder.js';
+import { buildHeaders, serializeBody } from './headers.js';
 
 const MUTATION_BODY_METHODS = ['POST', 'PUT', 'PATCH'];
 
@@ -31,59 +33,19 @@ class ApiFetch {
   }
 
   _buildUrl(path) {
-    return `${this.baseUrl}/${String(path).replace(/^\//, '')}`;
+    return buildUrl(this.baseUrl, path);
   }
 
   _buildHeaders(isFileUpload, customHeader, isMultipart) {
-    if (customHeader) return { ...customHeader };
-    if (isFileUpload || isMultipart) return {};
-    return { 'Content-Type': 'application/json' };
+    return buildHeaders(isFileUpload, customHeader, isMultipart);
   }
 
   _serializeBody(body, isFileUpload, isMultipart) {
-    if (body === undefined || body === null) return undefined;
-    return isFileUpload || isMultipart ? body : JSON.stringify(body);
+    return serializeBody(body, isFileUpload, isMultipart);
   }
 
-  // Build a query string for paginated GET requests. Scalars are encoded
-  // directly; arrays repeat the key; plain objects (e.g. a dateRange) are
-  // JSON-serialized so the backend can parse them.
-  _buildPaginatedPath(
-    url,
-    { page, limit, search = '', sort = '', others, ...filters }
-  ) {
-    let queryPrefix = '?';
-    if (url.endsWith('&')) queryPrefix = '';
-    else if (url.includes('?')) queryPrefix = '&';
-
-    const parts = [
-      `page=${page}`,
-      `limit=${limit}`,
-      `search=${encodeURIComponent(search ?? '')}`,
-      `sort=${encodeURIComponent(JSON.stringify(sort ?? ''))}`,
-    ];
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === '') return;
-      if (Array.isArray(value)) {
-        value.forEach((val) => {
-          parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
-        });
-        return;
-      }
-      if (typeof value === 'object') {
-        const serialized = JSON.stringify(value);
-        if (serialized === '{}' || serialized === 'null') return;
-        parts.push(
-          `${encodeURIComponent(key)}=${encodeURIComponent(serialized)}`
-        );
-        return;
-      }
-      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
-    });
-
-    if (others) parts.push(others);
-    return `${url}${queryPrefix}${parts.join('&')}`;
+  _buildPaginatedPath(url, params) {
+    return buildPaginatedPath(url, params);
   }
 
   async _refreshToken() {

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Documentation</title>
+    <link rel="stylesheet" href="./shared.css" />
+    <style>
+      .doc-grid {
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 18px;
+      }
+      .doc-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-soft);
+        padding: 22px 22px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .doc-card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.3;
+      }
+      .doc-card-desc {
+        font-size: 0.84rem;
+        color: var(--muted);
+        line-height: 1.55;
+        flex: 1;
+      }
+      .doc-card-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .doc-card-actions a {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 9px 12px;
+        border-radius: 12px;
+        font-size: 0.83rem;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .btn-en {
+        background: var(--primary-soft);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        color: var(--primary);
+      }
+      @media (max-width: 600px) {
+        .doc-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div>
+          <p class="eyebrow">Cases Digital Assets Management</p>
+          <h1>Project Documentation</h1>
+          <p class="lead">Choose a phase to browse generated documentation.</p>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:16px;flex-wrap:wrap">
+            <button class="primary-btn" id="buildBtn" type="button">Rebuild Docs</button>
+            <span id="buildStatus" style="font-size:0.85rem;color:var(--muted)"></span>
+          </div>
+        </div>
+      </header>
+      <main class="doc-grid">
+        
+      <article class="doc-card">
+        <div class="doc-card-title">Superpowers</div>
+        <p class="doc-card-desc">16 document(s) • Arabic</p>
+        <div class="doc-card-actions">
+          <a class="btn-en" href="./superpowers/index.html">Open Phase</a>
+        </div>
+      </article>
+      </main>
+    </div>
+    <script>
+      (function () {
+        var btn = document.getElementById("buildBtn");
+        var status = document.getElementById("buildStatus");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          btn.disabled = true;
+          if (status) status.textContent = "Building...";
+          fetch("/api/build-docs", { method: "POST" })
+            .then(function (r) { return r.json(); })
+            .then(function (payload) {
+              if (status) status.textContent = payload.message || "Done. Reloading...";
+              setTimeout(function () { window.location.reload(); }, 600);
+            })
+            .catch(function () {
+              if (status) status.textContent = "Build failed. Is the server running? (npm run docs:serve)";
+              btn.disabled = false;
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>

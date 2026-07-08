@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 24 Quran Progress Tracking Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 24 Quran Progress Tracking Design</h1>
+        <p class="lead">Goal</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html" class="active">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align aya-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Quran Progress Tracking + Lesson Next-Plan — Design</span></nav>
+          <section class="doc-hero">
+            <h2>Quran Progress Tracking + Lesson Next-Plan — Design</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>Date:</strong> 2026-06-24 <strong>Status:</strong> Approved (design), pending implementation plan</p></div><div class="content-block"><p>Track each student&#39;s memorization progress through the Quran (30 juz&#39;, 114 surahs) and let the teacher (ADMIN) plan what each student works on next, attached to a lesson (<code>LessonSession</code> = الحصة).</p></div><div class="content-block"><p>Two surfaces:</p></div><div class="content-block"><ol><li><strong>Progress</strong> — the teacher opens a juz&#39;, checks the surah-portions the student</li></ol></div><div class="content-block"><p>completed; the dashboard shows only touched juz&#39;, the current surah/ayah, and per-juz&#39; + overall percentages.</p></div><div class="content-block"><ol><li><strong>Next-plan</strong> — when creating/editing a lesson, the teacher sets what&#39;s due next</li></ol></div><div class="content-block"><p>time: memorization (حفظ) surahs/ayahs, review (مراجعة) surahs/ayahs, and/or a free-text homework note. All optional, but at least one required.</p></div></div>
+
+          
+    <section class="doc-section" id="key-modeling-decision" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Key modeling decision</h2>
+        </div>
+        <div class="content-block"><p>Surahs do <strong>not</strong> align to juz&#39; boundaries — one surah can span multiple juz&#39; (Al-Baqarah → juz 1, 2, 3) and one juz&#39; contains portions of several surahs. We use <strong>accurate segmentation</strong>: the unit of completion is a <em>segment</em> (the portion of one surah inside one juz&#39;, as an ayah range).</p></div><div class="content-block"><p>Progress per juz&#39; = completed segments ÷ total segments in that juz&#39;.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="data-model-prisma-—-packagesdbprismaschemaprisma" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Data model (Prisma — <code>packages/db/prisma/schema.prisma</code>)</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Reference data (seeded once, read-only at runtime)</h3><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>model QuranSurah {
+  id              Int            @id @default(autoincrement())
+  number          Int            @unique        // 1..114, also display order
+  nameAr          String
+  nameEn          String
+  ayahCount       Int
+  revelationPlace RevelationPlace
+  segments        QuranJuzSegment[]
+  assignments     LessonAssignment[]
+}
+
+model QuranJuz {
+  id       Int               @id @default(autoincrement())
+  number   Int               @unique            // 1..30
+  nameAr   String
+  nameEn   String
+  segments QuranJuzSegment[]
+}
+
+model QuranJuzSegment {
+  id       Int        @id @default(autoincrement())
+  juzId    Int
+  juz      QuranJuz   @relation(fields: [juzId], references: [id], onDelete: Cascade)
+  surahId  Int
+  surah    QuranSurah @relation(fields: [surahId], references: [id], onDelete: Cascade)
+  fromAyah Int
+  toAyah   Int
+  order    Int        @default(0)               // position of this segment within the juz&#39;
+  progress StudentSegmentProgress[]
+
+  @@unique([juzId, surahId])                     // a surah appears once per juz&#39;
+  @@index([juzId])
+  @@index([surahId])
+}</code></pre></div></div><div class="content-block"><p>~140 segment rows total (114 surahs + the times a surah crosses a juz&#39; boundary).</p></div></section><section class="subsection-card"><h3>Student progress</h3><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>model StudentSegmentProgress {
+  id          Int             @id @default(autoincrement())
+  studentId   Int
+  student     User            @relation(&quot;StudentQuranProgress&quot;, fields: [studentId], references: [id], onDelete: Cascade)
+  segmentId   Int
+  segment     QuranJuzSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  status      SegmentStatus                       // IN_PROGRESS | COMPLETED ; no row = NOT_STARTED
+  currentAyah Int?                                // optional ayah-level position within an in-progress segment
+  completedAt DateTime?
+  updatedById Int?
+  updatedBy   User?           @relation(&quot;SegmentProgressUpdatedBy&quot;, fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, segmentId])
+  @@index([studentId])
+}</code></pre></div></div><div class="content-block"><ul><li><strong>No row = NOT_STARTED.</strong> A row exists only once the teacher touches the segment.</li><li><strong>Current surah/ayah</strong> (the optional ayah-level detail) = the <code>IN_PROGRESS</code> segment<ul><li>its <code>currentAyah</code>.</li></ul></li><li><strong>Dashboard rule:</strong> only juz&#39; with ≥1 touched segment are shown; surahs ordered by</li></ul></div><div class="content-block"><p><code>segment.order</code>.</p></div></section><section class="subsection-card"><h3>Lesson next-plan</h3><div class="content-block"><p>Extend existing <code>LessonSession</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>  homework    String?           @db.Text     // free-text &quot;what&#39;s due next time&quot;
+  assignments LessonAssignment[]</code></pre></div></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>model LessonAssignment {
+  id        Int                  @id @default(autoincrement())
+  lessonId  Int
+  lesson    LessonSession        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  kind      LessonAssignmentKind                  // MEMORIZE | REVIEW
+  surahId   Int
+  surah     QuranSurah           @relation(fields: [surahId], references: [id])
+  fromAyah  Int?                                  // null + null toAyah = whole surah
+  toAyah    Int?
+  order     Int                  @default(0)
+  createdAt DateTime             @default(now())
+
+  @@index([lessonId])
+}</code></pre></div></div><div class="content-block"><ul><li>The plan is <strong>decoupled</strong> from progress (teacher updates progress separately).</li><li>Validation: when setting a lesson&#39;s plan, at least one of <code>{assignments, homework}</code></li></ul></div><div class="content-block"><p>must be present.</p></div></section><section class="subsection-card"><h3>New enums (mirror in `packages/shared/constants/enums.js`)</h3><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>enum RevelationPlace     { MAKKI  MADANI }
+enum SegmentStatus       { IN_PROGRESS  COMPLETED }
+enum LessonAssignmentKind { MEMORIZE  REVIEW }</code></pre></div></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="backend-serversrcmodules" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Backend (<code>Server/src/modules</code>)</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>New module `quran` (route → controller → usecase → repo → validation → dto → messages)</h3><div class="content-block"><ul><li><code>GET /quran/surahs</code> — all surahs (number, names, ayahCount, revelationPlace). Any authenticated user.</li><li><code>GET /quran/juz</code> — all juz&#39; with their segments (surah + ayah range, ordered). Any authenticated user.</li><li><code>GET /quran/progress/:studentId</code> — the student&#39;s full juz/segment tree with per-segment</li></ul></div><div class="content-block"><p>status, current position, and per-juz&#39; + overall percentages. <strong>Scoped:</strong> admin=all, parent=linked children, student=self (reuse <code>userRepo.isStudentOfParent</code> / self-check).</p></div><div class="content-block"><ul><li><code>PUT /quran/progress/:studentId/juz/:juzId</code> — <strong>admin-only</strong> (<code>PROGRESS_MANAGE</code>).</li></ul></div><div class="content-block"><p>Bulk upsert of the juz&#39;s segments for the student: each item <code>{ segmentId, status, currentAyah? }</code>; omitted segments left untouched, or an explicit clear flag to reset to NOT_STARTED. This is the &quot;open a juz&#39;, check the boxes&quot; action. Sets <code>completedAt</code>/<code>updatedById</code>. Audit-logged (<code>UPDATE</code>, entity <code>StudentSegmentProgress</code>).</p></div></section><section class="subsection-card"><h3>Extend `sessions` module</h3><div class="content-block"><ul><li><code>PUT /sessions/:id/plan</code> — <strong>admin-only</strong>. Replaces the lesson&#39;s <code>assignments[]</code> and</li></ul></div><div class="content-block"><p>sets <code>homework</code>. Validates ≥1 of {assignments, homework}; validates ayah ranges (<code>1 &lt;= fromAyah &lt;= toAyah &lt;= surah.ayahCount</code>). Multi-write transaction (delete old assignments + create new + update homework). Audit-logged.</p></div><div class="content-block"><ul><li>Session <code>GET</code> (<code>getById</code>) includes <code>assignments</code> (with surah) + <code>homework</code>.</li></ul></div></section><section class="subsection-card"><h3>Permissions (`packages/shared/constants/permissions.js`)</h3><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>QURAN_PERMISSIONS = {
+  READ:            &quot;quran.read&quot;,            // reference data
+  PROGRESS_VIEW:   &quot;quran.progress_view&quot;,   // read a student&#39;s progress (scoped)
+  PROGRESS_MANAGE: &quot;quran.progress_manage&quot;, // admin marks segments
+}</code></pre></div></div><div class="content-block"><ul><li>ADMIN: all (via <code>getAllPermissions()</code>).</li><li>PARENT &amp; STUDENT: <code>READ</code> + <code>PROGRESS_VIEW</code>.</li><li>The lesson plan uses the existing admin <code>session.edit</code> permission.</li></ul></div></section><section class="subsection-card"><h3>Message codes</h3><div class="content-block"><ul><li>New <code>packages/shared/messages-codes/quran.js</code> (<code>quranMessagesCodes</code>) + register in</li></ul></div><div class="content-block"><p>the messages-codes index and <code>messages-names.js</code>. Codes e.g. <code>STUDENT<em>NOT</em>FOUND</code>, <code>JUZ<em>NOT</em>FOUND</code>, <code>SEGMENT<em>NOT</em>IN<em>JUZ</code>, <code>INVALID</em>AYAH<em>RANGE</code>, <code>CANNOT</em>ACCESS_PROGRESS</code>.</p></div><div class="content-block"><ul><li>Sessions: add <code>PLAN<em>REQUIRED</code> (≥1 item), <code>INVALID</em>AYAH<em>RANGE</code>, <code>SURAH</em>NOT_FOUND</code> to</li></ul></div><div class="content-block"><p><code>session.messages.js</code> / <code>packages/shared/messages-codes/session.js</code>.</p></div><div class="content-block"><ul><li>Every code gets ar + en localization on the web side (per repo convention).</li></ul></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="frontend-web" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Frontend (<code>web</code>)</h2>
+        </div>
+        <div class="content-block"><p>Follow the config-driven feature shape (<code>features/&lt;x&gt;</code> + <code>config/</code>, DataTable/useRequest, AppForm + RHF, <code>usePermission</code> gating, i18n).</p></div><div class="content-block"><ul><li><strong>Admin → student detail</strong>: a &quot;تقدم القرآن&quot; section. A button opens a juz&#39; picker;</li></ul></div><div class="content-block"><p>selecting a juz&#39; renders its surah-segments ordered, each with a completed / in-progress checkbox + optional current-ayah input. Save → <code>PUT /quran/progress/:studentId/juz/:juzId</code>.</p></div><div class="content-block"><ul><li><strong>Session create/edit modal</strong>: a &quot;خطة المرة الجاية&quot; section — multi-select surahs for</li></ul></div><div class="content-block"><p>حفظ (MEMORIZE), multi-select surahs for مراجعة (REVIEW) each with whole-surah or ayah-range, and a homework textarea. Client + server enforce ≥1. Submits to <code>PUT /sessions/:id/plan</code>.</p></div><div class="content-block"><ul><li><strong>Dashboard (student/parent + admin overview)</strong>: show only touched juz&#39;, ordered surahs,</li></ul></div><div class="content-block"><p>current surah/ayah, % per juz&#39; + overall, and the upcoming lesson&#39;s plan.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="seed-packagesdbprismaseedjs" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Seed (<code>packages/db/prisma/seed.js</code>)</h2>
+        </div>
+        <div class="content-block"><p>Add a <code>seedQuran()</code> step:</p></div><div class="content-block"><ol><li>Upsert 114 <code>QuranSurah</code> rows (number, nameAr, nameEn, ayahCount, revelationPlace) —</li></ol></div><div class="content-block"><p>canonical fixed data.</p></div><div class="content-block"><ol><li>Upsert 30 <code>QuranJuz</code> rows (number, nameAr, nameEn).</li><li>Upsert <code>QuranJuzSegment</code> rows from a verified juz&#39;-boundary table (juz&#39; number →</li></ol></div><div class="content-block"><p>ordered list of {surah number, fromAyah, toAyah}).</p></div><div class="content-block"><p>Idempotent upserts keyed on the unique fields so re-seeding is safe.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="decisions-defaults" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Decisions / defaults</h2>
+        </div>
+        <div class="content-block"><ul><li>The &quot;teacher&quot; who marks progress and sets plans = <strong>ADMIN</strong> (no separate teacher role).</li><li>Completion granularity = <strong>segment</strong> (a surah&#39;s portion within a juz&#39;).</li><li>Lesson plan references <strong>whole surahs + ayah ranges</strong>, independent of juz&#39; segmentation.</li><li>Plan and progress are decoupled (no auto-feedback from one to the other this round).</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="out-of-scope-this-round" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Out of scope (this round)</h2>
+        </div>
+        <div class="content-block"><ul><li>Auto-advancing progress from completed lesson plans.</li><li>Points/badges awarded on juz&#39; completion.</li><li>Editing Quran reference data at runtime (seed-only).</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"key-modeling-decision","title":"Key modeling decision"},{"id":"data-model-prisma-—-packagesdbprismaschemaprisma","title":"Data model (Prisma — `packages/db/prisma/schema.prisma`)"},{"id":"backend-serversrcmodules","title":"Backend (`Server/src/modules`)"},{"id":"frontend-web","title":"Frontend (`web`)"},{"id":"seed-packagesdbprismaseedjs","title":"Seed (`packages/db/prisma/seed.js`)"},{"id":"decisions-defaults","title":"Decisions / defaults"},{"id":"out-of-scope-this-round","title":"Out of scope (this round)"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

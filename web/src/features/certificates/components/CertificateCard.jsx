@@ -299,7 +299,11 @@ export default function CertificateCard({ certificate, printable = false }) {
         mx: "auto",
         aspectRatio: isPortrait ? "210 / 297" : "297 / 210",
         position: "relative",
-        borderRadius: 4,
+        // Printable/exported certs fill the A4 page edge-to-edge, so the outer
+        // radius would leave white corner triangles on colored backgrounds — the
+        // inner frame keeps its own radius, so the outer one is redundant. Keep it
+        // rounded only for the in-app (non-printable) previews.
+        borderRadius: printable ? 0 : 4,
         // Portrait keeps its own padding; landscape lets the auto-fitter own the
         // inset so scaled content can use the full inner box.
         p: isPortrait ? { xs: 1.5, sm: 2.5, md: 3 } : 0,

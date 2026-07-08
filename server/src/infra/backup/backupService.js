@@ -46,75 +46,24 @@ import { encryptionKeysRepo } from "../../modules/encryptionKeys/encryptionKeys.
 import { driveProvider } from "./providers/drive.js";
 import { s3BackupProvider } from "./providers/s3.js";
 import { localBackupProvider } from "./providers/local.js";
+import {
+  BACKUPS_DIR,
+  EXTERNAL_TMP_PREFIX,
+  ensureBackupsDir,
+  datedFileName,
+  safeUnlink,
+  safeRmDir,
+  sweepStaleExternalTempDirs,
+} from "./fsUtils.js";
 
 const TK = messagesNames.backupMessages;
 
-/** Local directory for .enc files (absolute or relative to server cwd). */
-export const BACKUPS_DIR = path.isAbsolute(ENV.backup.dir)
-  ? ENV.backup.dir
-  : path.resolve(process.cwd(), ENV.backup.dir);
-
 const DEFAULT_RETENTION = 200;
 const EXTERNAL_CHECK_TTL_MS = 5 * 60 * 1000; // 5 min — short check->commit window (decrypted text)
-const EXTERNAL_TMP_PREFIX = "aya-academy-external-"; // temp check dir prefix (for the sweep)
 
 /** The chosen provider (drive by default). */
 function backupProviderName() {
   return ENV.backup.provider || BACKUP_PROVIDERS.DRIVE;
-}
-
-function ensureBackupsDir() {
-  if (!fs.existsSync(BACKUPS_DIR)) fs.mkdirSync(BACKUPS_DIR, { recursive: true });
-}
-
-/** aya-academy-YYYY-MM-DD-HHmm.enc */
-function datedFileName(date = new Date()) {
-  const p = (n) => String(n).padStart(2, "0");
-  const stamp = `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}`;
-  return `aya-academy-${stamp}.enc`;
-}
-
-function safeUnlink(p) {
-  try {
-    if (p && fs.existsSync(p)) fs.unlinkSync(p);
-  } catch {
-    /* ignore temp delete errors */
-  }
-}
-
-/** Removes a whole temp dir (best-effort) — ensures the decrypted text goes with it. */
-function safeRmDir(dir) {
-  try {
-    if (dir && fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
-  } catch {
-    /* ignore temp dir delete errors */
-  }
-}
-
-/**
- * Sweeps leftover external-restore check dirs (decrypted DB text) left by a
- * previous crash. Called on boot (server/scheduler) — deletes any dir with the
- * prefix in os.tmpdir(). best-effort: does not throw. Exported for the boot point.
- */
-export function sweepStaleExternalTempDirs() {
-  const tmpRoot = os.tmpdir();
-  let entries = [];
-  try {
-    entries = fs.readdirSync(tmpRoot);
-  } catch {
-    return;
-  }
-  for (const name of entries) {
-    if (!name.startsWith(EXTERNAL_TMP_PREFIX)) continue;
-    const full = path.join(tmpRoot, name);
-    try {
-      const stat = fs.statSync(full);
-      if (stat.isDirectory()) safeRmDir(full);
-      else safeUnlink(full); // leftover from an older format (a .sql file directly)
-    } catch {
-      /* ignore */
-    }
-  }
 }
 
 class BackupService {
@@ -686,3 +635,5 @@ class BackupService {
 
 export const backupService = new BackupService();
 export { BackupService };
+// Re-exported for existing importers (public API preserved after the fs-helper split).
+export { BACKUPS_DIR, sweepStaleExternalTempDirs };
