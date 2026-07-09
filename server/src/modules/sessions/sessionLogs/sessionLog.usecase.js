@@ -12,6 +12,32 @@ import { sessionLogRepo } from "./sessionLog.repo.js";
 
 const SUBJECT_VALUES = Object.values(SESSION_SUBJECTS);
 
+/**
+ * Best-effort: recompute-and-store the open USAGE bill for the month a session
+ * belongs to. Swallows every error — billing sync must NEVER fail the session
+ * logging it hangs off of.
+ */
+async function syncUsageBill(studentId, sessionDate) {
+  try {
+    await subscriptionUsecase.recomputeOpenUsageSubscription({
+      studentId,
+      sessionDate,
+    });
+  } catch {
+    // swallow — billing sync must never fail session logging
+  }
+}
+
+/** True when two dates fall in the same UTC year+month (same billing bucket). */
+function sameUtcMonth(a, b) {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getUTCFullYear() === db.getUTCFullYear() &&
+    da.getUTCMonth() === db.getUTCMonth()
+  );
+}
+
 class SessionLogUsecase {
   /** Throws unless `authUser` may access the given session log (by its student). */
   async assertCanAccess(authUser, sessionLog) {
@@ -85,15 +111,8 @@ class SessionLogUsecase {
 
     const created = await sessionLogRepo.create({ data });
 
-    // Open the accumulating next-month USAGE subscription (best-effort).
-    try {
-      await subscriptionUsecase.ensureOpenUsageSubscription({
-        studentId: created.studentId,
-        sessionDate: created.sessionDate,
-      });
-    } catch {
-      // swallow — opening the accumulator must never fail session logging
-    }
+    // Recompute-and-store the accumulating next-month USAGE bill (best-effort).
+    await syncUsageBill(created.studentId, created.sessionDate);
 
     await this.notifyParents(created);
 
@@ -150,14 +169,33 @@ class SessionLogUsecase {
     if (input.attendance !== undefined) data.attendance = input.attendance;
     if (input.sessionDate !== undefined) data.sessionDate = input.sessionDate;
 
-    return sessionLogRepo.update({ id, data });
+    const updated = await sessionLogRepo.update({ id, data });
+
+    // Recompute-and-store the affected USAGE bill(s) (best-effort). Recompute-
+    // from-source, so recomputing both the old and the new consumption month is
+    // always safe. When the student or the month changed, sync BOTH buckets so
+    // the old month sheds the moved/changed hours and the new month gains them.
+    await syncUsageBill(existing.studentId, existing.sessionDate);
+    if (
+      updated.studentId !== existing.studentId ||
+      !sameUtcMonth(updated.sessionDate, existing.sessionDate)
+    ) {
+      await syncUsageBill(updated.studentId, updated.sessionDate);
+    }
+
+    return updated;
   }
 
   async remove({ id, authUser }) {
     const existing = await sessionLogRepo.findById({ id });
     if (!existing) throw notFound(sessionLogMessagesCodes.SESSION_LOG_NOT_FOUND);
     await this.assertCanAccess(authUser, existing);
-    return sessionLogRepo.deleteSessionLog({ id });
+
+    // Load-before-delete already done (existing) — delete, then recompute the
+    // removed session's month so the bill sheds its hours (best-effort).
+    const result = await sessionLogRepo.deleteSessionLog({ id });
+    await syncUsageBill(existing.studentId, existing.sessionDate);
+    return result;
   }
 }
 
