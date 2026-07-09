@@ -318,31 +318,63 @@ class SubscriptionUsecase {
   }
 
   /**
-   * Ensure an open (UPCOMING) USAGE subscription exists for the payment month
-   * (M+1) of a session dated in month M. Called best-effort when a session is
-   * logged. Hours are NOT written here — they are derived until month-close
-   * freeze. Idempotent: returns the existing open sub if present.
+   * STORED model (v2): recompute-from-source. On every session mutation, find (or
+   * create) the open UPCOMING USAGE subscription for the payment month (M+1) of a
+   * session dated in month M, recompute its hours from the ACTUAL session sum for
+   * the consumption month M, and STORE `subsHours`/`remainingHours`/`priceCharged`
+   * on it. Recompute-from-source means no deltas → no drift.
+   *
+   * Only ever touches a still-open (UPCOMING) sub: once month-close has frozen it
+   * (any other status) the number is settled, so a found non-UPCOMING sub is
+   * returned untouched. The price mirrors the freeze's stored-coupon logic — any
+   * coupon already attached to the open sub is applied to the hours-based base.
    */
-  async ensureOpenUsageSubscription({ studentId, sessionDate }) {
-    const paymentStart = firstOfNextMonth(new Date(sessionDate));
-    const existing = await subscriptionRepo.findOpenUsageSubscription({
+  async recomputeOpenUsageSubscription({ studentId, sessionDate }) {
+    const when = new Date(sessionDate);
+    const paymentStart = firstOfNextMonth(when);
+    const consumption = monthRange(when);
+    const settings = await settingsUsecase.getEffective();
+    const hourlyRate = Number(settings.hourlyRate);
+
+    const open = await subscriptionRepo.findOpenUsageSubscription({
       studentId,
       paymentStart,
     });
-    if (existing) return existing;
+    // Frozen/paid — never rewrite a settled number.
+    if (open && open.status !== SUBSCRIPTION_STATUSES.UPCOMING) return open;
 
-    const settings = await settingsUsecase.getEffective();
-    return subscriptionRepo.createSubscription({
-      origin: SUBSCRIPTION_ORIGINS.USAGE,
-      status: SUBSCRIPTION_STATUSES.UPCOMING,
-      billingPeriod: BILLING_PERIODS.MONTHLY,
-      startDate: paymentStart,
-      endDate: endOfMonth(paymentStart),
-      subsHours: null,
-      remainingHours: null,
-      priceCharged: null,
-      currency: settings.currency,
-      student: { connect: { id: studentId } },
+    const subsHours = await subscriptionRepo.sumUsageHoursForStudentMonth({
+      studentId,
+      gte: consumption.gte,
+      lt: consumption.lt,
+    });
+
+    // price = hours × rate, minus any coupon already attached to the open sub
+    // (same stored-coupon logic as the month-close freeze).
+    const base = priceFromHours(subsHours, hourlyRate);
+    const c = open?.coupon ?? null;
+    const priceCharged = c
+      ? roundMoney(applyDiscount(base, { type: c.type, value: Number(c.value) }))
+      : base;
+
+    if (!open) {
+      return subscriptionRepo.createSubscription({
+        origin: SUBSCRIPTION_ORIGINS.USAGE,
+        status: SUBSCRIPTION_STATUSES.UPCOMING,
+        billingPeriod: BILLING_PERIODS.MONTHLY,
+        startDate: paymentStart,
+        endDate: endOfMonth(paymentStart),
+        subsHours,
+        remainingHours: subsHours,
+        priceCharged,
+        currency: settings.currency,
+        student: { connect: { id: studentId } },
+      });
+    }
+    return subscriptionRepo.updateSubscription(open.id, {
+      subsHours,
+      remainingHours: subsHours,
+      priceCharged,
     });
   }
 
