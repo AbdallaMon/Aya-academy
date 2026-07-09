@@ -1,26 +1,8 @@
 // Declarative filter-bar config for the subscriptions list (the config/ folder is
 // the contract — no inline filterConfig in the page).
 //
-// buildSubscriptionsFilters({ txt }) returns the status enum filter, whose option
-// KEYS are the statuses the backend expects and VALUES are the localized labels.
-import { SUBSCRIPTION_STATUSES } from "./constant.js";
-
-export function buildSubscriptionsFilters({ txt }) {
-  return [
-    {
-      type: "enum",
-      key: "status",
-      label: txt.status,
-      options: SUBSCRIPTION_STATUSES.reduce(
-        (acc, s) => ({ ...acc, [s]: txt[s] }),
-        {},
-      ),
-    },
-    {
-      type: "enum",
-      key: "origin",
-      label: txt.origin,
-      options: { MANUAL: txt.originManual, USAGE: txt.originUsage },
-    },
-  ];
+// The status and origin filters were removed from the subscriptions list; the
+// function/exports stay in place so existing callers keep working.
+export function buildSubscriptionsFilters() {
+  return [];
 }
