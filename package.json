@@ -22,6 +22,7 @@
     "db:migrate:reset": "npm run migrate:reset -w @aya/db",
     "db:studio": "npm run studio -w @aya/db",
     "db:seed": "npm run seed -w @aya/db",
+    "usage:bill": "node scripts/run-usage-billing.js",
     "docs:build": "node scripts/generate-docs-site.mjs",
     "docs:serve": "node scripts/docs-site-server.mjs"
   },
