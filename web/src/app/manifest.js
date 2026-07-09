@@ -13,7 +13,7 @@ export default function manifest() {
     name: BRAND[fallbackLng],
     short_name: BRAND[fallbackLng],
     description:
-      'رحلة مرحة وآمنة لتعليم الأطفال القرآن الكريم والأخلاق الجميلة.',
+      'تحفيظ القرآن والتجويد واللغة العربية والعلوم الشرعية أونلاين، للكبار والأطفال، مع معلّمين مؤهّلين.',
     start_url: `/${fallbackLng}`,
     scope: '/',
     display: 'standalone',
