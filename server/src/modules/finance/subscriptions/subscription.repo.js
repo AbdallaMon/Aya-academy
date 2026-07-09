@@ -190,6 +190,24 @@ class SubscriptionRepo {
     return new Map(rows.map((r) => [r.studentId, Number(r._sum.durationHours ?? 0)]));
   }
 
+  /**
+   * UNBILLED PRESENT session hours for ONE student in a month window. Same filter
+   * as sumUsageHoursByStudent but scoped to a single studentId and returning a
+   * plain number (0 when none) — used by the recompute-from-source hook.
+   */
+  async sumUsageHoursForStudentMonth({ studentId, gte, lt, client } = {}) {
+    const agg = await (client ?? prisma).sessionLog.aggregate({
+      where: {
+        studentId,
+        sessionDate: { gte, lt },
+        attendance: SESSION_ATTENDANCE.PRESENT,
+        billedSubscriptionId: null,
+      },
+      _sum: { durationHours: true },
+    });
+    return Number(agg._sum.durationHours ?? 0);
+  }
+
   /** The open (UPCOMING) USAGE subscription for a student's payment month, or null. */
   async findOpenUsageSubscription({ studentId, paymentStart, client } = {}) {
     const row = await (client ?? prisma).subscription.findFirst({
