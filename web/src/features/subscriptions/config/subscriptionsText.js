@@ -79,7 +79,16 @@ export const subscriptionsText = {
     liveHint: "بيتحدّث مع كل حصة",
     frozenHint: "اتجمّد — جاهز للفاتورة",
     usageManagedHint: "بيتحسب تلقائياً من الحصص، ويتقفل آخر الشهر",
+    currentTitle: "الاشتراك الحالي",
     noCurrent: "لا يوجد اشتراك حالي",
+    noNext: "لا توجد فاتورة قادمة",
+    paid: "مدفوعة",
+    unpaid: "غير مدفوعة",
+    viewStudent: "عرض الطالب",
+    // month-only create dialog
+    month: "الشهر",
+    monthHint: "هيتم إنشاء اشتراك حسب الحصص لهذا الشهر، والساعات بتتحسب تلقائياً.",
+    subscriptionExists: "يوجد اشتراك حسب الحصص لهذا الشهر بالفعل.",
     viewAll: "كل الاشتراكات",
   },
   en: {
@@ -156,7 +165,16 @@ export const subscriptionsText = {
     liveHint: "Updates with every session",
     frozenHint: "Frozen — ready to invoice",
     usageManagedHint: "Auto-computed from sessions; closes at month end",
+    currentTitle: "Current subscription",
     noCurrent: "No current subscription",
+    noNext: "No upcoming bill",
+    paid: "Paid",
+    unpaid: "Unpaid",
+    viewStudent: "View student",
+    // month-only create dialog
+    month: "Month",
+    monthHint: "A usage subscription is created for this month; hours are computed automatically from sessions.",
+    subscriptionExists: "A usage subscription for this month already exists.",
     viewAll: "All subscriptions",
   },
 };
