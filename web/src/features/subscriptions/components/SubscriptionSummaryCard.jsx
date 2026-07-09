@@ -6,12 +6,16 @@ import {
   Card,
   CardContent,
   Chip,
-  Divider,
   Link as MuiLink,
   Stack,
   Typography,
 } from "@mui/material";
-import { MdOpenInNew } from "react-icons/md";
+import { alpha } from "@mui/material/styles";
+import {
+  MdOpenInNew,
+  MdOutlineInbox,
+  MdOutlineReceiptLong,
+} from "react-icons/md";
 import SubscriptionStatusChip from "../../../shared/components/SubscriptionStatusChip.jsx";
 import { localePath } from "../../../i18n/routing.js";
 import { formatMoney, formatHours } from "../../../shared/lib/money.js";
@@ -27,6 +31,11 @@ function formatDate(value) {
  * NEXT (open, accumulating USAGE) bill shown side by side. Both `current` and
  * `next` may be null — a student may have only one, or neither.
  *
+ * Each slot carries its own compact ⋮ overflow menu (SubscriptionActions in
+ * "menu" variant) in its header, so the card body stays clean. The NEXT slot is
+ * visually flagged as accumulating (dashed, info-tinted) and both empty states
+ * are soft, non-alarming placeholders.
+ *
  * Hours/price are read straight off the stored subscription (v2 stored model):
  * `sub.subsHours` / `sub.priceCharged` — no usage-preview fetch. The next bill's
  * hours grow as sessions are logged (the backend recomputes + stores them).
@@ -38,7 +47,7 @@ function formatDate(value) {
  * @param {object}   props.txt          useSubscriptionsText() result
  * @param {string}   props.lng          active locale
  * @param {Function=} props.onChanged   refetch callback fired after an action
- * @param {boolean=} props.showActions  render the per-sub action bar (default true)
+ * @param {boolean=} props.showActions  render the per-sub ⋮ menu (default true)
  * @param {boolean=} props.detailed     surface origin chip + period dates (default false)
  * @param {boolean=} props.hideHeader   hide the student-name header (default false)
  */
@@ -53,7 +62,7 @@ export default function SubscriptionSummaryCard({
   detailed = false,
   hideHeader = false,
 }) {
-  // The embedded action bar (SubscriptionActions) speaks the subscription-DETAIL
+  // The embedded action menu (SubscriptionActions) speaks the subscription-DETAIL
   // text namespace, not this card's list-text — resolve it here so callers keep
   // passing the list `txt` for the card's own labels.
   const actionsTxt = useSubscriptionDetailText();
@@ -68,18 +77,25 @@ export default function SubscriptionSummaryCard({
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        borderRadius: 2,
         transition: "box-shadow .2s ease, transform .2s ease",
         "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
       }}
     >
-      <CardContent sx={{ flex: 1 }}>
+      <CardContent
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+        }}
+      >
         {/* Header: student → their detail page */}
         {!hideHeader && (
           <Stack
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            sx={{ mb: 1.5 }}
             spacing={1}
           >
             {student?.id ? (
@@ -106,7 +122,7 @@ export default function SubscriptionSummaryCard({
               )}
               underline="hover"
               variant="caption"
-              sx={{ whiteSpace: "nowrap" }}
+              sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
             >
               {txt.viewAll}
             </MuiLink>
@@ -115,13 +131,15 @@ export default function SubscriptionSummaryCard({
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          divider={<Divider orientation="vertical" flexItem />}
+          spacing={1.5}
+          alignItems="stretch"
+          sx={{ flex: 1 }}
         >
           <SubSlot
             title={txt.currentTitle}
             sub={current}
-            emptyLabel={txt.noCurrent}
+            emptyHint={txt.noCurrentHint || txt.noCurrent}
+            emptyIcon={<MdOutlineInbox size={26} />}
             txt={txt}
             actionsTxt={actionsTxt}
             lng={lng}
@@ -133,7 +151,8 @@ export default function SubscriptionSummaryCard({
           <SubSlot
             title={txt.accumulatingTitle}
             sub={next}
-            emptyLabel={txt.noNext}
+            emptyHint={txt.noNextHint || txt.noNext}
+            emptyIcon={<MdOutlineReceiptLong size={26} />}
             txt={txt}
             actionsTxt={actionsTxt}
             lng={lng}
@@ -148,11 +167,12 @@ export default function SubscriptionSummaryCard({
   );
 }
 
-/** One column of the combined card — current or next. */
+/** One column/section of the combined card — current or next. */
 function SubSlot({
   title,
   sub,
-  emptyLabel,
+  emptyHint,
+  emptyIcon,
   txt,
   actionsTxt,
   lng,
@@ -161,20 +181,69 @@ function SubSlot({
   detailed,
   onChanged,
 }) {
+  const isNext = variant === "next";
+
   return (
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Typography
-        variant="overline"
-        color={variant === "next" ? "info.main" : "text.secondary"}
-        sx={{ display: "block", lineHeight: 1.4 }}
+    <Box
+      sx={(theme) => ({
+        flex: 1,
+        minWidth: 0,
+        p: 1.5,
+        borderRadius: 2,
+        border: "1px solid",
+        borderStyle: isNext ? "dashed" : "solid",
+        borderColor: isNext
+          ? alpha(theme.palette.info.main, 0.4)
+          : theme.palette.divider,
+        bgcolor: isNext
+          ? alpha(theme.palette.info.main, 0.05)
+          : "transparent",
+        display: "flex",
+        flexDirection: "column",
+      })}
+    >
+      {/* Slot header: section label + the compact ⋮ menu (kept top-of-slot so the
+          body below stays clean). The menu only renders when a sub exists. */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={1}
+        sx={{ minHeight: 32 }}
       >
-        {title}
-      </Typography>
+        <Typography
+          variant="overline"
+          color={isNext ? "info.main" : "text.secondary"}
+          sx={{ lineHeight: 1.3, fontWeight: 700 }}
+          noWrap
+        >
+          {title}
+        </Typography>
+        {sub && showActions ? (
+          <Box sx={{ flexShrink: 0 }}>
+            <SubscriptionActions
+              variant="menu"
+              subscription={sub}
+              invoice={sub.invoice}
+              txt={actionsTxt}
+              onChanged={onChanged}
+            />
+          </Box>
+        ) : null}
+      </Stack>
 
       {!sub ? (
-        <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
-          {emptyLabel}
-        </Typography>
+        <Stack
+          alignItems="center"
+          justifyContent="center"
+          spacing={0.75}
+          sx={{ flex: 1, py: 2, textAlign: "center", color: "text.disabled" }}
+        >
+          {emptyIcon}
+          <Typography variant="caption" color="text.secondary">
+            {emptyHint}
+          </Typography>
+        </Stack>
       ) : (
         <Stack spacing={1} sx={{ mt: 0.5 }}>
           <Box>
@@ -226,8 +295,8 @@ function SubSlot({
               sx={{ alignSelf: "flex-start", height: 20, fontSize: "0.68rem" }}
             />
           ) : null}
-          {variant === "next" ? (
-            <Typography variant="caption" color="text.secondary">
+          {isNext ? (
+            <Typography variant="caption" color="info.main">
               {txt.liveHint}
             </Typography>
           ) : null}
@@ -242,17 +311,6 @@ function SubSlot({
             {txt.view}
             <MdOpenInNew size={13} />
           </MuiLink>
-
-          {showActions ? (
-            <Box sx={{ mt: 0.5 }}>
-              <SubscriptionActions
-                subscription={sub}
-                invoice={sub.invoice}
-                txt={actionsTxt}
-                onChanged={onChanged}
-              />
-            </Box>
-          ) : null}
         </Stack>
       )}
     </Box>
