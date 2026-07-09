@@ -1371,6 +1371,20 @@ class SubscriptionUsecase {
       });
     }
 
+    // 2b. Time guard: a subscription may only be activated once its month has
+    //     essentially arrived — from the LAST DAY of the preceding month onwards
+    //     (endOfMonth(previousMonth(startDate))). This blocks pre-activating the
+    //     next-month accumulating bill early; only the current/imminent
+    //     subscription is activatable.
+    const activationOpensAt = endOfMonth(previousMonth(existing.startDate));
+    if (new Date() < activationOpensAt) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.ACTIVATION_TOO_EARLY,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+
     // 3. Resolve the new status from the date window and persist.
     const status = this.resolveStatus(existing.startDate, existing.endDate);
     const updated = await subscriptionRepo.updateSubscription(id, { status });

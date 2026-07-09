@@ -398,7 +398,7 @@ class InvoiceUsecase {
     if (parents.length === 0) {
       throw new AppError({
         statusCode: 409,
-        code: invoiceMessagesCodes.INVOICE_SEND_FAILED,
+        code: invoiceMessagesCodes.NO_PARENT_LINKED,
         translationKey: messagesNames.invoiceMessages,
       });
     }

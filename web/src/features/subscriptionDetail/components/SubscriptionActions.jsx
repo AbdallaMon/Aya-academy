@@ -167,11 +167,21 @@ export default function SubscriptionActions({
   const subCancellable =
     status === "PENDING" || status === "UPCOMING" || status === "ACTIVE";
 
+  // Activation only opens once the sub's month is essentially here — from the
+  // LAST DAY of the preceding month onwards. `new Date(y, m, 0)` = last day of
+  // the month BEFORE the start month. Mirrors the backend time guard so the next
+  // month's accumulating bill can't be pre-activated early.
+  const startDate = subscription.startDate ? new Date(subscription.startDate) : null;
+  const activationOpensAt = startDate
+    ? new Date(startDate.getFullYear(), startDate.getMonth(), 0, 23, 59, 59)
+    : null;
+  const activationWindowOpen = !activationOpensAt || new Date() >= activationOpensAt;
+
   const enableRenew = subEnded;
   const enableChangePlan = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableCoupon = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableSend = !!invoice;
-  const enableActivate = subPendingOrUpcoming;
+  const enableActivate = subPendingOrUpcoming && activationWindowOpen;
   const enableMarkPaid = !!invoice && invoice.status === "UNPAID";
   const enableCancel = subCancellable;
   // Hours are editable on the CURRENT (pending/active) sub, but NOT while a USAGE
@@ -295,7 +305,10 @@ export default function SubscriptionActions({
       label: txt.activate,
       onClick: activateConfirm.open,
       enabled: enableActivate,
-      reason: txt.reasonActivate,
+      reason:
+        subPendingOrUpcoming && !activationWindowOpen
+          ? txt.reasonActivateTooEarly
+          : txt.reasonActivate,
       buttonVariant: "contained",
       color: "success",
     },

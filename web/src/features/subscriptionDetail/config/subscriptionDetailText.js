@@ -99,6 +99,8 @@ export const subscriptionDetailText = {
     reasonCoupon: "لا يمكن تعديل الكوبون بعد الدفع أو التفعيل",
     reasonSend: "لا توجد فاتورة لإرسالها",
     reasonActivate: "الاشتراك غير قابل للتفعيل في حالته الحالية",
+    reasonActivateTooEarly:
+      "لسه بدري — التفعيل يفتح من آخر الشهر السابق لبداية الاشتراك",
     reasonMarkPaid: "لا توجد فاتورة غير مدفوعة",
     reasonCancel: "لا يمكن إلغاء اشتراك منتهٍ أو ملغى بالفعل",
     // usage-based billing
@@ -210,6 +212,8 @@ export const subscriptionDetailText = {
     reasonCoupon: "The coupon can't be changed after payment or activation.",
     reasonSend: "There is no invoice to send.",
     reasonActivate: "The subscription can't be activated in its current state.",
+    reasonActivateTooEarly:
+      "Too early — activation opens from the last day of the month before the subscription starts.",
     reasonMarkPaid: "There is no unpaid invoice.",
     reasonCancel: "A subscription that's already expired or cancelled can't be cancelled.",
     // usage-based billing

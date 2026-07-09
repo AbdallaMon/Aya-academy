@@ -172,6 +172,8 @@ const ar = {
       'لا يمكن تغيير الخطة بعد دفع الفاتورة',
     [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS]:
       'يوجد اشتراك بالاستخدام لهذا الطالب في هذا الشهر بالفعل',
+    [subscriptionMessagesCodes.ACTIVATION_TOO_EARLY]:
+      'لا يمكن تفعيل الاشتراك قبل بداية شهره (يفتح التفعيل من آخر الشهر السابق)',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'انتهى الاشتراك أو غير مفعّل',
   },
@@ -342,6 +344,8 @@ const ar = {
       'لا يمكن تغيير حالة الفاتورة بهذا الشكل',
     [invoiceMessagesCodes.INVOICE_SENT]: 'تم إرسال الفاتورة',
     [invoiceMessagesCodes.INVOICE_SEND_FAILED]: 'فشل إرسال الفاتورة',
+    [invoiceMessagesCodes.NO_PARENT_LINKED]:
+      'فشل إرسال الفاتورة: لا يوجد ولي أمر مرتبط بالطالب',
     [invoiceMessagesCodes.CANNOT_SEND_INVOICE]: 'لا تملك صلاحية إرسال الفاتورة',
     [invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED]: 'إعدادات واتساب غير مكتملة',
   },
@@ -625,6 +629,8 @@ const en = {
       'Subscription activated',
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]:
       'Cannot change the plan after the invoice is paid',
+    [subscriptionMessagesCodes.ACTIVATION_TOO_EARLY]:
+      "Can't activate the subscription before its month begins (activation opens from the last day of the previous month)",
     [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS]:
       'A usage subscription already exists for this student in this month',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
@@ -791,6 +797,8 @@ const en = {
       "This invoice status change isn't allowed",
     [invoiceMessagesCodes.INVOICE_SENT]: 'Invoice sent',
     [invoiceMessagesCodes.INVOICE_SEND_FAILED]: 'Failed to send the invoice',
+    [invoiceMessagesCodes.NO_PARENT_LINKED]:
+      'Failed to send the invoice: the student has no linked parent',
     [invoiceMessagesCodes.CANNOT_SEND_INVOICE]:
       'You are not allowed to send this invoice',
     [invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED]:
