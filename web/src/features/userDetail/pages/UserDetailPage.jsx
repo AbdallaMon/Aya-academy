@@ -20,6 +20,7 @@ import CertificatesTab from "../components/CertificatesTab.jsx";
 import GamesTab from "../components/GamesTab.jsx";
 import EvaluationsTab from "../components/EvaluationsTab.jsx";
 import SubscriptionsPage from "../../subscriptions/pages/SubscriptionsPage.jsx";
+import StudentSubscriptionCard from "../../subscriptions/components/StudentSubscriptionCard.jsx";
 import ParentChildrenTab from "../components/ParentChildrenTab.jsx";
 import ProfileTab from "../components/ProfileTab.jsx";
 import AwardBadgeDialog from "../components/AwardBadgeDialog.jsx";
@@ -228,13 +229,21 @@ export default function UserDetailPage({ userId }) {
       case "subscriptions":
         // The user-scoped subscriptions tab IS the real subscriptions page,
         // filtered to this student — identical table + actions (approve / renew /
-        // invoice / request-payment …) for admin and parent alike.
+        // invoice / request-payment …) for admin and parent alike. Above it, the
+        // combined current + next card surfaces the live status, type and period
+        // at a glance with its own action bar.
         return (
-          <SubscriptionsPage
-            studentId={userId}
-            studentName={user.name}
-            embedded
-          />
+          <>
+            <StudentSubscriptionCard
+              studentId={userId}
+              onChanged={triggerRefetch}
+            />
+            <SubscriptionsPage
+              studentId={userId}
+              studentName={user.name}
+              embedded
+            />
+          </>
         );
       case "children":
         return <ParentChildrenTab overview={overview} txt={txt} canView={canView} />;
