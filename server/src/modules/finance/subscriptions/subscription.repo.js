@@ -1,6 +1,7 @@
 import { prisma } from "@aya/db/prisma.client.js";
 import {
   activeSubscriptionWhere,
+  SESSION_ATTENDANCE,
   SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
@@ -181,7 +182,7 @@ class SubscriptionRepo {
       by: ["studentId"],
       where: {
         sessionDate: { gte, lt },
-        attendance: "PRESENT",
+        attendance: SESSION_ATTENDANCE.PRESENT,
         billedSubscriptionId: null,
       },
       _sum: { durationHours: true },
@@ -228,7 +229,7 @@ class SubscriptionRepo {
       where: {
         studentId,
         sessionDate: { gte, lt },
-        attendance: "PRESENT",
+        attendance: SESSION_ATTENDANCE.PRESENT,
         billedSubscriptionId: null,
       },
       data: { billedSubscriptionId: subscriptionId },
