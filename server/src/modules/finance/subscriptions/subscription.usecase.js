@@ -260,16 +260,46 @@ class SubscriptionUsecase {
     return row;
   }
 
+  /**
+   * Subscriptions list — two shapes, both paginated `{ items, total, page,
+   * pageSize }` (V2-5):
+   *
+   *   • studentId provided (a student's page) → items are RAW subscription rows,
+   *     ALL of that student's subs newest-first. No latest-per-student collapse,
+   *     so the current (being paid) + next (accumulating) sub both surface.
+   *
+   *   • no studentId (global admin/parent list) → items are ONE summary per
+   *     student: `{ studentId, current, next }` where `current` is the active sub
+   *     and `next` is the open UPCOMING USAGE sub (either may be null). The card
+   *     grid renders current + next together.
+   */
   async list({ authUser, page, limit, studentId, status }) {
     const { skip, take, page: p, limit: l } = paginate({ page, limit });
-    // Where-building now lives in the repo (reference convention).
-    const { items, total } = await subscriptionRepo.listScoped({
+
+    if (studentId) {
+      // Student-scoped: all rows newest-first (bypasses the latest collapse).
+      const { items, total } = await subscriptionRepo.listScoped({
+        authUser,
+        filters: { studentId, status },
+        skip,
+        take,
+      });
+      const gated = items.map((row) => this.gateInvoiceForViewer(row, authUser));
+      return paginatedResult(gated, total, p, l);
+    }
+
+    // Global: one { studentId, current, next } summary per student.
+    const { items, total } = await subscriptionRepo.summariesByStudent({
       authUser,
-      filters: { studentId, status },
+      filters: { status },
       skip,
       take,
     });
-    const gated = items.map((row) => this.gateInvoiceForViewer(row, authUser));
+    const gated = items.map((s) => ({
+      studentId: s.studentId,
+      current: this.gateInvoiceForViewer(s.current, authUser),
+      next: this.gateInvoiceForViewer(s.next, authUser),
+    }));
     return paginatedResult(gated, total, p, l);
   }
 

@@ -36,11 +36,102 @@ class SubscriptionRepo {
     return where;
   }
 
-  // Scoped list — builds the where from (authUser, filters) then pages the
-  // latest-per-student query.
+  // Scoped list — builds the where from (authUser, filters). When a studentId is
+  // in scope (a student's page) it returns ALL that student's subs newest-first
+  // (no latest-per-student collapse, so current + next both surface, V2-5);
+  // otherwise it falls back to the latest-per-student view.
   async listScoped({ authUser, filters = {}, skip, take } = {}) {
     const where = await this.buildListWhere(authUser, filters);
+    if (filters.studentId) {
+      return this.listSubscriptionsForStudent({ where, skip, take });
+    }
     return this.listLatestPerStudent({ where, skip, take });
+  }
+
+  /**
+   * All subscriptions matching `where`, newest-first (startDate desc, then id
+   * desc for same-day ties). Same `{ items, total }` shape as listSubscriptions.
+   * Used by the student-scoped list so current + next both surface.
+   */
+  async listSubscriptionsForStudent({ where = {}, skip = 0, take = 20 } = {}) {
+    const [rows, total] = await Promise.all([
+      prisma.subscription.findMany({
+        where,
+        skip,
+        take,
+        orderBy: [{ startDate: "desc" }, { id: "desc" }],
+        select: subscriptionSelect,
+      }),
+      prisma.subscription.count({ where }),
+    ]);
+    return { items: rows.map(toSubscription), total };
+  }
+
+  /**
+   * One summary per student in scope: `{ studentId, current, next }` where
+   * `current` is the active sub (activeSubscriptionWhere) and `next` is the open
+   * UPCOMING USAGE sub — both full subscription rows or null. Mirrors the
+   * dashboard card's current+next idea, paginated by DISTINCT student.
+   *
+   * Pagination uses groupBy (DB-level LIMIT/OFFSET on MySQL, unlike
+   * findMany+distinct which post-processes) ordered newest-activity-first. The
+   * status filter narrows nothing here — current/next carry their own status
+   * semantics — so it is intentionally dropped from the student scope.
+   * Returns `{ items, total }` where total = distinct students in scope.
+   */
+  async summariesByStudent({ authUser, filters = {}, skip = 0, take = 20 } = {}) {
+    const where = await this.buildListWhere(authUser, filters);
+    const { status, ...scopeWhere } = where;
+
+    const [pageGroups, allGroups] = await Promise.all([
+      prisma.subscription.groupBy({
+        by: ["studentId"],
+        where: scopeWhere,
+        _max: { id: true },
+        orderBy: { _max: { id: "desc" } },
+        skip,
+        take,
+      }),
+      prisma.subscription.groupBy({ by: ["studentId"], where: scopeWhere }),
+    ]);
+
+    const total = allGroups.length;
+    const studentIds = pageGroups.map((g) => g.studentId);
+    if (!studentIds.length) return { items: [], total };
+
+    const now = new Date();
+    const [currents, nexts] = await Promise.all([
+      prisma.subscription.findMany({
+        where: { studentId: { in: studentIds }, ...activeSubscriptionWhere(now) },
+        orderBy: { endDate: "desc" },
+        select: subscriptionSelect,
+      }),
+      prisma.subscription.findMany({
+        where: {
+          studentId: { in: studentIds },
+          origin: SUBSCRIPTION_ORIGINS.USAGE,
+          status: SUBSCRIPTION_STATUSES.UPCOMING,
+        },
+        orderBy: { startDate: "desc" },
+        select: subscriptionSelect,
+      }),
+    ]);
+
+    // First row per student wins (both queries are ordered so the pick is stable).
+    const firstByStudent = (rows) => {
+      const m = new Map();
+      for (const r of rows) if (!m.has(r.studentId)) m.set(r.studentId, r);
+      return m;
+    };
+    const currentBy = firstByStudent(currents);
+    const nextBy = firstByStudent(nexts);
+
+    const items = studentIds.map((studentId) => ({
+      studentId,
+      current: toSubscription(currentBy.get(studentId) ?? null),
+      next: toSubscription(nextBy.get(studentId) ?? null),
+    }));
+    return { items, total };
   }
 
   async listSubscriptions(where, skip, take) {
