@@ -20,6 +20,21 @@ export function useBoardPersistence(sessionKey, opts = {}) {
   const imageMapRef = useRef({});
   const uploadingRef = useRef(new Set());
   const lastScene = useRef({ elements: [], appState: {} });
+  // Playful overlay layer (magnetic letters, emoji stickers, tree nodes/edges)
+  // and the chosen kid background — persisted alongside the Excalidraw scene in
+  // the same board-data blob so everything survives a refresh together. Seed the
+  // first render straight from localStorage (covers the offline / no-session
+  // path); the backend effect below overrides it once the server responds.
+  const [objects, setObjectsState] = useState(() => {
+    const s = typeof window !== "undefined" ? boardChannel.loadScene(sessionKey) : null;
+    return Array.isArray(s?.objects) ? s.objects : [];
+  });
+  const [background, setBackgroundState] = useState(() => {
+    const s = typeof window !== "undefined" ? boardChannel.loadScene(sessionKey) : null;
+    return s?.background ?? null;
+  });
+  const objectsRef = useRef(objects);
+  const backgroundRef = useRef(background);
   const [seedCount, setSeedCount] = useState(0);
   const loadingFromBackendRef = useRef(false);
   const hasSession = !!(sessionKey && sessionId) || token;
@@ -41,6 +56,15 @@ export function useBoardPersistence(sessionKey, opts = {}) {
         // Rebuild the imageMap from the backend payload.
         if (backendData.imageMap) {
           imageMapRef.current = { ...backendData.imageMap };
+        }
+        // Rehydrate the playful overlay layer + background.
+        if (Array.isArray(backendData.objects)) {
+          objectsRef.current = backendData.objects;
+          setObjectsState(backendData.objects);
+        }
+        if (backendData.background !== undefined) {
+          backgroundRef.current = backendData.background;
+          setBackgroundState(backendData.background);
         }
       }
       loadingFromBackendRef.current = false;
@@ -89,6 +113,9 @@ export function useBoardPersistence(sessionKey, opts = {}) {
       },
       imageMap: canUpload ? imageMapRef.current : undefined,
       files: canUpload ? undefined : files,
+      // Playful overlay layer + chosen background travel with the scene.
+      objects: objectsRef.current,
+      background: backgroundRef.current,
     };
     // localStorage — always fast
     boardChannel.saveScene(sessionKey, data);
@@ -97,6 +124,37 @@ export function useBoardPersistence(sessionKey, opts = {}) {
       boardChannel.saveToBackend(sessionId, data, setIsSaving, token);
     }
   }, [sessionKey, canUpload, sessionId, isLoadingTokenData, token]);
+
+  // Debounced persist trigger for overlay/background edits (mirrors onChange).
+  const schedulePersist = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(persistNow, 500);
+  }, [persistNow]);
+
+  // Public setters — accept a value or an updater, keep ref + state in sync, save.
+  const setObjects = useCallback(
+    (next) => {
+      setObjectsState((prev) => {
+        const value = typeof next === "function" ? next(prev) : next;
+        objectsRef.current = value;
+        return value;
+      });
+      schedulePersist();
+    },
+    [schedulePersist]
+  );
+
+  const setBackground = useCallback(
+    (next) => {
+      setBackgroundState((prev) => {
+        const value = typeof next === "function" ? next(prev) : next;
+        backgroundRef.current = value;
+        return value;
+      });
+      schedulePersist();
+    },
+    [schedulePersist]
+  );
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (!isSaving) return;
@@ -158,5 +216,13 @@ export function useBoardPersistence(sessionKey, opts = {}) {
     [canUpload, token, isLoadingTokenData]
   );
 
-  return { initialData, onChange, hydrate };
+  return {
+    initialData,
+    onChange,
+    hydrate,
+    objects,
+    setObjects,
+    background,
+    setBackground,
+  };
 }

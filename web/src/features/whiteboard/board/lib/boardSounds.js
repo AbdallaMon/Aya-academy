@@ -59,6 +59,51 @@ const MOTIFS = {
     tone(880, 0, 0.1, "square", 0.18);
     tone(1320, 0.03, 0.12, "sine", 0.12);
   },
+  // Soft magnet "clack" — a low thunk when a magnetic letter/tile snaps down.
+  magnet: () => {
+    tone(180, 0, 0.07, "square", 0.12);
+    tone(120, 0.02, 0.1, "sine", 0.16);
+  },
+  // A tiny bright "tick" when a letter is grabbed or placed.
+  letter: () => {
+    tone(1046, 0, 0.06, "triangle", 0.12);
+    tone(1568, 0.04, 0.07, "sine", 0.08);
+  },
+  // Dry metronome-like tick (timer countdown).
+  tick: () => tone(1200, 0, 0.04, "square", 0.08),
+  // Warm two-note "ding!" — timer finished / gentle chime.
+  ding: () => {
+    tone(1318, 0, 0.5, "sine", 0.16);
+    tone(1976, 0.12, 0.45, "sine", 0.08);
+  },
+  // Airy upward whoosh — mode on (spotlight/reveal).
+  whoosh: () => {
+    const a = ac();
+    if (!a) return;
+    for (let i = 0; i < 8; i += 1) {
+      tone(300 + i * 160, i * 0.018, 0.14, "sine", 0.05);
+    }
+  },
+  // Playful "boing" when a sticker/emoji lands on the board.
+  sticker: () => {
+    tone(660, 0, 0.09, "triangle", 0.14);
+    tone(990, 0.06, 0.12, "sine", 0.1);
+  },
+  // Descending spin whir — the name wheel turning.
+  spin: () => {
+    const a = ac();
+    if (!a) return;
+    for (let i = 0; i < 6; i += 1) {
+      tone(900 - i * 90, i * 0.05, 0.08, "square", 0.06);
+    }
+  },
+  // Triumphant "ta-daa!" — a quick rising run into a held major chord. The
+  // "someone won!" fanfare for the name wheel / a big success.
+  win: () => {
+    [523, 659, 784].forEach((f, i) => tone(f, i * 0.1, 0.16, "triangle", 0.14));
+    [784, 988, 1175].forEach((f) => tone(f, 0.32, 0.6, "triangle", 0.12));
+    tone(1568, 0.34, 0.45, "sine", 0.07);
+  },
   // Applause: many overlapping noise bursts with slight timing jitter.
   clap: () => {
     for (let i = 0; i < 12; i += 1) {
@@ -81,4 +126,11 @@ const MOTIFS = {
 
 export function playReactionSound(kind) {
   (MOTIFS[kind] || MOTIFS.cheer)();
+}
+
+// Generic entry point for the board tools (laser, timer, letters, wheel, …).
+// Unknown names are ignored silently so a tool can never crash the board.
+export function playBoardSound(name) {
+  const motif = MOTIFS[name];
+  if (motif) motif();
 }
