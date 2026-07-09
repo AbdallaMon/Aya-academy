@@ -52,12 +52,21 @@ export default function ParentChildrenTab({ overview, txt, canView }) {
                   <TableCell>{levelLabel(c.studentLevel, lng)}</TableCell>
                   <TableCell>{c.points ?? 0}</TableCell>
                   <TableCell>
-                    <Chip
-                      size="small"
-                      color={c.activeSubscription ? "success" : "default"}
-                      variant={c.activeSubscription ? "filled" : "outlined"}
-                      label={c.activeSubscription ? txt.subscribed : txt.notSubscribed}
-                    />
+                    {(() => {
+                      // Multi-sub aware: subscribed when any subscription is
+                      // ACTIVE; falls back to the legacy single-sub field.
+                      const subscribed = c.subscriptions
+                        ? c.subscriptions.some((s) => s.status === "ACTIVE")
+                        : Boolean(c.activeSubscription);
+                      return (
+                        <Chip
+                          size="small"
+                          color={subscribed ? "success" : "default"}
+                          variant={subscribed ? "filled" : "outlined"}
+                          label={subscribed ? txt.subscribed : txt.notSubscribed}
+                        />
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>{c.certificatesCount ?? 0}</TableCell>
                   {canView && (

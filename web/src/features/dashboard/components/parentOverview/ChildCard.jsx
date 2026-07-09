@@ -14,6 +14,8 @@ import {
 import { alpha } from '@mui/material/styles';
 import { MdArrowForward } from 'react-icons/md';
 import { localePath } from '@/i18n/routing.js';
+import SubscriptionStatusChip from '@/shared/components/SubscriptionStatusChip.jsx';
+import UsageMeterCard from '@/features/subscriptionDetail/components/UsageMeterCard.jsx';
 import ChildMetric from './ChildMetric.jsx';
 
 // Per-child summary card. Branches on the backend-computed subscriptionState so
@@ -21,6 +23,14 @@ import ChildMetric from './ChildMetric.jsx';
 // shows the stats/achievements; every other state hides them and surfaces a
 // state-appropriate note + CTA.
 export default function ChildCard({ child, txt, lng }) {
+  // Multi-sub: the current ACTIVE plan and the open (accumulating) USAGE bill are
+  // shown side by side instead of a single scalar. Falls back gracefully when a
+  // legacy payload has no subscriptions[].
+  const current = child.subscriptions?.find((s) => s.status === 'ACTIVE') ?? null;
+  const open =
+    child.subscriptions?.find(
+      (s) => s.origin === 'USAGE' && s.status === 'UPCOMING',
+    ) ?? null;
   return (
     <Card
       sx={{
@@ -64,16 +74,16 @@ export default function ChildCard({ child, txt, lng }) {
             <Typography variant="subtitle1" fontWeight={800} noWrap>
               {child.nickname || child.name}
             </Typography>
-            <Chip
-              size="small"
-              color={child.activeSubscription ? 'success' : 'default'}
-              label={
-                child.activeSubscription
-                  ? txt.activeSubscription
-                  : txt.noActiveSubscription
-              }
-              sx={{ height: 22, fontSize: 11, fontWeight: 700 }}
-            />
+            {current ? (
+              <SubscriptionStatusChip sub={current} txt={txt} />
+            ) : (
+              <Chip
+                size="small"
+                color="default"
+                label={txt.noActiveSubscription}
+                sx={{ height: 22, fontSize: 11, fontWeight: 700 }}
+              />
+            )}
           </Box>
         </Stack>
 
@@ -215,6 +225,13 @@ export default function ChildCard({ child, txt, lng }) {
           );
         })()}
 
+        {/* The open, live-accumulating next-month USAGE bill (if any). */}
+        {open && (
+          <Box sx={{ mt: 1.5 }}>
+            <UsageMeterCard subscriptionId={open.id} txt={txt} />
+          </Box>
+        )}
+
         {(() => {
           const state = child.subscriptionState;
           const subHref =
@@ -330,6 +347,22 @@ export default function ChildCard({ child, txt, lng }) {
             </Button>
           );
         })()}
+
+        {child.subscriptions?.length > 0 && (
+          <Button
+            fullWidth
+            size="small"
+            variant="text"
+            component={Link}
+            href={localePath(
+              lng,
+              `/dashboard/subscriptions?studentId=${child.id}`,
+            )}
+            sx={{ mt: 1 }}
+          >
+            {txt.viewAll}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

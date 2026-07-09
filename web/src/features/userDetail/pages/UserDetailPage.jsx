@@ -154,7 +154,13 @@ export default function UserDetailPage({ userId }) {
   function renderActive() {
     // Parent viewing an inactive child: stats/achievements tabs are locked.
     if (lockChildAchievements && ["overview", "badges", "games"].includes(activeTab)) {
-      const childPending = overview?.subscriptionState === "PENDING";
+      // Multi-sub aware: pending when any subscription is awaiting payment
+      // (PENDING/UPCOMING); falls back to the legacy scalar state.
+      const childPending = overview?.subscriptions
+        ? overview.subscriptions.some((s) =>
+            ["PENDING", "UPCOMING"].includes(s.status),
+          )
+        : overview?.subscriptionState === "PENDING";
       const subHref = overview?.latestSubscriptionId
         ? `/dashboard/subscriptions/${overview.latestSubscriptionId}`
         : null;

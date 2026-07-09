@@ -46,7 +46,14 @@ export default function ParentOverview() {
 
   const totalPoints = children.reduce((sum, c) => sum + (c.points || 0), 0);
   const totalBadges = children.reduce((sum, c) => sum + (c.badgeCount || 0), 0);
-  const activeSubs = children.filter((c) => c.activeSubscription).length;
+  // Multi-sub aware: a child counts as active if any of its subscriptions is
+  // ACTIVE. Falls back to the legacy single-sub field when subscriptions[] is
+  // absent (older payloads).
+  const activeSubs = children.filter((c) =>
+    c.subscriptions
+      ? c.subscriptions.some((s) => s.status === "ACTIVE")
+      : Boolean(c.activeSubscription),
+  ).length;
 
   return (
     <Box>
