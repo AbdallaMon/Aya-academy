@@ -228,7 +228,7 @@ export default function ChildCard({ child, txt, lng }) {
         {/* The open, live-accumulating next-month USAGE bill (if any). */}
         {open && (
           <Box sx={{ mt: 1.5 }}>
-            <UsageMeterCard subscriptionId={open.id} txt={txt} />
+            <UsageMeterCard sub={open} txt={txt} />
           </Box>
         )}
 

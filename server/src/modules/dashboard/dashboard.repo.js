@@ -18,6 +18,11 @@ const SUB_CARD_SELECT = {
   planId: true,
   endDate: true,
   remainingHours: true,
+  // v2 stored model: the accumulating next-month bill renders these directly
+  // (no usage-preview fetch) on the parent card / children page.
+  subsHours: true,
+  priceCharged: true,
+  currency: true,
 };
 
 class DashboardRepo {

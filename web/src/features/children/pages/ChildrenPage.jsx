@@ -183,7 +183,7 @@ export default function ChildrenPage() {
                   {/* Live-accumulating next-month usage bill (if any). */}
                   {open && (
                     <Box mb={2}>
-                      <UsageMeterCard subscriptionId={open.id} txt={subsTxt} />
+                      <UsageMeterCard sub={open} txt={subsTxt} />
                     </Box>
                   )}
 

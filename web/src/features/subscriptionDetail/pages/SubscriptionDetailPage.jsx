@@ -129,7 +129,7 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
           {resolveSubscriptionView(subscription).isOpen ? (
-            <UsageMeterCard subscriptionId={subscription.id} txt={txt} />
+            <UsageMeterCard sub={subscription} txt={txt} />
           ) : (
             <SubscriptionCard subscription={subscription} invoice={invoice} txt={txt} />
           )}

@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Button, Stack, TextField } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Grid,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useRouter } from "next/navigation";
 import { MdAdd } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
@@ -17,11 +26,14 @@ import {
   PageHeader,
   useConfirm,
 } from "../../../shared/components/index.js";
+import FilterBar from "../../../shared/components/tables/FilterBar.jsx";
+import DataTablePagination from "../../../shared/components/tables/dataTable/DataTablePagination.jsx";
 import { SUBSCRIPTIONS_URL } from "../config/constant.js";
 import { useSubscriptionsText } from "../config/subscriptionsText.js";
 import { buildSubscriptionsColumns } from "../config/subscriptionsColumns.js";
 import { buildSubscriptionsFilters } from "../config/subscriptionsFilters.js";
 import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
+import SubscriptionSummaryCard from "../components/SubscriptionSummaryCard.jsx";
 import EditHoursDialog from "../components/EditHoursDialog.jsx";
 import InvoiceDialog from "../../invoices/components/InvoiceDialog.jsx";
 import RenewDialog from "../../subscriptionDetail/components/RenewDialog.jsx";
@@ -39,7 +51,7 @@ export default function SubscriptionsPage({
   embedded = false,
 }) {
   const txt = useSubscriptionsText();
-  const { lng } = useTranslation();
+  const { lng, t } = useTranslation();
   const confirm = useConfirm();
   const router = useRouter();
   const { user } = useAuth();
@@ -176,6 +188,24 @@ export default function SubscriptionsPage({
     [txt],
   );
 
+  // The list endpoint returns TWO shapes (V2-5): when scoped to a student it
+  // returns RAW subscription rows (→ table); globally it returns one summary per
+  // student `{ studentId, current, next }` (→ combined-card grid). Detect from
+  // the actual payload shape when we have rows, else from whether a studentId
+  // scope is active (prop OR a ?studentId= URL filter).
+  const rows = data || [];
+  const studentScoped = Boolean(studentId) || Boolean(filters?.studentId);
+  const showSummaryCards =
+    rows.length > 0
+      ? Boolean(
+          rows[0] &&
+            typeof rows[0] === "object" &&
+            !("id" in rows[0]) &&
+            ("current" in rows[0] || "next" in rows[0]),
+        )
+      : !studentScoped;
+  const td = t("tableData", { returnObjects: true }) || {};
+
   if (!canList) return null;
 
   return (
@@ -201,20 +231,67 @@ export default function SubscriptionsPage({
         />
       )}
 
-      <DataTable
-        initialRows={data || []}
-        columns={columns}
-        total={total}
-        page={page}
-        rowsPerPage={pageSize}
-        setPage={setPage}
-        setRowsPerPage={setPageSize}
-        loading={isLoading}
-        filters={filters}
-        setFilters={setFilters}
-        filterConfig={filterConfig}
-        noContainer
-      />
+      {showSummaryCards ? (
+        <Paper sx={{ width: "100%", mb: 2, position: "relative" }}>
+          <FilterBar
+            filterConfig={filterConfig}
+            filters={filters || {}}
+            setFilters={setFilters}
+            translator={txt}
+          />
+
+          {isLoading && rows.length === 0 ? (
+            <Stack alignItems="center" sx={{ py: 8 }}>
+              <CircularProgress />
+            </Stack>
+          ) : rows.length === 0 ? (
+            <Typography
+              color="text.secondary"
+              sx={{ textAlign: "center", py: 8 }}
+            >
+              {txt.empty}
+            </Typography>
+          ) : (
+            <Grid container spacing={2} sx={{ p: 2 }}>
+              {rows.map((s) => (
+                <Grid key={s.studentId} size={{ xs: 12, md: 6, lg: 4 }}>
+                  <SubscriptionSummaryCard
+                    studentId={s.studentId}
+                    current={s.current}
+                    next={s.next}
+                    txt={txt}
+                    lng={lng}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+
+          <DataTablePagination
+            total={total}
+            page={page}
+            rowsPerPage={pageSize}
+            setPage={setPage}
+            setRowsPerPage={setPageSize}
+            td={td}
+          />
+        </Paper>
+      ) : (
+        <DataTable
+          initialRows={data || []}
+          columns={columns}
+          total={total}
+          page={page}
+          rowsPerPage={pageSize}
+          setPage={setPage}
+          setRowsPerPage={setPageSize}
+          loading={isLoading}
+          filters={filters}
+          setFilters={setFilters}
+          filterConfig={filterConfig}
+          noContainer
+        />
+      )}
 
       {canCreate && (
         <SubscriptionCreateDialog
