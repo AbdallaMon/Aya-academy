@@ -15,6 +15,12 @@ import { MdOpenInNew } from "react-icons/md";
 import SubscriptionStatusChip from "../../../shared/components/SubscriptionStatusChip.jsx";
 import { localePath } from "../../../i18n/routing.js";
 import { formatMoney, formatHours } from "../../../shared/lib/money.js";
+import { useSubscriptionDetailText } from "../../subscriptionDetail/config/subscriptionDetailText.js";
+import SubscriptionActions from "../../subscriptionDetail/components/SubscriptionActions.jsx";
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleDateString() : "—";
+}
 
 /**
  * One combined card per student: the CURRENT (being-paid) subscription and the
@@ -25,14 +31,32 @@ import { formatMoney, formatHours } from "../../../shared/lib/money.js";
  * `sub.subsHours` / `sub.priceCharged` — no usage-preview fetch. The next bill's
  * hours grow as sessions are logged (the backend recomputes + stores them).
  *
- * @param {object}  props
- * @param {number}  props.studentId
- * @param {object=} props.current   active subscription row or null
- * @param {object=} props.next      open UPCOMING USAGE subscription row or null
- * @param {object}  props.txt       useSubscriptionsText() result
- * @param {string}  props.lng       active locale
+ * @param {object}   props
+ * @param {number}   props.studentId
+ * @param {object=}  props.current      active subscription row or null
+ * @param {object=}  props.next         open UPCOMING USAGE subscription row or null
+ * @param {object}   props.txt          useSubscriptionsText() result
+ * @param {string}   props.lng          active locale
+ * @param {Function=} props.onChanged   refetch callback fired after an action
+ * @param {boolean=} props.showActions  render the per-sub action bar (default true)
+ * @param {boolean=} props.detailed     surface origin chip + period dates (default false)
+ * @param {boolean=} props.hideHeader   hide the student-name header (default false)
  */
-export default function SubscriptionSummaryCard({ studentId, current, next, txt, lng }) {
+export default function SubscriptionSummaryCard({
+  studentId,
+  current,
+  next,
+  txt,
+  lng,
+  onChanged,
+  showActions = true,
+  detailed = false,
+  hideHeader = false,
+}) {
+  // The embedded action bar (SubscriptionActions) speaks the subscription-DETAIL
+  // text namespace, not this card's list-text — resolve it here so callers keep
+  // passing the list `txt` for the card's own labels.
+  const actionsTxt = useSubscriptionDetailText();
   const student = current?.student || next?.student || null;
   const studentLabel =
     student?.name || student?.nickname || `#${studentId ?? student?.id ?? ""}`;
@@ -50,42 +74,44 @@ export default function SubscriptionSummaryCard({ studentId, current, next, txt,
     >
       <CardContent sx={{ flex: 1 }}>
         {/* Header: student → their detail page */}
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ mb: 1.5 }}
-          spacing={1}
-        >
-          {student?.id ? (
+        {!hideHeader && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ mb: 1.5 }}
+            spacing={1}
+          >
+            {student?.id ? (
+              <MuiLink
+                component={Link}
+                href={localePath(lng, `/dashboard/users/${student.id}`)}
+                underline="hover"
+                fontWeight={800}
+                noWrap
+                sx={{ minWidth: 0 }}
+              >
+                {studentLabel}
+              </MuiLink>
+            ) : (
+              <Typography fontWeight={800} noWrap>
+                {studentLabel}
+              </Typography>
+            )}
             <MuiLink
               component={Link}
-              href={localePath(lng, `/dashboard/users/${student.id}`)}
+              href={localePath(
+                lng,
+                `/dashboard/subscriptions?studentId=${studentId ?? student?.id}`,
+              )}
               underline="hover"
-              fontWeight={800}
-              noWrap
-              sx={{ minWidth: 0 }}
+              variant="caption"
+              sx={{ whiteSpace: "nowrap" }}
             >
-              {studentLabel}
+              {txt.viewAll}
             </MuiLink>
-          ) : (
-            <Typography fontWeight={800} noWrap>
-              {studentLabel}
-            </Typography>
-          )}
-          <MuiLink
-            component={Link}
-            href={localePath(
-              lng,
-              `/dashboard/subscriptions?studentId=${studentId ?? student?.id}`,
-            )}
-            underline="hover"
-            variant="caption"
-            sx={{ whiteSpace: "nowrap" }}
-          >
-            {txt.viewAll}
-          </MuiLink>
-        </Stack>
+          </Stack>
+        )}
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -97,16 +123,24 @@ export default function SubscriptionSummaryCard({ studentId, current, next, txt,
             sub={current}
             emptyLabel={txt.noCurrent}
             txt={txt}
+            actionsTxt={actionsTxt}
             lng={lng}
             variant="current"
+            showActions={showActions}
+            detailed={detailed}
+            onChanged={onChanged}
           />
           <SubSlot
             title={txt.accumulatingTitle}
             sub={next}
             emptyLabel={txt.noNext}
             txt={txt}
+            actionsTxt={actionsTxt}
             lng={lng}
             variant="next"
+            showActions={showActions}
+            detailed={detailed}
+            onChanged={onChanged}
           />
         </Stack>
       </CardContent>
@@ -115,7 +149,18 @@ export default function SubscriptionSummaryCard({ studentId, current, next, txt,
 }
 
 /** One column of the combined card — current or next. */
-function SubSlot({ title, sub, emptyLabel, txt, lng, variant }) {
+function SubSlot({
+  title,
+  sub,
+  emptyLabel,
+  txt,
+  actionsTxt,
+  lng,
+  variant,
+  showActions,
+  detailed,
+  onChanged,
+}) {
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
       <Typography
@@ -135,6 +180,28 @@ function SubSlot({ title, sub, emptyLabel, txt, lng, variant }) {
           <Box>
             <SubscriptionStatusChip sub={sub} txt={txt} />
           </Box>
+
+          {detailed ? (
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              flexWrap="wrap"
+              useFlexGap
+            >
+              <Chip
+                size="small"
+                variant="outlined"
+                label={sub.origin === "USAGE" ? txt.originUsage : txt.originManual}
+                sx={{ height: 20, fontSize: "0.68rem" }}
+              />
+              {(sub.startDate || sub.endDate) && (
+                <Typography variant="caption" color="text.secondary">
+                  {formatDate(sub.startDate)} – {formatDate(sub.endDate)}
+                </Typography>
+              )}
+            </Stack>
+          ) : null}
 
           <Stack direction="row" alignItems="baseline" spacing={1}>
             <Typography variant="h5" fontWeight={800}>
@@ -175,6 +242,17 @@ function SubSlot({ title, sub, emptyLabel, txt, lng, variant }) {
             {txt.view}
             <MdOpenInNew size={13} />
           </MuiLink>
+
+          {showActions ? (
+            <Box sx={{ mt: 0.5 }}>
+              <SubscriptionActions
+                subscription={sub}
+                invoice={sub.invoice}
+                txt={actionsTxt}
+                onChanged={onChanged}
+              />
+            </Box>
+          ) : null}
         </Stack>
       )}
     </Box>

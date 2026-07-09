@@ -261,6 +261,7 @@ export default function SubscriptionsPage({
                     next={s.next}
                     txt={txt}
                     lng={lng}
+                    onChanged={triggerRefetch}
                   />
                 </Grid>
               ))}

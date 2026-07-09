@@ -9,6 +9,7 @@ import {
   MdPaid,
   MdLocalOffer,
   MdCancel,
+  MdSchedule,
 } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
@@ -21,6 +22,7 @@ import RenewDialog from "./RenewDialog.jsx";
 import ChangePlanDialog from "./ChangePlanDialog.jsx";
 import CouponDialog from "./CouponDialog.jsx";
 import ConfirmWithCheckbox from "./ConfirmWithCheckbox.jsx";
+import EditHoursDialog from "../../subscriptions/components/EditHoursDialog.jsx";
 
 /**
  * A single action button that is ALWAYS rendered when the user's role may
@@ -71,6 +73,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const renewDialog = useOpen();
   const changeDialog = useOpen();
   const couponDialog = useOpen();
+  const editHoursDialog = useOpen();
   const activateConfirm = useOpen();
   const markPaidConfirm = useOpen();
   const cancelConfirm = useOpen();
@@ -96,6 +99,13 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
     syncToUrl: false,
     shouldAutoToast: true,
   });
+  const subPut = useRequest({
+    url: SUBSCRIPTIONS_URL,
+    method: "put",
+    autoFetch: false,
+    syncToUrl: false,
+    shouldAutoToast: true,
+  });
 
   // ── who may see each action (by role/permission) ──
   const canRenew =
@@ -111,6 +121,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const canActivate = hasPermission(PERMISSIONS.SUBSCRIPTION.ACTIVATE);
   const canMarkPaid = hasPermission(PERMISSIONS.INVOICE.EDIT);
   const canCancel = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL);
+  const canEditHours = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
 
   // ── current state → whether each action is enabled ──
   const status = subscription.status;
@@ -131,6 +142,13 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const enableActivate = subPendingOrUpcoming;
   const enableMarkPaid = !!invoice && invoice.status === "UNPAID";
   const enableCancel = subCancellable;
+  // Hours are editable on the CURRENT (pending/active) sub, but NOT while a USAGE
+  // sub is still accumulating (its hours are auto-recomputed from sessions), nor
+  // after it has ended (EXPIRED/CANCELLED).
+  const enableEditHours = !isAccumulating && !subEnded;
+  const reasonEditHours = isAccumulating
+    ? txt.reasonEditHoursUsage
+    : txt.reasonEditHours;
 
   // Parent still gets a gentle "awaiting activation" hint while PENDING/UPCOMING.
   const showAwaitingHint = !isAdmin && subPendingOrUpcoming;
@@ -179,7 +197,21 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
     }
   }
 
-  const busy = subMut.isLoading || invSend.isLoading || invPatch.isLoading;
+  async function saveHours(payload) {
+    try {
+      await subPut.fetchData(String(subscription.id), payload);
+      editHoursDialog.close();
+      onChanged?.();
+    } catch {
+      /* auto-toasted */
+    }
+  }
+
+  const busy =
+    subMut.isLoading ||
+    invSend.isLoading ||
+    invPatch.isLoading ||
+    subPut.isLoading;
 
   const anyVisible =
     canRenew ||
@@ -188,7 +220,8 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
     canSend ||
     canActivate ||
     canMarkPaid ||
-    canCancel;
+    canCancel ||
+    canEditHours;
   if (!anyVisible && !showAwaitingHint && !isAccumulating) return null;
 
   return (
@@ -281,6 +314,19 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
           </ActionButton>
         )}
 
+        {canEditHours && (
+          <ActionButton
+            variant="outlined"
+            startIcon={<MdSchedule />}
+            onClick={editHoursDialog.open}
+            enabled={enableEditHours}
+            reason={reasonEditHours}
+            busy={busy}
+          >
+            {txt.editHours}
+          </ActionButton>
+        )}
+
         {canCancel && (
           <ActionButton
             variant="outlined"
@@ -321,6 +367,15 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
         subscription={subscription}
         txt={txt}
         onChanged={onChanged}
+      />
+
+      <EditHoursDialog
+        open={editHoursDialog.isOpen}
+        onClose={editHoursDialog.close}
+        txt={txt}
+        initial={subscription}
+        loading={subPut.isLoading}
+        onSubmit={saveHours}
       />
 
       <ConfirmWithCheckbox

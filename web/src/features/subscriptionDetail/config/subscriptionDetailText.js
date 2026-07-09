@@ -84,6 +84,14 @@ export const subscriptionDetailText = {
     cancelSub: "إلغاء الاشتراك",
     cancelSubTitle: "إلغاء الاشتراك",
     cancelSubConfirm: "متأكد إنك عايز تلغي الاشتراك ده؟",
+    // edit hours
+    editHours: "تعديل الساعات",
+    editHoursTitle: "تعديل ساعات الفاتورة",
+    subsHoursHint: "الفاتورة بتتحسب على عدد الساعات دي",
+    remainingExceedsSubs: "الساعات المتبقية لا يمكن أن تتجاوز ساعات الاشتراك.",
+    reasonEditHours: "لا يمكن تعديل ساعات اشتراك منتهٍ أو ملغى.",
+    reasonEditHoursUsage:
+      "ساعات الفاتورة الجارية بتتحسب تلقائياً من الحصص، ولا يمكن تعديلها الآن.",
     // disabled-action tooltips (why an action isn't available now)
     reasonRenew: "التجديد متاح فقط بعد انتهاء الاشتراك أو إلغائه",
     reasonChangePlan: "لا يمكن تغيير الخطة بعد تفعيل الاشتراك أو دفع الفاتورة",
@@ -186,6 +194,14 @@ export const subscriptionDetailText = {
     cancelSub: "Cancel subscription",
     cancelSubTitle: "Cancel subscription",
     cancelSubConfirm: "Are you sure you want to cancel this subscription?",
+    // edit hours
+    editHours: "Edit hours",
+    editHoursTitle: "Edit invoice hours",
+    subsHoursHint: "The invoice is calculated from these hours.",
+    remainingExceedsSubs: "Remaining hours can't exceed subscription hours.",
+    reasonEditHours: "The hours of an expired or cancelled subscription can't be edited.",
+    reasonEditHoursUsage:
+      "The accumulating bill's hours are auto-computed from sessions and can't be edited now.",
     // disabled-action tooltips (why an action isn't available now)
     reasonRenew: "Renewal is only available after the subscription has expired or been cancelled.",
     reasonChangePlan: "The plan can't be changed after the subscription is active or the invoice is paid.",
