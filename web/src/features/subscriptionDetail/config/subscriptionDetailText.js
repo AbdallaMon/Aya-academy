@@ -52,6 +52,7 @@ export const subscriptionDetailText = {
     selectPlan: "اختر الخطة",
     // actions section
     actions: "إجراءات",
+    more: "المزيد",
     // renew
     renew: "تجديد",
     renewTitle: "تجديد الاشتراك",
@@ -162,6 +163,7 @@ export const subscriptionDetailText = {
     selectPlan: "Select plan",
     // actions section
     actions: "Actions",
+    more: "More",
     // renew
     renew: "Renew",
     renewTitle: "Renew subscription",

@@ -1,6 +1,19 @@
 "use client";
 
-import { Alert, Button, Chip, Stack, Tooltip } from "@mui/material";
+import { useState } from "react";
+import {
+  Alert,
+  Button,
+  Chip,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import {
   MdAutorenew,
   MdSwapHoriz,
@@ -10,6 +23,7 @@ import {
   MdLocalOffer,
   MdCancel,
   MdSchedule,
+  MdMoreVert,
 } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
@@ -63,9 +77,21 @@ function ActionButton({ enabled, reason, busy, children, ...btnProps }) {
  *  Cancel        | SUBSCRIPTION.CANCEL (admin)     | status PENDING/UPCOMING/ACTIVE
  *
  * Coupon entry also lives inside the renew/change dialogs (CouponControl).
- * Props: subscription, invoice (or null), txt, onChanged.
+ *
+ * Two render shapes share the SAME gating/handlers/dialogs (`variant` prop):
+ *   - "bar"  (default) — a wrapping row of buttons, used on the DETAIL page.
+ *   - "menu" — a single ⋮ IconButton opening a compact Menu, used inside the
+ *     combined subscription card so the card body stays clean.
+ *
+ * Props: subscription, invoice (or null), txt, onChanged, variant.
  */
-export default function SubscriptionActions({ subscription, invoice, txt, onChanged }) {
+export default function SubscriptionActions({
+  subscription,
+  invoice,
+  txt,
+  onChanged,
+  variant = "bar",
+}) {
   const { hasPermission } = usePermission();
   const { user } = useAuth();
   const isAdmin = user?.role === USER_ROLES.ADMIN;
@@ -77,6 +103,12 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
   const activateConfirm = useOpen();
   const markPaidConfirm = useOpen();
   const cancelConfirm = useOpen();
+
+  // ⋮ overflow menu anchor (menu variant only)
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const menuOpen = Boolean(menuAnchor);
+  const openMenu = (e) => setMenuAnchor(e.currentTarget);
+  const closeMenu = () => setMenuAnchor(null);
 
   const subMut = useRequest({
     url: SUBSCRIPTIONS_URL,
@@ -213,138 +245,151 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
     invPatch.isLoading ||
     subPut.isLoading;
 
-  const anyVisible =
-    canRenew ||
-    canChangePlan ||
-    canCoupon ||
-    canSend ||
-    canActivate ||
-    canMarkPaid ||
-    canCancel ||
-    canEditHours;
-  if (!anyVisible && !showAwaitingHint && !isAccumulating) return null;
+  // Single source of truth for both render shapes. Each action carries its
+  // visibility (`show`), enabled state, why-disabled reason, handler and styling.
+  const actions = [
+    {
+      key: "renew",
+      show: canRenew && !isUsage,
+      icon: <MdAutorenew />,
+      label: txt.renew,
+      onClick: renewDialog.open,
+      enabled: enableRenew,
+      reason: txt.reasonRenew,
+      buttonVariant: "contained",
+    },
+    {
+      key: "changePlan",
+      show: canChangePlan && !isUsage,
+      icon: <MdSwapHoriz />,
+      label: txt.changePlan,
+      onClick: changeDialog.open,
+      enabled: enableChangePlan,
+      reason: txt.reasonChangePlan,
+      buttonVariant: "outlined",
+    },
+    {
+      key: "coupon",
+      show: canCoupon,
+      icon: <MdLocalOffer />,
+      label: txt.coupon,
+      onClick: couponDialog.open,
+      enabled: enableCoupon,
+      reason: txt.reasonCoupon,
+      buttonVariant: "outlined",
+    },
+    {
+      key: "send",
+      show: canSend,
+      icon: <MdSend />,
+      label: invoice?.sentAt ? txt.resend : txt.sendToParent,
+      onClick: sendToParent,
+      enabled: enableSend,
+      reason: txt.reasonSend,
+      buttonVariant: "outlined",
+    },
+    {
+      key: "activate",
+      show: canActivate,
+      icon: <MdPlayCircle />,
+      label: txt.activate,
+      onClick: activateConfirm.open,
+      enabled: enableActivate,
+      reason: txt.reasonActivate,
+      buttonVariant: "contained",
+      color: "success",
+    },
+    {
+      key: "markPaid",
+      show: canMarkPaid,
+      icon: <MdPaid />,
+      label: txt.markPaid,
+      onClick: markPaidConfirm.open,
+      enabled: enableMarkPaid,
+      reason: txt.reasonMarkPaid,
+      buttonVariant: "contained",
+      color: "success",
+    },
+    {
+      key: "editHours",
+      show: canEditHours,
+      icon: <MdSchedule />,
+      label: txt.editHours,
+      onClick: editHoursDialog.open,
+      enabled: enableEditHours,
+      reason: reasonEditHours,
+      buttonVariant: "outlined",
+    },
+    {
+      key: "cancel",
+      show: canCancel,
+      icon: <MdCancel />,
+      label: txt.cancelSub,
+      onClick: cancelConfirm.open,
+      enabled: enableCancel,
+      reason: txt.reasonCancel,
+      buttonVariant: "outlined",
+      color: "error",
+    },
+  ].filter((a) => a.show);
+
+  if (actions.length === 0 && !showAwaitingHint && !isAccumulating) return null;
 
   return (
     <>
-      {/* USAGE accumulating: explain the bill is auto-computed from sessions and
-          closes at month end — no manual renew/plan actions apply. */}
-      {isAccumulating && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {txt.usageManagedHint}
-        </Alert>
+      {variant === "menu" ? (
+        <MenuActions
+          actions={actions}
+          busy={busy}
+          menuAnchor={menuAnchor}
+          menuOpen={menuOpen}
+          openMenu={openMenu}
+          closeMenu={closeMenu}
+          moreLabel={txt.more}
+          showAwaitingHint={showAwaitingHint}
+          awaitingHint={txt.awaitingActivationHint}
+        />
+      ) : (
+        <>
+          {/* USAGE accumulating: explain the bill is auto-computed from sessions
+              and closes at month end — no manual renew/plan actions apply. */}
+          {isAccumulating && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {txt.usageManagedHint}
+            </Alert>
+          )}
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ mb: 3 }}
+          >
+            {actions.map((a) => (
+              <ActionButton
+                key={a.key}
+                variant={a.buttonVariant}
+                color={a.color}
+                startIcon={a.icon}
+                onClick={a.onClick}
+                enabled={a.enabled}
+                reason={a.reason}
+                busy={busy}
+              >
+                {a.label}
+              </ActionButton>
+            ))}
+
+            {showAwaitingHint && (
+              <Chip
+                color="info"
+                variant="outlined"
+                label={txt.awaitingActivationHint}
+              />
+            )}
+          </Stack>
+        </>
       )}
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-        {canRenew && !isUsage && (
-          <ActionButton
-            variant="contained"
-            startIcon={<MdAutorenew />}
-            onClick={renewDialog.open}
-            enabled={enableRenew}
-            reason={txt.reasonRenew}
-            busy={busy}
-          >
-            {txt.renew}
-          </ActionButton>
-        )}
-
-        {canChangePlan && !isUsage && (
-          <ActionButton
-            variant="outlined"
-            startIcon={<MdSwapHoriz />}
-            onClick={changeDialog.open}
-            enabled={enableChangePlan}
-            reason={txt.reasonChangePlan}
-            busy={busy}
-          >
-            {txt.changePlan}
-          </ActionButton>
-        )}
-
-        {canCoupon && (
-          <ActionButton
-            variant="outlined"
-            startIcon={<MdLocalOffer />}
-            onClick={couponDialog.open}
-            enabled={enableCoupon}
-            reason={txt.reasonCoupon}
-            busy={busy}
-          >
-            {txt.coupon}
-          </ActionButton>
-        )}
-
-        {canSend && (
-          <ActionButton
-            variant="outlined"
-            startIcon={<MdSend />}
-            onClick={sendToParent}
-            enabled={enableSend}
-            reason={txt.reasonSend}
-            busy={busy}
-          >
-            {invoice?.sentAt ? txt.resend : txt.sendToParent}
-          </ActionButton>
-        )}
-
-        {canActivate && (
-          <ActionButton
-            variant="contained"
-            color="success"
-            startIcon={<MdPlayCircle />}
-            onClick={activateConfirm.open}
-            enabled={enableActivate}
-            reason={txt.reasonActivate}
-            busy={busy}
-          >
-            {txt.activate}
-          </ActionButton>
-        )}
-
-        {canMarkPaid && (
-          <ActionButton
-            variant="contained"
-            color="success"
-            startIcon={<MdPaid />}
-            onClick={markPaidConfirm.open}
-            enabled={enableMarkPaid}
-            reason={txt.reasonMarkPaid}
-            busy={busy}
-          >
-            {txt.markPaid}
-          </ActionButton>
-        )}
-
-        {canEditHours && (
-          <ActionButton
-            variant="outlined"
-            startIcon={<MdSchedule />}
-            onClick={editHoursDialog.open}
-            enabled={enableEditHours}
-            reason={reasonEditHours}
-            busy={busy}
-          >
-            {txt.editHours}
-          </ActionButton>
-        )}
-
-        {canCancel && (
-          <ActionButton
-            variant="outlined"
-            color="error"
-            startIcon={<MdCancel />}
-            onClick={cancelConfirm.open}
-            enabled={enableCancel}
-            reason={txt.reasonCancel}
-            busy={busy}
-          >
-            {txt.cancelSub}
-          </ActionButton>
-        )}
-
-        {showAwaitingHint && (
-          <Chip color="info" variant="outlined" label={txt.awaitingActivationHint} />
-        )}
-      </Stack>
 
       <RenewDialog
         open={renewDialog.isOpen}
@@ -413,6 +458,98 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
         onCancel={cancelConfirm.close}
         onConfirm={cancelSubscription}
       />
+    </>
+  );
+}
+
+/**
+ * Compact ⋮ overflow menu. Renders the SAME action descriptors as the bar, but
+ * as MenuItems: a disabled item keeps its icon/label and surfaces its
+ * why-disabled reason as subdued secondary text. If there is no visible action
+ * and no awaiting hint, renders nothing.
+ */
+function MenuActions({
+  actions,
+  busy,
+  menuAnchor,
+  menuOpen,
+  openMenu,
+  closeMenu,
+  moreLabel,
+  showAwaitingHint,
+  awaitingHint,
+}) {
+  if (actions.length === 0) {
+    // No actionable items — only a gentle awaiting hint (parent, pending sub).
+    return showAwaitingHint ? (
+      <Chip
+        size="small"
+        color="info"
+        variant="outlined"
+        label={awaitingHint}
+        sx={{ height: 22, fontSize: "0.68rem" }}
+      />
+    ) : null;
+  }
+
+  const runAction = (fn) => {
+    closeMenu();
+    fn();
+  };
+
+  return (
+    <>
+      <Tooltip title={moreLabel || ""}>
+        <IconButton
+          size="small"
+          aria-label={moreLabel}
+          onClick={openMenu}
+          disabled={busy}
+        >
+          <MdMoreVert />
+        </IconButton>
+      </Tooltip>
+      <Menu
+        anchorEl={menuAnchor}
+        open={menuOpen}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "end" }}
+        transformOrigin={{ vertical: "top", horizontal: "end" }}
+      >
+        {actions.map((a) => {
+          const disabled = !a.enabled || busy;
+          return (
+            <MenuItem
+              key={a.key}
+              disabled={disabled}
+              onClick={() => runAction(a.onClick)}
+              sx={{
+                color: a.color === "error" ? "error.main" : undefined,
+                alignItems: "flex-start",
+              }}
+            >
+              <ListItemIcon sx={{ color: "inherit", minWidth: 34, mt: 0.25 }}>
+                {a.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={a.label}
+                secondary={
+                  !a.enabled && a.reason ? (
+                    <Typography
+                      variant="caption"
+                      color="text.disabled"
+                      sx={{ display: "block", whiteSpace: "normal" }}
+                    >
+                      {a.reason}
+                    </Typography>
+                  ) : undefined
+                }
+                sx={{ my: 0 }}
+              />
+            </MenuItem>
+          );
+        })}
+      </Menu>
     </>
   );
 }
