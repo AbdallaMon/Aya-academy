@@ -409,6 +409,39 @@ class SubscriptionUsecase {
   }
 
   /**
+   * On-demand "promotion": ensure every currently-active student has their
+   * next-month open USAGE subscription, with hours recomputed from this month's
+   * sessions. Runs the SAME orderly path as the per-session hook
+   * (recomputeOpenUsageSubscription) — it does NOT freeze or invoice (that is
+   * generateMonthlyUsageInvoices' job at month-close). Idempotent: a student who
+   * already has an open next-month sub just gets it refreshed; a frozen one is
+   * left untouched. Per-student errors are isolated so one failure never aborts
+   * the run.
+   *
+   * @param {Date} [now] the reference day; the created sub covers next month.
+   * @returns {Promise<{ processed:number, failed:number }>}
+   */
+  async seedOpenUsageSubscriptions(now = new Date()) {
+    const activeStudents = await subscriptionRepo.listActiveStudentsWithPlan(now);
+    let processed = 0;
+    let failed = 0;
+    for (const { studentId } of activeStudents) {
+      try {
+        await this.recomputeOpenUsageSubscription({ studentId, sessionDate: now });
+        processed += 1;
+      } catch (err) {
+        failed += 1;
+        // eslint-disable-next-line no-console
+        console.error(
+          `seedOpenUsageSubscriptions: student ${studentId} failed`,
+          err?.code || err?.message || err,
+        );
+      }
+    }
+    return { processed, failed };
+  }
+
+  /**
    * Live accumulating-bill preview for a USAGE subscription: the consumed hours
    * in the sub's consumption month (its startDate − 1 month) and the projected
    * price at the current hourly rate. Read-scoped exactly like getById

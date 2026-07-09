@@ -23,6 +23,7 @@
     "db:studio": "npm run studio -w @aya/db",
     "db:seed": "npm run seed -w @aya/db",
     "usage:bill": "node scripts/run-usage-billing.js",
+    "usage:seed": "node scripts/seed-usage-subscriptions.js",
     "docs:build": "node scripts/generate-docs-site.mjs",
     "docs:serve": "node scripts/docs-site-server.mjs"
   },
@@ -30,6 +31,7 @@
     "stylis": "4.3.6"
   },
   "dependencies": {
-    "@mui/stylis-plugin-rtl": "^9.1.1"
+    "@mui/stylis-plugin-rtl": "^9.1.1",
+    "dotenv": "^17.4.2"
   }
 }
