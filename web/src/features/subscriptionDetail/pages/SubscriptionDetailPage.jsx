@@ -16,8 +16,10 @@ import {
   STATUS_COLOR,
   invoiceSubscriptionPath,
 } from "../config/constant.js";
+import { resolveSubscriptionView } from "../../subscriptions/config/subscriptionView.js";
 import { useSubscriptionDetailText } from "../config/subscriptionDetailText.js";
 import SubscriptionCard from "../components/SubscriptionCard.jsx";
+import UsageMeterCard from "../components/UsageMeterCard.jsx";
 import InvoiceCard from "../components/InvoiceCard.jsx";
 import SubscriptionActions from "../components/SubscriptionActions.jsx";
 
@@ -126,7 +128,11 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <SubscriptionCard subscription={subscription} invoice={invoice} txt={txt} />
+          {resolveSubscriptionView(subscription).isOpen ? (
+            <UsageMeterCard subscriptionId={subscription.id} txt={txt} />
+          ) : (
+            <SubscriptionCard subscription={subscription} invoice={invoice} txt={txt} />
+          )}
         </Grid>
         {canViewInvoice && (
           <Grid size={{ xs: 12, md: 6 }}>

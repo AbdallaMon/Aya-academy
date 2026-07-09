@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Chip, Stack, Tooltip } from "@mui/material";
+import { Alert, Button, Chip, Stack, Tooltip } from "@mui/material";
 import {
   MdAutorenew,
   MdSwapHoriz,
@@ -114,6 +114,10 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
 
   // ── current state → whether each action is enabled ──
   const status = subscription.status;
+  // USAGE subs are billed from logged sessions, not renewed/plan-changed. While
+  // UPCOMING they are the live accumulating next-month bill.
+  const isUsage = subscription.origin === "USAGE";
+  const isAccumulating = isUsage && status === "UPCOMING";
   const invoiceUnpaidOrNone = !invoice || invoice.status === "UNPAID";
   const subPendingOrUpcoming = status === "PENDING" || status === "UPCOMING";
   const subEnded = status === "EXPIRED" || status === "CANCELLED";
@@ -185,12 +189,19 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
     canActivate ||
     canMarkPaid ||
     canCancel;
-  if (!anyVisible && !showAwaitingHint) return null;
+  if (!anyVisible && !showAwaitingHint && !isAccumulating) return null;
 
   return (
     <>
+      {/* USAGE accumulating: explain the bill is auto-computed from sessions and
+          closes at month end — no manual renew/plan actions apply. */}
+      {isAccumulating && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {txt.usageManagedHint}
+        </Alert>
+      )}
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-        {canRenew && (
+        {canRenew && !isUsage && (
           <ActionButton
             variant="contained"
             startIcon={<MdAutorenew />}
@@ -203,7 +214,7 @@ export default function SubscriptionActions({ subscription, invoice, txt, onChan
           </ActionButton>
         )}
 
-        {canChangePlan && (
+        {canChangePlan && !isUsage && (
           <ActionButton
             variant="outlined"
             startIcon={<MdSwapHoriz />}
