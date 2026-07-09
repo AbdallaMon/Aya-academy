@@ -405,7 +405,87 @@ class SubscriptionUsecase {
     };
   }
 
+  /**
+   * Create-by-month (USAGE arrears): an admin adds a subscription for ONE month.
+   * Per the arrears bucketing, the sub dated month X bills month X-1's PRESENT
+   * sessions — so `startDate = 1st of the chosen month`, `endDate = last day`,
+   * `origin = USAGE`, `subsHours = the sum of that student's unbilled PRESENT
+   * hours in the consumption month (previousMonth(startDate))`, and
+   * `priceCharged = hours × hourly rate`. Refuses a duplicate USAGE sub for the
+   * same (studentId, startDate) — reusing the status-agnostic
+   * findOpenUsageSubscription lookup (origin + startDate only).
+   *
+   * Intentionally does NOT run prepareForNewSubscription: a USAGE bill coexists
+   * with the student's active plan (same as the month-close cron path), so it is
+   * never gated by the one-active / one-in-flight rules.
+   */
+  async createByMonth({ authUser, ...input }) {
+    const studentId = input.studentId;
+    const startDate = monthRange(input.month).gte; // 1st of the chosen month (UTC)
+    const endDate = endOfMonth(startDate);
+
+    // One USAGE bill per (student, month).
+    const existing = await subscriptionRepo.findOpenUsageSubscription({
+      studentId,
+      paymentStart: startDate,
+    });
+    if (existing) {
+      throw conflict(
+        subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS,
+        messagesNames.subscriptionMessages,
+      );
+    }
+
+    // Arrears: the month-X sub bills month X-1's sessions.
+    const consumption = monthRange(previousMonth(startDate));
+    const settings = await settingsUsecase.getEffective();
+    const subsHours = await subscriptionRepo.sumUsageHoursForStudentMonth({
+      studentId,
+      gte: consumption.gte,
+      lt: consumption.lt,
+    });
+    const priceCharged = priceFromHours(subsHours, Number(settings.hourlyRate));
+
+    const subscription = await subscriptionRepo.createSubscription({
+      origin: SUBSCRIPTION_ORIGINS.USAGE,
+      status: this.resolveStatus(startDate, endDate),
+      billingPeriod: BILLING_PERIODS.MONTHLY,
+      startDate,
+      endDate,
+      subsHours,
+      remainingHours: subsHours,
+      priceCharged,
+      currency: settings.currency,
+      notes: input.notes,
+      student: { connect: { id: studentId } },
+      createdBy: { connect: { id: authUser.id } },
+    });
+
+    // Auto-create the demand invoice (snapshot of the template) — best-effort.
+    await this.ensureInvoice(subscription);
+
+    // Notify the student — failure must not fail the request.
+    try {
+      await notificationUsecase.createNotification({
+        userId: studentId,
+        type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
+        titleAr: "تم إنشاء اشتراك جديد",
+        titleEn: "A new subscription has been created",
+        link: "/dashboard",
+      });
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return subscription;
+  }
+
   async create({ authUser, ...input }) {
+    // Create-by-month (USAGE) path: derives dates/hours/price from the month.
+    if (input.month != null) {
+      return this.createByMonth({ authUser, ...input });
+    }
+
     if (input.endDate <= input.startDate) {
       throw badRequest(
         subscriptionMessagesCodes.INVALID_DATE_RANGE,

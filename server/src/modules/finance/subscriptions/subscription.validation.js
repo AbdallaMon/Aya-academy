@@ -16,23 +16,38 @@ const statuses = [
 const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];
 
 export class SubscriptionValidation {
-  static createSubscriptionSchema = z.object({
-    studentId: z
-      .number()
-      .int()
-      .positive(subscriptionMessagesCodes.STUDENT_REQUIRED),
-    planId: z.number().int().positive().optional(),
-    billingPeriod: z.enum(billingPeriods).optional(),
-    status: z.enum(statuses).optional(),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-    subsHours: z.number().int().optional(),
-    remainingHours: z.number().int().optional(),
-    priceCharged: z.number().optional(),
-    couponId: z.number().int().positive().optional(),
-    couponCode: z.string().trim().min(1).optional(),
-    notes: z.string().optional(),
-  });
+  static createSubscriptionSchema = z
+    .object({
+      studentId: z
+        .number()
+        .int()
+        .positive(subscriptionMessagesCodes.STUDENT_REQUIRED),
+      planId: z.number().int().positive().optional(),
+      billingPeriod: z.enum(billingPeriods).optional(),
+      status: z.enum(statuses).optional(),
+      // Create-by-month (USAGE arrears) path: a single month → the usecase
+      // derives startDate = 1st, endDate = last day, origin = USAGE, and hours
+      // from the student's sessions. Accepts an ISO date or `YYYY-MM`.
+      // When present, startDate/endDate are derived server-side and ignored.
+      month: z.coerce.date().optional(),
+      // Legacy plan-based path: explicit dates. Optional so the month path
+      // validates; required (via refine) when `month` is absent.
+      startDate: z.coerce.date().optional(),
+      endDate: z.coerce.date().optional(),
+      subsHours: z.number().int().optional(),
+      remainingHours: z.number().int().optional(),
+      priceCharged: z.number().optional(),
+      couponId: z.number().int().positive().optional(),
+      couponCode: z.string().trim().min(1).optional(),
+      notes: z.string().optional(),
+    })
+    .refine(
+      (v) => v.month != null || (v.startDate != null && v.endDate != null),
+      {
+        message: subscriptionMessagesCodes.INVALID_DATE_RANGE,
+        path: ["month"],
+      },
+    );
 
   static updateSubscriptionSchema = z.object({
     studentId: z.number().int().positive().optional(),

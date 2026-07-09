@@ -21,4 +21,6 @@ export const subscriptionMessagesCodes = {
   PLAN_CHANGED: "PLAN_CHANGED",
   SUBSCRIPTION_ACTIVATED: "SUBSCRIPTION_ACTIVATED",
   CANNOT_CHANGE_PLAN_PAID: "CANNOT_CHANGE_PLAN_PAID",
+  // Create-by-month: a USAGE subscription already exists for this (student, month).
+  USAGE_SUBSCRIPTION_EXISTS: "USAGE_SUBSCRIPTION_EXISTS",
 };

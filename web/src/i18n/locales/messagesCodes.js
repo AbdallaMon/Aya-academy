@@ -170,6 +170,8 @@ const ar = {
     [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: 'تم تفعيل الاشتراك',
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]:
       'لا يمكن تغيير الخطة بعد دفع الفاتورة',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS]:
+      'يوجد اشتراك بالاستخدام لهذا الطالب في هذا الشهر بالفعل',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'انتهى الاشتراك أو غير مفعّل',
   },
@@ -623,6 +625,8 @@ const en = {
       'Subscription activated',
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]:
       'Cannot change the plan after the invoice is paid',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS]:
+      'A usage subscription already exists for this student in this month',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'Subscription expired or inactive',
   },
