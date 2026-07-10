@@ -356,7 +356,7 @@ export default function ChildCard({ child, txt, lng }) {
             component={Link}
             href={localePath(
               lng,
-              `/dashboard/subscriptions?studentId=${child.id}`,
+              `/dashboard/users/${child.id}?tab=subscriptions`,
             )}
             sx={{ mt: 1 }}
           >

@@ -118,7 +118,7 @@ export default function SubscriptionSummaryCard({
               component={Link}
               href={localePath(
                 lng,
-                `/dashboard/subscriptions?studentId=${studentId ?? student?.id}`,
+                `/dashboard/users/${studentId ?? student?.id}?tab=subscriptions`,
               )}
               underline="hover"
               variant="caption"
