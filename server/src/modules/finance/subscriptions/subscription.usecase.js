@@ -1547,9 +1547,22 @@ class SubscriptionUsecase {
           continue;
         }
 
-        // Zero-session fallback = the OPEN sub's OWN linked plan hours (v3 §4),
-        // not the student's active-sub plan and not the lowest plan.
-        const planHours = existingOpen?.plan?.hours ?? null;
+        // Zero-session fallback hours:
+        //  - existing open sub → its OWN linked plan hours (v3 §4).
+        //  - to-be-created sub (none open yet) → the student's INHERITED plan
+        //    (v3 §5). Mirrors recomputeOpenUsageSubscription's new-sub branch so
+        //    month-close never mints a plan-less sub (which would break the
+        //    inheritance chain: currentPlanIdForStudent skips planId: null subs).
+        let inheritedPlanId = null;
+        let planHours = existingOpen?.plan?.hours ?? null;
+        if (!existingOpen) {
+          inheritedPlanId =
+            await subscriptionRepo.currentPlanIdForStudent(studentId);
+          const inheritedPlan = inheritedPlanId
+            ? await planRepo.getById(inheritedPlanId)
+            : null;
+          planHours = inheritedPlan?.hours ?? null;
+        }
         const subsHours = resolveUsageHours({ usageHours, planHours });
 
         if (!subsHours || subsHours <= 0) {
@@ -1588,6 +1601,11 @@ class SubscriptionUsecase {
                 endDate: paymentEnd,
                 currency: settings.currency,
                 student: { connect: { id: studentId } },
+                // Inherit the student's plan so the sub is never plan-less and
+                // stays in the inheritance chain once it becomes ACTIVE.
+                plan: inheritedPlanId
+                  ? { connect: { id: inheritedPlanId } }
+                  : undefined,
               },
               tx,
             );
