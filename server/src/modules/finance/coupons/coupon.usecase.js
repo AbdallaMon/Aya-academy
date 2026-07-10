@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { badRequest, conflict, notFound } from "../../../shared/errors/AppError.js";
 import { couponMessagesCodes, messagesNames } from "@aya/shared";
-import { couponAppliesToPeriod } from "../../../shared/utility/pricing.js";
 import { couponRepo } from "./coupon.repo.js";
 
 class CouponUsecase {
@@ -42,18 +41,22 @@ class CouponUsecase {
     const existing = await couponRepo.getByCode(code);
     if (existing) throw conflict(couponMessagesCodes.COUPON_CODE_TAKEN);
 
+    // Coupons are GLOBAL: they apply to any plan and any billing period. We no
+    // longer scope by plan (planIds ignored → no CouponPlan links) or by cycle
+    // (billingPeriod forced null = "applies to both/any"). The Prisma
+    // billingPeriod/CouponPlan fields are kept but left unwritten/unused.
     const data = {
       code,
       type: input.type,
       value: input.value,
       source: input.source,
-      billingPeriod: input.billingPeriod ?? null,
+      billingPeriod: null,
       maxRedemptions: input.maxRedemptions,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       isActive: input.isActive,
     };
-    return couponRepo.createCoupon({ data, planIds: input.planIds });
+    return couponRepo.createCoupon({ data });
   }
 
   async update({ id, authUser, ...input }) {
@@ -78,18 +81,20 @@ class CouponUsecase {
       );
     }
 
+    // Coupons are GLOBAL now: plan links (planIds) and cycle scope (billingPeriod)
+    // are no longer written — both inputs are ignored so an updated coupon stays
+    // applicable to any plan and any billing period.
     const data = {
       code: input.code,
       type: input.type,
       value: input.value,
       source: input.source,
-      billingPeriod: input.billingPeriod === undefined ? undefined : (input.billingPeriod ?? null),
       maxRedemptions: input.maxRedemptions,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       isActive: input.isActive,
     };
-    return couponRepo.updateCoupon({ id, data, planIds: input.planIds });
+    return couponRepo.updateCoupon({ id, data });
   }
 
   async remove({ id, authUser }) {
@@ -121,21 +126,10 @@ class CouponUsecase {
       return { valid: false, reason: couponMessagesCodes.COUPON_EXPIRED };
     }
 
-    if (coupon.plans && coupon.plans.length) {
-      const linkedPlanIds = coupon.plans.map((link) => link.planId);
-      if (!planId || !linkedPlanIds.includes(planId)) {
-        return {
-          valid: false,
-          reason: couponMessagesCodes.COUPON_NOT_APPLICABLE,
-        };
-      }
-    }
-
-    // Cycle scope: a coupon tied to MONTHLY/YEARLY only applies to that cycle.
-    if (billingPeriod && !couponAppliesToPeriod(coupon, billingPeriod)) {
-      return { valid: false, reason: couponMessagesCodes.COUPON_NOT_APPLICABLE };
-    }
-
+    // Coupons are GLOBAL: a valid, in-window, under-cap coupon applies to ANY
+    // plan and ANY billing period. Plan-scope and cycle-scope are no longer
+    // enforced (the `planId`/`billingPeriod` args are accepted but ignored, and
+    // any legacy CouponPlan/billingPeriod data is disregarded).
     return {
       valid: true,
       reason: null,
