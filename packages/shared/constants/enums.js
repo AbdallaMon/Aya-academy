@@ -133,18 +133,16 @@ export function activeSubscriptionWhere(now = new Date()) {
 
 /**
  * "Current-period" subscription filter: the sub whose [startDate, endDate] window
- * contains `now`, REGARDLESS of activation — so a not-yet-activated (PENDING)
- * current-month sub still surfaces as the current one (shown with its status),
- * instead of reading as "no current subscription". Excludes CANCELLED/EXPIRED.
- * Spread into a larger `where`.
+ * contains `now`, REGARDLESS of activation OR cancellation — so a not-yet-activated
+ * (PENDING) or a CANCELLED current-month sub still surfaces as the current one
+ * (shown with its status + an Activate action), instead of vanishing from the UI.
+ * Only a genuinely EXPIRED (past) sub is excluded. Spread into a larger `where`.
  */
 export function currentSubscriptionWhere(now = new Date()) {
   return {
     startDate: { lte: now },
     endDate: { gte: now },
-    status: {
-      notIn: [SUBSCRIPTION_STATUSES.CANCELLED, SUBSCRIPTION_STATUSES.EXPIRED],
-    },
+    status: { not: SUBSCRIPTION_STATUSES.EXPIRED },
   };
 }
 

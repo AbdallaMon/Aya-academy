@@ -181,7 +181,10 @@ export default function SubscriptionActions({
   const enableChangePlan = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableCoupon = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableSend = !!invoice;
-  const enableActivate = subPendingOrUpcoming && activationWindowOpen;
+  // Activatable when not yet started (PENDING/UPCOMING) OR cancelled (re-activate
+  // a cancelled sub — it stays visible with an Activate action instead of vanishing).
+  const enableActivate =
+    (subPendingOrUpcoming || status === "CANCELLED") && activationWindowOpen;
   const enableMarkPaid = !!invoice && invoice.status === "UNPAID";
   const enableCancel = subCancellable;
   // Hours are editable on the CURRENT (pending/active) sub, but NOT while a USAGE

@@ -64,7 +64,7 @@ export const subscriptionDetailText = {
     changePlanTitle: "تعديل خطة الاشتراك",
     changePlanSubmit: "حفظ التغيير",
     changePlanHint:
-      "بيعيد ربط الخطة بالاشتراك. الساعات والسعر متتغيّرش إلا لو الاشتراك لسه مفيهوش حصص متسجّلة؛ لو فيه حصص، الحصص هي اللي بتحدّد الساعات.",
+      "بيعيد ربط الخطة بالاشتراك. الساعات والسعر متتغيّرش إلا لو الاشتراك لسه مفيهوش حصص متسجّلة؛ لو فيه حصص، الحصص هي اللي بتحدّد الساعات. عشان تزوّد الساعات ضيف حصة بتاريخ الاشتراك.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "إضافة أو تغيير الكوبون",
     couponSubmit: "حفظ الكوبون",
@@ -121,7 +121,7 @@ export const subscriptionDetailText = {
     originUsage: "حسب الحصص",
     originManual: "يدوي",
     accumulatingTitle: "فاتورة الشهر القادم (بتتجمّع)",
-    liveHint: "بيتحدّث مع كل حصة",
+    liveHint: "بيتجمّع من حصص الشهر الحالي، ويتفوتر الشهر الجاي",
     frozenHint: "اتجمّد — جاهز للفاتورة",
     usageManagedHint: "بيتحسب تلقائياً من الحصص، ويتقفل آخر الشهر",
     noCurrent: "لا يوجد اشتراك حالي",
@@ -183,7 +183,7 @@ export const subscriptionDetailText = {
     changePlanTitle: "Change subscription plan",
     changePlanSubmit: "Save change",
     changePlanHint:
-      "Re-links the subscription's plan. Hours and price only change if the subscription has no logged sessions yet; once sessions are logged, they drive the hours.",
+      "Re-links the subscription's plan. Hours and price only change if the subscription has no logged sessions yet; once sessions are logged, they drive the hours. To add hours, log a session dated within the subscription.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "Add or change coupon",
     couponSubmit: "Save coupon",
@@ -240,7 +240,7 @@ export const subscriptionDetailText = {
     originUsage: "Usage-based",
     originManual: "Manual",
     accumulatingTitle: "Next month's bill (building up)",
-    liveHint: "Updates with every session",
+    liveHint: "Builds up from this month's sessions, billed next month",
     frozenHint: "Frozen — ready to invoice",
     usageManagedHint: "Auto-computed from sessions; closes at month end",
     noCurrent: "No current subscription",

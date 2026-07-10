@@ -1459,9 +1459,13 @@ class SubscriptionUsecase {
     //    no dedicated invalid-activation code, and minting one would be noise;
     //    SUBSCRIPTION_ACTIVATED is the success message, so it can't double as the
     //    error.
+    // PENDING/UPCOMING (not yet started) OR CANCELLED (re-activate a cancelled
+    // sub — cancelling no longer removes it, it just flips to CANCELLED and can
+    // be turned back on).
     const activatable = [
       SUBSCRIPTION_STATUSES.PENDING,
       SUBSCRIPTION_STATUSES.UPCOMING,
+      SUBSCRIPTION_STATUSES.CANCELLED,
     ];
     if (!activatable.includes(existing.status)) {
       throw new AppError({
