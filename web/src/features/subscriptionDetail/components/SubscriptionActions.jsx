@@ -262,8 +262,12 @@ export default function SubscriptionActions({
   // visibility (`show`), enabled state, why-disabled reason, handler and styling.
   const actions = [
     {
+      // Change plan is available on EVERY subscription now (all subs carry a
+      // plan). It only re-links the plan; hours change only when the sub has no
+      // sessions yet (backend rule). It stays enabled while the sub isn't a
+      // settled ACTIVE one with a paid invoice.
       key: "changePlan",
-      show: canChangePlan && !isUsage,
+      show: canChangePlan,
       icon: <MdSwapHoriz />,
       label: txt.changePlan,
       onClick: changeDialog.open,
