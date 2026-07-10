@@ -15,7 +15,6 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  MdAutorenew,
   MdSwapHoriz,
   MdSend,
   MdPlayCircle,
@@ -23,6 +22,7 @@ import {
   MdLocalOffer,
   MdCancel,
   MdSchedule,
+  MdReceiptLong,
   MdMoreVert,
 } from "react-icons/md";
 import { PERMISSIONS, USER_ROLES } from "@aya/shared";
@@ -32,11 +32,11 @@ import { useOpen } from "../../../hooks/useOpen.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { ConfirmDialog } from "../../../shared/components/index.js";
 import { SUBSCRIPTIONS_URL, INVOICES_URL } from "../config/constant.js";
-import RenewDialog from "./RenewDialog.jsx";
 import ChangePlanDialog from "./ChangePlanDialog.jsx";
 import CouponDialog from "./CouponDialog.jsx";
 import ConfirmWithCheckbox from "./ConfirmWithCheckbox.jsx";
 import EditHoursDialog from "../../subscriptions/components/EditHoursDialog.jsx";
+import InvoiceDialog from "../../invoices/components/InvoiceDialog.jsx";
 
 /**
  * A single action button that is ALWAYS rendered when the user's role may
@@ -68,15 +68,15 @@ function ActionButton({ enabled, reason, busy, children, ...btnProps }) {
  *
  *  Action        | visible if (permission)        | enabled when
  *  ------------- | ------------------------------- | ---------------------------
- *  Renew         | RENEW || REQUEST || admin       | status EXPIRED/CANCELLED
  *  Change plan   | EDIT (admin)                    | status≠ACTIVE & invoice UNPAID/none
  *  Coupon        | EDIT || REQUEST || admin        | status≠ACTIVE & invoice UNPAID/none
+ *  View invoice  | INVOICE.VIEW                    | an invoice exists
  *  Send to parent| INVOICE.SEND (admin)            | an invoice exists
  *  Activate      | SUBSCRIPTION.ACTIVATE (admin)   | status PENDING/UPCOMING
  *  Mark paid     | INVOICE.EDIT (admin)            | invoice status UNPAID
  *  Cancel        | SUBSCRIPTION.CANCEL (admin)     | status PENDING/UPCOMING/ACTIVE
  *
- * Coupon entry also lives inside the renew/change dialogs (CouponControl).
+ * Coupon entry also lives inside the change-plan dialog (CouponControl).
  *
  * Two render shapes share the SAME gating/handlers/dialogs (`variant` prop):
  *   - "bar"  (default) — a wrapping row of buttons, used on the DETAIL page.
@@ -96,10 +96,10 @@ export default function SubscriptionActions({
   const { user } = useAuth();
   const isAdmin = user?.role === USER_ROLES.ADMIN;
 
-  const renewDialog = useOpen();
   const changeDialog = useOpen();
   const couponDialog = useOpen();
   const editHoursDialog = useOpen();
+  const invoiceDialog = useOpen();
   const activateConfirm = useOpen();
   const markPaidConfirm = useOpen();
   const cancelConfirm = useOpen();
@@ -140,10 +140,6 @@ export default function SubscriptionActions({
   });
 
   // ── who may see each action (by role/permission) ──
-  const canRenew =
-    hasPermission(PERMISSIONS.SUBSCRIPTION.RENEW) ||
-    hasPermission(PERMISSIONS.SUBSCRIPTION.REQUEST) ||
-    isAdmin;
   const canChangePlan = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
   const canCoupon =
     hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT) ||
@@ -154,6 +150,11 @@ export default function SubscriptionActions({
   const canMarkPaid = hasPermission(PERMISSIONS.INVOICE.EDIT);
   const canCancel = hasPermission(PERMISSIONS.SUBSCRIPTION.CANCEL);
   const canEditHours = hasPermission(PERMISSIONS.SUBSCRIPTION.EDIT);
+  // Invoice viewing — mirrors the subscriptions detail page gating so the shared
+  // InvoiceDialog can be opened straight from the subscription cards/bar.
+  const canViewInvoice = hasPermission(PERMISSIONS.INVOICE.VIEW);
+  const canGenerateInvoice = hasPermission(PERMISSIONS.INVOICE.GENERATE);
+  const canEditInvoice = hasPermission(PERMISSIONS.INVOICE.EDIT);
 
   // ── current state → whether each action is enabled ──
   const status = subscription.status;
@@ -177,7 +178,6 @@ export default function SubscriptionActions({
     : null;
   const activationWindowOpen = !activationOpensAt || new Date() >= activationOpensAt;
 
-  const enableRenew = subEnded;
   const enableChangePlan = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableCoupon = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableSend = !!invoice;
@@ -259,16 +259,6 @@ export default function SubscriptionActions({
   // visibility (`show`), enabled state, why-disabled reason, handler and styling.
   const actions = [
     {
-      key: "renew",
-      show: canRenew && !isUsage,
-      icon: <MdAutorenew />,
-      label: txt.renew,
-      onClick: renewDialog.open,
-      enabled: enableRenew,
-      reason: txt.reasonRenew,
-      buttonVariant: "contained",
-    },
-    {
       key: "changePlan",
       show: canChangePlan && !isUsage,
       icon: <MdSwapHoriz />,
@@ -286,6 +276,16 @@ export default function SubscriptionActions({
       onClick: couponDialog.open,
       enabled: enableCoupon,
       reason: txt.reasonCoupon,
+      buttonVariant: "outlined",
+    },
+    {
+      key: "viewInvoice",
+      show: canViewInvoice,
+      icon: <MdReceiptLong />,
+      label: txt.viewInvoice,
+      onClick: invoiceDialog.open,
+      enabled: !!invoice,
+      reason: txt.reasonViewInvoice,
       buttonVariant: "outlined",
     },
     {
@@ -404,13 +404,6 @@ export default function SubscriptionActions({
         </>
       )}
 
-      <RenewDialog
-        open={renewDialog.isOpen}
-        onClose={renewDialog.close}
-        subscription={subscription}
-        txt={txt}
-      />
-
       <ChangePlanDialog
         open={changeDialog.isOpen}
         onClose={changeDialog.close}
@@ -435,6 +428,17 @@ export default function SubscriptionActions({
         loading={subPut.isLoading}
         onSubmit={saveHours}
       />
+
+      {canViewInvoice && (
+        <InvoiceDialog
+          open={invoiceDialog.isOpen}
+          onClose={invoiceDialog.close}
+          subscriptionId={subscription.id}
+          canGenerate={canGenerateInvoice}
+          canEdit={canEditInvoice}
+          onChanged={onChanged}
+        />
+      )}
 
       <ConfirmWithCheckbox
         open={activateConfirm.isOpen}
