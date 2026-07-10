@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Grid, IconButton, InputAdornment, TextField } from "@mui/material";
 import { MdAutorenew } from "react-icons/md";
@@ -13,12 +13,7 @@ import {
 } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
-import {
-  COUPONS_URL,
-  BILLING_SCOPES,
-  COUPON_SOURCES,
-  toDateInput,
-} from "../config/constant.js";
+import { COUPONS_URL, COUPON_SOURCES, toDateInput } from "../config/constant.js";
 import { useCouponsText } from "../config/couponsText.js";
 
 const FORM_ID = "coupon-form";
@@ -35,7 +30,6 @@ function makeDefaults(coupon) {
       code: coupon.code ?? "",
       type: coupon.type ?? "PERCENT",
       value: coupon.value ?? "",
-      billingPeriod: coupon.billingPeriod ?? "ALL",
       source: coupon.source ?? "MANUAL",
       maxRedemptions: coupon.maxRedemptions ?? "",
       startsAt: toDateInput(coupon.startsAt),
@@ -46,7 +40,6 @@ function makeDefaults(coupon) {
   return {
     code: generateCode(),
     type: "PERCENT",
-    billingPeriod: "ALL",
     source: "MANUAL",
     isActive: true,
     value: "",
@@ -91,23 +84,10 @@ export default function CouponFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, coupon, reset]);
 
-  const scopeOptions = useMemo(
-    () =>
-      BILLING_SCOPES.reduce((acc, s) => {
-        acc[s] = s === "MONTHLY" ? txt.monthly : txt.both;
-        return acc;
-      }, {}),
-    [txt],
-  );
-
-  const sourceOptions = useMemo(
-    () =>
-      COUPON_SOURCES.reduce((acc, s) => {
-        acc[s] = txt[s] || s;
-        return acc;
-      }, {}),
-    [txt],
-  );
+  const sourceOptions = COUPON_SOURCES.reduce((acc, s) => {
+    acc[s] = txt[s] || s;
+    return acc;
+  }, {});
 
   const { fetchData, isLoading } = useRequest({
     url: COUPONS_URL,
@@ -123,7 +103,6 @@ export default function CouponFormDialog({
           code: txt.codeLabel,
           type: txt.typeLabel,
           value: txt.valueLabel,
-          billingPeriod: txt.scopeLabel,
           maxRedemptions: txt.maxRedemptions,
           startsAt: txt.startsAt,
           endsAt: txt.endsAt,
@@ -135,15 +114,12 @@ export default function CouponFormDialog({
   });
 
   function submit(values) {
+    // Coupons are global now — they apply to any plan/cycle, so we no longer send
+    // planIds or a billingPeriod scope.
     const payload = {
       code: values.code?.trim() || undefined,
       type: values.type,
       value: Number(values.value),
-      // "ALL" sentinel → omit (applies to both cycles).
-      billingPeriod:
-        values.billingPeriod && values.billingPeriod !== "ALL"
-          ? values.billingPeriod
-          : undefined,
       maxRedemptions: values.maxRedemptions
         ? Number(values.maxRedemptions)
         : undefined,
@@ -152,7 +128,6 @@ export default function CouponFormDialog({
     };
     if (lockedPlanId) {
       payload.source = "MANUAL";
-      payload.planIds = [lockedPlanId];
       payload.isActive = true;
     } else {
       payload.source = values.source || undefined;
@@ -222,15 +197,6 @@ export default function CouponFormDialog({
               label={txt.valueLabel}
               type="number"
               rules={{ required: txt.required }}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <RHFSelect
-              name="billingPeriod"
-              control={control}
-              label={txt.scopeLabel}
-              options={scopeOptions}
             />
           </Grid>
 
