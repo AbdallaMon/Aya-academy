@@ -1208,9 +1208,11 @@ class SubscriptionUsecase {
   }
 
   /**
-   * Change the plan/period/coupon of a not-yet-paid subscription. Only allowed
-   * while the demand invoice is unpaid (or absent). Recomputes price/hours/dates
-   * for the new plan, then regenerates the invoice so its amounts match.
+   * Re-link the plan of a not-yet-paid subscription (v3 §3). RE-LINK ONLY: it
+   * NEVER recomputes subsHours / priceCharged / dates and NEVER regenerates the
+   * invoice — the inherited hours + price stay exactly as they were. Only allowed
+   * while the sub is not ACTIVE and its demand invoice is unpaid (or absent).
+   * A coupon change is a separate action (applyCoupon).
    */
   async changePlan({ authUser, id, ...input }) {
     // 1. TEACHER-ONLY. Changing an existing subscription's plan is an admin-only
@@ -1225,9 +1227,9 @@ class SubscriptionUsecase {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
 
-    // An ACTIVE subscription is settled — its plan/period/coupon must not change.
-    // Cancel it first, then create a fresh one. This is in ADDITION to the
-    // invoice-UNPAID guard below.
+    // An ACTIVE subscription is settled — its plan must not change. Cancel it
+    // first, then create a fresh one. This is in ADDITION to the invoice-UNPAID
+    // guard below.
     if (existing.status === SUBSCRIPTION_STATUSES.ACTIVE) {
       throw new AppError({
         statusCode: 409,
@@ -1247,61 +1249,18 @@ class SubscriptionUsecase {
       });
     }
 
+    // 3. Validate the target plan exists + is active.
     const plan = await planRepo.getByIdWithCoupons(input.planId);
     if (!plan || !plan.isActive) {
       throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
     }
 
-    const billingPeriod =
-      input.billingPeriod ?? existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
-    const settings = await settingsUsecase.getEffective();
-
-    // 3. Recompute price/hours/dates for the new plan + period + coupon.
-    const { priceCharged, couponId } = await this.computePricing(
-      plan,
-      billingPeriod,
-      input.couponCode,
-      Number(settings.hourlyRate),
-    );
-    const hours =
-      billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
-    const startDate = existing.startDate;
-    const endDate = this.computeEndDate(startDate, billingPeriod);
-
-    const data = {
-      billingPeriod,
-      endDate,
-      subsHours: hours,
-      remainingHours: hours,
-      priceCharged,
+    // 4. RE-LINK ONLY — swap the linked plan; hours/price/dates/invoice untouched.
+    const updated = await subscriptionRepo.updateSubscription(id, {
       plan: { connect: { id: plan.id } },
-      coupon: couponId ? { connect: { id: couponId } } : { disconnect: true },
-    };
-
-    // 4. Persist the change + correct the coupon redemption accounting atomically.
-    //    The new coupon (couponId) may differ from the sub's current one
-    //    (existing.couponId): old->new, old->none, none->new are all handled by
-    //    swapCouponRedemption. Without this the old coupon stays burned and the
-    //    new one is never counted.
-    const updated = await prisma.$transaction(async (tx) => {
-      await this.swapCouponRedemption(existing.couponId, couponId, tx);
-      return subscriptionRepo.updateSubscription(id, data, tx);
     });
 
-    // 5. Regenerate the demand invoice so its amounts AND discount snapshot match
-    //    the new plan/coupon. Uses the system regenerate (no admin gate) so a
-    //    PARENT changing the plan also refreshes the invoice. Dynamic import
-    //    avoids the subscription↔invoice circular import. Best-effort.
-    try {
-      const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
-      await invoiceUsecase.regenerateForSubscription(id, {
-        createdById: authUser.id,
-      });
-    } catch {
-      // swallow — invoice regeneration is best-effort
-    }
-
-    // 6. Notify the student the plan changed (best-effort).
+    // 5. Notify the student the plan changed (best-effort).
     try {
       await notificationUsecase.createNotification({
         userId: updated.studentId,
