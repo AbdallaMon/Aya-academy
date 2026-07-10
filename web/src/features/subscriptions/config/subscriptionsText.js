@@ -87,9 +87,11 @@ export const subscriptionsText = {
     paid: "مدفوعة",
     unpaid: "غير مدفوعة",
     viewStudent: "عرض الطالب",
-    // month-only create dialog
+    // plan + month create dialog
     month: "الشهر",
-    monthHint: "هيتم إنشاء اشتراك حسب الحصص لهذا الشهر، والساعات بتتحسب تلقائياً.",
+    monthHint: "هيتم إنشاء اشتراك للشهر ده بساعات وسعر الخطة المختارة.",
+    noPlans: "لا توجد خطط متاحة.",
+    planHint: "{hours} ساعة · {price}",
     subscriptionExists: "يوجد اشتراك حسب الحصص لهذا الشهر بالفعل.",
     viewAll: "كل الاشتراكات",
   },
@@ -175,9 +177,11 @@ export const subscriptionsText = {
     paid: "Paid",
     unpaid: "Unpaid",
     viewStudent: "View student",
-    // month-only create dialog
+    // plan + month create dialog
     month: "Month",
-    monthHint: "A usage subscription is created for this month; hours are computed automatically from sessions.",
+    monthHint: "A subscription for this month is created with the selected plan's hours and price.",
+    noPlans: "No plans available.",
+    planHint: "{hours} h · {price}",
     subscriptionExists: "A usage subscription for this month already exists.",
     viewAll: "All subscriptions",
   },

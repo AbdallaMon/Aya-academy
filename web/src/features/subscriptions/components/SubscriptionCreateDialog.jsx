@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { MenuItem, Stack, TextField, Typography } from "@mui/material";
-import { FormDialog } from "../../../shared/components/index.js";
+import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
-import { USERS_URL } from "../config/constant.js";
+import { useTranslation } from "../../../i18n/client.js";
+import { formatMoney } from "../../../shared/lib/money.js";
+import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
+import { USERS_URL, PLANS_PUBLIC_URL } from "../config/constant.js";
 
 const FORM_ID = "subscription-create-form";
+const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
 /** Current month as `YYYY-MM` (what a native month input expects/emits). */
 function currentMonth() {
@@ -16,9 +20,10 @@ function currentMonth() {
 }
 
 /**
- * Admin-only: create a USAGE subscription for a student for ONE month. The form
- * asks ONLY for a month — the backend derives startDate (1st), endDate (last
- * day), origin (USAGE), and the hours/price from that month's logged sessions.
+ * Admin-only: create a subscription for a student for ONE month from a PLAN.
+ * The form asks for a plan + month (+ optional coupon); the backend derives
+ * startDate (1st), endDate (last day), and takes hours/price FROM the plan at
+ * creation. Submits `{ studentId, planId, month, couponCode? }`.
  *
  * When `lockedStudent` ({ id, name }) is provided (embedded in a user's detail
  * tab) the student is preset + shown read-only instead of the picker.
@@ -31,8 +36,14 @@ export default function SubscriptionCreateDialog({
   loading,
   lockedStudent = null,
 }) {
+  const { lng } = useTranslation();
   const lockedStudentId = lockedStudent?.id ?? "";
   const defaultMonth = useMemo(() => currentMonth(), []);
+
+  // MONTHLY-only in the UI for now — the yearly toggle is hidden.
+  const billingPeriod = "MONTHLY";
+  const [planId, setPlanId] = useState("");
+  const [coupon, setCoupon] = useState(EMPTY_COUPON);
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { studentId: lockedStudentId, month: defaultMonth },
@@ -47,23 +58,52 @@ export default function SubscriptionCreateDialog({
     initialParams: { limit: 100, role: "STUDENT" },
   });
 
+  const plansReq = useRequest({
+    url: PLANS_PUBLIC_URL,
+    method: "get",
+    isPublic: true,
+    autoFetch: false,
+    syncToUrl: false,
+  });
+
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     if (open) {
       // No need to load the student picker when the student is locked.
       if (!lockedStudent) studentsReq.fetchData();
+      plansReq.fetchData();
       reset({ studentId: lockedStudentId, month: defaultMonth });
+      setPlanId("");
+      setCoupon(EMPTY_COUPON);
     }
   }, [open]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
+  const plans = plansReq.data || [];
+  const selectedPlan = plans.find((p) => String(p.id) === String(planId)) || null;
+
+  function onPlanChange(id) {
+    setPlanId(id);
+    const plan = plans.find((p) => String(p.id) === String(id)) || null;
+    setCoupon(plan ? initialCoupon(plan, billingPeriod) : EMPTY_COUPON);
+  }
+
+  const { codeToSend, net } = resolveCoupon(selectedPlan, billingPeriod, coupon);
+
+  const planHint =
+    selectedPlan &&
+    (txt.planHint || "{hours} · {price}")
+      .replace("{hours}", String(selectedPlan.hours ?? "—"))
+      .replace("{price}", formatMoney(net, selectedPlan.currency));
 
   function submit(values) {
-    if (!values.studentId || !values.month) return;
+    if (!values.studentId || !values.month || !planId) return;
     onCreate({
       studentId: Number(values.studentId),
+      planId: Number(planId),
       month: values.month, // "YYYY-MM"
+      ...(codeToSend ? { couponCode: codeToSend } : {}),
     });
   }
 
@@ -105,6 +145,28 @@ export default function SubscriptionCreateDialog({
             />
           )}
 
+          <TextField
+            select
+            label={txt.selectPlan}
+            value={planId}
+            onChange={(e) => onPlanChange(e.target.value)}
+            fullWidth
+            required
+            helperText={plans.length === 0 ? txt.noPlans : undefined}
+          >
+            {plans.map((p) => (
+              <MenuItem key={p.id} value={String(p.id)}>
+                {lng === "en" ? p.titleEn : p.titleAr}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {planHint && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>
+              {planHint}
+            </Typography>
+          )}
+
           <Controller
             name="month"
             control={control}
@@ -120,6 +182,15 @@ export default function SubscriptionCreateDialog({
               />
             )}
           />
+
+          {selectedPlan && (
+            <CouponControl
+              plan={selectedPlan}
+              billingPeriod={billingPeriod}
+              coupon={coupon}
+              onCoupon={setCoupon}
+            />
+          )}
 
           <Typography variant="caption" color="text.secondary">
             {txt.monthHint}

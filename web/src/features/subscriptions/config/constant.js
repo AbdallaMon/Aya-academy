@@ -1,6 +1,9 @@
 export const SUBSCRIPTIONS_URL = "subscriptions";
 export const USERS_URL = "users";
 export const PLANS_URL = "plans";
+// Public active plans (with pricing + the plan's own removable coupon) for the
+// create-subscription plan picker. Same endpoint the renew/change-plan pickers use.
+export const PLANS_PUBLIC_URL = "plans/public";
 
 export const SUBSCRIPTION_STATUSES = [
   "PENDING",
