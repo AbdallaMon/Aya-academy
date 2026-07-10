@@ -25,10 +25,13 @@ export class SubscriptionValidation {
       planId: z.number().int().positive().optional(),
       billingPeriod: z.enum(billingPeriods).optional(),
       status: z.enum(statuses).optional(),
-      // Create-by-month (USAGE arrears) path: a single month → the usecase
-      // derives startDate = 1st, endDate = last day, origin = USAGE, and hours
-      // from the student's sessions. Accepts an ISO date or `YYYY-MM`.
-      // When present, startDate/endDate are derived server-side and ignored.
+      // Month-based create. Two shapes share the `month` field (startDate/endDate
+      // are derived server-side as 1st → last day and ignored when `month` is set):
+      //   • planId + month  → create-by-plan (v3, the admin form): hours + price
+      //     come from the plan; USAGE sub with the plan linked (couponCode optional).
+      //   • month only      → legacy USAGE arrears: hours from the student's
+      //     sessions in the previous month.
+      // Accepts an ISO date or `YYYY-MM`.
       month: z.coerce.date().optional(),
       // Legacy plan-based path: explicit dates. Optional so the month path
       // validates; required (via refine) when `month` is absent.

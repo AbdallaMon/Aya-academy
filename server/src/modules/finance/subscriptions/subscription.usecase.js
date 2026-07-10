@@ -556,8 +556,102 @@ class SubscriptionUsecase {
     return subscription;
   }
 
+  /**
+   * Create-by-plan(+month) (v3 §2): the admin form sends `{ studentId, planId,
+   * month, couponCode? }`. Dates derive from the month (1st → last day); hours +
+   * price come from the PLAN at creation time (subsHours = plan.hours, price via
+   * computePricing). The sub is a plan-linked USAGE sub so the monthly usage
+   * machinery (recompute / freeze / inheritance) operates on it uniformly and a
+   * later zero-session month falls back to this sub's own plan hours.
+   *
+   * origin = USAGE (not MANUAL): the same lookup that guarantees one bill per
+   * (student, month) — findOpenUsageSubscription (origin USAGE + startDate) — is
+   * reused as the duplicate guard, and USAGE subs coexist with the student's plan
+   * (mirrors createByMonth: no prepareForNewSubscription gate).
+   */
+  async createByPlanMonth({ authUser, ...input }) {
+    const studentId = input.studentId;
+    const startDate = monthRange(input.month).gte; // 1st of the chosen month (UTC)
+    const endDate = endOfMonth(startDate);
+
+    // Load + validate the plan (hours + price come from it).
+    const plan = await planRepo.getByIdWithCoupons(input.planId);
+    if (!plan || !plan.isActive) {
+      throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+    }
+
+    // One sub per (student, month) — status-agnostic USAGE lookup by startDate.
+    const existing = await subscriptionRepo.findOpenUsageSubscription({
+      studentId,
+      paymentStart: startDate,
+    });
+    if (existing) {
+      throw conflict(
+        subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS,
+        messagesNames.subscriptionMessages,
+      );
+    }
+
+    const settings = await settingsUsecase.getEffective();
+    const { priceCharged, couponId } = await this.computePricing(
+      plan,
+      BILLING_PERIODS.MONTHLY,
+      input.couponCode,
+      Number(settings.hourlyRate),
+    );
+    const subsHours = plan.hours;
+
+    const data = {
+      origin: SUBSCRIPTION_ORIGINS.USAGE,
+      status: this.resolveStatus(startDate, endDate),
+      billingPeriod: BILLING_PERIODS.MONTHLY,
+      startDate,
+      endDate,
+      subsHours,
+      remainingHours: subsHours,
+      priceCharged,
+      currency: settings.currency,
+      notes: input.notes,
+      student: { connect: { id: studentId } },
+      plan: { connect: { id: plan.id } },
+      createdBy: { connect: { id: authUser.id } },
+    };
+    if (couponId) data.coupon = { connect: { id: couponId } };
+
+    const subscription = await prisma.$transaction(async (tx) => {
+      const sub = await subscriptionRepo.createSubscription(data, tx);
+      if (couponId) {
+        await couponRepo.incrementCouponRedemption(couponId, tx);
+      }
+      return sub;
+    });
+
+    // Auto-create the demand invoice (snapshot of the template) — best-effort.
+    await this.ensureInvoice(subscription, { plan });
+
+    // Notify the student — failure must not fail the request.
+    try {
+      await notificationUsecase.createNotification({
+        userId: studentId,
+        type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
+        titleAr: "تم إنشاء اشتراك جديد",
+        titleEn: "A new subscription has been created",
+        link: "/dashboard",
+      });
+    } catch {
+      // swallow — notification is best-effort
+    }
+
+    return subscription;
+  }
+
   async create({ authUser, ...input }) {
-    // Create-by-month (USAGE) path: derives dates/hours/price from the month.
+    // Create-by-plan(+month) path (v3 §2 — the admin form): a plan + month yields
+    // a plan-linked USAGE sub whose hours + price come from the PLAN at creation.
+    if (input.month != null && input.planId != null) {
+      return this.createByPlanMonth({ authUser, ...input });
+    }
+    // Legacy create-by-month (USAGE arrears) path: month only, hours from sessions.
     if (input.month != null) {
       return this.createByMonth({ authUser, ...input });
     }
