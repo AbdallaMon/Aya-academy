@@ -1252,10 +1252,63 @@ class SubscriptionUsecase {
       throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
     }
 
-    // 4. RE-LINK ONLY — swap the linked plan; hours/price/dates/invoice untouched.
-    const updated = await subscriptionRepo.updateSubscription(id, {
-      plan: { connect: { id: plan.id } },
+    // 4. Determine whether the sub has any ACTUAL usage in its consumption month
+    //    (arrears: the month-X sub bills month X-1's sessions — the same window
+    //    usagePreview/recompute pick: monthRange(previousMonth(startDate))).
+    //      - usage === 0 → the hours came from the plan, not sessions, so the new
+    //        plan's hours + price flow through: reset subsHours/remainingHours to
+    //        the new plan's hours and re-price from those hours (keeping the sub's
+    //        existing coupon, if any).
+    //      - usage  >  0 → real logged sessions drive the hours; RE-LINK ONLY,
+    //        leaving subsHours/remainingHours/price as-is.
+    const consumption = monthRange(previousMonth(existing.startDate));
+    const usage = await subscriptionRepo.sumUsageHoursForStudentMonth({
+      studentId: existing.studentId,
+      gte: consumption.gte,
+      lt: consumption.lt,
     });
+
+    const data = { plan: { connect: { id: plan.id } } };
+    let priceChanged = false;
+    if (usage === 0) {
+      const settings = await settingsUsecase.getEffective();
+      const { priceCharged } = await this.computeUsagePricing({
+        subsHours: plan.hours,
+        // Keep applying the sub's existing coupon (if any) to the new hours.
+        couponCode: existing.coupon?.code,
+        hourlyRate: Number(settings.hourlyRate),
+        planId: plan.id,
+      });
+      data.subsHours = plan.hours;
+      data.remainingHours = plan.hours;
+      data.priceCharged = priceCharged;
+      priceChanged = Number(priceCharged) !== Number(existing.priceCharged);
+    }
+
+    const updated = await subscriptionRepo.updateSubscription(id, data);
+
+    // 4b. When the hours/price were reset from the new plan, best-effort
+    //     regenerate the still-unpaid demand invoice so its amount matches (the
+    //     change-plan guard already ensured the invoice is UNPAID or absent).
+    if (usage === 0 && priceChanged) {
+      try {
+        const currentInvoice =
+          invoice ?? (await invoiceRepo.getBySubscriptionId(id));
+        if (
+          !currentInvoice ||
+          currentInvoice.status === INVOICE_STATUSES.UNPAID
+        ) {
+          const { invoiceUsecase } = await import(
+            "../invoices/invoice.usecase.js"
+          );
+          await invoiceUsecase.regenerateForSubscription(id, {
+            createdById: authUser.id,
+          });
+        }
+      } catch {
+        // swallow — invoice regeneration is best-effort
+      }
+    }
 
     // 5. Notify the student the plan changed (best-effort).
     try {
