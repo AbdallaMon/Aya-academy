@@ -773,12 +773,16 @@ class SubscriptionUsecase {
       );
     }
 
+    // subsHours (the invoiced hours) is NOT editable via the manual edit path:
+    // it is set ONLY by the automatic hours writes (createByPlanMonth from the
+    // plan, recompute/freeze from sessions). Any subsHours in the input is
+    // ignored here — the price is never recomputed from it. Only remainingHours
+    // is manually editable.
     const data = {
       status: input.status,
       billingPeriod: input.billingPeriod,
       startDate: input.startDate,
       endDate: input.endDate,
-      subsHours: input.subsHours,
       remainingHours: input.remainingHours,
       priceCharged: input.priceCharged,
       notes: input.notes,
@@ -793,28 +797,15 @@ class SubscriptionUsecase {
       data.coupon = { connect: { id: input.couponId } };
     }
 
-    // Edit hours → pay more: when hours change without an explicit price, the
-    // charged price is recomputed from the new hours × the global hourly rate
-    // (EditHoursDialog sends only hours, no price).
-    if (input.subsHours !== undefined && input.priceCharged === undefined) {
-      const settings = await settingsUsecase.getEffective();
-      data.priceCharged = priceFromHours(
-        input.subsHours,
-        Number(settings.hourlyRate),
-      );
-    }
-
     const subscription = await subscriptionRepo.updateSubscription(id, data);
 
-    // If subsHours or the charged price actually changed, best-effort regenerate
-    // the demand invoice so its amount matches — mirror changePlan(). Guarded so
-    // a notes-only edit doesn't regenerate.
-    const hoursChanged =
-      input.subsHours !== undefined && input.subsHours !== existing.subsHours;
+    // If the charged price was explicitly changed, best-effort regenerate the
+    // demand invoice so its amount matches. Guarded so a notes-only edit doesn't
+    // regenerate. (subsHours is no longer editable here, so hours never change.)
     const priceChanged =
       data.priceCharged !== undefined &&
       Number(data.priceCharged) !== Number(existing.priceCharged);
-    if (hoursChanged || priceChanged) {
+    if (priceChanged) {
       try {
         // Only refresh the demand invoice while it is still UNPAID (or absent):
         // a settled (PAID/VOID) invoice is a fixed record and must not have its

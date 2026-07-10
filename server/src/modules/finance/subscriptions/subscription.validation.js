@@ -52,6 +52,10 @@ export class SubscriptionValidation {
       },
     );
 
+  // Manual edit path. subsHours (the invoiced hours) is intentionally NOT
+  // accepted here — it is set only by the automatic hours writes (create-by-plan
+  // from the plan, recompute/freeze from sessions). Only remainingHours is
+  // manually editable (must stay >= 0).
   static updateSubscriptionSchema = z.object({
     studentId: z.number().int().positive().optional(),
     planId: z.number().int().positive().optional(),
@@ -59,8 +63,7 @@ export class SubscriptionValidation {
     status: z.enum(statuses).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
-    subsHours: z.number().int().optional(),
-    remainingHours: z.number().int().optional(),
+    remainingHours: z.number().int().min(0).optional(),
     priceCharged: z.number().optional(),
     couponId: z.number().int().positive().optional(),
     notes: z.string().optional(),
