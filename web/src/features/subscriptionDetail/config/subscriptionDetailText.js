@@ -63,7 +63,8 @@ export const subscriptionDetailText = {
     changePlan: "تعديل الخطة",
     changePlanTitle: "تعديل خطة الاشتراك",
     changePlanSubmit: "حفظ التغيير",
-    changePlanHint: "بيغيّر الخطة المربوطة بالاشتراك بس — الساعات والسعر متتغيّرش.",
+    changePlanHint:
+      "بيعيد ربط الخطة بالاشتراك. الساعات والسعر متتغيّرش إلا لو الاشتراك لسه مفيهوش حصص متسجّلة؛ لو فيه حصص، الحصص هي اللي بتحدّد الساعات.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "إضافة أو تغيير الكوبون",
     couponSubmit: "حفظ الكوبون",
@@ -86,9 +87,12 @@ export const subscriptionDetailText = {
     cancelSub: "إلغاء الاشتراك",
     cancelSubTitle: "إلغاء الاشتراك",
     cancelSubConfirm: "متأكد إنك عايز تلغي الاشتراك ده؟",
-    // edit hours
-    editHours: "تعديل الساعات",
+    // edit hours (remaining only)
+    editHours: "تعديل الساعات المتبقية",
     editHoursTitle: "تعديل ساعات الفاتورة",
+    editRemainingTitle: "تعديل الساعات المتبقية",
+    remainingHoursLabel: "الساعات المتبقية",
+    remainingHoursHint: "عدد الساعات المتبقية للطالب في هذا الاشتراك.",
     subsHoursHint: "الفاتورة بتتحسب على عدد الساعات دي",
     remainingExceedsSubs: "الساعات المتبقية لا يمكن أن تتجاوز ساعات الاشتراك.",
     reasonEditHours: "لا يمكن تعديل ساعات اشتراك منتهٍ أو ملغى.",
@@ -99,6 +103,7 @@ export const subscriptionDetailText = {
     reasonChangePlan: "لا يمكن تغيير الخطة بعد تفعيل الاشتراك أو دفع الفاتورة",
     reasonCoupon: "لا يمكن تعديل الكوبون بعد الدفع أو التفعيل",
     reasonSend: "لا توجد فاتورة لإرسالها",
+    reasonViewInvoice: "لا توجد فاتورة لعرضها",
     reasonActivate: "الاشتراك غير قابل للتفعيل في حالته الحالية",
     reasonActivateTooEarly:
       "لسه بدري — التفعيل يفتح من آخر الشهر السابق لبداية الاشتراك",
@@ -177,7 +182,8 @@ export const subscriptionDetailText = {
     changePlan: "Change plan",
     changePlanTitle: "Change subscription plan",
     changePlanSubmit: "Save change",
-    changePlanHint: "Only re-links the subscription's plan — hours and price are unchanged.",
+    changePlanHint:
+      "Re-links the subscription's plan. Hours and price only change if the subscription has no logged sessions yet; once sessions are logged, they drive the hours.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "Add or change coupon",
     couponSubmit: "Save coupon",
@@ -200,9 +206,12 @@ export const subscriptionDetailText = {
     cancelSub: "Cancel subscription",
     cancelSubTitle: "Cancel subscription",
     cancelSubConfirm: "Are you sure you want to cancel this subscription?",
-    // edit hours
-    editHours: "Edit hours",
+    // edit hours (remaining only)
+    editHours: "Edit remaining hours",
     editHoursTitle: "Edit invoice hours",
+    editRemainingTitle: "Edit remaining hours",
+    remainingHoursLabel: "Remaining hours",
+    remainingHoursHint: "Hours the student still has left on this subscription.",
     subsHoursHint: "The invoice is calculated from these hours.",
     remainingExceedsSubs: "Remaining hours can't exceed subscription hours.",
     reasonEditHours: "The hours of an expired or cancelled subscription can't be edited.",
@@ -213,6 +222,7 @@ export const subscriptionDetailText = {
     reasonChangePlan: "The plan can't be changed after the subscription is active or the invoice is paid.",
     reasonCoupon: "The coupon can't be changed after payment or activation.",
     reasonSend: "There is no invoice to send.",
+    reasonViewInvoice: "There is no invoice to view.",
     reasonActivate: "The subscription can't be activated in its current state.",
     reasonActivateTooEarly:
       "Too early — activation opens from the last day of the month before the subscription starts.",
