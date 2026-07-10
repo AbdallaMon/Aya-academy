@@ -12,11 +12,13 @@ const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
 /**
  * Change the plan of an existing subscription (in place — no new subscription).
- * RE-LINKS THE PLAN ONLY: the backend does not recompute hours/price/dates or
- * regenerate the invoice. planId is required; the optional coupon (CouponControl,
- * reused) stays its own concern. POSTs /subscriptions/:id/change-plan with only
- * `{ planId, couponCode? }`. A 409 CANNOT_CHANGE_PLAN_PAID (invoice already paid)
- * is left to the auto-toast. On success → refetch.
+ * RE-LINKS THE PLAN: the backend swaps the linked plan and only recomputes
+ * hours/price from the new plan when the subscription has no logged sessions yet;
+ * once sessions exist, they drive the hours and the plan link is all that changes.
+ * planId is required; the optional coupon (CouponControl, reused) stays its own
+ * concern. POSTs /subscriptions/:id/change-plan with only `{ planId, couponCode? }`.
+ * A 409 CANNOT_CHANGE_PLAN_PAID (invoice already paid) is left to the auto-toast.
+ * On success → refetch.
  *
  * Props: open, onClose, subscription, txt, onChanged.
  */
