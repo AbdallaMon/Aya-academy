@@ -1,6 +1,7 @@
 import { prisma } from "@aya/db/prisma.client.js";
 import {
   activeSubscriptionWhere,
+  currentSubscriptionWhere,
   SESSION_ATTENDANCE,
   SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
@@ -102,8 +103,9 @@ class SubscriptionRepo {
     const now = new Date();
     const [currents, nexts] = await Promise.all([
       prisma.subscription.findMany({
-        where: { studentId: { in: studentIds }, ...activeSubscriptionWhere(now) },
-        orderBy: { endDate: "desc" },
+        // Current-period sub even if not yet activated (shown with its status).
+        where: { studentId: { in: studentIds }, ...currentSubscriptionWhere(now) },
+        orderBy: [{ status: "asc" }, { endDate: "desc" }],
         select: subscriptionSelect,
       }),
       prisma.subscription.findMany({

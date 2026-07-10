@@ -209,17 +209,19 @@ class SubscriptionUsecase {
   }
 
   /**
-   * Price a USAGE subscription (hours × rate) with an optional coupon code.
-   * Only plan-agnostic coupons validate (validateCoupon with planId: null).
-   * Mirrors computePricing but the base is hours-derived, not plan-derived.
+   * Price a subscription STRICTLY from its own hours: base = subsHours × rate,
+   * then the coupon discount is applied to THAT total (never the plan's hours).
+   * `planId` (optional) is used ONLY to validate a plan-scoped coupon code — it
+   * never affects the base. This is the single pricing path for every
+   * subscription (create, apply-coupon, recompute, freeze).
    */
-  async computeUsagePricing({ subsHours, couponCode, hourlyRate }) {
+  async computeUsagePricing({ subsHours, couponCode, hourlyRate, planId = null }) {
     const base = priceFromHours(subsHours, hourlyRate);
     if (!couponCode) return { priceCharged: base, couponId: null };
 
     const result = await couponUsecase.validateCoupon({
       code: couponCode,
-      planId: null,
+      planId,
       billingPeriod: BILLING_PERIODS.MONTHLY,
     });
     if (!result.valid) {
@@ -593,13 +595,15 @@ class SubscriptionUsecase {
     }
 
     const settings = await settingsUsecase.getEffective();
-    const { priceCharged, couponId } = await this.computePricing(
-      plan,
-      BILLING_PERIODS.MONTHLY,
-      input.couponCode,
-      Number(settings.hourlyRate),
-    );
     const subsHours = plan.hours;
+    // Price from the subscription's OWN hours (subsHours × rate), NOT the plan's
+    // period price. planId is passed only so a plan-scoped coupon still validates.
+    const { priceCharged, couponId } = await this.computeUsagePricing({
+      subsHours,
+      couponCode: input.couponCode,
+      hourlyRate: Number(settings.hourlyRate),
+      planId: plan.id,
+    });
 
     const data = {
       origin: SUBSCRIPTION_ORIGINS.USAGE,
@@ -1314,60 +1318,44 @@ class SubscriptionUsecase {
     }
 
     // 3. Recompute the price with the new code. A falsy code (empty/null/absent)
-    //    yields couponId null = coupon removed. USAGE subs are hours-based and
-    //    plan-agnostic; MANUAL subs stay plan-based (unchanged).
+    //    yields couponId null = coupon removed. Pricing is ALWAYS from the
+    //    subscription's own hours (subsHours × rate); the coupon discounts THAT
+    //    total, never the plan. The sub's planId is passed only so a plan-scoped
+    //    coupon still validates.
     const settings = await settingsUsecase.getEffective();
     let priceCharged;
     let couponId;
 
-    if (existing.origin === SUBSCRIPTION_ORIGINS.USAGE) {
-      if (existing.subsHours == null) {
-        // Accumulating (not frozen): attach the coupon now; the discount is
-        // computed at month-close freeze. Validate the code so a bad code is
-        // rejected immediately; price stays null (derived until freeze).
-        if (input.couponCode) {
-          const result = await couponUsecase.validateCoupon({
-            code: input.couponCode,
-            planId: null,
-            billingPeriod: BILLING_PERIODS.MONTHLY,
-          });
-          if (!result.valid) {
-            throw badRequest(
-              subscriptionMessagesCodes.COUPON_INVALID,
-              messagesNames.subscriptionMessages,
-            );
-          }
-          const coupon = await couponRepo.getByCode(input.couponCode);
-          couponId = coupon.id;
-        } else {
-          couponId = null;
+    if (existing.subsHours == null) {
+      // Accumulating (not frozen): attach the coupon now; the discount is
+      // computed at month-close freeze. Validate the code so a bad code is
+      // rejected immediately; price stays null (derived until freeze).
+      if (input.couponCode) {
+        const result = await couponUsecase.validateCoupon({
+          code: input.couponCode,
+          planId: existing.planId ?? null,
+          billingPeriod: BILLING_PERIODS.MONTHLY,
+        });
+        if (!result.valid) {
+          throw badRequest(
+            subscriptionMessagesCodes.COUPON_INVALID,
+            messagesNames.subscriptionMessages,
+          );
         }
-        priceCharged = existing.priceCharged ?? null; // unchanged / still derived
+        const coupon = await couponRepo.getByCode(input.couponCode);
+        couponId = coupon.id;
       } else {
-        // Frozen (PENDING, pre-activation): recompute hours-based price now.
-        ({ priceCharged, couponId } = await this.computeUsagePricing({
-          subsHours: existing.subsHours,
-          couponCode: input.couponCode,
-          hourlyRate: Number(settings.hourlyRate),
-        }));
+        couponId = null;
       }
+      priceCharged = existing.priceCharged ?? null; // unchanged / still derived
     } else {
-      // MANUAL path — unchanged (plan-based).
-      if (!existing.planId) {
-        throw badRequest(
-          subscriptionMessagesCodes.PLAN_REQUIRED,
-          messagesNames.subscriptionMessages,
-        );
-      }
-      const plan = await planRepo.getByIdWithCoupons(existing.planId);
-      if (!plan) throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
-      const billingPeriod = existing.billingPeriod ?? BILLING_PERIODS.MONTHLY;
-      ({ priceCharged, couponId } = await this.computePricing(
-        plan,
-        billingPeriod,
-        input.couponCode,
-        Number(settings.hourlyRate),
-      ));
+      // Priced from the sub's own hours (subsHours × rate) minus the coupon.
+      ({ priceCharged, couponId } = await this.computeUsagePricing({
+        subsHours: existing.subsHours,
+        couponCode: input.couponCode,
+        hourlyRate: Number(settings.hourlyRate),
+        planId: existing.planId ?? null,
+      }));
     }
 
     // 4. Persist price + coupon link and correct redemption accounting atomically.

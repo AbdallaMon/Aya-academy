@@ -7,6 +7,7 @@ import { prisma } from "@aya/db/prisma.client.js";
 import {
   USER_ROLES,
   activeSubscriptionWhere,
+  currentSubscriptionWhere,
   SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
 } from "@aya/shared";
@@ -184,8 +185,9 @@ class DashboardRepo {
     const now = new Date();
     const [active, open, latest] = await Promise.all([
       db.subscription.findFirst({
-        where: { studentId, ...activeSubscriptionWhere(now) },
-        orderBy: { endDate: "desc" },
+        // Current-period sub even if not yet activated (shown with its status).
+        where: { studentId, ...currentSubscriptionWhere(now) },
+        orderBy: [{ status: "asc" }, { endDate: "desc" }],
         select: SUB_CARD_SELECT,
       }),
       db.subscription.findFirst({
