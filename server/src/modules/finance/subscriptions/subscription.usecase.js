@@ -940,7 +940,8 @@ class SubscriptionUsecase {
           type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
           titleAr: "طلب اشتراك جديد بانتظار الموافقة",
           titleEn: "New subscription request pending approval",
-          link: "/dashboard/subscriptions",
+          link: `/dashboard/subscriptions/${subscription.id}`,
+          dataJson: { subscriptionId: subscription.id, studentId },
         });
       }
     } catch {
@@ -1192,7 +1193,8 @@ class SubscriptionUsecase {
             type: NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
             titleAr: "طلب تجديد اشتراك بانتظار الموافقة",
             titleEn: "Subscription renewal request pending approval",
-            link: "/dashboard/subscriptions",
+            link: `/dashboard/subscriptions/${subscription.id}`,
+            dataJson: { subscriptionId: subscription.id, studentId },
           });
         }
       } else {

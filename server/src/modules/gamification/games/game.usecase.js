@@ -166,7 +166,7 @@ class GameUsecase {
         type: NOTIFICATION_TYPES.GAME_ASSIGNED,
         titleAr: "لعبة جديدة في انتظارك!",
         titleEn: "A new game is waiting for you!",
-        link: "/dashboard",
+        link: `/dashboard/games/${game.slug}`,
         dataJson: { gameId: game.id },
       });
     } catch {
