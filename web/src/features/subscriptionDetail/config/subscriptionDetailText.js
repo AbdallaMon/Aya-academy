@@ -63,6 +63,7 @@ export const subscriptionDetailText = {
     changePlan: "تعديل الخطة",
     changePlanTitle: "تعديل خطة الاشتراك",
     changePlanSubmit: "حفظ التغيير",
+    changePlanHint: "بيغيّر الخطة المربوطة بالاشتراك بس — الساعات والسعر متتغيّرش.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "إضافة أو تغيير الكوبون",
     couponSubmit: "حفظ الكوبون",
@@ -176,6 +177,7 @@ export const subscriptionDetailText = {
     changePlan: "Change plan",
     changePlanTitle: "Change subscription plan",
     changePlanSubmit: "Save change",
+    changePlanHint: "Only re-links the subscription's plan — hours and price are unchanged.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "Add or change coupon",
     couponSubmit: "Save coupon",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MenuItem, Stack, TextField } from "@mui/material";
+import { Alert, MenuItem, Stack, TextField } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -12,9 +12,11 @@ const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
 /**
  * Change the plan of an existing subscription (in place — no new subscription).
- * planId is required; billing period + coupon (CouponControl, reused) are
- * editable. POSTs /subscriptions/:id/change-plan. A 409 CANNOT_CHANGE_PLAN_PAID
- * (invoice already paid) is left to the auto-toast. On success → refetch.
+ * RE-LINKS THE PLAN ONLY: the backend does not recompute hours/price/dates or
+ * regenerate the invoice. planId is required; the optional coupon (CouponControl,
+ * reused) stays its own concern. POSTs /subscriptions/:id/change-plan with only
+ * `{ planId, couponCode? }`. A 409 CANNOT_CHANGE_PLAN_PAID (invoice already paid)
+ * is left to the auto-toast. On success → refetch.
  *
  * Props: open, onClose, subscription, txt, onChanged.
  */
@@ -76,7 +78,6 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
     try {
       await changeReq.fetchData(`${subscription.id}/change-plan`, {
         planId: Number(planId),
-        billingPeriod,
         ...(codeToSend ? { couponCode: codeToSend } : {}),
       });
       onClose();
@@ -98,6 +99,10 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
       onSubmit={submit}
     >
       <Stack spacing={2.5} sx={{ pt: 1 }}>
+        <Alert severity="info" sx={{ py: 0 }}>
+          {txt.changePlanHint}
+        </Alert>
+
         <TextField
           select
           label={txt.selectPlan}
