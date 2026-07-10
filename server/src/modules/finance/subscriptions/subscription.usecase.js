@@ -373,22 +373,22 @@ class SubscriptionUsecase {
     // Frozen/paid — never rewrite a settled number.
     if (open && open.status !== SUBSCRIPTION_STATUSES.UPCOMING) return open;
 
-    const subsHours = await subscriptionRepo.sumUsageHoursForStudentMonth({
+    const usage = await subscriptionRepo.sumUsageHoursForStudentMonth({
       studentId,
       gte: consumption.gte,
       lt: consumption.lt,
     });
 
-    // price = hours × rate, minus any coupon already attached to the open sub
-    // (same stored-coupon logic as the month-close freeze).
-    const base = priceFromHours(subsHours, hourlyRate);
-    const c = open?.coupon ?? null;
-    const priceCharged = c
-      ? roundMoney(applyDiscount(base, { type: c.type, value: Number(c.value) }))
-      : base;
-
     if (!open) {
-      return subscriptionRepo.createSubscription({
+      // New open sub — inherit the student's current/most-recent sub's plan (v3
+      // §5). Zero sessions fall back to THAT inherited plan's hours.
+      const inheritedPlanId =
+        await subscriptionRepo.currentPlanIdForStudent(studentId);
+      const inheritedPlan = inheritedPlanId
+        ? await planRepo.getById(inheritedPlanId)
+        : null;
+      const subsHours = usage > 0 ? usage : inheritedPlan?.hours ?? 0;
+      const data = {
         origin: SUBSCRIPTION_ORIGINS.USAGE,
         status: SUBSCRIPTION_STATUSES.UPCOMING,
         billingPeriod: BILLING_PERIODS.MONTHLY,
@@ -396,11 +396,24 @@ class SubscriptionUsecase {
         endDate: endOfMonth(paymentStart),
         subsHours,
         remainingHours: subsHours,
-        priceCharged,
+        // Fresh sub carries no coupon yet, so price is the plain hours × rate.
+        priceCharged: priceFromHours(subsHours, hourlyRate),
         currency: settings.currency,
         student: { connect: { id: studentId } },
-      });
+      };
+      if (inheritedPlanId) data.plan = { connect: { id: inheritedPlanId } };
+      return subscriptionRepo.createSubscription(data);
     }
+
+    // Existing open (UPCOMING) — recompute using its OWN linked plan hours as the
+    // zero-session fallback. Price = hours × rate, minus any coupon already
+    // attached to the open sub (same stored-coupon logic as the month-close freeze).
+    const subsHours = usage > 0 ? usage : open.plan?.hours ?? 0;
+    const base = priceFromHours(subsHours, hourlyRate);
+    const c = open.coupon ?? null;
+    const priceCharged = c
+      ? roundMoney(applyDiscount(base, { type: c.type, value: Number(c.value) }))
+      : base;
     return subscriptionRepo.updateSubscription(open.id, {
       subsHours,
       remainingHours: subsHours,
@@ -1432,9 +1445,10 @@ class SubscriptionUsecase {
 
   /**
    * End-of-month usage billing — invoked by subscriptionScheduler on the last
-   * day of the month. For every active student: freeze the consumed hours (or
-   * plan / lowest-plan fallback), stamp the billed sessions, generate + send the
-   * invoice, and expire the closing month's sub. Idempotent per (student, month)
+   * day of the month. For every active student: freeze the consumed hours (or,
+   * for a zero-session month, the OPEN sub's own linked plan hours), stamp the
+   * billed sessions, generate + send the invoice, and expire the closing month's
+   * sub. Idempotent per (student, month)
    * via the one-open-USAGE-sub invariant. Never throws over the edge.
    *
    * @param {Date} [now] last day of month M (the month being closed).
@@ -1447,27 +1461,21 @@ class SubscriptionUsecase {
     const settings = await settingsUsecase.getEffective();
     const hourlyRate = Number(settings.hourlyRate);
 
-    const [usageByStudent, activeStudents, lowestPlanHours] = await Promise.all([
+    const [usageByStudent, activeStudents] = await Promise.all([
       subscriptionRepo.sumUsageHoursByStudent(consumption),
       subscriptionRepo.listActiveStudentsWithPlan(now),
-      subscriptionRepo.lowestActivePlanHours(),
     ]);
 
     let invoiced = 0;
     let skipped = 0;
     let failed = 0;
 
-    for (const { studentId, planHours } of activeStudents) {
+    for (const { studentId } of activeStudents) {
       try {
         const usageHours = usageByStudent.get(studentId) ?? 0;
-        const subsHours = resolveUsageHours({ usageHours, planHours, lowestPlanHours });
 
-        if (!subsHours || subsHours <= 0) {
-          skipped += 1; // only when the system has no plans at all
-          continue;
-        }
-
-        // Resolve the open sub first — this drives BOTH idempotency and pricing.
+        // Resolve the open sub first — this drives idempotency, the plan-hours
+        // fallback, AND pricing.
         // Idempotency: a re-run sees the closing month's sessions already stamped
         // billed (sumUsageHoursByStudent → 0) and would fall back to plan hours,
         // clobbering the already-frozen number and reverting an ACTIVE/paid sub
@@ -1483,6 +1491,16 @@ class SubscriptionUsecase {
           existingOpen.status !== SUBSCRIPTION_STATUSES.UPCOMING
         ) {
           skipped += 1; // already billed by a prior run
+          continue;
+        }
+
+        // Zero-session fallback = the OPEN sub's OWN linked plan hours (v3 §4),
+        // not the student's active-sub plan and not the lowest plan.
+        const planHours = existingOpen?.plan?.hours ?? null;
+        const subsHours = resolveUsageHours({ usageHours, planHours });
+
+        if (!subsHours || subsHours <= 0) {
+          skipped += 1; // no usage and no linked plan → nothing to bill
           continue;
         }
 

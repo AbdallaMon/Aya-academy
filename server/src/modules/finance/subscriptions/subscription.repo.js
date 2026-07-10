@@ -322,6 +322,26 @@ class SubscriptionRepo {
     return subs.map((s) => ({ studentId: s.studentId, planHours: s.plan?.hours ?? null }));
   }
 
+  /**
+   * The planId a new monthly sub should inherit for a student (v3 §5):
+   * the student's currently-active plan-linked sub, else their most-recent
+   * plan-linked sub, else null. Only subs with a non-null planId are considered.
+   */
+  async currentPlanIdForStudent(studentId, now = new Date()) {
+    const active = await prisma.subscription.findFirst({
+      where: { studentId, planId: { not: null }, ...activeSubscriptionWhere(now) },
+      orderBy: { endDate: "desc" },
+      select: { planId: true },
+    });
+    if (active) return active.planId;
+    const latest = await prisma.subscription.findFirst({
+      where: { studentId, planId: { not: null } },
+      orderBy: [{ startDate: "desc" }, { id: "desc" }],
+      select: { planId: true },
+    });
+    return latest?.planId ?? null;
+  }
+
   /** Hours of the cheapest active plan (min hours), or null if none exist. */
   async lowestActivePlanHours() {
     const plan = await prisma.plan.findFirst({

@@ -15,10 +15,13 @@ export const subscriptionStudentSelect = {
 };
 
 // Plan projection embedded in a subscription payload.
+// `hours` is surfaced so the usage-billing zero-session fallback can read the
+// subscription's OWN linked plan hours (v3 locked model §4).
 export const subscriptionPlanSelect = {
   id: true,
   titleAr: true,
   titleEn: true,
+  hours: true,
 };
 
 // Coupon (discount) projection embedded in a subscription payload — lets the
