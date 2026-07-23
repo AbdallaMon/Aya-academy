@@ -5,26 +5,24 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import {
   Alert,
-  Autocomplete,
   FormControlLabel,
   Stack,
   Switch,
-  TextField,
   Typography,
 } from "@mui/material";
 import { DEFAULT_APP_SETTINGS } from "@aya/shared";
-import { FormDialog, RHFTextField } from "../../../shared/components/index.js";
+import {
+  AsyncUserAutocomplete,
+  FormDialog,
+  RHFTextField,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import {
   WHITEBOARD_URL,
-  STUDENTS_PICKER_URL,
-  STUDENTS_PICKER_PARAMS,
 } from "../config/constant.js";
 import { useWhiteboardText } from "../config/whiteboardText.js";
-
-const nameOf = (u) => u?.nickname || u?.name || "";
 
 // Create a whiteboard session that opens immediately: title + attendees +
 // public/private are all chosen up front, then we go straight to the session.
@@ -35,15 +33,6 @@ export default function CreateWhiteboardDialog({ open, onClose, onCreated }) {
   const { control, handleSubmit, reset } = useForm({ defaultValues: { title: "" } });
   const [selected, setSelected] = useState([]);
   const [isPublic, setIsPublic] = useState(false);
-
-  const { data: students } = useRequest({
-    url: STUDENTS_PICKER_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: open,
-    initialParams: STUDENTS_PICKER_PARAMS,
-    syncToUrl: false,
-  });
 
   // Show the teacher the current image-retention window (configurable in Settings).
   const { data: settings } = useRequest({
@@ -113,16 +102,13 @@ export default function CreateWhiteboardDialog({ open, onClose, onCreated }) {
         />
 
         <Stack spacing={0.5}>
-          <Autocomplete
+          <AsyncUserAutocomplete
             multiple
-            options={students || []}
             value={selected}
-            onChange={(_e, v) => setSelected(v)}
-            getOptionLabel={nameOf}
-            isOptionEqualToValue={(o, v) => o.id === v.id}
-            renderInput={(params) => (
-              <TextField {...params} label={txt.studentsLabel} placeholder={txt.addStudent} />
-            )}
+            onChange={setSelected}
+            role="STUDENT"
+            label={txt.studentsLabel}
+            placeholder={txt.addStudent}
           />
           <Typography variant="caption" color="text.secondary">
             {txt.studentsHint}

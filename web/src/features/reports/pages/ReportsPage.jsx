@@ -20,7 +20,7 @@ import {
   applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
-import { REPORTS_URL, USERS_URL, toDateInput } from "../config/constant.js";
+import { REPORTS_URL, toDateInput } from "../config/constant.js";
 import { useReportsText } from "../config/reportsText.js";
 import { buildReportsColumns } from "../config/reportsColumns.js";
 import { buildReportsFilters } from "../config/reportsFilters.js";
@@ -62,16 +62,6 @@ export default function ReportsPage() {
   });
 
   // Students for the create/edit picker — loaded lazily when the dialog opens.
-  const studentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "STUDENT" },
-  });
-  const students = studentsReq.data || [];
-
   const form = useOpen();
   const [selected, setSelected] = useState(null);
   const isEdit = Boolean(selected?.id);
@@ -129,11 +119,6 @@ export default function ReportsPage() {
       }),
   });
 
-  useEffect(() => {
-    if (form.isOpen && canCreate) studentsReq.fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.isOpen]);
-
   function onCreate() {
     setSelected(null);
     form.open();
@@ -158,16 +143,12 @@ export default function ReportsPage() {
     formMut.fetchData(isEdit ? String(selected.id) : null, payload);
   }
 
-  const columns = useMemo(
-    () =>
-      buildReportsColumns({
-        txt,
-        lng,
-        can: { edit: canEdit, delete: canDelete },
-        actions: { onEdit, onDelete },
-      }),
-    [txt, lng, canEdit, canDelete],
-  );
+  const columns = buildReportsColumns({
+    txt,
+    lng,
+    can: { edit: canEdit, delete: canDelete },
+    actions: { onEdit, onDelete },
+  });
 
   const filterConfig = useMemo(
     () => buildReportsFilters({ txt }),
@@ -231,6 +212,7 @@ export default function ReportsPage() {
 
             <Grid size={{ xs: 12 }}>
               <StudentsMultiSelect
+                key={`${form.isOpen}-${selected?.id ?? "new"}`}
                 name="studentIds"
                 control={control}
                 label={txt.studentsLabel}
@@ -238,10 +220,8 @@ export default function ReportsPage() {
                   validate: (v) =>
                     (Array.isArray(v) && v.length > 0) || txt.studentsRequired,
                 }}
-                options={students}
-                loading={studentsReq.isLoading}
+                initialOptions={(selected?.students || []).map((link) => link.student)}
                 placeholder={txt.selectStudents}
-                loadingText={txt.loadingStudents}
               />
             </Grid>
 

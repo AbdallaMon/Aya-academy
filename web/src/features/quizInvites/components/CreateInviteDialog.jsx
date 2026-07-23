@@ -22,7 +22,10 @@ import {
 import { MdSearch, MdContentCopy, MdCheckCircle } from "react-icons/md";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import { FormDialog } from "../../../shared/components/index.js";
+import {
+  AsyncUserAutocomplete,
+  FormDialog,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
@@ -30,7 +33,6 @@ import { localePath } from "../../../i18n/routing.js";
 import {
   INVITES_URL,
   BANK_URL,
-  USERS_URL,
   BADGES_URL,
   buildLinkForToken,
 } from "../config/constant.js";
@@ -46,21 +48,28 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
   const { showToast } = useToast();
 
   const [parentId, setParentId] = useState("");
+  const [selectedParent, setSelectedParent] = useState(null);
   const [questionIds, setQuestionIds] = useState([]);
   const [badgeId, setBadgeId] = useState("");
   const [expiresAt, setExpiresAt] = useState(null);
   const [search, setSearch] = useState("");
   const [formError, setFormError] = useState("");
   const [createdInvite, setCreatedInvite] = useState(null);
+  const [previousOpen, setPreviousOpen] = useState(open);
 
-  const parentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { role: "PARENT", limit: 100 },
-  });
+  if (open !== previousOpen) {
+    setPreviousOpen(open);
+    if (open) {
+      setParentId("");
+      setSelectedParent(null);
+      setQuestionIds([]);
+      setBadgeId("");
+      setExpiresAt(null);
+      setSearch("");
+      setFormError("");
+      setCreatedInvite(null);
+    }
+  }
 
   const questionsReq = useRequest({
     url: BANK_URL,
@@ -94,22 +103,13 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
 
   useEffect(() => {
     if (open) {
-      setParentId("");
-      setQuestionIds([]);
-      setBadgeId("");
-      setExpiresAt(null);
-      setSearch("");
-      setFormError("");
-      setCreatedInvite(null);
-      parentsReq.fetchData();
       questionsReq.fetchData();
       badgesReq.fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const parents = (parentsReq.data || []).filter((u) => u.role === "PARENT");
-  const questions = questionsReq.data || [];
+  const questions = useMemo(() => questionsReq.data || [], [questionsReq.data]);
   const badges = badgesReq.data || [];
   const selectedBadge = badges.find((b) => String(b.id) === String(badgeId)) || null;
 
@@ -217,21 +217,16 @@ export default function CreateInviteDialog({ open, onClose, txt, onSuccess }) {
       <Stack spacing={2.5}>
         {formError && <Alert severity="error">{formError}</Alert>}
 
-        <TextField
-          select
+        <AsyncUserAutocomplete
+          role="PARENT"
           label={txt.selectParent}
-          value={parentId}
-          onChange={(e) => setParentId(e.target.value)}
-          fullWidth
+          value={selectedParent}
+          onChange={(parent) => {
+            setSelectedParent(parent);
+            setParentId(parent ? String(parent.id) : "");
+          }}
           required
-          helperText={parents.length === 0 ? txt.noParents : undefined}
-        >
-          {parents.map((p) => (
-            <MenuItem key={p.id} value={String(p.id)}>
-              {p.name} {p.email ? `— ${p.email}` : ""}
-            </MenuItem>
-          ))}
-        </TextField>
+        />
 
         <Box>
           <TextField

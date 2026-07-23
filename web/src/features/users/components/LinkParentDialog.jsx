@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MenuItem, Stack, TextField, Typography } from "@mui/material";
-import { FormDialog } from "../../../shared/components/index.js";
-import { useRequest } from "../../../hooks/request/useRequest.js";
+import {
+  AsyncUserAutocomplete,
+  FormDialog,
+} from "../../../shared/components/index.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { USERS_URL, PARENT_RELATIONS_LIST } from "../config/constant.js";
 
@@ -13,16 +15,18 @@ import { USERS_URL, PARENT_RELATIONS_LIST } from "../config/constant.js";
  */
 export default function LinkParentDialog({ open, onClose, student, txt, onSuccess }) {
   const [parentId, setParentId] = useState("");
+  const [selectedParent, setSelectedParent] = useState(null);
   const [relation, setRelation] = useState("GUARDIAN");
+  const [previousOpen, setPreviousOpen] = useState(open);
 
-  const parentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "PARENT" },
-  });
+  if (open !== previousOpen) {
+    setPreviousOpen(open);
+    if (open) {
+      setParentId("");
+      setSelectedParent(null);
+      setRelation("GUARDIAN");
+    }
+  }
 
   const mut = useMultiRequest({
     url: USERS_URL,
@@ -31,17 +35,6 @@ export default function LinkParentDialog({ open, onClose, student, txt, onSucces
       onClose();
     },
   });
-
-  useEffect(() => {
-    if (open) {
-      parentsReq.fetchData();
-      setParentId("");
-      setRelation("GUARDIAN");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  const parents = (parentsReq.data || []).filter((u) => u.role === "PARENT");
 
   const relationLabels = {
     FATHER: txt.father,
@@ -72,21 +65,16 @@ export default function LinkParentDialog({ open, onClose, student, txt, onSucces
           {txt.linkHint}
         </Typography>
 
-        <TextField
-          select
+        <AsyncUserAutocomplete
+          role="PARENT"
           label={txt.selectParent}
-          value={parentId}
-          onChange={(e) => setParentId(e.target.value)}
-          fullWidth
+          value={selectedParent}
+          onChange={(parent) => {
+            setSelectedParent(parent);
+            setParentId(parent ? String(parent.id) : "");
+          }}
           required
-          helperText={parents.length === 0 ? txt.noParents : undefined}
-        >
-          {parents.map((p) => (
-            <MenuItem key={p.id} value={p.id}>
-              {p.name} {p.email ? `— ${p.email}` : ""}
-            </MenuItem>
-          ))}
-        </TextField>
+        />
 
         <TextField
           select

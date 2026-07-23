@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { Grid } from "@mui/material";
 import {
   SESSION_ATTENDANCE,
@@ -9,6 +9,7 @@ import {
 } from "@aya/shared";
 import {
   FormDialog,
+  AsyncUserAutocomplete,
   RHFTextField,
   RHFTextArea,
   RHFSelect,
@@ -18,9 +19,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
 import {
   SESSION_LOGS_URL,
-  USERS_URL,
   toDateInput,
-  studentLabel,
 } from "../config/constant.js";
 import { useSessionLogText } from "../config/sessionLogText.js";
 import SubjectsMultiSelect from "./SubjectsMultiSelect.jsx";
@@ -64,47 +63,30 @@ export default function SessionLogFormDialog({ open, onClose, session = null, on
   const { control, handleSubmit, reset, setError } = useForm({
     defaultValues: makeDefaults(session),
   });
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [previousDialog, setPreviousDialog] = useState({
+    open,
+    sessionId: session?.id ?? null,
+  });
 
-  const studentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "STUDENT" },
-  });
-  const teachersReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "ADMIN" },
-  });
+  // Reset picker values exactly when this dialog is opened for a different
+  // session. Keeping this in render avoids a cascading state update effect.
+  if (
+    open !== previousDialog.open ||
+    (open && (session?.id ?? null) !== previousDialog.sessionId)
+  ) {
+    setPreviousDialog({ open, sessionId: session?.id ?? null });
+    if (open) {
+      setSelectedStudent(session?.student || null);
+      setSelectedTeacher(session?.teacher || null);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
     reset(makeDefaults(session));
-    studentsReq.fetchData();
-    teachersReq.fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, session, reset]);
-
-  const studentOptions = useMemo(() => {
-    const map = {};
-    (studentsReq.data || []).forEach((u) => {
-      map[String(u.id)] = studentLabel(u);
-    });
-    return map;
-  }, [studentsReq.data]);
-
-  const teacherOptions = useMemo(() => {
-    const map = { "": txt.selectTeacher };
-    (teachersReq.data || []).forEach((u) => {
-      map[String(u.id)] = studentLabel(u);
-    });
-    return map;
-  }, [teachersReq.data, txt]);
 
   const ratingOptions = useMemo(() => {
     const map = { "": txt.noRating };
@@ -175,13 +157,24 @@ export default function SessionLogFormDialog({ open, onClose, session = null, on
       <form id={FORM_ID} onSubmit={handleSubmit(submit)} noValidate>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <RHFSelect
+            <Controller
               name="studentId"
               control={control}
-              label={txt.studentLabel}
-              options={studentOptions}
               rules={{ required: txt.required }}
-              disabled={studentsReq.isLoading}
+              render={({ field, fieldState }) => (
+                <AsyncUserAutocomplete
+                  role="STUDENT"
+                  label={txt.studentLabel}
+                  value={selectedStudent}
+                  onChange={(student) => {
+                    field.onChange(student ? String(student.id) : "");
+                    setSelectedStudent(student);
+                  }}
+                  required
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
             />
           </Grid>
 
@@ -249,12 +242,21 @@ export default function SessionLogFormDialog({ open, onClose, session = null, on
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }}>
-            <RHFSelect
+            <Controller
               name="teacherId"
               control={control}
-              label={txt.teacherLabel}
-              options={teacherOptions}
-              disabled={teachersReq.isLoading}
+              render={({ field }) => (
+                <AsyncUserAutocomplete
+                  role="ADMIN"
+                  label={txt.teacherLabel}
+                  value={selectedTeacher}
+                  onChange={(teacher) => {
+                    field.onChange(teacher ? String(teacher.id) : "");
+                    setSelectedTeacher(teacher);
+                  }}
+                  placeholder={txt.selectTeacher}
+                />
+              )}
             />
           </Grid>
 

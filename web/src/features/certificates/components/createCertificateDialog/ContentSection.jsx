@@ -15,7 +15,10 @@ import {
 } from "@mui/material";
 import { Controller } from "react-hook-form";
 import { MdInfoOutline } from "react-icons/md";
-import { RHFTextField } from "../../../../shared/components/index.js";
+import {
+  AsyncUserAutocomplete,
+  RHFTextField,
+} from "../../../../shared/components/index.js";
 import BadgeChip from "../../../userDetail/components/BadgeChip.jsx";
 
 export default function ContentSection({
@@ -27,7 +30,7 @@ export default function ContentSection({
   lockedStudentId,
   lockedStudentName,
   selectedStudent,
-  students,
+  onStudentChange,
   templates,
   badges,
   selectedBadge,
@@ -55,25 +58,19 @@ export default function ContentSection({
               control={control}
               rules={{ required: txt.required }}
               render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  fullWidth
-                  required
+                <AsyncUserAutocomplete
+                  role="STUDENT"
                   label={txt.studentLabel}
+                  value={selectedStudent}
+                  onChange={(student) => {
+                    field.onChange(student ? String(student.id) : "");
+                    onStudentChange?.(student);
+                  }}
+                  required
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
-                >
-                  <MenuItem value="" disabled>
-                    {txt.studentPlaceholder}
-                  </MenuItem>
-                  {students.map((s) => (
-                    <MenuItem key={s.id} value={String(s.id)}>
-                      {s.name}
-                      {s.nickname ? ` (${s.nickname})` : ""}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  placeholder={txt.studentPlaceholder}
+                />
               )}
             />
           )}

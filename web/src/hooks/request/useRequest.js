@@ -74,9 +74,11 @@ export function useRequest({
       setFiltersState((prev) =>
         typeof value === 'function' ? value(prev) : value
       );
-      if (syncToUrl) setPage(1);
+      // Filtering always starts a new result set. This matters for scroll-loaded
+      // pickers too: their filters are intentionally not synced to the URL.
+      setPage(1);
     },
-    [syncToUrl, setFiltersState]
+    [setFiltersState]
   );
 
   function triggerRefetch() {
@@ -266,7 +268,6 @@ export function useRequest({
       }
       fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     autoFetch,
     method,

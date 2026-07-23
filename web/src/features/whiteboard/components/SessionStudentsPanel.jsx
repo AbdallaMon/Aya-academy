@@ -2,21 +2,17 @@
 
 import { useState } from "react";
 import {
-  Autocomplete,
   Box,
   Button,
   Chip,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { MdClose, MdPersonAdd } from "react-icons/md";
-import { useRequest } from "../../../hooks/request/useRequest.js";
+import { AsyncUserAutocomplete } from "../../../shared/components/index.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import {
   WHITEBOARD_URL,
-  STUDENTS_PICKER_URL,
-  STUDENTS_PICKER_PARAMS,
 } from "../config/constant.js";
 import { useWhiteboardText } from "../config/whiteboardText.js";
 
@@ -28,19 +24,9 @@ export default function SessionStudentsPanel({ session, onChanged }) {
   const txt = useWhiteboardText();
   const [picked, setPicked] = useState(null);
 
-  const { data: students } = useRequest({
-    url: STUDENTS_PICKER_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: true,
-    initialParams: STUDENTS_PICKER_PARAMS,
-    syncToUrl: false,
-  });
-
   const mut = useMultiRequest({ url: WHITEBOARD_URL });
 
   const attachedIds = new Set(session.students.map((s) => s.studentId));
-  const options = (students || []).filter((u) => !attachedIds.has(u.id));
 
   const add = async () => {
     if (!picked) return;
@@ -65,16 +51,14 @@ export default function SessionStudentsPanel({ session, onChanged }) {
       </Typography>
 
       <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" gap={1}>
-        <Autocomplete
+        <AsyncUserAutocomplete
           sx={{ minWidth: 260 }}
-          options={options}
+          role="STUDENT"
           value={picked}
-          onChange={(_e, v) => setPicked(v)}
-          getOptionLabel={nameOf}
-          isOptionEqualToValue={(o, v) => o.id === v.id}
-          renderInput={(params) => (
-            <TextField {...params} label={txt.addStudent} size="small" />
-          )}
+          onChange={setPicked}
+          excludeIds={[...attachedIds]}
+          label={txt.addStudent}
+          size="small"
         />
         <Button
           variant="contained"

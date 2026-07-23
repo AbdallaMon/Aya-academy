@@ -5,7 +5,6 @@ import {
   Box,
   CircularProgress,
   Grid,
-  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
@@ -18,15 +17,13 @@ import { useTranslation } from "../../../i18n/client.js";
 import {
   DataTable,
   EmptyState,
+  AsyncUserAutocomplete,
   PageHeader,
   useConfirm,
 } from "../../../shared/components/index.js";
 import {
   SESSION_LOGS_URL,
-  MY_STUDENTS_URL,
-  USERS_URL,
   currentMonth,
-  studentLabel,
 } from "../config/constant.js";
 import { useSessionLogText } from "../config/sessionLogText.js";
 import { buildSessionLogColumns } from "../config/sessionLogColumns.js";
@@ -76,36 +73,6 @@ export default function SessionLogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Parent-only: their own children. Management gets full student + parent
-  // pickers so either filter can be cleared independently.
-  const myStudentsReq = useRequest({
-    url: MY_STUDENTS_URL,
-    method: "get",
-    autoFetch: canList && !isManagement,
-    syncToUrl: false,
-  });
-  const myStudents = myStudentsReq.data || [];
-  const allStudentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: canList && isManagement,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "STUDENT" },
-  });
-  const parentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: canList && isManagement,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "PARENT" },
-  });
-  const filterStudents = isManagement
-    ? allStudentsReq.data || []
-    : myStudents;
-  const filterParents = parentsReq.data || [];
-
   const form = useOpen();
   const [selected, setSelected] = useState(null);
 
@@ -143,9 +110,6 @@ export default function SessionLogPage() {
   if (!canList) return null;
 
   const monthValue = filters.month || "";
-  const studentValue = filters.studentId != null ? String(filters.studentId) : "";
-  const parentValue = filters.parentId != null ? String(filters.parentId) : "";
-
   const toolbar = (
     <Stack
       direction={{ xs: "column", sm: "row" }}
@@ -164,47 +128,33 @@ export default function SessionLogPage() {
         size="small"
         sx={{ minWidth: 180 }}
       />
-      <TextField
-        select
+      <AsyncUserAutocomplete
+        role="STUDENT"
         label={txt.studentFilterLabel}
-        value={studentValue}
-        onChange={(e) =>
+        value={filters.studentId ?? null}
+        onChange={(student) =>
           setFilters((prev) => ({
             ...prev,
-            studentId: e.target.value || undefined,
+            studentId: student?.id || undefined,
           }))
         }
         size="small"
         sx={{ minWidth: 200 }}
-      >
-        <MenuItem value="">{txt.allStudents}</MenuItem>
-        {filterStudents.map((s) => (
-          <MenuItem key={s.id} value={String(s.id)}>
-            {studentLabel(s)}
-          </MenuItem>
-        ))}
-      </TextField>
+      />
       {isManagement && (
-        <TextField
-          select
+        <AsyncUserAutocomplete
+          role="PARENT"
           label={txt.parentFilterLabel}
-          value={parentValue}
-          onChange={(e) =>
+          value={filters.parentId ?? null}
+          onChange={(parent) =>
             setFilters((prev) => ({
               ...prev,
-              parentId: e.target.value || undefined,
+              parentId: parent?.id || undefined,
             }))
           }
           size="small"
           sx={{ minWidth: 220 }}
-        >
-          <MenuItem value="">{txt.allParents}</MenuItem>
-          {filterParents.map((parent) => (
-            <MenuItem key={parent.id} value={String(parent.id)}>
-              {parent.name}
-            </MenuItem>
-          ))}
-        </TextField>
+        />
       )}
     </Stack>
   );

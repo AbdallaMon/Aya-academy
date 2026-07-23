@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { Box, Divider, Grid } from "@mui/material";
 import {
   FormDialog,
@@ -14,8 +14,6 @@ import {
   CERTIFICATES_URL,
   CERTIFICATE_TEMPLATES_URL,
   BADGES_URL,
-  STUDENTS_PICKER_URL,
-  STUDENTS_PICKER_PARAMS,
 } from "../config/constant.js";
 import {
   FORM_ID,
@@ -41,10 +39,29 @@ export default function CreateCertificateDialog({
   const txt = useCertificatesText();
   const { lng } = useTranslation();
 
-  const { control, handleSubmit, reset, watch, setValue, setError } = useForm({
+  const { control, handleSubmit, reset, setValue, setError } = useForm({
     defaultValues: EMPTY_VALUES,
     mode: "onTouched",
   });
+  const [pickedStudent, setPickedStudent] = useState(null);
+  const [previousDialog, setPreviousDialog] = useState({
+    open,
+    lockedStudentId: lockedStudentId ?? null,
+  });
+
+  if (
+    open !== previousDialog.open ||
+    (open && (lockedStudentId ?? null) !== previousDialog.lockedStudentId)
+  ) {
+    setPreviousDialog({ open, lockedStudentId: lockedStudentId ?? null });
+    if (open) {
+      setPickedStudent(
+        lockedStudentId
+          ? { id: lockedStudentId, name: lockedStudentName }
+          : null,
+      );
+    }
+  }
 
   useEffect(() => {
     if (open) {
@@ -53,20 +70,10 @@ export default function CreateCertificateDialog({
         studentId: lockedStudentId ? String(lockedStudentId) : "",
       });
     }
-  }, [open, reset, lockedStudentId]);
+  }, [open, reset, lockedStudentId, lockedStudentName]);
 
   // Student picker — admin only endpoint. Fetched lazily when the dialog opens.
   // Skipped entirely when the student is locked (we already know who it is).
-  const studentsReq = useRequest({
-    url: STUDENTS_PICKER_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: open && !lockedStudentId,
-    syncToUrl: false,
-    initialParams: STUDENTS_PICKER_PARAMS,
-  });
-  const students = useMemo(() => studentsReq.data || [], [studentsReq.data]);
-
   // Template picker — admin certificate templates.
   const templatesReq = useRequest({
     url: CERTIFICATE_TEMPLATES_URL,
@@ -133,18 +140,8 @@ export default function CreateCertificateDialog({
       }),
   });
 
-  const values = watch();
-  const selectedStudent = useMemo(() => {
-    if (lockedStudentId) {
-      return (
-        students.find((s) => String(s.id) === String(lockedStudentId)) || {
-          id: lockedStudentId,
-          name: lockedStudentName,
-        }
-      );
-    }
-    return students.find((s) => String(s.id) === String(values.studentId));
-  }, [students, values.studentId, lockedStudentId, lockedStudentName]);
+  const values = useWatch({ control });
+  const selectedStudent = pickedStudent;
   const selectedTemplate = useMemo(
     () => templates.find((t) => String(t.id) === String(values.templateId)),
     [templates, values.templateId],
@@ -270,7 +267,7 @@ export default function CreateCertificateDialog({
               lockedStudentId={lockedStudentId}
               lockedStudentName={lockedStudentName}
               selectedStudent={selectedStudent}
-              students={students}
+              onStudentChange={setPickedStudent}
               templates={templates}
               badges={badges}
               selectedBadge={selectedBadge}

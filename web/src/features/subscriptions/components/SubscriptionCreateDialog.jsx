@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { MenuItem, Stack, TextField, Typography } from "@mui/material";
-import { FormDialog, CouponControl } from "../../../shared/components/index.js";
+import {
+  AsyncUserAutocomplete,
+  FormDialog,
+  CouponControl,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { formatMoney } from "../../../shared/lib/money.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
 import {
   SUBSCRIPTION_PLAN_QUOTE_URL,
-  USERS_URL,
   subscriptionPlanOptionsPath,
 } from "../config/constant.js";
 
@@ -48,20 +51,12 @@ export default function SubscriptionCreateDialog({
   const billingPeriod = "MONTHLY";
   const [planId, setPlanId] = useState("");
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
+  const [selectedStudent, setSelectedStudent] = useState(lockedStudent || null);
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { studentId: lockedStudentId, month: defaultMonth },
   });
   const selectedStudentId = useWatch({ control, name: "studentId" });
-
-  const studentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "STUDENT" },
-  });
 
   const plansReq = useRequest({
     url: selectedStudentId
@@ -77,9 +72,9 @@ export default function SubscriptionCreateDialog({
   useEffect(() => {
     if (open) {
       // No need to load the student picker when the student is locked.
-      if (!lockedStudent) studentsReq.fetchData();
       if (lockedStudentId) plansReq.fetchData();
       reset({ studentId: lockedStudentId, month: defaultMonth });
+      setSelectedStudent(lockedStudent || null);
       setPlanId("");
       setCoupon(EMPTY_COUPON);
     }
@@ -93,7 +88,6 @@ export default function SubscriptionCreateDialog({
   }, [open, selectedStudentId]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
-  const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
   const plans = plansReq.data || [];
   const selectedPlan = plans.find((p) => String(p.id) === String(planId)) || null;
 
@@ -152,13 +146,16 @@ export default function SubscriptionCreateDialog({
               control={control}
               rules={{ required: true }}
               render={({ field }) => (
-                <TextField {...field} select label={txt.selectStudent} fullWidth required>
-                  {students.map((s) => (
-                    <MenuItem key={s.id} value={s.id}>
-                      {s.name} {s.nickname ? `(${s.nickname})` : ""}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                <AsyncUserAutocomplete
+                  role="STUDENT"
+                  label={txt.selectStudent}
+                  value={selectedStudent}
+                  onChange={(student) => {
+                    field.onChange(student ? String(student.id) : "");
+                    setSelectedStudent(student);
+                  }}
+                  required
+                />
               )}
             />
           )}
