@@ -61,6 +61,21 @@ class WhiteboardSessionController {
     return ok(res, session);
   }
 
+  async getLibrary(req, res) {
+    const data = await whiteboardSessionUsecase.getLibrary({
+      authUser: req.auth,
+    });
+    return ok(res, data, whiteboardMessagesCodes.LIBRARY_LOADED, TK);
+  }
+
+  async saveLibrary(req, res) {
+    const data = await whiteboardSessionUsecase.saveLibrary({
+      authUser: req.auth,
+      libraryItems: req.body.libraryItems,
+    });
+    return ok(res, data, whiteboardMessagesCodes.LIBRARY_SAVED, TK);
+  }
+
   async create(req, res) {
     const session = await whiteboardSessionUsecase.create({
       title: req.body.title,

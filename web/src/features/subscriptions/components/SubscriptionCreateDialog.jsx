@@ -89,7 +89,8 @@ export default function SubscriptionCreateDialog({
     setCoupon(plan ? initialCoupon(plan, billingPeriod) : EMPTY_COUPON);
   }
 
-  const { codeToSend, net } = resolveCoupon(selectedPlan, billingPeriod, coupon);
+  const resolvedCoupon = resolveCoupon(selectedPlan, billingPeriod, coupon);
+  const { net } = resolvedCoupon;
 
   const planHint =
     selectedPlan &&
@@ -103,7 +104,10 @@ export default function SubscriptionCreateDialog({
       studentId: Number(values.studentId),
       planId: Number(planId),
       month: values.month, // "YYYY-MM"
-      ...(codeToSend ? { couponCode: codeToSend } : {}),
+      ...(resolvedCoupon.applied === "custom" && resolvedCoupon.codeToSend
+        ? { couponCode: resolvedCoupon.codeToSend }
+        : {}),
+      applyPlanCoupon: resolvedCoupon.applyPlanCoupon,
     });
   }
 

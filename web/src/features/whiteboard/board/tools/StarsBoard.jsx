@@ -114,6 +114,21 @@ export default function StarsBoard({
     return top > 0 ? best : null;
   }, [students, scores]);
 
+  // Keep the highest score at the top. Equal scores retain the session's
+  // original student order so rows do not jump around unnecessarily.
+  const rankedStudents = useMemo(
+    () =>
+      students
+        .map((student, originalIndex) => ({ student, originalIndex }))
+        .sort(
+          (a, b) =>
+            (scores[b.student.id] || 0) - (scores[a.student.id] || 0) ||
+            a.originalIndex - b.originalIndex,
+        )
+        .map(({ student }) => student),
+    [students, scores],
+  );
+
   if (!active) return null;
 
   const score = (id) => scores[id] || 0;
@@ -242,7 +257,7 @@ export default function StarsBoard({
               spacing={1}
               sx={{ maxHeight: D.list, overflowY: "auto", pr: 0.5, mb: 1.5 }}
             >
-              {students.map((s) => {
+              {rankedStudents.map((s) => {
                 const n = score(s.id);
                 const isLeader = s.id === leaderId;
                 const anim = celebrate?.id === s.id ? celebrate.kind : null;

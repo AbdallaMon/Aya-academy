@@ -1,15 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveUsageHours } from "./usageBilling.js";
+import { resolveUsageMinutes } from "./usageBilling.js";
 
 test("actual usage wins even when below plan", () => {
-  assert.equal(resolveUsageHours({ usageHours: 5, planHours: 8 }), 5);
+  assert.equal(
+    resolveUsageMinutes({ usageMinutes: 45, planMinutes: 480 }),
+    45,
+  );
 });
 
-test("zero usage falls back to the sub's own plan hours", () => {
-  assert.equal(resolveUsageHours({ usageHours: 0, planHours: 8 }), 8);
+test("zero usage falls back to the sub's own plan minutes", () => {
+  assert.equal(
+    resolveUsageMinutes({ usageMinutes: 0, planMinutes: 480 }),
+    480,
+  );
 });
 
 test("zero usage + no linked plan → null (caller skips)", () => {
-  assert.equal(resolveUsageHours({ usageHours: 0, planHours: null }), null);
+  assert.equal(
+    resolveUsageMinutes({ usageMinutes: 0, planMinutes: null }),
+    null,
+  );
 });

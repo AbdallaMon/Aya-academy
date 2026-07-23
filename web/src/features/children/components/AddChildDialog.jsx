@@ -132,7 +132,7 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
     }
 
     const plan = plans.find((p) => p.id === values.planId) || null;
-    const { codeToSend } = resolveCoupon(plan, values.billingPeriod, values.coupon);
+    const resolved = resolveCoupon(plan, values.billingPeriod, values.coupon);
 
     let res;
     try {
@@ -160,7 +160,10 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
         studentId: childId,
         planId: values.planId,
         billingPeriod: values.billingPeriod,
-        ...(codeToSend ? { couponCode: codeToSend } : {}),
+        ...(resolved.applied === "custom" && resolved.codeToSend
+          ? { couponCode: resolved.codeToSend }
+          : {}),
+        applyPlanCoupon: resolved.applyPlanCoupon,
       });
     } catch {
       // child created but the subscription request failed — toast shown; still

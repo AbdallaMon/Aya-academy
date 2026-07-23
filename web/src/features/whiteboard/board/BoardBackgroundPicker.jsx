@@ -74,7 +74,10 @@ export default function BoardBackgroundPicker({ onPick, ar = true }) {
 
   return (
     <>
-      <Tooltip title={ar ? "الخلفية" : "Background"}>
+      <Tooltip
+        title={ar ? "الخلفية" : "Background"}
+        slotProps={{ tooltip: { dir: ar ? "rtl" : "ltr" } }}
+      >
         <IconButton
           onClick={(e) => setAnchor(e.currentTarget)}
           sx={{ bgcolor: "background.paper", boxShadow: 2 }}
@@ -87,6 +90,7 @@ export default function BoardBackgroundPicker({ onPick, ar = true }) {
         anchorEl={anchor}
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        slotProps={{ paper: { dir: ar ? "rtl" : "ltr" } }}
       >
         <Box sx={{ p: 1.5, maxWidth: 320 }}>
           <Typography variant="caption" sx={{ fontWeight: 700 }}>
@@ -143,7 +147,10 @@ export default function BoardBackgroundPicker({ onPick, ar = true }) {
             }}
           >
             {/* Upload your own background image. */}
-            <Tooltip title={ar ? "ارفع صورة من عندك" : "Upload your own image"}>
+            <Tooltip
+              title={ar ? "ارفع صورة من عندك" : "Upload your own image"}
+              slotProps={{ tooltip: { dir: ar ? "rtl" : "ltr" } }}
+            >
               <Box
                 component="label"
                 sx={{
@@ -165,7 +172,11 @@ export default function BoardBackgroundPicker({ onPick, ar = true }) {
               </Box>
             </Tooltip>
             {BOARD_BACKGROUNDS.map((bg) => (
-              <Tooltip key={bg.key} title={ar ? bg.labelAr : bg.labelEn}>
+              <Tooltip
+                key={bg.key}
+                title={ar ? bg.labelAr : bg.labelEn}
+                slotProps={{ tooltip: { dir: ar ? "rtl" : "ltr" } }}
+              >
                 <Box
                   onClick={() => pickImage(bg)}
                   sx={{

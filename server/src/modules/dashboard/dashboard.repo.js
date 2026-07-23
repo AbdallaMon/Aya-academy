@@ -11,19 +11,33 @@ import {
   SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
 } from "@aya/shared";
+import {
+  firstOfNextMonth,
+  monthRange,
+} from "../../shared/utility/dates.js";
 
 const SUB_CARD_SELECT = {
   id: true,
   origin: true,
   status: true,
   planId: true,
+  startDate: true,
   endDate: true,
+  remainingMinutes: true,
+  subsMinutes: true,
   remainingHours: true,
   // v2 stored model: the accumulating next-month bill renders these directly
   // (no usage-preview fetch) on the parent card / children page.
   subsHours: true,
   priceCharged: true,
   currency: true,
+  coupon: {
+    select: {
+      code: true,
+      type: true,
+      value: true,
+    },
+  },
 };
 
 class DashboardRepo {
@@ -163,6 +177,7 @@ class DashboardRepo {
         id: true,
         planId: true,
         endDate: true,
+        remainingMinutes: true,
         remainingHours: true,
       },
     });
@@ -183,6 +198,7 @@ class DashboardRepo {
   async cardSubscriptionsForStudent({ studentId, client } = {}) {
     const db = client ?? prisma;
     const now = new Date();
+    const nextMonth = monthRange(firstOfNextMonth(now));
     const [active, open, latest] = await Promise.all([
       db.subscription.findFirst({
         // Current-period sub even if not yet activated (shown with its status).
@@ -194,9 +210,15 @@ class DashboardRepo {
         where: {
           studentId,
           origin: SUBSCRIPTION_ORIGINS.USAGE,
-          status: SUBSCRIPTION_STATUSES.UPCOMING,
+          status: {
+            in: [
+              SUBSCRIPTION_STATUSES.PENDING,
+              SUBSCRIPTION_STATUSES.UPCOMING,
+            ],
+          },
+          startDate: { gte: nextMonth.gte, lt: nextMonth.lt },
         },
-        orderBy: { startDate: "desc" },
+        orderBy: [{ startDate: "desc" }, { id: "desc" }],
         select: SUB_CARD_SELECT,
       }),
       db.subscription.findFirst({

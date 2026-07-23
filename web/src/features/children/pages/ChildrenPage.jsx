@@ -55,18 +55,14 @@ export default function ChildrenPage() {
   });
 
   const children = childrenReq.data || [];
-  const subs = subsReq.data || [];
+  const subs = useMemo(() => subsReq.data || [], [subsReq.data]);
 
-  // Best subscription per child (drives the status chip + primary CTA):
-  // ACTIVE/UPCOMING > PENDING > most recent.
+  // The global subscriptions endpoint returns one summary per child:
+  // { studentId, current, next }. Keep the current and next buckets separate.
   const subByChild = useMemo(() => {
-    const rank = { ACTIVE: 4, UPCOMING: 3, PENDING: 2, EXPIRED: 1, CANCELLED: 0 };
     const map = {};
-    for (const s of subs) {
-      const cur = map[s.studentId];
-      if (!cur || (rank[s.status] ?? 0) > (rank[cur.status] ?? 0)) {
-        map[s.studentId] = s;
-      }
+    for (const summary of subs) {
+      map[summary.studentId] = summary.current ?? summary.next ?? null;
     }
     return map;
   }, [subs]);
@@ -75,8 +71,8 @@ export default function ChildrenPage() {
   // meter alongside the current subscription — multi-sub visibility).
   const openByChild = useMemo(() => {
     const map = {};
-    for (const s of subs) {
-      if (s.origin === "USAGE" && s.status === "UPCOMING") map[s.studentId] = s;
+    for (const summary of subs) {
+      if (summary.next) map[summary.studentId] = summary.next;
     }
     return map;
   }, [subs]);
@@ -103,6 +99,7 @@ export default function ChildrenPage() {
         planId: plan.id,
         billingPeriod: options.billingPeriod || "MONTHLY",
         ...(options.couponCode ? { couponCode: options.couponCode } : {}),
+        applyPlanCoupon: Boolean(options.applyPlanCoupon),
       });
       pickerDialog.close();
     } catch {

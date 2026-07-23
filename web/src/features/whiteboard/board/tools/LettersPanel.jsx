@@ -80,7 +80,7 @@ export default function LettersPanel({ active, rootRef, addObject, playSound, ar
         onChange={(_, v) => v && setSet(v)}
         sx={{ mb: 1.5 }}
       >
-        <ToggleButton value="ar">عربي</ToggleButton>
+        <ToggleButton value="ar">{ar ? "عربي" : "Arabic"}</ToggleButton>
         <ToggleButton value="en">ABC</ToggleButton>
         <ToggleButton value="num">١٢٣</ToggleButton>
       </ToggleButtonGroup>

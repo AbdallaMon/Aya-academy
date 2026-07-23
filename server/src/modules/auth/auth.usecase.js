@@ -17,11 +17,12 @@ import { mailer } from "../../infra/messaging/providers/mailer.js";
 import { buildPasswordResetEmail } from "../../infra/messaging/templates/passwordResetEmail.js";
 import { userRepo } from "../users/user.repo.js";
 import { planRepo } from "../finance/plans/plan.repo.js";
-import { couponRepo } from "../finance/coupons/coupon.repo.js";
+import { couponUsecase } from "../finance/coupons/coupon.usecase.js";
 import { settingsUsecase } from "../settings/settings.usecase.js";
 import { paymentTemplateUsecase } from "../finance/paymentTemplates/paymentTemplate.usecase.js";
 import { subscriptionRepo } from "../finance/subscriptions/subscription.repo.js";
 import { subscriptionUsecase } from "../finance/subscriptions/subscription.usecase.js";
+import { minutesFromHours } from "../../shared/utility/duration.js";
 import { invoiceUsecase } from "../finance/invoices/invoice.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { authRepo } from "./auth.repo.js";
@@ -120,18 +121,34 @@ class AuthUsecase {
           billingPeriod,
           child.couponCode,
           hourlyRate,
+          { autoPlanCoupon: child.applyPlanCoupon ?? true },
         );
-      } catch {
+      } catch (error) {
+        if (
+          error instanceof AppError &&
+          error.translationKey === messagesNames.couponMessages
+        ) {
+          throw error;
+        }
         throw badRequest(
           authMessagesCodes.COUPON_INVALID_FOR_PLAN,
           messagesNames.authMessages,
         );
       }
-      const hours =
+      const planHours =
         billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
+      const subsMinutes = minutesFromHours(planHours);
       const startDate = now;
       const endDate = subscriptionUsecase.computeEndDate(startDate, billingPeriod);
-      priced.push({ child, plan, billingPeriod, hours, startDate, endDate, ...pricing });
+      priced.push({
+        child,
+        plan,
+        billingPeriod,
+        subsMinutes,
+        startDate,
+        endDate,
+        ...pricing,
+      });
     }
 
     // 5. Pre-hash passwords outside the tx (keeps the tx short).
@@ -182,8 +199,8 @@ class AuthUsecase {
           billingPeriod: p.billingPeriod,
           startDate: p.startDate,
           endDate: p.endDate,
-          subsHours: p.hours,
-          remainingHours: p.hours,
+          subsMinutes: p.subsMinutes,
+          remainingMinutes: p.subsMinutes,
           priceCharged: p.priceCharged,
           currency: settings.currency,
           student: { connect: { id: studentUser.id } },
@@ -193,9 +210,12 @@ class AuthUsecase {
         if (p.couponId) subData.coupon = { connect: { id: p.couponId } };
 
         const subscription = await subscriptionRepo.createSubscription(subData, tx);
-        if (p.couponId) {
-          await couponRepo.incrementCouponRedemption(p.couponId, tx);
-        }
+        await couponUsecase.consumeOnce({
+          couponId: p.couponId,
+          studentId: studentUser.id,
+          subscriptionId: subscription.id,
+          client: tx,
+        });
 
         const invoice = await invoiceUsecase.generateForSubscription(subscription, {
           template,

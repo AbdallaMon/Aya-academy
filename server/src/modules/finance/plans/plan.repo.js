@@ -80,6 +80,22 @@ class PlanRepo {
     });
   }
 
+  /**
+   * Default fallback plan for usage billing: prefer the featured (middle)
+   * active plan, then the normal display order when no plan is featured.
+   */
+  getDefaultActiveWithCoupons({ client } = {}) {
+    return (client ?? prisma).plan.findFirst({
+      where: { isActive: true },
+      orderBy: [
+        { isFeatured: "desc" },
+        { sortOrder: "asc" },
+        { id: "asc" },
+      ],
+      include: planWithCouponsInclude,
+    });
+  }
+
   createPlan({ data, client } = {}) {
     return (client ?? prisma).plan.create({ data, include: planListInclude });
   }

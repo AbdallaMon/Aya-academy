@@ -157,7 +157,6 @@ class WhiteboardSessionUsecase {
   // The teacher inserts an image on the board; the file is stored on disk and we
   // keep only the reference, linked to the session.
   async uploadImage({ id, file, isAdmin, token }) {
-    console.log(id, file, isAdmin, token, "uploadImage");
     await this.checkIfCanAccessBoardSession({ isAdmin, id, token });
 
     if (!file) throw badRequest(whiteboardMessagesCodes.IMAGE_REQUIRED);
@@ -275,6 +274,28 @@ class WhiteboardSessionUsecase {
     await this.checkIfCanAccessBoardSession({ isAdmin, id, token });
     const row = await whiteboardSessionRepo.getBoardData({ id });
     return row?.boardData ?? null;
+  }
+
+  // The library belongs to the admin, not to a session. That makes imported
+  // Excalidraw shapes available in every whiteboard without exposing them to
+  // anonymous public-board viewers.
+  async getLibrary({ authUser }) {
+    const row = await whiteboardSessionRepo.getLibraryByOwnerId({
+      ownerId: authUser.id,
+    });
+    return { libraryItems: Array.isArray(row?.libraryItems) ? row.libraryItems : [] };
+  }
+
+  async saveLibrary({ authUser, libraryItems }) {
+    const saved = await whiteboardSessionRepo.saveLibrary({
+      ownerId: authUser.id,
+      libraryItems,
+    });
+    return {
+      libraryItems: Array.isArray(saved?.libraryItems)
+        ? saved.libraryItems
+        : [],
+    };
   }
 
   async #assertExists(id) {

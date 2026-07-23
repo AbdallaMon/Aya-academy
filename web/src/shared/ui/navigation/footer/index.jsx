@@ -22,6 +22,7 @@ const FOOTER_TEXT = {
     freeGame: 'العب لعبة مجانية',
     rights: 'جميع الحقوق محفوظة.',
     madeWith: 'صُنع بكل حب بواسطة',
+    developerName: 'عبدالله عبدالصبور',
   },
   en: {
     brand: 'Aya Academy',
@@ -35,6 +36,7 @@ const FOOTER_TEXT = {
     freeGame: 'Play a free game',
     rights: 'All rights reserved.',
     madeWith: 'Made with love by',
+    developerName: 'Abdalla Abdelsabour',
   },
 };
 
@@ -170,7 +172,7 @@ export default function SiteFooter() {
               '&:hover': { color: 'primary.dark' },
             }}
           >
-            AbdallaMon
+            {t.developerName}
           </Box>
         </Typography>
       </Container>

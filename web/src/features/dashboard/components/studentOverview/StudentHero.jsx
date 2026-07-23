@@ -4,6 +4,7 @@ import { Avatar, Box, Card, CardContent, Chip, Stack, Typography } from "@mui/ma
 import { alpha } from "@mui/material/styles";
 import { MdStar } from "react-icons/md";
 import { heroGradient, HeroStatPill } from "@/shared/ui/hero.jsx";
+import { formatDurationMinutes } from "@/shared/lib/money.js";
 
 // Playful hero: avatar + greeting + points / level / rank pills.
 export default function StudentHero({ txt, lng, profile, activeSubscription, rank }) {
@@ -64,8 +65,11 @@ export default function StudentHero({ txt, lng, profile, activeSubscription, ran
               <Chip
                 icon={<MdStar />}
                 label={
-                  activeSubscription.remainingHours != null
-                    ? `${activeSubscription.remainingHours} ${txt.remainingHours}`
+                  activeSubscription.remainingMinutes != null
+                    ? formatDurationMinutes(
+                        activeSubscription.remainingMinutes,
+                        lng,
+                      )
                     : txt.activeSubscription
                 }
                 sx={{

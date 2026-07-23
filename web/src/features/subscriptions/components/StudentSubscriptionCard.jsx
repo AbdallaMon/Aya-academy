@@ -14,6 +14,7 @@ import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { SUBSCRIPTIONS_URL } from "../config/constant.js";
 import { useSubscriptionsText } from "../config/subscriptionsText.js";
+import { selectSubscriptionPeriods } from "../config/subscriptionPeriods.js";
 import SubscriptionSummaryCard from "./SubscriptionSummaryCard.jsx";
 
 export default function StudentSubscriptionCard({ studentId, onChanged }) {
@@ -32,9 +33,10 @@ export default function StudentSubscriptionCard({ studentId, onChanged }) {
   });
 
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const current = rows.find((s) => s.status === "ACTIVE") || null;
-  const next =
-    rows.find((s) => s.origin === "USAGE" && s.status === "UPCOMING") || null;
+  const { current, next } = useMemo(
+    () => selectSubscriptionPeriods(rows),
+    [rows],
+  );
 
   function refetch() {
     triggerRefetch();

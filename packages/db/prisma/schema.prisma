@@ -299,6 +299,7 @@ model User {
   createdCertificates Certificate[]     @relation("CertificateCreatedBy")
   rewards             Reward[]
   notifications       Notification[]
+  couponRedemptions   CouponRedemption[] @relation("StudentCouponRedemptions")
   studentBadges       StudentBadge[]
   pointsLedger        Point[]           @relation("StudentPoints")
   awardedPoints       Point[]           @relation("PointAwardedBy")
@@ -311,6 +312,7 @@ model User {
 
   whiteboardSessionsCreated WhiteboardSession[]        @relation("WhiteboardCreatedBy")
   whiteboardAttendances     WhiteboardSessionStudent[] @relation("WhiteboardStudent")
+  whiteboardLibrary         WhiteboardLibrary?         @relation("WhiteboardLibraryOwner")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -388,6 +390,20 @@ model WhiteboardSessionStudent {
   @@index([studentId])
 }
 
+// An admin's Excalidraw library. It is intentionally independent from any
+// WhiteboardSession so imported shapes are available in every board the admin
+// opens. Excalidraw owns the JSON structure; the API validates the collection
+// boundary and persists it without reshaping its elements.
+model WhiteboardLibrary {
+  id           Int   @id @default(autoincrement())
+  ownerId      Int   @unique
+  owner        User  @relation("WhiteboardLibraryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  libraryItems Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model ParentStudent {
   id        Int            @id @default(autoincrement())
   parentId  Int
@@ -444,6 +460,7 @@ model Coupon {
 
   plans         CouponPlan[]
   subscriptions Subscription[]
+  redemptions   CouponRedemption[]
   rewards       Reward[]
   quizAttempts  QuizAttempt[]
 
@@ -464,6 +481,26 @@ model CouponPlan {
   @@index([planId])
 }
 
+// Append-only proof that a student consumed a coupon. The unique business key
+// permanently enforces one use of the same coupon per student, even if the
+// subscription is later cancelled, replaced or deleted.
+model CouponRedemption {
+  id             Int           @id @default(autoincrement())
+  couponId       Int
+  coupon         Coupon        @relation(fields: [couponId], references: [id])
+  studentId      Int
+  student        User          @relation("StudentCouponRedemptions", fields: [studentId], references: [id], onDelete: Cascade)
+  subscriptionId Int?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([couponId, studentId])
+  @@index([studentId])
+  @@index([subscriptionId])
+}
+
 // ============================================================
 // SUBSCRIPTIONS
 // ============================================================
@@ -479,10 +516,14 @@ model Subscription {
   origin         SubscriptionOrigin @default(MANUAL)
   startDate      DateTime
   endDate        DateTime
-  // Paid subscription hours — the billing basis (price = subsHours × hourlyRate).
-  // Column stays `totalHours` (via @map) so no data migration is needed.
-  subsHours      Int?               @map("totalHours")
-  remainingHours Int?
+  // Legacy hour-based fields. Kept temporarily so the explicit minutes backfill
+  // script can migrate production data without doing data work in the schema
+  // migration. New application writes use subsMinutes/remainingMinutes only.
+  subsHours       Int?               @map("totalHours")
+  remainingHours  Int?
+  // Canonical billing duration. Integer minutes avoid fractional-hour drift.
+  subsMinutes      Int?
+  remainingMinutes Int?
   currency       String             @default("GBP")
   priceCharged   Decimal?           @db.Decimal(10, 2)
   couponId       Int?
@@ -493,6 +534,7 @@ model Subscription {
 
   invoice        Invoice?
   billedSessions SessionLog[] @relation("UsageBilledSessions")
+  couponRedemptions CouponRedemption[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -550,6 +592,9 @@ model Invoice {
 
   // Snapshot amounts (derived — not directly editable).
   currency    String   @default("USD")
+  // Canonical duration snapshot for new invoices. `hours` is legacy compatibility
+  // until the standalone backfill has migrated every historical invoice.
+  minutes     Int?
   hours       Decimal? @db.Decimal(8, 2)
   hourlyRate  Decimal? @db.Decimal(10, 2)
   subtotal    Decimal  @default(0) @db.Decimal(10, 2)
@@ -752,8 +797,11 @@ model SessionLog {
 
   // Multi-select of SessionSubject values (MySQL has no enum arrays).
   subjectsJson Json
-  // Session length in hours (e.g. 1.5).
-  durationHours Decimal @db.Decimal(4, 2)
+  // Legacy hour duration. Nullable for new rows; the explicit backfill script
+  // copies it into durationMinutes after deployment.
+  durationHours   Decimal? @db.Decimal(4, 2)
+  // Canonical session duration for all new writes.
+  durationMinutes Int?
   // Teacher's evaluation of the student for this session.
   rating      SessionRating?
   // Free-text report about the session.

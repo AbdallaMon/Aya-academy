@@ -13,7 +13,12 @@ import {
 } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
-import { COUPONS_URL, COUPON_SOURCES, toDateInput } from "../config/constant.js";
+import {
+  BILLING_SCOPES,
+  COUPONS_URL,
+  COUPON_SOURCES,
+  toDateInput,
+} from "../config/constant.js";
 import { useCouponsText } from "../config/couponsText.js";
 
 const FORM_ID = "coupon-form";
@@ -31,6 +36,7 @@ function makeDefaults(coupon) {
       type: coupon.type ?? "PERCENT",
       value: coupon.value ?? "",
       source: coupon.source ?? "MANUAL",
+      billingPeriod: coupon.billingPeriod ?? "ALL",
       maxRedemptions: coupon.maxRedemptions ?? "",
       startsAt: toDateInput(coupon.startsAt),
       endsAt: toDateInput(coupon.endsAt),
@@ -41,6 +47,7 @@ function makeDefaults(coupon) {
     code: generateCode(),
     type: "PERCENT",
     source: "MANUAL",
+    billingPeriod: "ALL",
     isActive: true,
     value: "",
     maxRedemptions: "",
@@ -81,7 +88,6 @@ export default function CouponFormDialog({
     if (!open) return;
     // `open` re-seeds a fresh code each time the create dialog is opened.
     reset(makeDefaults(coupon));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, coupon, reset]);
 
   const sourceOptions = COUPON_SOURCES.reduce((acc, s) => {
@@ -120,6 +126,8 @@ export default function CouponFormDialog({
       code: values.code?.trim() || undefined,
       type: values.type,
       value: Number(values.value),
+      billingPeriod:
+        values.billingPeriod === "ALL" ? null : values.billingPeriod,
       maxRedemptions: values.maxRedemptions
         ? Number(values.maxRedemptions)
         : undefined,
@@ -129,6 +137,7 @@ export default function CouponFormDialog({
     if (lockedPlanId) {
       payload.source = "MANUAL";
       payload.isActive = true;
+      payload.planIds = [Number(lockedPlanId)];
     } else {
       payload.source = values.source || undefined;
       payload.isActive =
@@ -218,6 +227,23 @@ export default function CouponFormDialog({
                   Number(v) >= usedCount ||
                   `${txt.maxBelowUsage} (${usedCount})`,
               }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <RHFSelect
+              name="billingPeriod"
+              control={control}
+              label={txt.scopeLabel}
+              options={BILLING_SCOPES.reduce((acc, scope) => {
+                acc[scope] =
+                  scope === "ALL"
+                    ? txt.both
+                    : scope === "MONTHLY"
+                      ? txt.monthly
+                      : txt.yearly;
+                return acc;
+              }, {})}
             />
           </Grid>
 

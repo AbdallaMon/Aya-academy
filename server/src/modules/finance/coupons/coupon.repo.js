@@ -118,6 +118,27 @@ class CouponRepo {
     });
   }
 
+  /**
+   * Durable + legacy lookup for "has this student ever used this coupon?".
+   * Subscription history remains a compatibility source until old data is
+   * intentionally backfilled into CouponRedemption.
+   */
+  async findStudentCouponUsage({ couponId, studentId, client } = {}) {
+    const db = client ?? prisma;
+    const [redemption, subscription] = await Promise.all([
+      db.couponRedemption.findUnique({
+        where: { couponId_studentId: { couponId, studentId } },
+        select: { id: true, subscriptionId: true, createdAt: true },
+      }),
+      db.subscription.findFirst({
+        where: { couponId, studentId },
+        orderBy: { id: "asc" },
+        select: { id: true, createdAt: true },
+      }),
+    ]);
+    return { redemption, subscription };
+  }
+
   async createCoupon({ data, planIds, client } = {}) {
     const run = async (tx) => {
       const coupon = await tx.coupon.create({ data });
@@ -161,24 +182,38 @@ class CouponRepo {
     });
   }
 
-  /** Atomically bump a coupon's redemption counter (race-safe). */
-  incrementCouponRedemption(id, client) {
-    return (client ?? prisma).coupon.update({
-      where: { id },
-      data: { redemptionsCount: { increment: 1 } },
+  /** Append the permanent per-student redemption proof. */
+  createCouponRedemption({
+    couponId,
+    studentId,
+    subscriptionId,
+    client,
+  } = {}) {
+    return (client ?? prisma).couponRedemption.create({
+      data: { couponId, studentId, subscriptionId },
+      select: { id: true, couponId: true, studentId: true, subscriptionId: true },
     });
   }
 
-  /**
-   * Atomically release one redemption of a coupon (when a subscription that
-   * consumed it is rejected/cancelled or has its coupon replaced). Uses
-   * `updateMany` guarded by `redemptionsCount > 0` so the counter is never
-   * driven below zero — at 0 it is a safe no-op (returns { count: 0 }).
-   */
-  decrementCouponRedemption(id, client) {
+  /** Atomically consume one global slot without crossing maxRedemptions. */
+  incrementCouponRedemptionWithinLimit(id, now = new Date(), client) {
+    const maxRef = prisma.coupon.fields.maxRedemptions;
     return (client ?? prisma).coupon.updateMany({
-      where: { id, redemptionsCount: { gt: 0 } },
-      data: { redemptionsCount: { decrement: 1 } },
+      where: {
+        id,
+        isActive: true,
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+          {
+            OR: [
+              { maxRedemptions: null },
+              { redemptionsCount: { lt: maxRef } },
+            ],
+          },
+        ],
+      },
+      data: { redemptionsCount: { increment: 1 } },
     });
   }
 }

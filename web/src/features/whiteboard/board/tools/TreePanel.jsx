@@ -75,8 +75,8 @@ export default function TreePanel({ active, rootRef, addObject, playSound, ar = 
         </Button>
         <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
           {ar
-            ? "اسحب النقطة الزرقاء تحت أي عنوان وحطها على عنوان تاني عشان تربطهم ببعض. 🔗"
-            : "Drag the blue dot under a title onto another to link them. 🔗"}
+            ? "استخدم زر القلم فوق أي عنوان لتعديله، واسحب النقطة الزرقاء لربطه بعنوان آخر. 🔗"
+            : "Use the pencil above any title to edit it, and drag the blue dot to link another title. 🔗"}
         </Typography>
       </Stack>
     </Paper>

@@ -1,7 +1,9 @@
 "use client";
 
 import { Card, CardContent, Typography, Stack } from "@mui/material";
-import { formatMoney, formatHours } from "../../../shared/lib/money.js";
+import { formatDurationMinutes } from "../../../shared/lib/money.js";
+import { useTranslation } from "../../../i18n/client.js";
+import SubscriptionPriceBreakdown from "../../subscriptions/components/SubscriptionPriceBreakdown.jsx";
 
 /**
  * Meter for an open (accumulating) or frozen USAGE subscription. v2 STORED model:
@@ -16,8 +18,9 @@ import { formatMoney, formatHours } from "../../../shared/lib/money.js";
  * @param {object} props.txt  useSubscriptionsText() result
  */
 export default function UsageMeterCard({ sub, txt }) {
+  const { lng } = useTranslation();
   if (!sub) return null;
-  const frozen = sub.status !== "UPCOMING";
+  const frozen = !["PENDING", "UPCOMING"].includes(sub.status);
 
   return (
     <Card variant="outlined" sx={{ borderStyle: "dashed" }}>
@@ -26,10 +29,15 @@ export default function UsageMeterCard({ sub, txt }) {
           {txt.accumulatingTitle}
         </Typography>
         <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-          <Typography variant="h4">{formatHours(sub.subsHours ?? 0)}</Typography>
-          <Typography variant="h6" color="text.secondary">
-            {formatMoney(sub.priceCharged ?? 0, sub.currency)}
+          <Typography variant="h4">
+            {formatDurationMinutes(sub.subsMinutes ?? 0, lng)}
           </Typography>
+          <SubscriptionPriceBreakdown
+            subscription={sub}
+            invoice={sub.invoice}
+            txt={txt}
+            align="flex-end"
+          />
         </Stack>
         <Typography variant="caption" color="text.secondary">
           {frozen ? txt.frozenHint : txt.liveHint}

@@ -14,7 +14,10 @@ import {
 import { RowActionsMenu } from "../../../shared/components/index.js";
 import SubscriptionStatusChip from "../../../shared/components/SubscriptionStatusChip.jsx";
 import { localePath } from "../../../i18n/routing.js";
-import { formatMoney } from "../../../shared/lib/money.js";
+import {
+  formatDurationMinutes,
+  formatMoney,
+} from "../../../shared/lib/money.js";
 import { INVOICE_STATUS_COLOR } from "../../invoices/config/constant.js";
 
 /**
@@ -141,18 +144,19 @@ export function buildSubscriptionsColumns({
         row.plan ? (lng === "en" ? row.plan.titleEn : row.plan.titleAr) : "—",
     },
     {
-      field: "subsHours",
+      field: "subsMinutes",
       headerName: txt.subsHours,
       width: 110,
       sortable: false,
-      renderCell: ({ row }) => row.subsHours ?? "—",
+      renderCell: ({ row }) => formatDurationMinutes(row.subsMinutes, lng),
     },
     {
-      field: "remainingHours",
+      field: "remainingMinutes",
       headerName: txt.remainingHours,
       width: 120,
       sortable: false,
-      renderCell: ({ row }) => row.remainingHours ?? "—",
+      renderCell: ({ row }) =>
+        formatDurationMinutes(row.remainingMinutes, lng),
     },
     {
       field: "origin",

@@ -28,4 +28,10 @@ export class WhiteboardSessionValidation {
   static saveBoardDataSchema = z.object({
     boardData: z.record(z.unknown()),
   });
+
+  static saveLibrarySchema = z.object({
+    libraryItems: z
+      .array(z.unknown())
+      .max(500, whiteboardMessagesCodes.LIBRARY_ITEMS_INVALID),
+  });
 }

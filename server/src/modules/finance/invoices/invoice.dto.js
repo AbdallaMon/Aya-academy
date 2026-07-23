@@ -2,6 +2,11 @@
 // embedded subscription/student/plan are summarised so the frontend can render
 // the printable document without extra round-trips.
 
+import {
+  hoursFromMinutes,
+  resolveStoredMinutes,
+} from "../../../shared/utility/duration.js";
+
 function toNum(value) {
   if (value === null || value === undefined) return null;
   const n = Number(value);
@@ -44,6 +49,8 @@ const invoiceSubscriptionSelect = {
   status: true,
   startDate: true,
   endDate: true,
+  subsMinutes: true,
+  remainingMinutes: true,
   subsHours: true,
   remainingHours: true,
   currency: true,
@@ -59,6 +66,7 @@ export const invoiceSelect = {
   invoiceNumber: true,
   status: true,
   currency: true,
+  minutes: true,
   hours: true,
   hourlyRate: true,
   subtotal: true,
@@ -82,9 +90,11 @@ export function toInvoice(row) {
   if (!row) return row;
   const { subscription, ...rest } = row;
 
+  const invoiceMinutes = resolveStoredMinutes(rest.minutes, rest.hours);
   const normalized = {
     ...rest,
-    hours: toNum(rest.hours),
+    minutes: invoiceMinutes,
+    hours: hoursFromMinutes(invoiceMinutes),
     hourlyRate: toNum(rest.hourlyRate),
     subtotal: toNum(rest.subtotal),
     transferFee: toNum(rest.transferFee),
@@ -96,6 +106,14 @@ export function toInvoice(row) {
   if (!subscription) return { ...normalized, subscription };
 
   const { student, plan, ...subRest } = subscription;
+  const subsMinutes = resolveStoredMinutes(
+    subRest.subsMinutes,
+    subRest.subsHours,
+  );
+  const remainingMinutes = resolveStoredMinutes(
+    subRest.remainingMinutes,
+    subRest.remainingHours,
+  );
   const subStudent = student
     ? (() => {
         const { studentLinks, ...studentRest } = student;
@@ -116,6 +134,10 @@ export function toInvoice(row) {
     ...normalized,
     subscription: {
       ...subRest,
+      subsMinutes,
+      remainingMinutes,
+      subsHours: hoursFromMinutes(subsMinutes),
+      remainingHours: hoursFromMinutes(remainingMinutes),
       priceCharged: toNum(subRest.priceCharged),
       student: subStudent,
       plan,

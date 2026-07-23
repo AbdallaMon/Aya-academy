@@ -9,6 +9,11 @@ import {
 } from "@aya/shared";
 import { userRepo } from "../../users/user.repo.js";
 import { subscriptionSelect, toSubscription } from "./subscription.dto.js";
+import { legacyValueToMinutes } from "../../../shared/utility/duration.js";
+import {
+  firstOfNextMonth,
+  monthRange,
+} from "../../../shared/utility/dates.js";
 
 class SubscriptionRepo {
   /**
@@ -101,6 +106,7 @@ class SubscriptionRepo {
     if (!studentIds.length) return { items: [], total };
 
     const now = new Date();
+    const nextMonth = monthRange(firstOfNextMonth(now));
     const [currents, nexts] = await Promise.all([
       prisma.subscription.findMany({
         // Current-period sub even if not yet activated (shown with its status).
@@ -112,9 +118,15 @@ class SubscriptionRepo {
         where: {
           studentId: { in: studentIds },
           origin: SUBSCRIPTION_ORIGINS.USAGE,
-          status: SUBSCRIPTION_STATUSES.UPCOMING,
+          status: {
+            in: [
+              SUBSCRIPTION_STATUSES.PENDING,
+              SUBSCRIPTION_STATUSES.UPCOMING,
+            ],
+          },
+          startDate: { gte: nextMonth.gte, lt: nextMonth.lt },
         },
-        orderBy: { startDate: "desc" },
+        orderBy: [{ startDate: "desc" }, { id: "desc" }],
         select: subscriptionSelect,
       }),
     ]);
@@ -253,8 +265,8 @@ class SubscriptionRepo {
 
   /**
    * Hard-delete a subscription. The invoice FK cascades (onDelete: Cascade), so
-   * the demand invoice is removed with it. Coupon redemption is NOT touched here
-   * — the caller un-redeems before deleting, in the same tx.
+   * the demand invoice is removed with it. The caller preserves any legacy
+   * coupon proof in CouponRedemption before deleting.
    */
   deleteSubscription({ id, client } = {}) {
     return (client ?? prisma).subscription.delete({ where: { id } });
@@ -269,36 +281,78 @@ class SubscriptionRepo {
     return toSubscription(row);
   }
 
-  /** Map<studentId, hours> of UNBILLED PRESENT session hours in a month window. */
-  async sumUsageHoursByStudent({ gte, lt }) {
-    const rows = await prisma.sessionLog.groupBy({
-      by: ["studentId"],
-      where: {
-        sessionDate: { gte, lt },
-        attendance: SESSION_ATTENDANCE.PRESENT,
-        billedSubscriptionId: null,
-      },
-      _sum: { durationHours: true },
-    });
-    return new Map(rows.map((r) => [r.studentId, Number(r._sum.durationHours ?? 0)]));
+  /** Map<studentId, minutes> of UNBILLED PRESENT sessions in a month window. */
+  async sumUsageMinutesByStudent({ gte, lt }) {
+    const commonWhere = {
+      sessionDate: { gte, lt },
+      attendance: SESSION_ATTENDANCE.PRESENT,
+      billedSubscriptionId: null,
+    };
+    const [minuteRows, legacyRows] = await Promise.all([
+      prisma.sessionLog.groupBy({
+        by: ["studentId"],
+        where: { ...commonWhere, durationMinutes: { not: null } },
+        _sum: { durationMinutes: true },
+      }),
+      prisma.sessionLog.findMany({
+        where: { ...commonWhere, durationMinutes: null },
+        select: { studentId: true, durationHours: true },
+      }),
+    ]);
+
+    const totals = new Map();
+    for (const row of minuteRows) {
+      totals.set(row.studentId, Number(row._sum.durationMinutes ?? 0));
+    }
+    for (const row of legacyRows) {
+      const legacyMinutes = legacyValueToMinutes(row.durationHours) ?? 0;
+      totals.set(row.studentId, (totals.get(row.studentId) ?? 0) + legacyMinutes);
+    }
+    return totals;
   }
 
   /**
-   * UNBILLED PRESENT session hours for ONE student in a month window. Same filter
-   * as sumUsageHoursByStudent but scoped to a single studentId and returning a
-   * plain number (0 when none) — used by the recompute-from-source hook.
+   * UNBILLED PRESENT session minutes for ONE student in a month window. New
+   * minute rows and not-yet-backfilled legacy hour rows are summed separately so
+   * a partially migrated database cannot double count a session.
    */
-  async sumUsageHoursForStudentMonth({ studentId, gte, lt, client } = {}) {
-    const agg = await (client ?? prisma).sessionLog.aggregate({
-      where: {
-        studentId,
-        sessionDate: { gte, lt },
-        attendance: SESSION_ATTENDANCE.PRESENT,
-        billedSubscriptionId: null,
-      },
-      _sum: { durationHours: true },
-    });
-    return Number(agg._sum.durationHours ?? 0);
+  async sumUsageMinutesForStudentMonth({
+    studentId,
+    gte,
+    lt,
+    includeBilledSubscriptionId = null,
+    client,
+  } = {}) {
+    const db = client ?? prisma;
+    const commonWhere = {
+      studentId,
+      sessionDate: { gte, lt },
+      attendance: SESSION_ATTENDANCE.PRESENT,
+      ...(includeBilledSubscriptionId
+        ? {
+            OR: [
+              { billedSubscriptionId: null },
+              { billedSubscriptionId: includeBilledSubscriptionId },
+            ],
+          }
+        : { billedSubscriptionId: null }),
+    };
+    const [minuteAgg, legacyRows] = await Promise.all([
+      db.sessionLog.aggregate({
+        where: { ...commonWhere, durationMinutes: { not: null } },
+        _sum: { durationMinutes: true },
+      }),
+      db.sessionLog.findMany({
+        where: { ...commonWhere, durationMinutes: null },
+        select: { durationHours: true },
+      }),
+    ]);
+    const minutes = Number(minuteAgg._sum.durationMinutes ?? 0);
+    const legacyMinutes = legacyRows.reduce(
+      (total, row) => total + (legacyValueToMinutes(row.durationHours) ?? 0),
+      0,
+    );
+    return minutes + legacyMinutes;
   }
 
   /** The open (UPCOMING) USAGE subscription for a student's payment month, or null. */
@@ -314,14 +368,28 @@ class SubscriptionRepo {
     return toSubscription(row);
   }
 
-  /** Every currently-active student + their current plan's hours (for fallback). */
-  async listActiveStudentsWithPlan(now = new Date()) {
+  /**
+   * Every billable student with a subscription covering the current period.
+   * PENDING/UPCOMING remain included so awaiting approval/payment does not hide
+   * the next bucket; cancelled/expired subscriptions do not seed future bills.
+   */
+  async listCurrentPeriodStudents(now = new Date()) {
     const subs = await prisma.subscription.findMany({
-      where: activeSubscriptionWhere(now),
-      select: { studentId: true, plan: { select: { hours: true } } },
+      where: {
+        startDate: { lte: now },
+        endDate: { gte: now },
+        status: {
+          in: [
+            SUBSCRIPTION_STATUSES.ACTIVE,
+            SUBSCRIPTION_STATUSES.PENDING,
+            SUBSCRIPTION_STATUSES.UPCOMING,
+          ],
+        },
+      },
+      select: { studentId: true },
       distinct: ["studentId"],
     });
-    return subs.map((s) => ({ studentId: s.studentId, planHours: s.plan?.hours ?? null }));
+    return subs.map((s) => ({ studentId: s.studentId }));
   }
 
   /**

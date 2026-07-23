@@ -30,6 +30,9 @@ const TXT = {
     restore: "استرجاع خصم الباقة",
     invalid: "كود الخصم غير صالح",
     expired: "انتهت صلاحية كود الخصم",
+    notActiveYet: "الكوبون لم يبدأ بعد",
+    usageLimitReached: "انتهى الحد العام لاستخدام الكوبون",
+    alreadyUsed: "تم استخدام هذا الكوبون لهذا الطالب من قبل",
     notApplicable: "الكوبون لا ينطبق على هذه الباقة أو الدورة",
     notFound: "كود الخصم غير موجود",
     removed: "تمت إزالة الخصم — السعر بدون خصم",
@@ -45,6 +48,9 @@ const TXT = {
     restore: "Restore plan discount",
     invalid: "Invalid coupon code",
     expired: "Coupon code expired",
+    notActiveYet: "Coupon is not active yet",
+    usageLimitReached: "Coupon usage limit has been reached",
+    alreadyUsed: "This coupon was already used for this student",
     notApplicable: "Coupon does not apply to this plan or cycle",
     notFound: "Coupon code not found",
     removed: "Discount removed — price without discount",
@@ -55,6 +61,12 @@ function reasonText(reason, t) {
   switch (reason) {
     case "COUPON_EXPIRED":
       return t.expired;
+    case "COUPON_NOT_ACTIVE_YET":
+      return t.notActiveYet;
+    case "COUPON_USAGE_LIMIT_REACHED":
+      return t.usageLimitReached;
+    case "COUPON_ALREADY_USED_BY_STUDENT":
+      return t.alreadyUsed;
     case "COUPON_NOT_APPLICABLE":
       return t.notApplicable;
     case "COUPON_NOT_FOUND":

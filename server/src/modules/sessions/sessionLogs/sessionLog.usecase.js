@@ -5,6 +5,7 @@ import {
   sessionLogMessagesCodes,
 } from "@aya/shared";
 import { badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
+import { minutesFromHours } from "../../../shared/utility/duration.js";
 import { userRepo } from "../../users/user.repo.js";
 import { notificationUsecase } from "../../notifications/notification.usecase.js";
 import { subscriptionUsecase } from "../../finance/subscriptions/subscription.usecase.js";
@@ -97,11 +98,13 @@ class SessionLogUsecase {
     this.assertSubjects(input.subjects);
     const teacherId = await this.resolveTeacherId(input.teacherId);
 
+    const durationMinutes =
+      input.durationMinutes ?? minutesFromHours(input.durationHours);
     const data = {
       studentId: input.studentId,
       teacherId,
       subjectsJson: input.subjects,
-      durationHours: input.durationHours,
+      durationMinutes,
       rating: input.rating ?? null,
       report: input.report ?? null,
       attendance: input.attendance,
@@ -163,11 +166,26 @@ class SessionLogUsecase {
     if (input.teacherId !== undefined) {
       data.teacherId = await this.resolveTeacherId(input.teacherId);
     }
-    if (input.durationHours !== undefined) data.durationHours = input.durationHours;
+    if (input.durationMinutes !== undefined || input.durationHours !== undefined) {
+      data.durationMinutes =
+        input.durationMinutes ?? minutesFromHours(input.durationHours);
+    }
     if (input.rating !== undefined) data.rating = input.rating;
     if (input.report !== undefined) data.report = input.report;
     if (input.attendance !== undefined) data.attendance = input.attendance;
     if (input.sessionDate !== undefined) data.sessionDate = input.sessionDate;
+
+    const targetStudentId = data.studentId ?? existing.studentId;
+    const targetSessionDate = data.sessionDate ?? existing.sessionDate;
+    if (
+      existing.billedSubscriptionId &&
+      (targetStudentId !== existing.studentId ||
+        !sameUtcMonth(targetSessionDate, existing.sessionDate))
+    ) {
+      // Moving a billed session to a different student/month moves ownership to
+      // the new bucket; both old and new subscriptions are recomputed below.
+      data.billedSubscriptionId = null;
+    }
 
     const updated = await sessionLogRepo.update({ id, data });
 

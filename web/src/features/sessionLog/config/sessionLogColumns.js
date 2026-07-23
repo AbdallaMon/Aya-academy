@@ -4,6 +4,7 @@ import { Chip, Stack, Typography } from "@mui/material";
 import { MdEdit, MdDelete } from "react-icons/md";
 import { RowActionsMenu } from "../../../shared/components/index.js";
 import { formatSessionDate, studentLabel } from "./constant.js";
+import { formatDurationMinutes } from "../../../shared/lib/money.js";
 
 /**
  * Column descriptors for the session-log management table.
@@ -54,10 +55,10 @@ export function buildSessionLogColumns({ txt, lng, can, actions }) {
       },
     },
     {
-      field: "durationHours",
-      headerName: txt.hours,
-      width: 100,
-      renderCell: ({ row }) => Number(row.durationHours),
+      field: "durationMinutes",
+      headerName: txt.minutes,
+      width: 150,
+      renderCell: ({ row }) => formatDurationMinutes(row.durationMinutes, lng),
     },
     {
       field: "rating",

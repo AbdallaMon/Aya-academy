@@ -32,7 +32,7 @@ function makeDefaults(session) {
     return {
       studentId: session.student?.id != null ? String(session.student.id) : "",
       subjects: Array.isArray(session.subjectsJson) ? session.subjectsJson : [],
-      durationHours: session.durationHours ?? "",
+      durationMinutes: session.durationMinutes ?? "",
       rating: session.rating ?? "",
       report: session.report ?? "",
       teacherId: session.teacher?.id != null ? String(session.teacher.id) : "",
@@ -43,7 +43,7 @@ function makeDefaults(session) {
   return {
     studentId: "",
     subjects: [],
-    durationHours: "",
+    durationMinutes: "",
     rating: "",
     report: "",
     teacherId: "",
@@ -135,7 +135,7 @@ export default function SessionLogFormDialog({ open, onClose, session = null, on
         labelMap: {
           studentId: txt.studentLabel,
           subjects: txt.subjectsLabel,
-          durationHours: txt.durationLabel,
+          durationMinutes: txt.durationLabel,
           rating: txt.ratingLabel,
           report: txt.reportLabel,
           teacherId: txt.teacherLabel,
@@ -151,7 +151,7 @@ export default function SessionLogFormDialog({ open, onClose, session = null, on
     const payload = {
       studentId: Number(values.studentId),
       subjects: values.subjects || [],
-      durationHours: Number(values.durationHours),
+      durationMinutes: Number(values.durationMinutes),
       rating: values.rating || undefined,
       report: values.report?.trim() || undefined,
       attendance: values.attendance,
@@ -212,14 +212,19 @@ export default function SessionLogFormDialog({ open, onClose, session = null, on
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <RHFTextField
-              name="durationHours"
+              name="durationMinutes"
               control={control}
               label={txt.durationLabel}
               type="number"
-              inputProps={{ step: "0.5", min: "0" }}
+              inputProps={{ step: "1", min: "1", max: "1440" }}
+              helperText={txt.durationHint}
               rules={{
                 required: txt.required,
-                validate: (v) => Number(v) > 0 || txt.durationInvalid,
+                validate: (v) =>
+                  (Number.isInteger(Number(v)) &&
+                    Number(v) > 0 &&
+                    Number(v) <= 1440) ||
+                  txt.durationInvalid,
               }}
             />
           </Grid>

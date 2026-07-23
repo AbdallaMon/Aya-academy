@@ -79,8 +79,13 @@ export default function PlanPickerDialog({
 
   function confirm() {
     if (!selectedPlan) return;
-    const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
-    onRequest(selectedPlan, { billingPeriod, couponCode: codeToSend });
+    const resolved = resolveCoupon(selectedPlan, billingPeriod, coupon);
+    onRequest(selectedPlan, {
+      billingPeriod,
+      couponCode:
+        resolved.applied === "custom" ? resolved.codeToSend : undefined,
+      applyPlanCoupon: resolved.applyPlanCoupon,
+    });
   }
 
   return (

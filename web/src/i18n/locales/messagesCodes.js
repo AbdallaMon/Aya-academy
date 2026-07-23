@@ -144,6 +144,11 @@ const ar = {
     [couponMessagesCodes.COUPON_CODE_REQUIRED]: 'كود الكوبون مطلوب',
     [couponMessagesCodes.COUPON_INVALID]: 'كوبون غير صالح',
     [couponMessagesCodes.COUPON_EXPIRED]: 'انتهت صلاحية الكوبون',
+    [couponMessagesCodes.COUPON_NOT_ACTIVE_YET]: 'الكوبون لم يبدأ بعد',
+    [couponMessagesCodes.COUPON_USAGE_LIMIT_REACHED]:
+      'انتهى عدد الاستخدامات المتاح لهذا الكوبون',
+    [couponMessagesCodes.COUPON_ALREADY_USED_BY_STUDENT]:
+      'تم استخدام هذا الكوبون لهذا الطالب من قبل، ولا يمكن استخدامه مرة أخرى',
     [couponMessagesCodes.COUPON_NOT_APPLICABLE]: 'لا يمكن تطبيق هذا الكوبون',
     [couponMessagesCodes.COUPON_CODE_TAKEN]: 'كود الكوبون مستخدم بالفعل',
     [couponMessagesCodes.COUPON_MAX_BELOW_USAGE]:
@@ -489,6 +494,10 @@ const ar = {
     [whiteboardMessagesCodes.IMAGE_REQUIRED]: 'الصورة مطلوبة',
     [whiteboardMessagesCodes.IMAGE_FORBIDDEN]: 'لا يمكنك الوصول لهذه الصورة',
     [whiteboardMessagesCodes.BOARD_DATA_SAVED]: 'تم حفظ بيانات السبورة',
+    [whiteboardMessagesCodes.LIBRARY_LOADED]: 'تم تحميل مكتبة السبورة',
+    [whiteboardMessagesCodes.LIBRARY_SAVED]: 'تم حفظ مكتبة السبورة',
+    [whiteboardMessagesCodes.LIBRARY_ITEMS_INVALID]:
+      'محتوى مكتبة السبورة غير صالح',
   },
 };
 
@@ -599,6 +608,12 @@ const en = {
     [couponMessagesCodes.COUPON_CODE_REQUIRED]: 'Coupon code is required',
     [couponMessagesCodes.COUPON_INVALID]: 'Invalid coupon',
     [couponMessagesCodes.COUPON_EXPIRED]: 'Coupon has expired',
+    [couponMessagesCodes.COUPON_NOT_ACTIVE_YET]:
+      'This coupon is not active yet',
+    [couponMessagesCodes.COUPON_USAGE_LIMIT_REACHED]:
+      'This coupon has reached its total usage limit',
+    [couponMessagesCodes.COUPON_ALREADY_USED_BY_STUDENT]:
+      'This coupon has already been used for this student',
     [couponMessagesCodes.COUPON_NOT_APPLICABLE]: 'Coupon is not applicable',
     [couponMessagesCodes.COUPON_CODE_TAKEN]: 'Coupon code already in use',
     [couponMessagesCodes.COUPON_MAX_BELOW_USAGE]:
@@ -956,6 +971,10 @@ const en = {
     [whiteboardMessagesCodes.IMAGE_REQUIRED]: 'Image is required',
     [whiteboardMessagesCodes.IMAGE_FORBIDDEN]: 'You cannot access this image',
     [whiteboardMessagesCodes.BOARD_DATA_SAVED]: 'Board data saved',
+    [whiteboardMessagesCodes.LIBRARY_LOADED]: 'Whiteboard library loaded',
+    [whiteboardMessagesCodes.LIBRARY_SAVED]: 'Whiteboard library saved',
+    [whiteboardMessagesCodes.LIBRARY_ITEMS_INVALID]:
+      'The whiteboard library data is invalid',
   },
 };
 

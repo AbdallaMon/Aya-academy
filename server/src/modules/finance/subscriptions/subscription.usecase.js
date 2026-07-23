@@ -15,7 +15,7 @@ import {
   monthRange,
   previousMonth,
 } from "../../../shared/utility/dates.js";
-import { resolveUsageHours } from "./usageBilling.js";
+import { resolveUsageMinutes } from "./usageBilling.js";
 import {
   AppError,
   badRequest,
@@ -28,9 +28,11 @@ import {
   applyDiscount,
   couponAppliesToPeriod,
   isCouponActive,
+  priceFromMinutes,
   priceForPeriod,
   roundMoney,
 } from "../../../shared/utility/pricing.js";
+import { minutesFromHours } from "../../../shared/utility/duration.js";
 import { userRepo } from "../../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { couponRepo } from "../coupons/coupon.repo.js";
@@ -40,15 +42,6 @@ import { paymentTemplateUsecase } from "../paymentTemplates/paymentTemplate.usec
 import { notificationUsecase } from "../../notifications/notification.usecase.js";
 import { invoiceRepo } from "../invoices/invoice.repo.js";
 import { subscriptionRepo } from "./subscription.repo.js";
-
-/**
- * Charged price derived from the subscription's hours × the global hourly rate.
- * Used when no explicit/coupon-derived price is supplied (admin edits hours →
- * pays more). Rounded via the shared money helper.
- */
-function priceFromHours(subsHours, hourlyRate) {
-  return roundMoney(Number(subsHours) * Number(hourlyRate));
-}
 
 class SubscriptionUsecase {
   /** Throws unless `authUser` may access the given subscription (by its studentId). */
@@ -93,21 +86,95 @@ class SubscriptionUsecase {
   }
 
   /**
-   * Adjust coupon redemption counters when a subscription's coupon changes from
-   * `oldCouponId` to `newCouponId`. Atomic when given the enclosing `tx`:
-   *   - same id (incl. both null)        → no-op
-   *   - had a coupon (oldCouponId)       → release one redemption (floored at 0)
-   *   - now has a coupon (newCouponId)   → consume one redemption
-   * Covers all transitions: old→new, old→none, none→new.
+   * Keep an existing unpaid invoice financially synchronized without replacing
+   * its admin-edited template/notes. If no invoice exists yet, create it.
    */
-  async swapCouponRedemption(oldCouponId, newCouponId, tx) {
-    if (oldCouponId === newCouponId) return;
-    if (oldCouponId) {
-      await couponRepo.decrementCouponRedemption(oldCouponId, tx);
+  async refreshOrEnsureInvoice(subscription, { plan } = {}) {
+    if (!subscription || subscription.priceCharged == null) return;
+    try {
+      const existing = await invoiceRepo.getBySubscriptionId(subscription.id);
+      if (!existing) {
+        await this.ensureInvoice(subscription, { plan });
+        return;
+      }
+      if (existing.status !== INVOICE_STATUSES.UNPAID) return;
+      const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
+      await invoiceUsecase.refreshAmountsForSubscription(subscription.id);
+    } catch {
+      // best-effort; the subscription remains the source of truth
     }
-    if (newCouponId) {
-      await couponRepo.incrementCouponRedemption(newCouponId, tx);
+  }
+
+  /** A next-month usage bill remains editable until its invoice is settled. */
+  isMutableUsageSubscription(subscription) {
+    if (!subscription) return true;
+    if (
+      ![
+        SUBSCRIPTION_STATUSES.PENDING,
+        SUBSCRIPTION_STATUSES.UPCOMING,
+      ].includes(subscription.status)
+    ) {
+      return false;
     }
+    return (
+      !subscription.invoice ||
+      subscription.invoice.status === INVOICE_STATUSES.UNPAID
+    );
+  }
+
+  /**
+   * Resolve the usage bill's plan in priority order:
+   * existing link -> student's inherited link -> featured/default active plan.
+   */
+  async resolveUsagePlan(studentId, open = null) {
+    if (open?.planId) {
+      const linked = await planRepo.getByIdWithCoupons(open.planId);
+      if (linked) return linked;
+    }
+    const inheritedPlanId =
+      await subscriptionRepo.currentPlanIdForStudent(studentId);
+    if (inheritedPlanId) {
+      const inherited = await planRepo.getByIdWithCoupons(inheritedPlanId);
+      if (inherited) return inherited;
+    }
+    return planRepo.getDefaultActiveWithCoupons();
+  }
+
+  /** Immediately materialize the next calendar bucket for a new current sub. */
+  async ensureNextUsageForCurrentSubscription(subscription, now = new Date()) {
+    if (!subscription) return;
+    const start = new Date(subscription.startDate);
+    const end = new Date(subscription.endDate);
+    if (start > now || end < now) return;
+    try {
+      await this.recomputeOpenUsageSubscription({
+        studentId: subscription.studentId,
+        sessionDate: now,
+      });
+    } catch {
+      // best-effort; the daily seed retries
+    }
+  }
+
+  runTransaction(work) {
+    return prisma.$transaction(work);
+  }
+
+  /** Permanently consume a newly attached coupon inside the enclosing tx. */
+  async consumeCoupon({
+    previousCouponId = null,
+    couponId,
+    studentId,
+    subscriptionId,
+    tx,
+  }) {
+    return couponUsecase.consumeOnce({
+      previousCouponId,
+      couponId,
+      studentId,
+      subscriptionId,
+      client: tx,
+    });
   }
 
   /**
@@ -118,11 +185,10 @@ class SubscriptionUsecase {
    *      subscription, refuse (no admin bypass). The teacher must CANCEL it first
    *      (ACTIVE → CANCELLED via cancel()).
    *   2. ONE in-flight at a time — auto-replace: any PENDING subscription(s) are
-   *      deleted entirely (their invoice cascades; their coupon redemption is
-   *      returned first). No error — the new request simply replaces the old one.
+   *      deleted entirely (their invoice cascades). Coupon consumption remains
+   *      permanent. No error — the new request simply replaces the old one.
    *
-   * Must run INSIDE the enclosing `tx` so the deletes/coupon-decrements are atomic
-   * with the subsequent createSubscription.
+   * Must run INSIDE the enclosing `tx` so deletes and creation stay atomic.
    */
   async prepareForNewSubscription(studentId, tx) {
     // Rule 1 — block while a currently-active subscription exists.
@@ -142,9 +208,12 @@ class SubscriptionUsecase {
     });
     for (const p of pendings) {
       if (p.origin === SUBSCRIPTION_ORIGINS.USAGE) continue; // never delete usage bills
-      if (p.couponId) {
-        await couponRepo.decrementCouponRedemption(p.couponId, tx);
-      }
+      await couponUsecase.preserveLegacyRedemption({
+        couponId: p.couponId,
+        studentId,
+        subscriptionId: p.id,
+        client: tx,
+      });
       await subscriptionRepo.deleteSubscription({ id: p.id, client: tx });
     }
   }
@@ -158,83 +227,158 @@ class SubscriptionUsecase {
 
   /**
    * Compute the price a student is charged for a plan on the chosen billing
-   * cycle. The discount is driven SOLELY by the (optional) coupon code: when a
-   * valid code is attached the discount is applied; when none is attached the
-   * base price is charged. The plan's own coupon is offered by the UI as a
-   * removable default code — it is never silently auto-applied here.
+   * cycle. An explicit code is validated for the student; otherwise the best
+   * unused plan coupon may be applied automatically when that option is enabled.
    *
-   * Returns the price plus the id of any consumed coupon so the caller can
-   * atomically bump its redemption counter in the same tx.
+   * Returns the price plus the coupon id; the caller consumes it atomically in
+   * the same transaction that creates/updates the subscription.
    *
    * @param {object}  plan          plan loaded with `coupons[].coupon`
    * @param {string}  billingPeriod MONTHLY | YEARLY
    * @param {string=} couponCode    optional coupon code from the request
    * @returns {Promise<{ priceCharged:number, basePrice:number, couponId:number|null }>}
    */
-  async computePricing(plan, billingPeriod, couponCode, hourlyRate) {
-    const basePrice = roundMoney(priceForPeriod(plan, billingPeriod, hourlyRate));
-
-    // A plan discount is NOT silently auto-applied: the price is the base price
-    // unless an explicit coupon code is attached. The UI defaults the coupon to
-    // the plan's own coupon (removable + replaceable), so a discount is always a
-    // deliberate choice — removing it yields the base price.
-    if (!couponCode) {
-      return { priceCharged: basePrice, basePrice, couponId: null };
-    }
-
-    const result = await couponUsecase.validateCoupon({
-      code: couponCode,
+  async computePricing(
+    plan,
+    billingPeriod,
+    couponCode,
+    hourlyRate,
+    {
+      studentId = null,
+      currentSubscriptionId = null,
+      autoPlanCoupon = true,
+    } = {},
+  ) {
+    const periodHours =
+      billingPeriod === BILLING_PERIODS.YEARLY
+        ? Number(plan.hours) * 12
+        : Number(plan.hours);
+    return this.computeUsagePricing({
+      subsMinutes: minutesFromHours(periodHours),
+      couponCode,
+      hourlyRate,
       planId: plan.id,
+      plan,
       billingPeriod,
+      studentId,
+      currentSubscriptionId,
+      autoPlanCoupon,
     });
-    if (!result.valid) {
-      throw badRequest(
-        subscriptionMessagesCodes.COUPON_INVALID,
-        messagesNames.subscriptionMessages,
-      );
-    }
-    const coupon = await couponRepo.getByCode(couponCode);
-    const priceCharged = roundMoney(
-      applyDiscount(basePrice, {
-        type: result.discount.type,
-        value: result.discount.value,
-      }),
-    );
+  }
 
-    return {
-      priceCharged,
-      basePrice,
-      couponId: coupon.id,
-    };
+  /** Best currently-active discount linked to a plan for the requested cycle. */
+  bestPlanCoupon(plan, billingPeriod, basePrice, now = new Date()) {
+    const linked = (plan?.coupons ?? [])
+      .map((link) => link.coupon)
+      .filter(
+        (coupon) =>
+          isCouponActive(coupon, now) &&
+          couponAppliesToPeriod(coupon, billingPeriod),
+      );
+    if (!linked.length) return null;
+    return linked.reduce((best, coupon) => {
+      const net = roundMoney(
+        applyDiscount(basePrice, {
+          type: coupon.type,
+          value: Number(coupon.value),
+        }),
+      );
+      return !best || net < best.net ? { coupon, net } : best;
+    }, null)?.coupon;
   }
 
   /**
-   * Price a subscription STRICTLY from its own hours: base = subsHours × rate,
+   * Price a subscription STRICTLY from its own minutes:
+   * base = subsMinutes × hourlyRate ÷ 60,
    * then the coupon discount is applied to THAT total (never the plan's hours).
    * `planId` (optional) is used ONLY to validate a plan-scoped coupon code — it
    * never affects the base. This is the single pricing path for every
    * subscription (create, apply-coupon, recompute, freeze).
    */
-  async computeUsagePricing({ subsHours, couponCode, hourlyRate, planId = null }) {
-    const base = priceFromHours(subsHours, hourlyRate);
-    if (!couponCode) return { priceCharged: base, couponId: null };
+  async computeUsagePricing({
+    subsMinutes,
+    couponCode,
+    hourlyRate,
+    planId = null,
+    plan = null,
+    existingCoupon = null,
+    billingPeriod = BILLING_PERIODS.MONTHLY,
+    autoPlanCoupon = true,
+    studentId = null,
+    currentSubscriptionId = null,
+  }) {
+    const base = priceFromMinutes(subsMinutes, hourlyRate);
+    let coupon = existingCoupon;
 
-    const result = await couponUsecase.validateCoupon({
-      code: couponCode,
-      planId,
-      billingPeriod: BILLING_PERIODS.MONTHLY,
-    });
-    if (!result.valid) {
-      throw badRequest(
-        subscriptionMessagesCodes.COUPON_INVALID,
-        messagesNames.subscriptionMessages,
-      );
+    if (couponCode !== undefined && couponCode !== null) {
+      const code = String(couponCode).trim();
+      coupon = null;
+      if (code) {
+        const result = await couponUsecase.validateCoupon({
+          code,
+          planId,
+          billingPeriod,
+          studentId,
+          currentSubscriptionId,
+        });
+        if (!result.valid) {
+          throw badRequest(result.reason, messagesNames.couponMessages);
+        }
+        coupon = await couponRepo.getByCode(code);
+      }
+    } else if (!coupon && autoPlanCoupon) {
+      const candidates = (plan?.coupons ?? [])
+        .map((link) => link.coupon)
+        .filter(
+          (candidate) =>
+            isCouponActive(candidate) &&
+            couponAppliesToPeriod(candidate, billingPeriod),
+        )
+        .sort((left, right) => {
+          const leftNet = applyDiscount(base, {
+            type: left.type,
+            value: Number(left.value),
+          });
+          const rightNet = applyDiscount(base, {
+            type: right.type,
+            value: Number(right.value),
+          });
+          return leftNet - rightNet;
+        });
+
+      for (const candidate of candidates) {
+        if (!studentId) {
+          coupon = candidate;
+          break;
+        }
+        const result = await couponUsecase.validateCoupon({
+          code: candidate.code,
+          planId,
+          billingPeriod,
+          studentId,
+          currentSubscriptionId,
+        });
+        if (result.valid) {
+          coupon = candidate;
+          break;
+        }
+      }
     }
-    const coupon = await couponRepo.getByCode(couponCode);
+
+    if (!coupon) {
+      return { priceCharged: base, basePrice: base, couponId: null };
+    }
     const priceCharged = roundMoney(
-      applyDiscount(base, { type: result.discount.type, value: result.discount.value }),
+      applyDiscount(base, {
+        type: coupon.type,
+        value: Number(coupon.value),
+      }),
     );
-    return { priceCharged, couponId: coupon.id };
+    return {
+      priceCharged,
+      basePrice: base,
+      couponId: coupon.id,
+    };
   }
 
   /** End date for a billing cycle (1 month / 1 year) starting at `start`. */
@@ -352,8 +496,8 @@ class SubscriptionUsecase {
   /**
    * STORED model (v2): recompute-from-source. On every session mutation, find (or
    * create) the open UPCOMING USAGE subscription for the payment month (M+1) of a
-   * session dated in month M, recompute its hours from the ACTUAL session sum for
-   * the consumption month M, and STORE `subsHours`/`remainingHours`/`priceCharged`
+   * session dated in month M, recompute its minutes from the ACTUAL session sum for
+   * the consumption month M, and STORE `subsMinutes`/`remainingMinutes`/`priceCharged`
    * on it. Recompute-from-source means no deltas → no drift.
    *
    * Only ever touches a still-open (UPCOMING) sub: once month-close has frozen it
@@ -373,54 +517,92 @@ class SubscriptionUsecase {
       paymentStart,
     });
     // Frozen/paid — never rewrite a settled number.
-    if (open && open.status !== SUBSCRIPTION_STATUSES.UPCOMING) return open;
+    if (!this.isMutableUsageSubscription(open)) return open;
 
-    const usage = await subscriptionRepo.sumUsageHoursForStudentMonth({
+    const usageMinutes = await subscriptionRepo.sumUsageMinutesForStudentMonth({
       studentId,
       gte: consumption.gte,
       lt: consumption.lt,
+      includeBilledSubscriptionId: open?.id ?? null,
+    });
+
+    const plan = await this.resolveUsagePlan(studentId, open);
+    const resolvedMinutes = resolveUsageMinutes({
+      usageMinutes,
+      planMinutes: minutesFromHours(plan?.hours) ?? 0,
+    });
+    if (!resolvedMinutes || resolvedMinutes <= 0) return open;
+    const pricing = await this.computeUsagePricing({
+      subsMinutes: resolvedMinutes,
+      hourlyRate,
+      planId: plan?.id ?? null,
+      plan,
+      existingCoupon: open?.coupon ?? null,
+      studentId,
+      currentSubscriptionId: open?.id ?? null,
     });
 
     if (!open) {
       // New open sub — inherit the student's current/most-recent sub's plan (v3
-      // §5). Zero sessions fall back to THAT inherited plan's hours.
-      const inheritedPlanId =
-        await subscriptionRepo.currentPlanIdForStudent(studentId);
-      const inheritedPlan = inheritedPlanId
-        ? await planRepo.getById(inheritedPlanId)
-        : null;
-      const subsHours = usage > 0 ? usage : inheritedPlan?.hours ?? 0;
+      // §5). Zero sessions fall back to THAT inherited plan's minutes.
       const data = {
         origin: SUBSCRIPTION_ORIGINS.USAGE,
         status: SUBSCRIPTION_STATUSES.UPCOMING,
         billingPeriod: BILLING_PERIODS.MONTHLY,
         startDate: paymentStart,
         endDate: endOfMonth(paymentStart),
-        subsHours,
-        remainingHours: subsHours,
+        subsMinutes: resolvedMinutes,
+        remainingMinutes: resolvedMinutes,
         // Fresh sub carries no coupon yet, so price is the plain hours × rate.
-        priceCharged: priceFromHours(subsHours, hourlyRate),
+        priceCharged: pricing.priceCharged,
         currency: settings.currency,
         student: { connect: { id: studentId } },
       };
-      if (inheritedPlanId) data.plan = { connect: { id: inheritedPlanId } };
-      return subscriptionRepo.createSubscription(data);
+      if (plan) data.plan = { connect: { id: plan.id } };
+      if (pricing.couponId) {
+        data.coupon = { connect: { id: pricing.couponId } };
+      }
+      const subscription = await this.runTransaction(async (tx) => {
+        const created = await subscriptionRepo.createSubscription(data, tx);
+        await this.consumeCoupon({
+          couponId: pricing.couponId,
+          studentId,
+          subscriptionId: created.id,
+          tx,
+        });
+        return created;
+      });
+      await this.refreshOrEnsureInvoice(subscription, { plan });
+      return subscription;
     }
 
-    // Existing open (UPCOMING) — recompute using its OWN linked plan hours as the
-    // zero-session fallback. Price = hours × rate, minus any coupon already
+    // Existing open (UPCOMING) — recompute using its OWN linked plan minutes as
+    // the zero-session fallback. Price = minutes × hourly rate ÷ 60, minus any coupon already
     // attached to the open sub (same stored-coupon logic as the month-close freeze).
-    const subsHours = usage > 0 ? usage : open.plan?.hours ?? 0;
-    const base = priceFromHours(subsHours, hourlyRate);
-    const c = open.coupon ?? null;
-    const priceCharged = c
-      ? roundMoney(applyDiscount(base, { type: c.type, value: Number(c.value) }))
-      : base;
-    return subscriptionRepo.updateSubscription(open.id, {
-      subsHours,
-      remainingHours: subsHours,
-      priceCharged,
+    const subscription = await this.runTransaction(async (tx) => {
+      await this.consumeCoupon({
+        previousCouponId: open.couponId,
+        couponId: pricing.couponId,
+        studentId,
+        subscriptionId: open.id,
+        tx,
+      });
+      return subscriptionRepo.updateSubscription(
+        open.id,
+        {
+          subsMinutes: resolvedMinutes,
+          remainingMinutes: resolvedMinutes,
+          priceCharged: pricing.priceCharged,
+          plan: plan ? { connect: { id: plan.id } } : undefined,
+          coupon: pricing.couponId
+            ? { connect: { id: pricing.couponId } }
+            : { disconnect: true },
+        },
+        tx,
+      );
     });
+    await this.refreshOrEnsureInvoice(subscription, { plan });
+    return subscription;
   }
 
   /**
@@ -437,7 +619,7 @@ class SubscriptionUsecase {
    * @returns {Promise<{ processed:number, failed:number }>}
    */
   async seedOpenUsageSubscriptions(now = new Date()) {
-    const activeStudents = await subscriptionRepo.listActiveStudentsWithPlan(now);
+    const activeStudents = await subscriptionRepo.listCurrentPeriodStudents(now);
     let processed = 0;
     let failed = 0;
     for (const { studentId } of activeStudents) {
@@ -457,7 +639,7 @@ class SubscriptionUsecase {
   }
 
   /**
-   * Live accumulating-bill preview for a USAGE subscription: the consumed hours
+   * Live accumulating-bill preview for a USAGE subscription: the consumed minutes
    * in the sub's consumption month (its startDate − 1 month) and the projected
    * price at the current hourly rate. Read-scoped exactly like getById
    * (assertCanAccess by studentId). `frozen` is true once the sub has left the
@@ -471,13 +653,22 @@ class SubscriptionUsecase {
     await this.assertCanAccess(authUser, sub.studentId);
 
     const consumption = monthRange(previousMonth(sub.startDate)); // start − 1 month
-    const hoursMap = await subscriptionRepo.sumUsageHoursByStudent(consumption);
-    const usageHours = hoursMap.get(sub.studentId) ?? 0;
+    const usageMinutes = await subscriptionRepo.sumUsageMinutesForStudentMonth({
+      studentId: sub.studentId,
+      gte: consumption.gte,
+      lt: consumption.lt,
+      includeBilledSubscriptionId: sub.id,
+    });
     const settings = await settingsUsecase.getEffective();
 
     return {
-      usageHours,
-      projectedPrice: priceFromHours(usageHours, Number(settings.hourlyRate)),
+      usageMinutes,
+      // Temporary read compatibility for old clients.
+      usageHours: usageMinutes / 60,
+      projectedPrice: priceFromMinutes(
+        usageMinutes,
+        Number(settings.hourlyRate),
+      ),
       currency: sub.currency,
       frozen: sub.status !== SUBSCRIPTION_STATUSES.UPCOMING,
     };
@@ -487,9 +678,9 @@ class SubscriptionUsecase {
    * Create-by-month (USAGE arrears): an admin adds a subscription for ONE month.
    * Per the arrears bucketing, the sub dated month X bills month X-1's PRESENT
    * sessions — so `startDate = 1st of the chosen month`, `endDate = last day`,
-   * `origin = USAGE`, `subsHours = the sum of that student's unbilled PRESENT
-   * hours in the consumption month (previousMonth(startDate))`, and
-   * `priceCharged = hours × hourly rate`. Refuses a duplicate USAGE sub for the
+   * `origin = USAGE`, `subsMinutes = the sum of that student's unbilled PRESENT
+   * minutes in the consumption month (previousMonth(startDate))`, and
+   * `priceCharged = minutes × hourly rate ÷ 60`. Refuses a duplicate USAGE sub for the
    * same (studentId, startDate) — reusing the status-agnostic
    * findOpenUsageSubscription lookup (origin + startDate only).
    *
@@ -517,30 +708,55 @@ class SubscriptionUsecase {
     // Arrears: the month-X sub bills month X-1's sessions.
     const consumption = monthRange(previousMonth(startDate));
     const settings = await settingsUsecase.getEffective();
-    const subsHours = await subscriptionRepo.sumUsageHoursForStudentMonth({
+    const usageMinutes = await subscriptionRepo.sumUsageMinutesForStudentMonth({
       studentId,
       gte: consumption.gte,
       lt: consumption.lt,
     });
-    const priceCharged = priceFromHours(subsHours, Number(settings.hourlyRate));
+    const plan = await this.resolveUsagePlan(studentId);
+    const subsMinutes = resolveUsageMinutes({
+      usageMinutes,
+      planMinutes: minutesFromHours(plan?.hours) ?? 0,
+    });
+    const { priceCharged, couponId } = await this.computeUsagePricing({
+      subsMinutes,
+      couponCode: input.couponCode,
+      hourlyRate: Number(settings.hourlyRate),
+      planId: plan?.id ?? null,
+      plan,
+      studentId,
+      autoPlanCoupon: input.applyPlanCoupon ?? true,
+    });
 
-    const subscription = await subscriptionRepo.createSubscription({
+    const data = {
       origin: SUBSCRIPTION_ORIGINS.USAGE,
       status: this.resolveStatus(startDate, endDate),
       billingPeriod: BILLING_PERIODS.MONTHLY,
       startDate,
       endDate,
-      subsHours,
-      remainingHours: subsHours,
+      subsMinutes,
+      remainingMinutes: subsMinutes,
       priceCharged,
       currency: settings.currency,
       notes: input.notes,
       student: { connect: { id: studentId } },
       createdBy: { connect: { id: authUser.id } },
+      plan: plan ? { connect: { id: plan.id } } : undefined,
+      coupon: couponId ? { connect: { id: couponId } } : undefined,
+    };
+    const subscription = await prisma.$transaction(async (tx) => {
+      const created = await subscriptionRepo.createSubscription(data, tx);
+      await this.consumeCoupon({
+        couponId,
+        studentId,
+        subscriptionId: created.id,
+        tx,
+      });
+      return created;
     });
 
     // Auto-create the demand invoice (snapshot of the template) — best-effort.
-    await this.ensureInvoice(subscription);
+    await this.ensureInvoice(subscription, { plan });
 
     // Notify the student — failure must not fail the request.
     try {
@@ -595,14 +811,17 @@ class SubscriptionUsecase {
     }
 
     const settings = await settingsUsecase.getEffective();
-    const subsHours = plan.hours;
-    // Price from the subscription's OWN hours (subsHours × rate), NOT the plan's
+    const subsMinutes = minutesFromHours(plan.hours);
+    // Price from the subscription's OWN minutes, NOT the plan's
     // period price. planId is passed only so a plan-scoped coupon still validates.
     const { priceCharged, couponId } = await this.computeUsagePricing({
-      subsHours,
+      subsMinutes,
       couponCode: input.couponCode,
       hourlyRate: Number(settings.hourlyRate),
       planId: plan.id,
+      plan,
+      studentId,
+      autoPlanCoupon: input.applyPlanCoupon ?? true,
     });
 
     const data = {
@@ -611,8 +830,8 @@ class SubscriptionUsecase {
       billingPeriod: BILLING_PERIODS.MONTHLY,
       startDate,
       endDate,
-      subsHours,
-      remainingHours: subsHours,
+      subsMinutes,
+      remainingMinutes: subsMinutes,
       priceCharged,
       currency: settings.currency,
       notes: input.notes,
@@ -624,9 +843,12 @@ class SubscriptionUsecase {
 
     const subscription = await prisma.$transaction(async (tx) => {
       const sub = await subscriptionRepo.createSubscription(data, tx);
-      if (couponId) {
-        await couponRepo.incrementCouponRedemption(couponId, tx);
-      }
+      await this.consumeCoupon({
+        couponId,
+        studentId,
+        subscriptionId: sub.id,
+        tx,
+      });
       return sub;
     });
 
@@ -671,15 +893,22 @@ class SubscriptionUsecase {
       input.status ?? this.resolveStatus(input.startDate, input.endDate);
     const billingPeriod = input.billingPeriod ?? BILLING_PERIODS.MONTHLY;
     const settings = await settingsUsecase.getEffective();
+    const subsMinutes =
+      input.subsMinutes ?? minutesFromHours(input.subsHours);
+    const remainingMinutes =
+      input.remainingMinutes ??
+      minutesFromHours(input.remainingHours) ??
+      subsMinutes ??
+      null;
 
     const data = {
       status,
       billingPeriod,
       startDate: input.startDate,
       endDate: input.endDate,
-      subsHours: input.subsHours,
-      // remainingHours inherits from subsHours unless explicitly provided.
-      remainingHours: input.remainingHours ?? input.subsHours ?? null,
+      subsMinutes,
+      // Remaining duration inherits from the billed duration unless explicit.
+      remainingMinutes,
       priceCharged: input.priceCharged,
       currency: settings.currency,
       notes: input.notes,
@@ -693,38 +922,80 @@ class SubscriptionUsecase {
     // A coupon may be linked by id, or by code (validated + discount applied to
     // the charged price so the invoice can show the discount breakdown).
     let couponIdToConsume = null;
-    if (input.couponCode && input.planId) {
-      const plan = await planRepo.getById(input.planId);
-      if (!plan) throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+    if (input.couponCode) {
+      const plan = input.planId
+        ? await planRepo.getById(input.planId)
+        : null;
+      if (input.planId && !plan) {
+        throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+      }
       const result = await couponUsecase.validateCoupon({
         code: input.couponCode,
-        planId: input.planId,
+        planId: input.planId ?? null,
         billingPeriod,
+        studentId: input.studentId,
       });
       if (!result.valid) {
+        throw badRequest(result.reason, messagesNames.couponMessages);
+      }
+      const coupon = await couponRepo.getByCode(input.couponCode);
+      const base =
+        data.priceCharged ??
+        (subsMinutes != null
+          ? priceFromMinutes(subsMinutes, Number(settings.hourlyRate))
+          : plan
+            ? roundMoney(
+                priceForPeriod(plan, billingPeriod, Number(settings.hourlyRate)),
+              )
+            : null);
+      if (base != null) {
+        data.priceCharged = roundMoney(
+          applyDiscount(base, {
+            type: result.discount.type,
+            value: result.discount.value,
+          }),
+        );
+      }
+      data.coupon = { connect: { id: coupon.id } };
+      couponIdToConsume = coupon.id;
+    } else if (input.couponId !== undefined) {
+      const coupon = await couponRepo.getById({ id: input.couponId });
+      if (!coupon) {
         throw badRequest(
           subscriptionMessagesCodes.COUPON_INVALID,
           messagesNames.subscriptionMessages,
         );
       }
-      const coupon = await couponRepo.getByCode(input.couponCode);
-      const base = roundMoney(
-        priceForPeriod(plan, billingPeriod, Number(settings.hourlyRate)),
-      );
-      data.priceCharged = roundMoney(
-        applyDiscount(base, { type: result.discount.type, value: result.discount.value }),
-      );
+      const result = await couponUsecase.validateCoupon({
+        code: coupon.code,
+        planId: input.planId ?? null,
+        billingPeriod,
+        studentId: input.studentId,
+      });
+      if (!result.valid) {
+        throw badRequest(result.reason, messagesNames.couponMessages);
+      }
       data.coupon = { connect: { id: coupon.id } };
       couponIdToConsume = coupon.id;
-    } else if (input.couponId !== undefined) {
-      data.coupon = { connect: { id: input.couponId } };
+      if (data.priceCharged == null && subsMinutes != null) {
+        const base = priceFromMinutes(
+          subsMinutes,
+          Number(settings.hourlyRate),
+        );
+        data.priceCharged = roundMoney(
+          applyDiscount(base, {
+            type: result.discount.type,
+            value: result.discount.value,
+          }),
+        );
+      }
     }
 
     // Price precedence: explicit priceCharged wins; else coupon-derived (set in
-    // the branch above); else derive from subsHours × hourly rate.
-    if (data.priceCharged == null && input.subsHours != null) {
-      data.priceCharged = priceFromHours(
-        input.subsHours,
+    // the branch above); else derive from subsMinutes × hourly rate ÷ 60.
+    if (data.priceCharged == null && subsMinutes != null) {
+      data.priceCharged = priceFromMinutes(
+        subsMinutes,
         Number(settings.hourlyRate),
       );
     }
@@ -733,9 +1004,12 @@ class SubscriptionUsecase {
       // Block a 2nd active + clear any in-flight PENDING before creating.
       await this.prepareForNewSubscription(input.studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
-      if (couponIdToConsume) {
-        await couponRepo.incrementCouponRedemption(couponIdToConsume, tx);
-      }
+      await this.consumeCoupon({
+        couponId: couponIdToConsume,
+        studentId: input.studentId,
+        subscriptionId: sub.id,
+        tx,
+      });
       return sub;
     });
 
@@ -773,17 +1047,22 @@ class SubscriptionUsecase {
       );
     }
 
-    // subsHours (the invoiced hours) is NOT editable via the manual edit path:
+    // subsMinutes (the invoiced duration) is NOT editable via the manual edit path:
     // it is set ONLY by the automatic hours writes (createByPlanMonth from the
-    // plan, recompute/freeze from sessions). Any subsHours in the input is
-    // ignored here — the price is never recomputed from it. Only remainingHours
+    // plan, recompute/freeze from sessions). Any billed duration in the input is
+    // ignored here — the price is never recomputed from it. Only remainingMinutes
     // is manually editable.
     const data = {
       status: input.status,
       billingPeriod: input.billingPeriod,
       startDate: input.startDate,
       endDate: input.endDate,
-      remainingHours: input.remainingHours,
+      remainingMinutes:
+        input.remainingMinutes !== undefined
+          ? input.remainingMinutes
+          : input.remainingHours !== undefined
+            ? minutesFromHours(input.remainingHours)
+            : undefined,
       priceCharged: input.priceCharged,
       notes: input.notes,
     };
@@ -794,10 +1073,44 @@ class SubscriptionUsecase {
       data.plan = { connect: { id: input.planId } };
     }
     if (input.couponId !== undefined) {
-      data.coupon = { connect: { id: input.couponId } };
+      const coupon = await couponRepo.getById({ id: input.couponId });
+      if (!coupon) {
+        throw badRequest(
+          subscriptionMessagesCodes.COUPON_INVALID,
+          messagesNames.subscriptionMessages,
+        );
+      }
+      const targetStudentId = input.studentId ?? existing.studentId;
+      const result = await couponUsecase.validateCoupon({
+        code: coupon.code,
+        planId: input.planId ?? existing.planId ?? null,
+        billingPeriod: input.billingPeriod ?? existing.billingPeriod,
+        studentId: targetStudentId,
+        currentSubscriptionId:
+          targetStudentId === existing.studentId ? existing.id : null,
+      });
+      if (!result.valid) {
+        throw badRequest(result.reason, messagesNames.couponMessages);
+      }
+      data.coupon = { connect: { id: coupon.id } };
     }
 
-    const subscription = await subscriptionRepo.updateSubscription(id, data);
+    const subscription = await prisma.$transaction(async (tx) => {
+      if (input.couponId !== undefined) {
+        const targetStudentId = input.studentId ?? existing.studentId;
+        await this.consumeCoupon({
+          previousCouponId:
+            targetStudentId === existing.studentId
+              ? existing.couponId
+              : null,
+          couponId: input.couponId,
+          studentId: targetStudentId,
+          subscriptionId: existing.id,
+          tx,
+        });
+      }
+      return subscriptionRepo.updateSubscription(id, data, tx);
+    });
 
     // If the charged price was explicitly changed, best-effort regenerate the
     // demand invoice so its amount matches. Guarded so a notes-only edit doesn't
@@ -877,10 +1190,10 @@ class SubscriptionUsecase {
     const startDate = input.startDate ? new Date(input.startDate) : new Date();
     const endDate = this.computeEndDate(startDate, billingPeriod);
 
-    // Hours scale with the cycle: a yearly subscription bundles 12× the plan's
-    // monthly hours.
-    const hours =
+    // Minutes scale with the cycle: a yearly subscription bundles 12× the plan.
+    const subsMinutes =
       billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
+    const billedMinutes = minutesFromHours(subsMinutes);
 
     // Price is derived from the single global hourly rate + currency.
     const settings = await settingsUsecase.getEffective();
@@ -891,6 +1204,10 @@ class SubscriptionUsecase {
       billingPeriod,
       input.couponCode,
       Number(settings.hourlyRate),
+      {
+        studentId,
+        autoPlanCoupon: input.applyPlanCoupon ?? true,
+      },
     );
 
     const data = {
@@ -898,8 +1215,8 @@ class SubscriptionUsecase {
       billingPeriod,
       startDate,
       endDate,
-      subsHours: hours,
-      remainingHours: hours,
+      subsMinutes: billedMinutes,
+      remainingMinutes: billedMinutes,
       priceCharged,
       currency: settings.currency,
       notes: input.notes,
@@ -914,9 +1231,12 @@ class SubscriptionUsecase {
       // Block while active + auto-replace any in-flight PENDING before creating.
       await this.prepareForNewSubscription(studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
-      if (couponId) {
-        await couponRepo.incrementCouponRedemption(couponId, tx);
-      }
+      await this.consumeCoupon({
+        couponId,
+        studentId,
+        subscriptionId: sub.id,
+        tx,
+      });
       return sub;
     });
 
@@ -1001,18 +1321,10 @@ class SubscriptionUsecase {
       ? `${existing.notes ? `${existing.notes} | ` : ""}مرفوض: ${input.reason}`
       : existing.notes;
 
-    // Release the coupon: a rejected request never materialised, so its
-    // redemption must be returned. Atomic with the status update.
-    const updated = await prisma.$transaction(async (tx) => {
-      const sub = await subscriptionRepo.updateSubscription(
-        id,
-        { status: SUBSCRIPTION_STATUSES.CANCELLED, notes },
-        tx,
-      );
-      if (existing.couponId) {
-        await couponRepo.decrementCouponRedemption(existing.couponId, tx);
-      }
-      return sub;
+    // Rejection never restores coupon eligibility for this student.
+    const updated = await subscriptionRepo.updateSubscription(id, {
+      status: SUBSCRIPTION_STATUSES.CANCELLED,
+      notes,
     });
 
     try {
@@ -1055,18 +1367,9 @@ class SubscriptionUsecase {
       );
     }
 
-    // Release the coupon when cancelling — the consumed redemption is returned.
-    // Atomic with the status update.
-    const updated = await prisma.$transaction(async (tx) => {
-      const sub = await subscriptionRepo.updateSubscription(
-        id,
-        { status: SUBSCRIPTION_STATUSES.CANCELLED },
-        tx,
-      );
-      if (existing.couponId) {
-        await couponRepo.decrementCouponRedemption(existing.couponId, tx);
-      }
-      return sub;
+    // Cancellation never restores coupon eligibility for this student.
+    const updated = await subscriptionRepo.updateSubscription(id, {
+      status: SUBSCRIPTION_STATUSES.CANCELLED,
     });
 
     try {
@@ -1087,13 +1390,13 @@ class SubscriptionUsecase {
   /**
    * Renew a subscription: create a brand-new PENDING subscription for the same
    * student, defaulting plan/period from the source and overridable per input.
-   * Mirrors request()/create(): coupon validation + atomic redemption bump in a
+   * Mirrors request()/create(): coupon validation + atomic permanent redemption in a
    * tx, best-effort demand invoice, best-effort notification.
    *
    * One-active / one-in-flight rules (via prepareForNewSubscription inside the
    * creation tx): renewal is REFUSED while a currently-active subscription exists
    * (no bypass — cancel it first), and any in-flight PENDING subscription is
-   * AUTO-REPLACED (deleted, invoice cascades, coupon un-redeemed).
+   * AUTO-REPLACED (deleted, invoice cascades, coupon remains consumed).
    */
   async renew({ authUser, id, ...input }) {
     // 1. Load the source subscription and scope-check by its studentId.
@@ -1120,8 +1423,8 @@ class SubscriptionUsecase {
     // 3. Active/in-flight handling now lives in prepareForNewSubscription, run
     //    inside the creation tx below: it BLOCKS while a currently-active
     //    subscription exists (no admin bypass — the teacher must cancel it first)
-    //    and AUTO-REPLACES any PENDING subscription (deletes it, invoice cascades,
-    //    coupon un-redeemed). No allowWhileActive override anymore.
+    //    and AUTO-REPLACES any PENDING subscription (deletes it and its invoice;
+    //    coupon consumption remains permanent). No active bypass exists.
 
     const plan = await planRepo.getByIdWithCoupons(planId);
     if (!plan || !plan.isActive) {
@@ -1131,9 +1434,10 @@ class SubscriptionUsecase {
     const startDate = input.startDate ? new Date(input.startDate) : new Date();
     const endDate = this.computeEndDate(startDate, billingPeriod);
 
-    // Hours scale with the cycle (yearly bundles 12× the monthly hours).
-    const hours =
+    // Minutes scale with the cycle (yearly bundles 12× the monthly plan).
+    const planHours =
       billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
+    const subsMinutes = minutesFromHours(planHours);
 
     const settings = await settingsUsecase.getEffective();
 
@@ -1143,6 +1447,10 @@ class SubscriptionUsecase {
       billingPeriod,
       input.couponCode,
       Number(settings.hourlyRate),
+      {
+        studentId,
+        autoPlanCoupon: input.applyPlanCoupon ?? true,
+      },
     );
 
     const data = {
@@ -1150,8 +1458,8 @@ class SubscriptionUsecase {
       billingPeriod,
       startDate,
       endDate,
-      subsHours: hours,
-      remainingHours: hours,
+      subsMinutes,
+      remainingMinutes: subsMinutes,
       priceCharged,
       currency: settings.currency,
       student: { connect: { id: studentId } },
@@ -1165,9 +1473,12 @@ class SubscriptionUsecase {
       // Block while active + auto-replace any in-flight PENDING before creating.
       await this.prepareForNewSubscription(studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
-      if (couponId) {
-        await couponRepo.incrementCouponRedemption(couponId, tx);
-      }
+      await this.consumeCoupon({
+        couponId,
+        studentId,
+        subscriptionId: sub.id,
+        tx,
+      });
       return sub;
     });
 
@@ -1262,7 +1573,7 @@ class SubscriptionUsecase {
     //      - usage  >  0 → real logged sessions drive the hours; RE-LINK ONLY,
     //        leaving subsHours/remainingHours/price as-is.
     const consumption = monthRange(previousMonth(existing.startDate));
-    const usage = await subscriptionRepo.sumUsageHoursForStudentMonth({
+    const usageMinutes = await subscriptionRepo.sumUsageMinutesForStudentMonth({
       studentId: existing.studentId,
       gte: consumption.gte,
       lt: consumption.lt,
@@ -1270,17 +1581,18 @@ class SubscriptionUsecase {
 
     const data = { plan: { connect: { id: plan.id } } };
     let priceChanged = false;
-    if (usage === 0) {
+    if (usageMinutes === 0) {
       const settings = await settingsUsecase.getEffective();
+      const planMinutes = minutesFromHours(plan.hours);
       const { priceCharged } = await this.computeUsagePricing({
-        subsHours: plan.hours,
-        // Keep applying the sub's existing coupon (if any) to the new hours.
-        couponCode: existing.coupon?.code,
+        subsMinutes: planMinutes,
         hourlyRate: Number(settings.hourlyRate),
         planId: plan.id,
+        plan,
+        existingCoupon: existing.coupon ?? null,
       });
-      data.subsHours = plan.hours;
-      data.remainingHours = plan.hours;
+      data.subsMinutes = planMinutes;
+      data.remainingMinutes = planMinutes;
       data.priceCharged = priceCharged;
       priceChanged = Number(priceCharged) !== Number(existing.priceCharged);
     }
@@ -1290,7 +1602,7 @@ class SubscriptionUsecase {
     // 4b. When the hours/price were reset from the new plan, best-effort
     //     regenerate the still-unpaid demand invoice so its amount matches (the
     //     change-plan guard already ensured the invoice is UNPAID or absent).
-    if (usage === 0 && priceChanged) {
+    if (usageMinutes === 0 && priceChanged) {
       try {
         const currentInvoice =
           invoice ?? (await invoiceRepo.getBySubscriptionId(id));
@@ -1330,9 +1642,8 @@ class SubscriptionUsecase {
    * Apply, replace, or remove the SINGLE coupon on a not-yet-paid subscription
    * without changing its plan/period. An empty/absent couponCode REMOVES the
    * coupon (charges the base price). Recomputes the charged price for the SAME
-   * plan + billing period with the new code, swaps the coupon redemption
-   * accounting atomically (old->new / old->none / none->new), then regenerates
-   * the demand invoice so its amounts match.
+   * plan + billing period with the new code, permanently consumes a newly
+   * attached code atomically, then refreshes the invoice amounts.
    */
   async applyCoupon({ authUser, id, ...input }) {
     // 1. Load + object-scope check (ADMIN any, PARENT own child, STUDENT self).
@@ -1372,7 +1683,7 @@ class SubscriptionUsecase {
     let priceCharged;
     let couponId;
 
-    if (existing.subsHours == null) {
+    if (existing.subsMinutes == null) {
       // Accumulating (not frozen): attach the coupon now; the discount is
       // computed at month-close freeze. Validate the code so a bad code is
       // rejected immediately; price stays null (derived until freeze).
@@ -1381,12 +1692,11 @@ class SubscriptionUsecase {
           code: input.couponCode,
           planId: existing.planId ?? null,
           billingPeriod: BILLING_PERIODS.MONTHLY,
+          studentId: existing.studentId,
+          currentSubscriptionId: existing.id,
         });
         if (!result.valid) {
-          throw badRequest(
-            subscriptionMessagesCodes.COUPON_INVALID,
-            messagesNames.subscriptionMessages,
-          );
+          throw badRequest(result.reason, messagesNames.couponMessages);
         }
         const coupon = await couponRepo.getByCode(input.couponCode);
         couponId = coupon.id;
@@ -1395,18 +1705,27 @@ class SubscriptionUsecase {
       }
       priceCharged = existing.priceCharged ?? null; // unchanged / still derived
     } else {
-      // Priced from the sub's own hours (subsHours × rate) minus the coupon.
+      // Priced from the sub's own minutes minus the coupon.
       ({ priceCharged, couponId } = await this.computeUsagePricing({
-        subsHours: existing.subsHours,
+        subsMinutes: existing.subsMinutes,
         couponCode: input.couponCode,
         hourlyRate: Number(settings.hourlyRate),
         planId: existing.planId ?? null,
+        autoPlanCoupon: false,
+        studentId: existing.studentId,
+        currentSubscriptionId: existing.id,
       }));
     }
 
-    // 4. Persist price + coupon link and correct redemption accounting atomically.
+    // 4. Persist the link and permanently consume a newly attached coupon.
     const updated = await prisma.$transaction(async (tx) => {
-      await this.swapCouponRedemption(existing.couponId, couponId, tx);
+      await this.consumeCoupon({
+        previousCouponId: existing.couponId,
+        couponId,
+        studentId: existing.studentId,
+        subscriptionId: existing.id,
+        tx,
+      });
       return subscriptionRepo.updateSubscription(
         id,
         {
@@ -1423,14 +1742,7 @@ class SubscriptionUsecase {
     //    the new coupon. Uses the system regenerate (no admin gate) so a PARENT
     //    applying/removing a coupon also refreshes the invoice. Dynamic import
     //    avoids the subscription<->invoice circular dependency. Best-effort.
-    try {
-      const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
-      await invoiceUsecase.regenerateForSubscription(id, {
-        createdById: authUser.id,
-      });
-    } catch {
-      // swallow — invoice regeneration is best-effort
-    }
+    await this.refreshOrEnsureInvoice(updated);
 
     return updated;
   }
@@ -1552,10 +1864,8 @@ class SubscriptionUsecase {
     const settings = await settingsUsecase.getEffective();
     const hourlyRate = Number(settings.hourlyRate);
 
-    const [usageByStudent, activeStudents] = await Promise.all([
-      subscriptionRepo.sumUsageHoursByStudent(consumption),
-      subscriptionRepo.listActiveStudentsWithPlan(now),
-    ]);
+    const activeStudents =
+      await subscriptionRepo.listCurrentPeriodStudents(now);
 
     let invoiced = 0;
     let skipped = 0;
@@ -1563,8 +1873,6 @@ class SubscriptionUsecase {
 
     for (const { studentId } of activeStudents) {
       try {
-        const usageHours = usageByStudent.get(studentId) ?? 0;
-
         // Resolve the open sub first — this drives idempotency, the plan-hours
         // fallback, AND pricing.
         // Idempotency: a re-run sees the closing month's sessions already stamped
@@ -1577,13 +1885,18 @@ class SubscriptionUsecase {
           studentId,
           paymentStart,
         });
-        if (
-          existingOpen &&
-          existingOpen.status !== SUBSCRIPTION_STATUSES.UPCOMING
-        ) {
+        if (!this.isMutableUsageSubscription(existingOpen)) {
           skipped += 1; // already billed by a prior run
           continue;
         }
+
+        const usageMinutes =
+          await subscriptionRepo.sumUsageMinutesForStudentMonth({
+            studentId,
+            gte: consumption.gte,
+            lt: consumption.lt,
+            includeBilledSubscriptionId: existingOpen?.id ?? null,
+          });
 
         // Zero-session fallback hours:
         //  - existing open sub → its OWN linked plan hours (v3 §4).
@@ -1591,19 +1904,14 @@ class SubscriptionUsecase {
         //    (v3 §5). Mirrors recomputeOpenUsageSubscription's new-sub branch so
         //    month-close never mints a plan-less sub (which would break the
         //    inheritance chain: currentPlanIdForStudent skips planId: null subs).
-        let inheritedPlanId = null;
-        let planHours = existingOpen?.plan?.hours ?? null;
-        if (!existingOpen) {
-          inheritedPlanId =
-            await subscriptionRepo.currentPlanIdForStudent(studentId);
-          const inheritedPlan = inheritedPlanId
-            ? await planRepo.getById(inheritedPlanId)
-            : null;
-          planHours = inheritedPlan?.hours ?? null;
-        }
-        const subsHours = resolveUsageHours({ usageHours, planHours });
+        const plan = await this.resolveUsagePlan(studentId, existingOpen);
+        const planMinutes = minutesFromHours(plan?.hours) ?? 0;
+        const subsMinutes = resolveUsageMinutes({
+          usageMinutes,
+          planMinutes,
+        });
 
-        if (!subsHours || subsHours <= 0) {
+        if (!subsMinutes || subsMinutes <= 0) {
           skipped += 1; // no usage and no linked plan → nothing to bill
           continue;
         }
@@ -1612,16 +1920,16 @@ class SubscriptionUsecase {
         // redemption was booked at attach time, so we do NOT re-validate it here:
         // re-validating can now return invalid (redemption consumed / window
         // elapsed) and abort the whole run. Apply the stored discount directly.
-        const base = priceFromHours(subsHours, hourlyRate);
-        const storedCoupon = existingOpen?.coupon ?? null;
-        const priceCharged = storedCoupon
-          ? roundMoney(
-              applyDiscount(base, {
-                type: storedCoupon.type,
-                value: storedCoupon.value,
-              }),
-            )
-          : base;
+        const { priceCharged, couponId } =
+          await this.computeUsagePricing({
+            subsMinutes,
+            hourlyRate,
+            planId: plan?.id ?? null,
+            plan,
+            existingCoupon: existingOpen?.coupon ?? null,
+            studentId,
+            currentSubscriptionId: existingOpen?.id ?? null,
+          });
 
         const sub = await prisma.$transaction(async (tx) => {
           let open = await subscriptionRepo.findOpenUsageSubscription({
@@ -1641,26 +1949,38 @@ class SubscriptionUsecase {
                 student: { connect: { id: studentId } },
                 // Inherit the student's plan so the sub is never plan-less and
                 // stays in the inheritance chain once it becomes ACTIVE.
-                plan: inheritedPlanId
-                  ? { connect: { id: inheritedPlanId } }
+                plan: plan ? { connect: { id: plan.id } } : undefined,
+                coupon: couponId
+                  ? { connect: { id: couponId } }
                   : undefined,
               },
               tx,
             );
           }
+          await this.consumeCoupon({
+            previousCouponId: existingOpen?.couponId ?? null,
+            couponId,
+            studentId,
+            subscriptionId: open.id,
+            tx,
+          });
           // freeze the final number + price, mark it awaiting payment.
           const frozen = await subscriptionRepo.updateSubscription(
             open.id,
             {
-              subsHours,
-              remainingHours: subsHours,
+              subsMinutes,
+              remainingMinutes: subsMinutes,
               priceCharged,
               status: SUBSCRIPTION_STATUSES.PENDING,
+              plan: plan ? { connect: { id: plan.id } } : undefined,
+              coupon: couponId
+                ? { connect: { id: couponId } }
+                : { disconnect: true },
             },
             tx,
           );
           // stamp the sessions that were just billed (only when real usage).
-          if (usageHours > 0) {
+          if (usageMinutes > 0) {
             await subscriptionRepo.markSessionsBilled({
               studentId,
               gte: consumption.gte,
@@ -1672,7 +1992,7 @@ class SubscriptionUsecase {
           return frozen;
         });
 
-        await this.ensureInvoice(sub);     // existing idempotent invoice generator
+        await this.refreshOrEnsureInvoice(sub, { plan });
         invoiced += 1;
       } catch (err) {
         // Per-student isolation: one student's failure must not abort the whole

@@ -44,6 +44,7 @@ export class AuthValidation {
     planId: z.coerce.number().int().positive(authMessagesCodes.PLAN_REQUIRED),
     billingPeriod: z.enum(billingPeriods),
     couponCode: z.string().trim().min(1).optional(),
+    applyPlanCoupon: z.boolean().optional(),
   });
 
   // Public family enrollment: a parent + one or more children, each with a plan.

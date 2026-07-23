@@ -7,6 +7,7 @@
 // `billingPeriod` is null).
 
 import { BILLING_PERIODS, DISCOUNT_TYPES } from "@aya/shared";
+import { MINUTES_PER_HOUR } from "./duration.js";
 
 /** Effective monthly price: hours × global hourly rate. */
 export function effectiveMonthlyPrice(plan, hourlyRate) {
@@ -23,6 +24,13 @@ export function priceForPeriod(plan, billingPeriod, hourlyRate) {
   return billingPeriod === BILLING_PERIODS.YEARLY
     ? effectiveYearlyPrice(plan, hourlyRate)
     : effectiveMonthlyPrice(plan, hourlyRate);
+}
+
+/** Exact minute-based subscription price, rounded only after the full duration. */
+export function priceFromMinutes(minutes, hourlyRate) {
+  return roundMoney(
+    (Number(minutes) * Number(hourlyRate)) / MINUTES_PER_HOUR,
+  );
 }
 
 /** Apply a PERCENT/FIXED discount to a price, floored at 0. */

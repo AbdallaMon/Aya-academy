@@ -13,9 +13,10 @@ import {
 import { MdOpenInNew } from "react-icons/md";
 import SubscriptionStatusChip from "../../../shared/components/SubscriptionStatusChip.jsx";
 import { localePath } from "../../../i18n/routing.js";
-import { formatMoney, formatHours } from "../../../shared/lib/money.js";
+import { formatDurationMinutes } from "../../../shared/lib/money.js";
 import { useSubscriptionDetailText } from "../../subscriptionDetail/config/subscriptionDetailText.js";
 import SubscriptionActions from "../../subscriptionDetail/components/SubscriptionActions.jsx";
+import SubscriptionPriceBreakdown from "./SubscriptionPriceBreakdown.jsx";
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleDateString() : "—";
@@ -101,20 +102,19 @@ export default function SubscriptionCard({ sub, txt, lng, onChanged }) {
           )}
         </Stack>
 
-        {/* Hours */}
+        {/* Duration */}
         <Stack direction="row" alignItems="baseline" spacing={1}>
           <Typography variant="h5" fontWeight={800}>
-            {formatHours(sub.subsHours)}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {txt.hours}
+            {formatDurationMinutes(sub.subsMinutes, lng)}
           </Typography>
         </Stack>
 
         {/* Price */}
-        <Typography variant="body2" fontWeight={700}>
-          {formatMoney(sub.priceCharged, sub.currency)}
-        </Typography>
+        <SubscriptionPriceBreakdown
+          subscription={sub}
+          invoice={sub.invoice}
+          txt={txt}
+        />
 
         {/* Invoice paid/unpaid hint */}
         {sub.invoice ? (

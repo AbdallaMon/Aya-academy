@@ -167,6 +167,23 @@ class WhiteboardSessionRepo {
       select: { boardData: true },
     });
   }
+
+  // ── shared Excalidraw library ──────────────────────────
+  getLibraryByOwnerId({ ownerId, client } = {}) {
+    return (client ?? prisma).whiteboardLibrary.findUnique({
+      where: { ownerId },
+      select: { libraryItems: true },
+    });
+  }
+
+  saveLibrary({ ownerId, libraryItems, client } = {}) {
+    return (client ?? prisma).whiteboardLibrary.upsert({
+      where: { ownerId },
+      create: { ownerId, libraryItems },
+      update: { libraryItems },
+      select: { libraryItems: true },
+    });
+  }
 }
 
 export const whiteboardSessionRepo = new WhiteboardSessionRepo();

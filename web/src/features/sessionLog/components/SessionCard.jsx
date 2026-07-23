@@ -17,6 +17,7 @@ import {
 import { MdAccessTime, MdEventNote, MdPerson, MdStar } from "react-icons/md";
 import { useTranslation } from "../../../i18n/client.js";
 import { formatSessionDate, studentLabel } from "../config/constant.js";
+import { formatDurationMinutes } from "../../../shared/lib/money.js";
 
 export default function SessionCard({ session, txt }) {
   const { lng } = useTranslation();
@@ -75,7 +76,7 @@ export default function SessionCard({ session, txt }) {
           <Stack direction="row" spacing={0.5} alignItems="center">
             <MdAccessTime size={16} />
             <Typography variant="body2">
-              {`${Number(session.durationHours)} ${txt.hours}`}
+              {formatDurationMinutes(session.durationMinutes, lng)}
             </Typography>
           </Stack>
           {session.rating && (

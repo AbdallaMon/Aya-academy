@@ -37,7 +37,7 @@ export const invoicesText = {
     email: "البريد",
     plan: "الباقة",
     description: "البيان",
-    hours: "عدد الساعات",
+    hours: "المدة",
     freeHours: "ساعات مجانية",
     hourlyRate: "سعر الساعة",
     amount: "المبلغ",
@@ -78,7 +78,7 @@ export const invoicesText = {
     paymentStatus: "حالة السداد",
     save: "حفظ",
     cancel: "إلغاء",
-    hoursLocked: "عدد الساعات والمبلغ يأتيان من الاشتراك ولا يمكن تعديلهما.",
+    hoursLocked: "المدة والمبلغ يأتيان من الاشتراك ولا يمكن تعديلهما.",
     // mark paid flow
     markPaidConfirm: "هل تريد تأكيد دفع هذه الفاتورة؟",
     activateConfirm:
@@ -116,7 +116,7 @@ export const invoicesText = {
     email: "Email",
     plan: "Plan",
     description: "Description",
-    hours: "Hours",
+    hours: "Duration",
     freeHours: "Free hours",
     hourlyRate: "Hourly rate",
     amount: "Amount",
@@ -155,7 +155,7 @@ export const invoicesText = {
     paymentStatus: "Payment",
     save: "Save",
     cancel: "Cancel",
-    hoursLocked: "Hours and amount come from the subscription and can't be edited.",
+    hoursLocked: "Duration and amount come from the subscription and can't be edited.",
     markPaidConfirm: "Mark this invoice as paid?",
     activateConfirm:
       "Payment confirmed. Activate the subscription now? (Yes = activate immediately, No = leave the subscription unchanged)",

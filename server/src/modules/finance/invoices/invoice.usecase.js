@@ -8,7 +8,12 @@ import {
 } from "@aya/shared";
 import { AppError, badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { messagingService } from "../../../infra/messaging/messagingService.js";
-import { priceForPeriod, roundMoney } from "../../../shared/utility/pricing.js";
+import {
+  priceFromMinutes,
+  priceForPeriod,
+  roundMoney,
+} from "../../../shared/utility/pricing.js";
+import { hoursFromMinutes } from "../../../shared/utility/duration.js";
 import { userRepo } from "../../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { subscriptionRepo } from "../subscriptions/subscription.repo.js";
@@ -31,7 +36,8 @@ class InvoiceUsecase {
    * from the template; previous credit/debt are admin figures.
    */
   async computeAmounts(subscription, adjust, template, settings) {
-    const hours = subscription.subsHours ?? null;
+    const minutes = subscription.subsMinutes ?? null;
+    const hours = hoursFromMinutes(minutes);
     const subtotal = roundMoney(subscription.priceCharged ?? 0);
 
     let hourlyRate = settings?.hourlyRate != null ? roundMoney(settings.hourlyRate) : null;
@@ -50,6 +56,7 @@ class InvoiceUsecase {
 
     return {
       currency: settings?.currency ?? subscription.currency ?? "USD",
+      minutes,
       hours,
       hourlyRate,
       subtotal,
@@ -67,13 +74,19 @@ class InvoiceUsecase {
    * show the full discount breakdown even if the plan price changes later.
    */
   async computeDiscountSnapshot(subscription, hourlyRate, plan) {
-    if (!subscription?.planId || subscription.priceCharged == null) return null;
-    const planRow = plan ?? (await planRepo.getById(subscription.planId));
-    if (!planRow) return null;
-
-    const base = roundMoney(
-      priceForPeriod(planRow, subscription.billingPeriod, hourlyRate),
-    );
+    if (!subscription || subscription.priceCharged == null) return null;
+    let base = null;
+    if (subscription.subsMinutes != null) {
+      base = priceFromMinutes(subscription.subsMinutes, hourlyRate);
+    } else if (subscription.planId) {
+      const planRow = plan ?? (await planRepo.getById(subscription.planId));
+      if (planRow) {
+        base = roundMoney(
+          priceForPeriod(planRow, subscription.billingPeriod, hourlyRate),
+        );
+      }
+    }
+    if (base == null) return null;
     const net = roundMoney(subscription.priceCharged);
     const amount = roundMoney(Math.max(0, base - net));
     if (amount <= 0) return null;
@@ -189,6 +202,46 @@ class InvoiceUsecase {
       },
     });
     return { invoice: created, regenerated: false };
+  }
+
+  /**
+   * Refresh only derived financial amounts for an existing unpaid invoice.
+   * Per-invoice template overrides, notes, dates, send state and admin credit/
+   * debt are preserved; the subscription duration/price and discount snapshot
+   * are synchronized.
+   */
+  async refreshAmountsForSubscription(subscriptionId) {
+    const [subscription, existing, settings] = await Promise.all([
+      subscriptionRepo.getById(subscriptionId),
+      invoiceRepo.getBySubscriptionId(subscriptionId),
+      settingsUsecase.getEffective(),
+    ]);
+    if (!subscription || !existing) return null;
+    if (existing.status !== INVOICE_STATUSES.UNPAID) return existing;
+
+    const amounts = await this.computeAmounts(
+      subscription,
+      {
+        previousCredit: existing.previousCredit,
+        previousDebt: existing.previousDebt,
+      },
+      { configJson: existing.configJson ?? {} },
+      settings,
+    );
+    const discount = await this.computeDiscountSnapshot(
+      subscription,
+      Number(settings.hourlyRate),
+    );
+    return invoiceRepo.update({
+      id: existing.id,
+      data: {
+        ...amounts,
+        configJson: {
+          ...(existing.configJson ?? {}),
+          discount,
+        },
+      },
+    });
   }
 
   /**

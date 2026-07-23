@@ -139,7 +139,7 @@ export default function RegisterWizard() {
       },
       children: children.map((c) => {
         const plan = plans.find((p) => p.id === c.planId) || null;
-        const { codeToSend } = resolveCoupon(plan, c.billingPeriod, c.coupon);
+        const resolved = resolveCoupon(plan, c.billingPeriod, c.coupon);
         return {
           name: c.name.trim(),
           email: c.email.trim(),
@@ -148,7 +148,11 @@ export default function RegisterWizard() {
           birthDate: c.birthDate || undefined,
           planId: c.planId,
           billingPeriod: c.billingPeriod,
-          couponCode: codeToSend,
+          couponCode:
+            resolved.applied === "custom"
+              ? resolved.codeToSend
+              : undefined,
+          applyPlanCoupon: resolved.applyPlanCoupon,
         };
       }),
     };

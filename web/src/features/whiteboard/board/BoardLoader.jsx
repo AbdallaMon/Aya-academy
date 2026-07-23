@@ -71,6 +71,7 @@ export default function BoardLoader({ mode, idOrToken }) {
       // (token is passed so it can still fetch a public session's images).
       sessionId={data.id}
       canUpload={true}
+      canManageLibrary={!isPublic}
       token={isPublic ? idOrToken : null}
     />
   );

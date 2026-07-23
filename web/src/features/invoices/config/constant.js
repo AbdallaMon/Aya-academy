@@ -23,4 +23,8 @@ export function invoiceSendPath(invoiceId) {
 
 // Money/hours formatting lives in the shared money lib so the single global
 // currency renders consistently everywhere. Re-exported here for existing imports.
-export { formatMoney, formatHours } from "../../../shared/lib/money.js";
+export {
+  formatDurationMinutes,
+  formatHours,
+  formatMoney,
+} from "../../../shared/lib/money.js";

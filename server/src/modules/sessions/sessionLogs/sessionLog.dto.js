@@ -1,13 +1,13 @@
 // ===========================================================================
-// sessionLog.dto — output shaping for SessionLog rows. The Decimal
-// `durationHours` column is normalised to a plain JS number (like invoice.dto).
+// sessionLog.dto — output shaping for SessionLog rows. `durationMinutes` is the
+// canonical duration; a computed `durationHours` alias keeps older readers alive
+// while historical rows are migrated by the standalone script.
 // ===========================================================================
 
-function toNum(value) {
-  if (value === null || value === undefined) return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
+import {
+  hoursFromMinutes,
+  resolveStoredMinutes,
+} from "../../../shared/utility/duration.js";
 
 // Student summary embedded in a session-log payload.
 export const sessionLogStudentSelect = {
@@ -33,7 +33,9 @@ export const sessionLogListSelect = {
   id: true,
   studentId: true,
   teacherId: true,
+  billedSubscriptionId: true,
   subjectsJson: true,
+  durationMinutes: true,
   durationHours: true,
   rating: true,
   report: true,
@@ -52,8 +54,15 @@ export const sessionLogSelect = {
   createdBy: { select: sessionLogCreatedBySelect },
 };
 
-// Normalise Decimal → number before the row leaves the server.
 export function toSessionLog(row) {
   if (!row) return row;
-  return { ...row, durationHours: toNum(row.durationHours) };
+  const durationMinutes = resolveStoredMinutes(
+    row.durationMinutes,
+    row.durationHours,
+  );
+  return {
+    ...row,
+    durationMinutes,
+    durationHours: hoursFromMinutes(durationMinutes),
+  };
 }

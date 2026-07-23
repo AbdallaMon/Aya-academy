@@ -2,7 +2,17 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Box } from "@mui/material";
-import { MdClose, MdAdd, MdRemove, MdViewInAr, MdAddCircle, MdRotateRight, Md3dRotation } from "react-icons/md";
+import {
+  MdClose,
+  MdAdd,
+  MdRemove,
+  MdViewInAr,
+  MdAddCircle,
+  MdRotateRight,
+  Md3dRotation,
+  MdEdit,
+  MdCheck,
+} from "react-icons/md";
 
 // Sensible starting size per tile type — used as the base for the resize buttons.
 const BASE_SIZE = { letter: 68, emoji: 64, node: 22 };
@@ -27,11 +37,13 @@ export default function BoardObjectsLayer({
   onAddChild,
   rootRef,
   playSound,
+  ar = true,
+  viewport,
 }) {
   // Live drag position for the grabbed tile (committed on release) + the id.
-  const [drag, setDrag] = useState(null); // { id, xf, yf }
+  const [drag, setDrag] = useState(null); // { id, xf, yf, px, py, sceneX, sceneY }
   // In-progress connection dragged out of a node's link handle.
-  const [link, setLink] = useState(null); // { fromId, xf, yf }
+  const [link, setLink] = useState(null); // { fromId, xf, yf, px, py }
   // Live rotation while spinning a tile by its rotate handle.
   const [rot, setRot] = useState(null); // { id, deg }
   const rotRef = useRef(0);
@@ -39,25 +51,78 @@ export default function BoardObjectsLayer({
   const [tilt, setTilt] = useState(null); // { id, tx, ty }
   const tiltRef = useRef({ tx: 0, ty: 0 });
   const dragMoved = useRef(false);
+  const [editing, setEditing] = useState(null);
 
   const nodes = objects.filter((o) => o.type === "node");
   const edges = objects.filter((o) => o.type === "edge");
   const tiles = objects.filter((o) => o.type !== "edge");
 
-  // clientX/Y → board fraction (fullscreen-safe: rect is live each call).
-  const toFraction = useCallback(
+  // Pointer coordinates are converted into both legacy board fractions and
+  // Excalidraw scene coordinates. Scene coordinates make the overlay objects
+  // follow the board's own zoom and pan instead of only browser zoom.
+  const toBoardPosition = useCallback(
     (clientX, clientY) => {
       const rect = rootRef?.current?.getBoundingClientRect();
-      if (!rect || !rect.width || !rect.height) return { xf: 0.5, yf: 0.5 };
+      if (!rect || !rect.width || !rect.height) {
+        return {
+          xf: 0.5,
+          yf: 0.5,
+          px: 0,
+          py: 0,
+          sceneX: 0,
+          sceneY: 0,
+        };
+      }
       const xf = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
       const yf = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
-      return { xf, yf };
+      const zoom = viewport?.zoom || 1;
+      return {
+        xf,
+        yf,
+        px: clientX - rect.left,
+        py: clientY - rect.top,
+        sceneX:
+          (clientX - (viewport?.offsetLeft ?? rect.left)) / zoom -
+          (viewport?.scrollX ?? 0),
+        sceneY:
+          (clientY - (viewport?.offsetTop ?? rect.top)) / zoom -
+          (viewport?.scrollY ?? 0),
+      };
     },
-    [rootRef]
+    [rootRef, viewport],
   );
 
-  const posOf = (o) =>
-    drag && drag.id === o.id ? { xf: drag.xf, yf: drag.yf } : { xf: o.x, yf: o.y };
+  const posOf = (o) => {
+    if (drag && drag.id === o.id) return drag;
+    if (
+      viewport &&
+      Number.isFinite(o.sceneX) &&
+      Number.isFinite(o.sceneY)
+    ) {
+      return {
+        xf: o.x ?? 0.5,
+        yf: o.y ?? 0.5,
+        px:
+          (o.sceneX + viewport.scrollX) * viewport.zoom +
+          viewport.offsetLeft -
+          viewport.rootLeft,
+        py:
+          (o.sceneY + viewport.scrollY) * viewport.zoom +
+          viewport.offsetTop -
+          viewport.rootTop,
+        sceneX: o.sceneX,
+        sceneY: o.sceneY,
+      };
+    }
+    return {
+      xf: o.x ?? 0.5,
+      yf: o.y ?? 0.5,
+      px: `${(o.x ?? 0.5) * 100}%`,
+      py: `${(o.y ?? 0.5) * 100}%`,
+      sceneX: o.sceneX,
+      sceneY: o.sceneY,
+    };
+  };
 
   // ── dragging a tile ──────────────────────────────────────────
   const startDrag = (e, o) => {
@@ -67,7 +132,7 @@ export default function BoardObjectsLayer({
     const move = (ev) => {
       const p = ev.touches?.[0] ?? ev;
       dragMoved.current = true;
-      setDrag({ id: o.id, ...toFraction(p.clientX, p.clientY) });
+      setDrag({ id: o.id, ...toBoardPosition(p.clientX, p.clientY) });
     };
     const up = (ev) => {
       window.removeEventListener("pointermove", move);
@@ -76,8 +141,13 @@ export default function BoardObjectsLayer({
       window.removeEventListener("touchend", up);
       if (dragMoved.current) {
         const p = ev.changedTouches?.[0] ?? ev;
-        const f = toFraction(p.clientX, p.clientY);
-        updateObject?.(o.id, { x: f.xf, y: f.yf });
+        const position = toBoardPosition(p.clientX, p.clientY);
+        updateObject?.(o.id, {
+          x: position.xf,
+          y: position.yf,
+          sceneX: position.sceneX,
+          sceneY: position.sceneY,
+        });
         playSound?.(o.type === "letter" ? "magnet" : "letter");
       }
       setDrag(null);
@@ -93,7 +163,10 @@ export default function BoardObjectsLayer({
     e.stopPropagation();
     const move = (ev) => {
       const p = ev.touches?.[0] ?? ev;
-      setLink({ fromId: node.id, ...toFraction(p.clientX, p.clientY) });
+      setLink({
+        fromId: node.id,
+        ...toBoardPosition(p.clientX, p.clientY),
+      });
     };
     const up = (ev) => {
       window.removeEventListener("pointermove", move);
@@ -194,6 +267,16 @@ export default function BoardObjectsLayer({
 
   const nodeById = (id) => nodes.find((n) => n.id === id);
 
+  const commitTitleEdit = () => {
+    if (!editing) return;
+    const value = editing.value.trim();
+    if (value) {
+      updateObject?.(editing.id, { value });
+      playSound?.("letter");
+    }
+    setEditing(null);
+  };
+
   return (
     <Box sx={{ position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none" }}>
       {/* Edges (strings between tree nodes) + the live linking line. */}
@@ -208,12 +291,12 @@ export default function BoardObjectsLayer({
           return (
             <line
               key={edge.id}
-              x1={`${a.xf * 100}%`}
-              y1={`${a.yf * 100}%`}
-              x2={`${b.xf * 100}%`}
-              y2={`${b.yf * 100}%`}
+              x1={a.px}
+              y1={a.py}
+              x2={b.px}
+              y2={b.py}
               stroke={edge.color || "#5c7cfa"}
-              strokeWidth="4"
+              strokeWidth={Math.max(1.5, 4 * (viewport?.zoom || 1))}
               strokeLinecap="round"
             />
           );
@@ -223,13 +306,13 @@ export default function BoardObjectsLayer({
             const a = posOf(nodeById(link.fromId) || {});
             return (
               <line
-                x1={`${a.xf * 100}%`}
-                y1={`${a.yf * 100}%`}
-                x2={`${link.xf * 100}%`}
-                y2={`${link.yf * 100}%`}
+                x1={a.px}
+                y1={a.py}
+                x2={link.px}
+                y2={link.py}
                 stroke="#5c7cfa"
-                strokeWidth="4"
-                strokeDasharray="8 8"
+                strokeWidth={Math.max(1.5, 4 * (viewport?.zoom || 1))}
+                strokeDasharray={`${8 * (viewport?.zoom || 1)} ${8 * (viewport?.zoom || 1)}`}
                 strokeLinecap="round"
               />
             );
@@ -238,7 +321,11 @@ export default function BoardObjectsLayer({
 
       {/* Tiles: magnetic letters, emoji stickers, tree nodes. */}
       {tiles.map((o) => {
-        const { xf, yf } = posOf(o);
+        const { px, py } = posOf(o);
+        const sceneZoom =
+          Number.isFinite(o.sceneX) && Number.isFinite(o.sceneY)
+            ? viewport?.zoom || 1
+            : 1;
         const resize = (factor) => {
           const cur = o.size || BASE_SIZE[o.type] || 48;
           updateObject?.(o.id, { size: clampSize(o.type, Math.round(cur * factor)) });
@@ -255,9 +342,10 @@ export default function BoardObjectsLayer({
             // can't mirror left/right in Arabic (pointer coords are physical).
             style={{
               position: "absolute",
-              left: `${xf * 100}%`,
-              top: `${yf * 100}%`,
-              transform: "translate(-50%, -50%)",
+              left: typeof px === "number" ? `${px}px` : px,
+              top: typeof py === "number" ? `${py}px` : py,
+              transform: `translate(-50%, -50%) scale(${sceneZoom})`,
+              transformOrigin: "center",
               touchAction: "none",
             }}
             sx={{
@@ -280,7 +368,56 @@ export default function BoardObjectsLayer({
                     transformStyle: "preserve-3d",
                   }}
                 >
-                  {renderTile(o)}
+                  {editing?.id === o.id ? (
+                    <Box
+                      component="textarea"
+                      autoFocus
+                      value={editing.value}
+                      aria-label={ar ? "تعديل العنوان" : "Edit title"}
+                      onChange={(event) =>
+                        setEditing((current) => ({
+                          ...current,
+                          value: event.target.value,
+                        }))
+                      }
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onTouchStart={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => {
+                        event.stopPropagation();
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          setEditing(null);
+                        } else if (
+                          event.key === "Enter" &&
+                          !event.shiftKey
+                        ) {
+                          event.preventDefault();
+                          commitTitleEdit();
+                        }
+                      }}
+                      sx={{
+                        display: "block",
+                        width: 240,
+                        minHeight: 72,
+                        resize: "none",
+                        px: 2,
+                        py: 1,
+                        borderRadius: 3,
+                        border: "3px solid",
+                        borderColor: "primary.main",
+                        outline: "none",
+                        bgcolor: o.color || "#fff3bf",
+                        color: "#3a2f0b",
+                        font: "inherit",
+                        fontWeight: 800,
+                        fontSize: o.size || 22,
+                        textAlign: "center",
+                        boxShadow: "0 8px 18px rgba(0,0,0,.18)",
+                      }}
+                    />
+                  ) : (
+                    renderTile(o)
+                  )}
                 </Box>
               );
             })()}
@@ -304,11 +441,18 @@ export default function BoardObjectsLayer({
                 pointerEvents: "auto",
               }}
             >
-              <Ctl title="أصغر" onClick={() => resize(1 / 1.2)}><MdRemove size={15} /></Ctl>
-              <Ctl title="أكبر" onClick={() => resize(1.2)}><MdAdd size={15} /></Ctl>
+              <Ctl
+                title={ar ? "أصغر" : "Smaller"}
+                onClick={() => resize(1 / 1.2)}
+              >
+                <MdRemove size={15} />
+              </Ctl>
+              <Ctl title={ar ? "أكبر" : "Larger"} onClick={() => resize(1.2)}>
+                <MdAdd size={15} />
+              </Ctl>
               {o.type === "letter" && (
                 <Ctl
-                  title="مجسم / مسطّح"
+                  title={ar ? "مجسم / مسطّح" : "3D / flat"}
                   onClick={() => {
                     updateObject?.(o.id, { variant: o.variant === "flat" ? "magnet" : "flat" });
                     playSound?.("magnet");
@@ -318,8 +462,37 @@ export default function BoardObjectsLayer({
                 </Ctl>
               )}
               {o.type === "node" && (
+                editing?.id === o.id ? (
+                  <>
+                    <Ctl
+                      title={ar ? "حفظ العنوان" : "Save title"}
+                      color="#69db7c"
+                      onClick={commitTitleEdit}
+                    >
+                      <MdCheck size={15} />
+                    </Ctl>
+                    <Ctl
+                      title={ar ? "إلغاء التعديل" : "Cancel editing"}
+                      onClick={() => setEditing(null)}
+                    >
+                      <MdClose size={15} />
+                    </Ctl>
+                  </>
+                ) : (
+                  <Ctl
+                    title={ar ? "تعديل العنوان" : "Edit title"}
+                    color="#ffd43b"
+                    onClick={() =>
+                      setEditing({ id: o.id, value: String(o.value ?? "") })
+                    }
+                  >
+                    <MdEdit size={15} />
+                  </Ctl>
+                )
+              )}
+              {o.type === "node" && (
                 <Ctl
-                  title="فرع جديد"
+                  title={ar ? "فرع جديد" : "New branch"}
                   color="#69db7c"
                   onClick={() => onAddChild?.(o)}
                 >
@@ -327,7 +500,7 @@ export default function BoardObjectsLayer({
                 </Ctl>
               )}
               <Ctl
-                title="حذف"
+                title={ar ? "حذف" : "Delete"}
                 color="#ff5c7a"
                 onClick={() => {
                   removeObject?.(o.id);
@@ -343,6 +516,7 @@ export default function BoardObjectsLayer({
               <Box
                 onPointerDown={(e) => startLink(e, o)}
                 onTouchStart={(e) => startLink(e, o)}
+                title={ar ? "اسحب لربط عنوان آخر" : "Drag to link another title"}
                 style={{ position: "absolute", bottom: -10, left: "50%", transform: "translateX(-50%)", touchAction: "none" }}
                 sx={{
                   width: 18,
@@ -366,7 +540,7 @@ export default function BoardObjectsLayer({
                 sx={{ display: "flex", gap: 0.75 }}
               >
                 <Box
-                  title="لف (2D)"
+                  title={ar ? "لف (2D)" : "Rotate (2D)"}
                   onPointerDown={(e) => startRotate(e, o)}
                   onTouchStart={(e) => startRotate(e, o)}
                   sx={{
@@ -386,7 +560,7 @@ export default function BoardObjectsLayer({
                   <MdRotateRight size={15} />
                 </Box>
                 <Box
-                  title="إمالة (3D)"
+                  title={ar ? "إمالة (3D)" : "Tilt (3D)"}
                   onPointerDown={(e) => startTilt(e, o)}
                   onTouchStart={(e) => startTilt(e, o)}
                   sx={{

@@ -1,3 +1,8 @@
+import {
+  hoursFromMinutes,
+  resolveStoredMinutes,
+} from "../../../shared/utility/duration.js";
+
 // Student projection embedded in a subscription payload.
 // Includes the student's email + parents (so the frontend can show parent
 // phone/email). `studentLinks` is flattened into `parents` by `toSubscription`.
@@ -44,6 +49,8 @@ export const subscriptionSelect = {
   origin: true,
   startDate: true,
   endDate: true,
+  subsMinutes: true,
+  remainingMinutes: true,
   subsHours: true,
   remainingHours: true,
   currency: true,
@@ -60,7 +67,16 @@ export const subscriptionSelect = {
   // it's paid. Null until the invoice is generated. `sentAt` lets the usecase
   // hide an unsent invoice from non-admins (the teacher must request payment
   // before a parent/student sees it).
-  invoice: { select: { id: true, status: true, dueDate: true, sentAt: true } },
+  invoice: {
+    select: {
+      id: true,
+      status: true,
+      subtotal: true,
+      configJson: true,
+      dueDate: true,
+      sentAt: true,
+    },
+  },
 };
 
 /**
@@ -70,7 +86,20 @@ export const subscriptionSelect = {
  */
 export function toSubscription(row) {
   if (!row) return row;
-  const { student, ...rest } = row;
+  const subsMinutes = resolveStoredMinutes(row.subsMinutes, row.subsHours);
+  const remainingMinutes = resolveStoredMinutes(
+    row.remainingMinutes,
+    row.remainingHours,
+  );
+  const normalized = {
+    ...row,
+    subsMinutes,
+    remainingMinutes,
+    // Read-only compatibility aliases. All new writes use minute fields.
+    subsHours: hoursFromMinutes(subsMinutes),
+    remainingHours: hoursFromMinutes(remainingMinutes),
+  };
+  const { student, ...rest } = normalized;
   if (!student) return { ...rest, student };
   const { studentLinks, ...studentRest } = student;
   return {

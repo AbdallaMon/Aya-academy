@@ -10,7 +10,7 @@ import { useTranslation } from "../../../i18n/client.js";
 import { useInvoicesText } from "../config/invoicesText.js";
 import {
   INVOICE_STATUS_COLOR,
-  formatHours,
+  formatDurationMinutes,
   formatMoney,
 } from "../config/constant.js";
 import { DEFAULT_PAYMENT_TEMPLATE } from "@aya/shared";
@@ -266,7 +266,9 @@ export default function InvoiceDocument({ invoice, printable = false }) {
           </Stack>
           <Stack direction="row" sx={{ px: 1.5, py: 1.25, fontSize: 13 }}>
             <Box sx={{ flex: 2, fontWeight: 700 }}>{planTitle}</Box>
-            <Box sx={{ flex: 1, textAlign: "center" }}>{formatHours(invoice.hours)}</Box>
+            <Box sx={{ flex: 1, textAlign: "center" }}>
+              {formatDurationMinutes(invoice.minutes, lng)}
+            </Box>
             <Box sx={{ flex: 1, textAlign: "center" }}>{formatMoney(invoice.hourlyRate, currency)}</Box>
             <Box sx={{ flex: 1, textAlign: isEn ? "right" : "left", fontWeight: 700 }}>
               {formatMoney(invoice.subtotal, currency)}

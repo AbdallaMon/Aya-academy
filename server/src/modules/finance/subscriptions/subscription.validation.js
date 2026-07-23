@@ -37,11 +37,16 @@ export class SubscriptionValidation {
       // validates; required (via refine) when `month` is absent.
       startDate: z.coerce.date().optional(),
       endDate: z.coerce.date().optional(),
-      subsHours: z.number().int().optional(),
-      remainingHours: z.number().int().optional(),
+      subsMinutes: z.number().int().min(0).optional(),
+      remainingMinutes: z.number().int().min(0).optional(),
+      // Temporary compatibility for older API clients; converted to minutes in
+      // the usecase and never written to the legacy columns.
+      subsHours: z.number().optional(),
+      remainingHours: z.number().optional(),
       priceCharged: z.number().optional(),
       couponId: z.number().int().positive().optional(),
       couponCode: z.string().trim().min(1).optional(),
+      applyPlanCoupon: z.boolean().optional(),
       notes: z.string().optional(),
     })
     .refine(
@@ -52,7 +57,7 @@ export class SubscriptionValidation {
       },
     );
 
-  // Manual edit path. subsHours (the invoiced hours) is intentionally NOT
+  // Manual edit path. subsMinutes (the invoiced duration) is intentionally NOT
   // accepted here — it is set only by the automatic hours writes (create-by-plan
   // from the plan, recompute/freeze from sessions). Only remainingHours is
   // manually editable (must stay >= 0).
@@ -63,7 +68,8 @@ export class SubscriptionValidation {
     status: z.enum(statuses).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
-    remainingHours: z.number().int().min(0).optional(),
+    remainingMinutes: z.number().int().min(0).optional(),
+    remainingHours: z.number().min(0).optional(),
     priceCharged: z.number().optional(),
     couponId: z.number().int().positive().optional(),
     notes: z.string().optional(),
@@ -80,6 +86,7 @@ export class SubscriptionValidation {
     billingPeriod: z.enum(billingPeriods).optional(),
     startDate: z.coerce.date().optional(),
     couponCode: z.string().trim().min(1).optional(),
+    applyPlanCoupon: z.boolean().optional(),
     notes: z.string().optional(),
   });
 
@@ -102,6 +109,7 @@ export class SubscriptionValidation {
     planId: z.number().int().positive().optional(),
     billingPeriod: z.enum(billingPeriods).optional(),
     couponCode: z.string().trim().min(1).optional(),
+    applyPlanCoupon: z.boolean().optional(),
     startDate: z.coerce.date().optional(),
   });
 

@@ -26,7 +26,11 @@ export default function BoardToolbar({ activeKeys, onToggle, ar = true, footer =
       }}
     >
       <Stack spacing={1} alignItems="center">
-        <Tooltip title={ar ? "الأدوات" : "Tools"} placement={tipSide}>
+        <Tooltip
+          title={ar ? "الأدوات" : "Tools"}
+          placement={tipSide}
+          slotProps={{ tooltip: { dir: ar ? "rtl" : "ltr" } }}
+        >
           <IconButton
             onClick={() => setOpen((v) => !v)}
             sx={{ bgcolor: "primary.main", color: "#fff", boxShadow: 3, "&:hover": { bgcolor: "primary.dark" } }}
@@ -40,7 +44,12 @@ export default function BoardToolbar({ activeKeys, onToggle, ar = true, footer =
             const on = activeKeys.has(t.key);
             const Icon = t.icon;
             return (
-              <Tooltip key={t.key} title={ar ? t.labelAr : t.labelEn} placement={tipSide}>
+              <Tooltip
+                key={t.key}
+                title={ar ? t.labelAr : t.labelEn}
+                placement={tipSide}
+                slotProps={{ tooltip: { dir: ar ? "rtl" : "ltr" } }}
+              >
                 <IconButton
                   onClick={() => onToggle(t)}
                   sx={{

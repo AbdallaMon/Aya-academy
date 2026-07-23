@@ -17,6 +17,8 @@ import { localePath } from '@/i18n/routing.js';
 import SubscriptionStatusChip from '@/shared/components/SubscriptionStatusChip.jsx';
 import UsageMeterCard from '@/features/subscriptionDetail/components/UsageMeterCard.jsx';
 import ChildMetric from './ChildMetric.jsx';
+import { formatDurationMinutes } from '@/shared/lib/money.js';
+import { selectSubscriptionPeriods } from '@/features/subscriptions/config/subscriptionPeriods.js';
 
 // Per-child summary card. Branches on the backend-computed subscriptionState so
 // a pending renewal reads as "awaiting payment", not "expired". Only ACTIVE
@@ -26,11 +28,9 @@ export default function ChildCard({ child, txt, lng }) {
   // Multi-sub: the current ACTIVE plan and the open (accumulating) USAGE bill are
   // shown side by side instead of a single scalar. Falls back gracefully when a
   // legacy payload has no subscriptions[].
-  const current = child.subscriptions?.find((s) => s.status === 'ACTIVE') ?? null;
-  const open =
-    child.subscriptions?.find(
-      (s) => s.origin === 'USAGE' && s.status === 'UPCOMING',
-    ) ?? null;
+  const { current, next: open } = selectSubscriptionPeriods(
+    child.subscriptions,
+  );
   return (
     <Card
       sx={{
@@ -129,15 +129,17 @@ export default function ChildCard({ child, txt, lng }) {
                   />
                 </Stack>
 
-                {child.activeSubscription?.remainingHours != null && (
+                {child.activeSubscription?.remainingMinutes != null && (
                   <Typography
                     variant="caption"
                     color="success.main"
                     fontWeight={700}
                     sx={{ display: 'block', mt: 1.5 }}
                   >
-                    ⏳ {child.activeSubscription.remainingHours}{' '}
-                    {txt.remainingHours}
+                    ⏳ {formatDurationMinutes(
+                      child.activeSubscription.remainingMinutes,
+                      lng,
+                    )}
                   </Typography>
                 )}
               </>

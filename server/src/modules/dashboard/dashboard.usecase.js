@@ -10,6 +10,10 @@ import {
   hasActiveSubscription,
   filterActiveStudentIds,
 } from "../../shared/access/subscriptionAccess.js";
+import {
+  hoursFromMinutes,
+  resolveStoredMinutes,
+} from "../../shared/utility/duration.js";
 
 const LEADERBOARD_DEFAULT_LIMIT = 10;
 const LEADERBOARD_MAX_LIMIT = 50;
@@ -18,6 +22,25 @@ const RECENT_LIMIT = 5;
 // Decimal | null → Number (0 when absent). Prisma Decimal stringifies safely.
 function toNumber(value) {
   return value === null || value === undefined ? 0 : Number(value);
+}
+
+function withMinuteDurations(subscription) {
+  if (!subscription) return subscription;
+  const subsMinutes = resolveStoredMinutes(
+    subscription.subsMinutes,
+    subscription.subsHours,
+  );
+  const remainingMinutes = resolveStoredMinutes(
+    subscription.remainingMinutes,
+    subscription.remainingHours,
+  );
+  return {
+    ...subscription,
+    subsMinutes,
+    remainingMinutes,
+    subsHours: hoursFromMinutes(subsMinutes),
+    remainingHours: hoursFromMinutes(remainingMinutes),
+  };
 }
 
 class DashboardUsecase {
@@ -139,14 +162,15 @@ class DashboardUsecase {
           rank,
           badgeCount: isActive ? child._count?.studentBadges ?? 0 : null,
           activeSubscription: sub
-            ? {
+            ? withMinuteDurations({
                 id: sub.id,
                 planId: sub.planId,
                 endDate: sub.endDate,
+                remainingMinutes: sub.remainingMinutes,
                 remainingHours: sub.remainingHours,
-              }
+              })
             : null,
-          subscriptions,
+          subscriptions: subscriptions.map(withMinuteDurations),
           subscriptionState,
           latestSubscriptionId: latest?.id ?? null,
         };
@@ -203,12 +227,13 @@ class DashboardUsecase {
         : null,
       rank: active ? rank : null,
       activeSubscription: activeSubscription
-        ? {
+        ? withMinuteDurations({
             id: activeSubscription.id,
             planId: activeSubscription.planId,
             endDate: activeSubscription.endDate,
+            remainingMinutes: activeSubscription.remainingMinutes,
             remainingHours: activeSubscription.remainingHours,
-          }
+          })
         : null,
       badges: active
         ? badges.map((b) => ({

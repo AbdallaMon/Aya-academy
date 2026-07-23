@@ -31,6 +31,7 @@ export default function ReactionBar({ students = [], onFire, ar = true }) {
         {open ? (
           // Close handle when the tray is open.
           <IconButton
+            aria-label={ar ? "إغلاق لوحة التشجيع" : "Close encouragement panel"}
             onClick={() => setOpen(false)}
             sx={{ pointerEvents: "auto", bgcolor: "background.paper", boxShadow: 2, mb: 1 }}
           >
@@ -42,7 +43,7 @@ export default function ReactionBar({ students = [], onFire, ar = true }) {
             icon={<MdCelebration />}
             clickable
             onClick={() => setOpen(true)}
-            label={ar ? "تحفيز وتشجيع 🎉" : "Rewards 🎉"}
+            label={ar ? "تحفيز وتشجيع 🎉" : "Encouragement & rewards 🎉"}
             sx={{
               pointerEvents: "auto",
               bgcolor: "background.paper",
@@ -79,6 +80,9 @@ export default function ReactionBar({ students = [], onFire, ar = true }) {
                 displayEmpty
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
+                MenuProps={{
+                  slotProps: { paper: { dir: ar ? "rtl" : "ltr" } },
+                }}
                 sx={{ minWidth: 140 }}
               >
                 <MenuItem value="">
@@ -95,7 +99,7 @@ export default function ReactionBar({ students = [], onFire, ar = true }) {
               <Chip
                 key={r.key}
                 clickable
-                label={ar ? `${r.emoji} ${r.labelAr}` : r.emoji}
+                label={`${r.emoji} ${ar ? r.labelAr : r.labelEn}`}
                 onClick={() => onFire?.(r.key, nameFor(studentId))}
                 sx={{ fontSize: 18, py: 2.2 }}
               />

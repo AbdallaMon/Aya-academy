@@ -26,15 +26,11 @@ export class CouponValidation {
     }),
     value: z.number().positive(couponMessagesCodes.COUPON_INVALID),
     source: z.enum(couponSources).optional(),
-    // ACCEPTED BUT IGNORED — coupons are global now (apply to any plan + any
-    // cycle). Kept optional so existing callers don't break; the usecase never
-    // reads them.
     billingPeriod: z.enum(billingPeriods).nullable().optional(),
     maxRedemptions: z.number().int().positive().optional(),
     startsAt: z.coerce.date().optional(),
     endsAt: z.coerce.date().optional(),
     isActive: z.boolean().optional(),
-    // ACCEPTED BUT IGNORED — see billingPeriod above (no plan scoping anymore).
     planIds: z.array(z.number().int().positive()).optional(),
   });
 
@@ -46,14 +42,11 @@ export class CouponValidation {
     type: z.enum(discountTypes).optional(),
     value: z.number().positive(couponMessagesCodes.COUPON_INVALID).optional(),
     source: z.enum(couponSources).optional(),
-    // ACCEPTED BUT IGNORED — coupons are global (any plan + any cycle). Kept
-    // optional so existing callers don't break; the usecase never reads them.
     billingPeriod: z.enum(billingPeriods).nullable().optional(),
     maxRedemptions: z.number().int().positive().optional(),
     startsAt: z.coerce.date().optional(),
     endsAt: z.coerce.date().optional(),
     isActive: z.boolean().optional(),
-    // ACCEPTED BUT IGNORED — see billingPeriod above (no plan scoping anymore).
     planIds: z.array(z.number().int().positive()).optional(),
   });
 

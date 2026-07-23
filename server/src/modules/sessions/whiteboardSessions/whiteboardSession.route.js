@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { messagesNames, PERMISSIONS } from "@aya/shared";
 import { whiteboardSessionController } from "./whiteboardSession.controller.js";
 import { WhiteboardSessionValidation } from "./whiteboardSession.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
@@ -50,6 +50,21 @@ whiteboardSessionRoutes.post(
   ...requireManage,
   validate(WhiteboardSessionValidation.createSchema),
   asyncHandler(whiteboardSessionController.create),
+);
+whiteboardSessionRoutes.get(
+  "/library",
+  ...requireManage,
+  asyncHandler(whiteboardSessionController.getLibrary),
+);
+whiteboardSessionRoutes.put(
+  "/library",
+  ...requireManage,
+  validate(
+    WhiteboardSessionValidation.saveLibrarySchema,
+    "body",
+    messagesNames.whiteboardMessages,
+  ),
+  asyncHandler(whiteboardSessionController.saveLibrary),
 );
 whiteboardSessionRoutes.get(
   "/:id",
