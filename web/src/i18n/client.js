@@ -6,7 +6,7 @@
 //   const data = t("tableData", { returnObjects: true });
 //
 // Language is held in React context, persisted to a cookie + localStorage, and
-// applied to <html dir/lang>. Arabic (RTL) is the default.
+// applied to <html dir/lang>. English (LTR) is the default.
 
 import {
   createContext,

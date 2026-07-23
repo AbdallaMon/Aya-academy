@@ -1,6 +1,6 @@
 // Locale routing helpers — pure + isomorphic (safe on server and client).
 // The app uses URL-prefixed locales: every page lives under /ar/... or /en/...
-// Arabic is the default (and RTL).
+// English is the default; Arabic remains available as RTL.
 
 import { fallbackLng, languages } from "./settings.js";
 

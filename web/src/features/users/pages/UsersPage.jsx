@@ -186,7 +186,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
           await mut.patchRequest(`${selected.id}/avatar`, { attachmentId: avatarId });
         }
       } else {
-        // createUserSchema: name, email, password, role, phone, locale, nickname, avatarId
+        // createUserSchema: name, email, password, role, phone, nickname, avatarId
         const payload = {
           name: values.name,
           email: values.email,
@@ -194,7 +194,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
           role: values.role,
           phone: values.phone || undefined,
           nickname: values.nickname || undefined,
-          locale: values.locale || undefined,
           avatarId: avatarId || undefined,
         };
         await mut.postRequest(null, payload);
@@ -361,14 +360,16 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
               <RHFTextField name="nickname" control={control} label={txt.nicknameLabel} />
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <RHFSelect
-                name="locale"
-                control={control}
-                label={txt.localeLabel}
-                options={{ ar: txt.arabic, en: txt.english }}
-              />
-            </Grid>
+            {isEditing && (
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <RHFSelect
+                  name="locale"
+                  control={control}
+                  label={txt.localeLabel}
+                  options={{ ar: txt.arabic, en: txt.english }}
+                />
+              </Grid>
+            )}
 
             {isEditing && (
               <Grid size={{ xs: 12, sm: 6 }}>
