@@ -86,7 +86,8 @@ export const subscriptionDetailText = {
     // cancel subscription
     cancelSub: "إلغاء الاشتراك",
     cancelSubTitle: "إلغاء الاشتراك",
-    cancelSubConfirm: "متأكد إنك عايز تلغي الاشتراك ده؟",
+    cancelSubConfirm:
+      "سيتم إلغاء الاشتراك وفاتورته غير المدفوعة. بعد الإلغاء، إضافة حصة في شهر الاستهلاك ستنشئ اشتراكاً جديداً للشهر التالي تلقائياً. هل تريد المتابعة؟",
     // edit hours (remaining only)
     editHours: "تعديل المدة المتبقية",
     editHoursTitle: "تعديل مدة الفاتورة",
@@ -206,7 +207,8 @@ export const subscriptionDetailText = {
     // cancel subscription
     cancelSub: "Cancel subscription",
     cancelSubTitle: "Cancel subscription",
-    cancelSubConfirm: "Are you sure you want to cancel this subscription?",
+    cancelSubConfirm:
+      "This cancels the subscription and its unpaid invoice. After cancellation, logging a session in the consumption month automatically creates a new subscription for the following month. Continue?",
     // edit hours (remaining only)
     editHours: "Edit remaining duration",
     editHoursTitle: "Edit invoice duration",

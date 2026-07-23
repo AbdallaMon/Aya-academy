@@ -43,7 +43,7 @@ export class SubscriptionValidation {
       // the usecase and never written to the legacy columns.
       subsHours: z.number().optional(),
       remainingHours: z.number().optional(),
-      priceCharged: z.number().optional(),
+      priceCharged: z.number().min(0).optional(),
       couponId: z.number().int().positive().optional(),
       couponCode: z.string().trim().min(1).optional(),
       applyPlanCoupon: z.boolean().optional(),
@@ -61,19 +61,21 @@ export class SubscriptionValidation {
   // accepted here — it is set only by the automatic hours writes (create-by-plan
   // from the plan, recompute/freeze from sessions). Only remainingHours is
   // manually editable (must stay >= 0).
-  static updateSubscriptionSchema = z.object({
-    studentId: z.number().int().positive().optional(),
-    planId: z.number().int().positive().optional(),
-    billingPeriod: z.enum(billingPeriods).optional(),
-    status: z.enum(statuses).optional(),
-    startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
-    remainingMinutes: z.number().int().min(0).optional(),
-    remainingHours: z.number().min(0).optional(),
-    priceCharged: z.number().optional(),
-    couponId: z.number().int().positive().optional(),
-    notes: z.string().optional(),
-  });
+  static updateSubscriptionSchema = z
+    .object({
+      // Workflow-owned fields (student/plan/status/dates/price/coupon) are not
+      // accepted here. Their dedicated actions enforce invoice invariants.
+      remainingMinutes: z.number().int().min(0).optional(),
+      remainingHours: z.number().min(0).optional(),
+      notes: z.string().optional(),
+    })
+    .refine(
+      (value) =>
+        value.remainingMinutes !== undefined ||
+        value.remainingHours !== undefined ||
+        value.notes !== undefined,
+      { message: subscriptionMessagesCodes.NO_EDITABLE_FIELDS },
+    );
 
   // Parent requests a plan for one of their children → creates a PENDING sub.
   // Dates/hours/price are derived from the chosen plan server-side.
@@ -92,7 +94,7 @@ export class SubscriptionValidation {
 
   // Admin approves a PENDING request; may adjust the charged price / add a note.
   static approveSubscriptionSchema = z.object({
-    priceCharged: z.number().optional(),
+    priceCharged: z.number().min(0).optional(),
     notes: z.string().optional(),
   });
 
@@ -119,6 +121,18 @@ export class SubscriptionValidation {
     planId: z.number().int().positive(subscriptionMessagesCodes.PLAN_REQUIRED),
     billingPeriod: z.enum(billingPeriods).optional(),
     couponCode: z.string().trim().min(1).optional(),
+    applyPlanCoupon: z.boolean().optional(),
+  });
+
+  static planOptionsParamsSchema = z.object({
+    studentId: z.coerce.number().int().positive(),
+  });
+
+  static planQuoteSchema = z.object({
+    studentId: z.number().int().positive(),
+    planId: z.number().int().positive(),
+    couponCode: z.string().trim().optional().nullable(),
+    currentSubscriptionId: z.number().int().positive().optional(),
   });
 
   // Admin activates a PENDING/UPCOMING subscription, optionally marking its

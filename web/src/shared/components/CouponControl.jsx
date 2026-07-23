@@ -36,6 +36,7 @@ const TXT = {
     notApplicable: "الكوبون لا ينطبق على هذه الباقة أو الدورة",
     notFound: "كود الخصم غير موجود",
     removed: "تمت إزالة الخصم — السعر بدون خصم",
+    noPlanCoupon: "لا يوجد كوبون متاح لهذه الخطة لهذا الطالب حالياً.",
   },
   en: {
     label: "Coupon code",
@@ -54,6 +55,7 @@ const TXT = {
     notApplicable: "Coupon does not apply to this plan or cycle",
     notFound: "Coupon code not found",
     removed: "Discount removed — price without discount",
+    noPlanCoupon: "No plan coupon is currently available for this student.",
   },
 };
 
@@ -88,16 +90,24 @@ function reasonText(reason, t) {
  *  - onCoupon(next): replace the coupon state
  *  - currency?: overrides plan.currency for formatting
  */
-export default function CouponControl({ plan, billingPeriod, coupon, onCoupon, currency }) {
+export default function CouponControl({
+  plan,
+  billingPeriod,
+  coupon,
+  onCoupon,
+  currency,
+  quoteUrl = "plans/quote",
+  quoteBody = {},
+}) {
   const { lng } = useTranslation();
   const t = TXT[lng === "en" ? "en" : "ar"];
   const cur = currency || plan?.currency;
   const planCoupon = planCouponOf(plan, billingPeriod);
 
   const quoteReq = useRequest({
-    url: "plans/quote",
+    url: quoteUrl,
     method: "post",
-    isPublic: true,
+    isPublic: quoteUrl === "plans/quote",
     syncToUrl: false,
   });
 
@@ -119,6 +129,7 @@ export default function CouponControl({ plan, billingPeriod, coupon, onCoupon, c
         planId: plan.id,
         billingPeriod,
         couponCode: code.trim(),
+        ...quoteBody,
       });
       const data = res?.data;
       if (data?.couponValid) {
@@ -180,6 +191,11 @@ export default function CouponControl({ plan, billingPeriod, coupon, onCoupon, c
   // ── Input (idle / none / invalid): text field + verify, optional restore ──
   return (
     <Stack spacing={1}>
+      {!planCoupon && status === "idle" && (
+        <Alert severity="info" sx={{ py: 0 }}>
+          {t.noPlanCoupon}
+        </Alert>
+      )}
       {status === "none" && (
         <Alert severity="info" sx={{ py: 0 }}>
           {t.removed}

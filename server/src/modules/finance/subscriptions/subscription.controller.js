@@ -1,8 +1,4 @@
-import {
-  generalMessagesCodes,
-  messagesNames,
-  subscriptionMessagesCodes,
-} from "@aya/shared";
+import { messagesNames, subscriptionMessagesCodes } from "@aya/shared";
 import { created, ok } from "../../../shared/http/response.js";
 import { idParam, optionalIntQuery } from "../../../shared/http/params.js";
 import { subscriptionUsecase } from "./subscription.usecase.js";
@@ -47,12 +43,33 @@ class SubscriptionController {
     return ok(res, data);
   }
 
+  async planOptions(req, res) {
+    const data = await subscriptionUsecase.planOptions({
+      authUser: req.auth,
+      studentId: idParam(req.params.studentId),
+    });
+    return ok(res, data);
+  }
+
+  async planQuote(req, res) {
+    const data = await subscriptionUsecase.planQuote({
+      authUser: req.auth,
+      ...req.body,
+    });
+    return ok(res, data);
+  }
+
   async create(req, res) {
     const subscription = await subscriptionUsecase.create({
       ...req.body,
       authUser: req.auth,
     });
-    return created(res, subscription, generalMessagesCodes.CREATED);
+    return created(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_CREATED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async update(req, res) {
@@ -61,7 +78,12 @@ class SubscriptionController {
       id: idParam(req.params.id),
       authUser: req.auth,
     });
-    return ok(res, subscription, generalMessagesCodes.UPDATED);
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_UPDATED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async remove(req, res) {
@@ -69,7 +91,12 @@ class SubscriptionController {
       id: idParam(req.params.id),
       authUser: req.auth,
     });
-    return ok(res, subscription, generalMessagesCodes.DELETED);
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async request(req, res) {
@@ -77,7 +104,12 @@ class SubscriptionController {
       ...req.body,
       authUser: req.auth,
     });
-    return created(res, subscription, generalMessagesCodes.CREATED);
+    return created(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_CREATED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async approve(req, res) {
@@ -86,7 +118,12 @@ class SubscriptionController {
       id: idParam(req.params.id),
       authUser: req.auth,
     });
-    return ok(res, subscription, generalMessagesCodes.UPDATED);
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_UPDATED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async reject(req, res) {
@@ -95,7 +132,12 @@ class SubscriptionController {
       id: idParam(req.params.id),
       authUser: req.auth,
     });
-    return ok(res, subscription, generalMessagesCodes.UPDATED);
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_REJECTED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async cancel(req, res) {
@@ -103,7 +145,12 @@ class SubscriptionController {
       id: idParam(req.params.id),
       authUser: req.auth,
     });
-    return ok(res, subscription, generalMessagesCodes.UPDATED);
+    return ok(
+      res,
+      subscription,
+      subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED,
+      messagesNames.subscriptionMessages,
+    );
   }
 
   async renew(req, res) {
@@ -143,7 +190,7 @@ class SubscriptionController {
     return ok(
       res,
       subscription,
-      subscriptionMessagesCodes.PLAN_CHANGED,
+      subscriptionMessagesCodes.COUPON_UPDATED,
       messagesNames.subscriptionMessages,
     );
   }

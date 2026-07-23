@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { formatMoney } from "../../../shared/lib/money.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
-import { USERS_URL, PLANS_PUBLIC_URL } from "../config/constant.js";
+import {
+  SUBSCRIPTION_PLAN_QUOTE_URL,
+  USERS_URL,
+  subscriptionPlanOptionsPath,
+} from "../config/constant.js";
 
 const FORM_ID = "subscription-create-form";
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
@@ -48,6 +52,7 @@ export default function SubscriptionCreateDialog({
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { studentId: lockedStudentId, month: defaultMonth },
   });
+  const selectedStudentId = useWatch({ control, name: "studentId" });
 
   const studentsReq = useRequest({
     url: USERS_URL,
@@ -59,9 +64,11 @@ export default function SubscriptionCreateDialog({
   });
 
   const plansReq = useRequest({
-    url: PLANS_PUBLIC_URL,
+    url: selectedStudentId
+      ? subscriptionPlanOptionsPath(selectedStudentId)
+      : "plans/public",
     method: "get",
-    isPublic: true,
+    isPublic: !selectedStudentId,
     autoFetch: false,
     syncToUrl: false,
   });
@@ -71,12 +78,19 @@ export default function SubscriptionCreateDialog({
     if (open) {
       // No need to load the student picker when the student is locked.
       if (!lockedStudent) studentsReq.fetchData();
-      plansReq.fetchData();
+      if (lockedStudentId) plansReq.fetchData();
       reset({ studentId: lockedStudentId, month: defaultMonth });
       setPlanId("");
       setCoupon(EMPTY_COUPON);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !selectedStudentId) return;
+    setPlanId("");
+    setCoupon(EMPTY_COUPON);
+    plansReq.fetchData();
+  }, [open, selectedStudentId]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
@@ -193,6 +207,8 @@ export default function SubscriptionCreateDialog({
               billingPeriod={billingPeriod}
               coupon={coupon}
               onCoupon={setCoupon}
+              quoteUrl={SUBSCRIPTION_PLAN_QUOTE_URL}
+              quoteBody={{ studentId: Number(selectedStudentId) }}
             />
           )}
 

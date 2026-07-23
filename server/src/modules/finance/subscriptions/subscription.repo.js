@@ -88,25 +88,46 @@ class SubscriptionRepo {
   async summariesByStudent({ authUser, filters = {}, skip = 0, take = 20 } = {}) {
     const where = await this.buildListWhere(authUser, filters);
     const { status, ...scopeWhere } = where;
+    const now = new Date();
+    const nextMonth = monthRange(firstOfNextMonth(now));
+    const slotWhere = {
+      ...scopeWhere,
+      OR: [
+        {
+          ...currentSubscriptionWhere(now),
+          ...(status ? { status } : {}),
+        },
+        {
+          origin: SUBSCRIPTION_ORIGINS.USAGE,
+          startDate: { gte: nextMonth.gte, lt: nextMonth.lt },
+          status: status
+            ? status
+            : {
+                in: [
+                  SUBSCRIPTION_STATUSES.PENDING,
+                  SUBSCRIPTION_STATUSES.UPCOMING,
+                ],
+              },
+        },
+      ],
+    };
 
     const [pageGroups, allGroups] = await Promise.all([
       prisma.subscription.groupBy({
         by: ["studentId"],
-        where: scopeWhere,
+        where: slotWhere,
         _max: { id: true },
         orderBy: { _max: { id: "desc" } },
         skip,
         take,
       }),
-      prisma.subscription.groupBy({ by: ["studentId"], where: scopeWhere }),
+      prisma.subscription.groupBy({ by: ["studentId"], where: slotWhere }),
     ]);
 
     const total = allGroups.length;
     const studentIds = pageGroups.map((g) => g.studentId);
     if (!studentIds.length) return { items: [], total };
 
-    const now = new Date();
-    const nextMonth = monthRange(firstOfNextMonth(now));
     const [currents, nexts] = await Promise.all([
       prisma.subscription.findMany({
         // Current-period sub even if not yet activated (shown with its status).
@@ -132,12 +153,27 @@ class SubscriptionRepo {
     ]);
 
     // First row per student wins (both queries are ordered so the pick is stable).
-    const firstByStudent = (rows) => {
+    const firstByStudent = (rows, statusRank = {}) => {
       const m = new Map();
-      for (const r of rows) if (!m.has(r.studentId)) m.set(r.studentId, r);
+      for (const row of rows) {
+        const current = m.get(row.studentId);
+        if (
+          !current ||
+          (statusRank[row.status] ?? 99) <
+            (statusRank[current.status] ?? 99)
+        ) {
+          m.set(row.studentId, row);
+        }
+      }
       return m;
     };
-    const currentBy = firstByStudent(currents);
+    const currentBy = firstByStudent(currents, {
+      [SUBSCRIPTION_STATUSES.ACTIVE]: 0,
+      [SUBSCRIPTION_STATUSES.PENDING]: 1,
+      [SUBSCRIPTION_STATUSES.UPCOMING]: 2,
+      [SUBSCRIPTION_STATUSES.CANCELLED]: 3,
+      [SUBSCRIPTION_STATUSES.EXPIRED]: 4,
+    });
     const nextBy = firstByStudent(nexts);
 
     const items = studentIds.map((studentId) => ({
@@ -217,8 +253,8 @@ class SubscriptionRepo {
     return { items: rows.map(toSubscription), total };
   }
 
-  async getById(id) {
-    const row = await prisma.subscription.findUnique({
+  async getById(id, client) {
+    const row = await (client ?? prisma).subscription.findUnique({
       where: { id },
       select: subscriptionSelect,
     });
@@ -238,9 +274,13 @@ class SubscriptionRepo {
    * status ACTIVE AND now within [startDate, endDate]. Single batched query —
    * no N+1. Returns an array of ids.
    */
-  async getCurrentlySubscribedStudentIds(studentIds, now = new Date()) {
+  async getCurrentlySubscribedStudentIds(
+    studentIds,
+    now = new Date(),
+    client,
+  ) {
     if (!studentIds?.length) return [];
-    const subs = await prisma.subscription.findMany({
+    const subs = await (client ?? prisma).subscription.findMany({
       where: {
         studentId: { in: studentIds },
         ...activeSubscriptionWhere(now),
@@ -362,10 +402,83 @@ class SubscriptionRepo {
         studentId,
         origin: SUBSCRIPTION_ORIGINS.USAGE,
         startDate: paymentStart,
+        status: {
+          in: [
+            SUBSCRIPTION_STATUSES.PENDING,
+            SUBSCRIPTION_STATUSES.UPCOMING,
+            SUBSCRIPTION_STATUSES.ACTIVE,
+          ],
+        },
       },
+      orderBy: { id: "desc" },
       select: subscriptionSelect,
     });
     return toSubscription(row);
+  }
+
+  /** Exact session snapshot used by month close/manual rebilling. */
+  listBillableSessionsForStudentMonth({
+    studentId,
+    gte,
+    lt,
+    includeBilledSubscriptionId = null,
+    client,
+  } = {}) {
+    return (client ?? prisma).sessionLog.findMany({
+      where: {
+        studentId,
+        sessionDate: { gte, lt },
+        attendance: SESSION_ATTENDANCE.PRESENT,
+        ...(includeBilledSubscriptionId
+          ? {
+              OR: [
+                { billedSubscriptionId: null },
+                { billedSubscriptionId: includeBilledSubscriptionId },
+              ],
+            }
+          : { billedSubscriptionId: null }),
+      },
+      select: {
+        id: true,
+        durationMinutes: true,
+        durationHours: true,
+        billedSubscriptionId: true,
+      },
+      orderBy: { id: "asc" },
+    });
+  }
+
+  /** Distinct students with sessions in a month, independent of subscription status. */
+  async listSessionStudentsForMonth({ gte, lt, client } = {}) {
+    const rows = await (client ?? prisma).sessionLog.groupBy({
+      by: ["studentId"],
+      where: {
+        sessionDate: { gte, lt },
+        attendance: SESSION_ATTENDANCE.PRESENT,
+      },
+      _max: { updatedAt: true },
+    });
+    return rows.map((row) => ({
+      studentId: row.studentId,
+      latestSessionAt: row._max.updatedAt,
+    }));
+  }
+
+  findLatestCancelledUsageSubscription({
+    studentId,
+    paymentStart,
+    client,
+  } = {}) {
+    return (client ?? prisma).subscription.findFirst({
+      where: {
+        studentId,
+        origin: SUBSCRIPTION_ORIGINS.USAGE,
+        status: SUBSCRIPTION_STATUSES.CANCELLED,
+        startDate: paymentStart,
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      select: { id: true, updatedAt: true },
+    });
   }
 
   /**
@@ -390,6 +503,24 @@ class SubscriptionRepo {
       distinct: ["studentId"],
     });
     return subs.map((s) => ({ studentId: s.studentId }));
+  }
+
+  async listOpenUsageStudentsForPaymentMonth(paymentStart, client) {
+    const rows = await (client ?? prisma).subscription.findMany({
+      where: {
+        origin: SUBSCRIPTION_ORIGINS.USAGE,
+        startDate: paymentStart,
+        status: {
+          in: [
+            SUBSCRIPTION_STATUSES.PENDING,
+            SUBSCRIPTION_STATUSES.UPCOMING,
+          ],
+        },
+      },
+      select: { studentId: true },
+      distinct: ["studentId"],
+    });
+    return rows.map((row) => ({ studentId: row.studentId }));
   }
 
   /**
@@ -431,6 +562,16 @@ class SubscriptionRepo {
         attendance: SESSION_ATTENDANCE.PRESENT,
         billedSubscriptionId: null,
       },
+      data: { billedSubscriptionId: subscriptionId },
+    });
+    return res.count;
+  }
+
+  /** Stamp only the rows included in the exact billing snapshot. */
+  async markSessionIdsBilled({ ids, subscriptionId, client } = {}) {
+    if (!ids?.length) return 0;
+    const res = await (client ?? prisma).sessionLog.updateMany({
+      where: { id: { in: ids } },
       data: { billedSubscriptionId: subscriptionId },
     });
     return res.count;

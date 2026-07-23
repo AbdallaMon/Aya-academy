@@ -1,11 +1,14 @@
 import {
   INVOICE_STATUSES,
   NOTIFICATION_TYPES,
+  SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
   invoiceMessagesCodes,
   messagesNames,
+  subscriptionMessagesCodes,
 } from "@aya/shared";
+import { prisma } from "@aya/db/prisma.client.js";
 import { AppError, badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { messagingService } from "../../../infra/messaging/messagingService.js";
 import {
@@ -13,7 +16,15 @@ import {
   priceForPeriod,
   roundMoney,
 } from "../../../shared/utility/pricing.js";
-import { hoursFromMinutes } from "../../../shared/utility/duration.js";
+import {
+  hoursFromMinutes,
+  minutesFromHours,
+} from "../../../shared/utility/duration.js";
+import {
+  monthRange,
+  previousMonth,
+} from "../../../shared/utility/dates.js";
+import { resolveUsageMinutes } from "../subscriptions/usageBilling.js";
 import { userRepo } from "../../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { subscriptionRepo } from "../subscriptions/subscription.repo.js";
@@ -24,6 +35,10 @@ import { notificationUsecase } from "../../notifications/notification.usecase.js
 import { invoiceRepo } from "./invoice.repo.js";
 
 class InvoiceUsecase {
+  runTransaction(work) {
+    return prisma.$transaction(work);
+  }
+
   /** Stable, human-friendly invoice number derived from the subscription id. */
   invoiceNumberFor(subscriptionId) {
     return `INV-${String(subscriptionId).padStart(6, "0")}`;
@@ -123,9 +138,120 @@ class InvoiceUsecase {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(invoiceMessagesCodes.CANNOT_ACCESS_INVOICE);
     }
+    const existing = await invoiceRepo.getBySubscriptionId(subscriptionId);
+    if (existing) {
+      return this.rebillForSubscription(subscriptionId, {
+        createdById: authUser.id,
+      });
+    }
     return this.regenerateForSubscription(subscriptionId, {
       createdById: authUser.id,
     });
+  }
+
+  async rebillForSubscription(subscriptionId, { createdById = null } = {}) {
+    const [subscription, template, settings] = await Promise.all([
+      subscriptionRepo.getById(subscriptionId),
+      paymentTemplateUsecase.get(null),
+      settingsUsecase.getEffective(),
+    ]);
+    if (!subscription) {
+      throw notFound(invoiceMessagesCodes.SUBSCRIPTION_NOT_FOUND);
+    }
+    const existing = await invoiceRepo.getBySubscriptionId(subscriptionId);
+    if (!existing) {
+      return this.regenerateForSubscription(subscriptionId, { createdById });
+    }
+    const plan = subscription.planId
+      ? await planRepo.getByIdWithCoupons(subscription.planId)
+      : null;
+
+    const invoice = await this.runTransaction(async (tx) => {
+      const current = await subscriptionRepo.getById(subscriptionId, tx);
+      let pricedSubscription = current;
+
+      if (current.origin === SUBSCRIPTION_ORIGINS.USAGE) {
+        const consumption = monthRange(previousMonth(current.startDate));
+        const rows =
+          await subscriptionRepo.listBillableSessionsForStudentMonth({
+            studentId: current.studentId,
+            gte: consumption.gte,
+            lt: consumption.lt,
+            includeBilledSubscriptionId: current.id,
+            client: tx,
+          });
+        const usageMinutes = subscriptionUsecase.sumSessionRowsMinutes(rows);
+        const fallbackMinutes =
+          minutesFromHours(plan?.hours) ?? current.subsMinutes ?? 0;
+        const subsMinutes = resolveUsageMinutes({
+          usageMinutes,
+          planMinutes: fallbackMinutes,
+        });
+        const pricing = await subscriptionUsecase.computeUsagePricing({
+          subsMinutes,
+          hourlyRate: Number(settings.hourlyRate),
+          planId: plan?.id ?? null,
+          plan,
+          existingCoupon: current.coupon ?? null,
+          autoPlanCoupon: false,
+          studentId: current.studentId,
+          currentSubscriptionId: current.id,
+        });
+        pricedSubscription = await subscriptionRepo.updateSubscription(
+          current.id,
+          {
+            subsMinutes,
+            remainingMinutes: subsMinutes,
+            priceCharged: pricing.priceCharged,
+            status: SUBSCRIPTION_STATUSES.PENDING,
+            usageMonthKey: subscriptionUsecase.usageSlotKey(
+              current.studentId,
+              current.startDate,
+            ),
+          },
+          tx,
+        );
+        await subscriptionRepo.markSessionIdsBilled({
+          ids: rows.map((row) => row.id),
+          subscriptionId: current.id,
+          client: tx,
+        });
+      } else {
+        pricedSubscription = await subscriptionRepo.updateSubscription(
+          current.id,
+          { status: SUBSCRIPTION_STATUSES.PENDING },
+          tx,
+        );
+      }
+
+      const amounts = await this.computeAmounts(
+        pricedSubscription,
+        { previousCredit: 0, previousDebt: 0 },
+        template,
+        settings,
+      );
+      const discount = await this.computeDiscountSnapshot(
+        pricedSubscription,
+        Number(settings.hourlyRate),
+        plan,
+      );
+      const issueDate = new Date();
+      return invoiceRepo.update({
+        id: existing.id,
+        data: {
+          status: INVOICE_STATUSES.UNPAID,
+          sentAt: null,
+          ...amounts,
+          configJson: { ...template.configJson, discount },
+          issueDate,
+          dueDate: this.computeDueDate(issueDate, template),
+          billingPeriodLabel: null,
+        },
+        client: tx,
+      });
+    });
+
+    return { invoice, regenerated: true, rebilled: true };
   }
 
   /**
@@ -406,12 +532,52 @@ class InvoiceUsecase {
       input.status === INVOICE_STATUSES.PAID &&
       existing.status !== INVOICE_STATUSES.PAID;
 
-    const updated = await invoiceRepo.update({ id, data });
-
-    // Demand-invoice flow: paying the invoice can activate the subscription.
-    if (becomingPaid && input.activateSubscription) {
-      await this.activateSubscription(existing.subscriptionId);
-    }
+    const updated = await this.runTransaction(async (tx) => {
+      const invoice = await invoiceRepo.update({ id, data, client: tx });
+      if (becomingPaid && input.activateSubscription) {
+        const subscription = await subscriptionRepo.getById(
+          existing.subscriptionId,
+          tx,
+        );
+        const promotable = [
+          SUBSCRIPTION_STATUSES.PENDING,
+          SUBSCRIPTION_STATUSES.UPCOMING,
+        ];
+        if (subscription && promotable.includes(subscription.status)) {
+          const activeStudentIds =
+            await subscriptionRepo.getCurrentlySubscribedStudentIds(
+              [subscription.studentId],
+              new Date(),
+              tx,
+            );
+          if (activeStudentIds.includes(subscription.studentId)) {
+            throw new AppError({
+              statusCode: 409,
+              code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
+              translationKey: messagesNames.subscriptionMessages,
+            });
+          }
+          await subscriptionRepo.updateSubscription(
+            subscription.id,
+            {
+              status: subscriptionUsecase.resolveStatus(
+                subscription.startDate,
+                subscription.endDate,
+              ),
+              usageMonthKey:
+                subscription.origin === "USAGE"
+                  ? subscriptionUsecase.usageSlotKey(
+                      subscription.studentId,
+                      subscription.startDate,
+                    )
+                  : undefined,
+            },
+            tx,
+          );
+        }
+      }
+      return invoice;
+    });
 
     return updated;
   }
@@ -435,6 +601,16 @@ class InvoiceUsecase {
       throw new AppError({
         statusCode: 404,
         code: invoiceMessagesCodes.INVOICE_NOT_FOUND,
+        translationKey: messagesNames.invoiceMessages,
+      });
+    }
+    if (
+      invoice.status !== INVOICE_STATUSES.UNPAID ||
+      invoice.subscription?.status === SUBSCRIPTION_STATUSES.CANCELLED
+    ) {
+      throw new AppError({
+        statusCode: 409,
+        code: invoiceMessagesCodes.CANNOT_SEND_INVOICE,
         translationKey: messagesNames.invoiceMessages,
       });
     }

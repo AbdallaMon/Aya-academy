@@ -33,13 +33,15 @@ class InvoiceController {
 
   async generate(req, res) {
     // generate(authUser, subscriptionId) is frozen (consumed cross-module).
-    const { invoice, regenerated } = await invoiceUsecase.generate(
+    const { invoice, regenerated, rebilled } = await invoiceUsecase.generate(
       req.auth,
       idParam(req.params.subscriptionId),
     );
-    const code = regenerated
-      ? invoiceMessagesCodes.INVOICE_REGENERATED
-      : invoiceMessagesCodes.INVOICE_GENERATED;
+    const code = rebilled
+      ? invoiceMessagesCodes.INVOICE_REBILLED_AND_SUBSCRIPTION_PAUSED
+      : regenerated
+        ? invoiceMessagesCodes.INVOICE_REGENERATED
+        : invoiceMessagesCodes.INVOICE_GENERATED;
     return created(res, invoice, code, messagesNames.invoiceMessages);
   }
 

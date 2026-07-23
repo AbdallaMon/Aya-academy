@@ -167,7 +167,8 @@ const ar = {
     [subscriptionMessagesCodes.NOT_PENDING]: 'الاشتراك ليس قيد الانتظار',
     [subscriptionMessagesCodes.COUPON_INVALID]: 'كوبون غير صالح',
     [subscriptionMessagesCodes.CANNOT_CANCEL]: 'لا يمكن إلغاء هذا الاشتراك',
-    [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: 'تم إلغاء الاشتراك',
+    [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]:
+      'تم إلغاء الاشتراك وفاتورته غير المدفوعة. إضافة حصة للشهر السابق ستنشئ اشتراكاً جديداً للشهر التالي.',
     [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]:
       'يوجد اشتراك مفعّل حالياً — يجب إلغاء تفعيله أولاً قبل إنشاء اشتراك جديد',
     [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: 'تم تجديد الاشتراك',
@@ -181,6 +182,20 @@ const ar = {
       'لا يمكن تفعيل الاشتراك قبل بداية شهره (يفتح التفعيل من آخر الشهر السابق)',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'انتهى الاشتراك أو غير مفعّل',
+    [subscriptionMessagesCodes.NO_EDITABLE_FIELDS]:
+      'هذا الحقل لا يمكن تعديله من التعديل العام. استخدم الإجراء المخصص له.',
+    [subscriptionMessagesCodes.REMAINING_EXCEEDS_TOTAL]:
+      'الدقائق المتبقية لا يمكن أن تتجاوز إجمالي دقائق الاشتراك',
+    [subscriptionMessagesCodes.SUBSCRIPTION_UPDATED]:
+      'تم تحديث بيانات الاشتراك',
+    [subscriptionMessagesCodes.SUBSCRIPTION_CREATED]:
+      'تم إنشاء الاشتراك والفاتورة بنجاح',
+    [subscriptionMessagesCodes.SUBSCRIPTION_REJECTED]:
+      'تم رفض الاشتراك وإلغاء فاتورته غير المدفوعة',
+    [subscriptionMessagesCodes.COUPON_UPDATED]:
+      'تم تحديث الكوبون والسعر والفاتورة',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_SYNCED]:
+      'تم تحديث اشتراك الشهر القادم من الحصص',
   },
   // ── game-messages ─────────────────────────────────────────────────────────
   [messagesNames.gameMessages]: {
@@ -344,6 +359,8 @@ const ar = {
       'الاشتراك لا يحتوي على مبلغ محدد',
     [invoiceMessagesCodes.INVOICE_GENERATED]: 'تم إنشاء الفاتورة',
     [invoiceMessagesCodes.INVOICE_REGENERATED]: 'تم إعادة توليد الفاتورة',
+    [invoiceMessagesCodes.INVOICE_REBILLED_AND_SUBSCRIPTION_PAUSED]:
+      'تمت إعادة حساب الحصص والفاتورة، وأصبح الاشتراك بانتظار الدفع والتفعيل',
     [invoiceMessagesCodes.INVOICE_UPDATED]: 'تم تحديث الفاتورة',
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]:
       'لا يمكن تغيير حالة الفاتورة بهذا الشكل',
@@ -635,7 +652,7 @@ const en = {
     [subscriptionMessagesCodes.CANNOT_CANCEL]:
       'This subscription cannot be cancelled',
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]:
-      'Subscription cancelled',
+      "Subscription and its unpaid invoice were cancelled. Logging a session in the prior month creates a new subscription for the following month.",
     [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]:
       'There is an active subscription — cancel it first before creating a new one',
     [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: 'Subscription renewed',
@@ -650,6 +667,20 @@ const en = {
       'A usage subscription already exists for this student in this month',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'Subscription expired or inactive',
+    [subscriptionMessagesCodes.NO_EDITABLE_FIELDS]:
+      'This workflow field cannot be changed by the generic edit action.',
+    [subscriptionMessagesCodes.REMAINING_EXCEEDS_TOTAL]:
+      'Remaining minutes cannot exceed the subscription total.',
+    [subscriptionMessagesCodes.SUBSCRIPTION_UPDATED]:
+      'Subscription details updated',
+    [subscriptionMessagesCodes.SUBSCRIPTION_CREATED]:
+      'Subscription and invoice created successfully',
+    [subscriptionMessagesCodes.SUBSCRIPTION_REJECTED]:
+      'Subscription rejected and its unpaid invoice voided',
+    [subscriptionMessagesCodes.COUPON_UPDATED]:
+      'Coupon, price, and invoice updated',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_SYNCED]:
+      "Next month's subscription was updated from sessions",
   },
   [messagesNames.gameMessages]: {
     [gameMessagesCodes.GAME_NOT_FOUND]: 'Game not found',
@@ -807,6 +838,8 @@ const en = {
       'The subscription has no price set',
     [invoiceMessagesCodes.INVOICE_GENERATED]: 'Invoice generated',
     [invoiceMessagesCodes.INVOICE_REGENERATED]: 'Invoice regenerated',
+    [invoiceMessagesCodes.INVOICE_REBILLED_AND_SUBSCRIPTION_PAUSED]:
+      'Sessions and invoice recalculated; the subscription is awaiting payment and activation',
     [invoiceMessagesCodes.INVOICE_UPDATED]: 'Invoice updated',
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]:
       "This invoice status change isn't allowed",

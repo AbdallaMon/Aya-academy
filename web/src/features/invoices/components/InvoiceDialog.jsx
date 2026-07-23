@@ -59,6 +59,13 @@ export default function InvoiceDialog({
   }
 
   async function generate() {
+    if (invoice) {
+      const sure = await confirm({
+        title: txt.regenerateConfirm,
+        intent: "warning",
+      });
+      if (!sure) return;
+    }
     await mut.postRequest(invoiceGeneratePath(subscriptionId), {});
     refresh();
   }

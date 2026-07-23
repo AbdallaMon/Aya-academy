@@ -138,7 +138,7 @@ class AuthUsecase {
       const planHours =
         billingPeriod === BILLING_PERIODS.YEARLY ? plan.hours * 12 : plan.hours;
       const subsMinutes = minutesFromHours(planHours);
-      const startDate = now;
+      const startDate = subscriptionUsecase.computeStartDate(now);
       const endDate = subscriptionUsecase.computeEndDate(startDate, billingPeriod);
       priced.push({
         child,

@@ -12,6 +12,8 @@ export const invoicesText = {
     regenerate: "إعادة توليد الفاتورة",
     regenerateHint:
       "يعيد ضبط الفاتورة بالكامل من القالب والاشتراك (المبالغ، الملاحظات، تعليمات الدفع، فترة الفوترة والتواريخ) ويصفّر الرصيد/المديونية السابقة.",
+    regenerateConfirm:
+      "إعادة الفوترة ستجمع حصص شهر الاستهلاك من جديد، وتجعل الفاتورة غير مدفوعة، وتوقف الاشتراك مؤقتاً لحين تأكيد الدفع. هل تريد المتابعة؟",
     edit: "تعديل",
     print: "طباعة",
     markPaid: "تأكيد الدفع",
@@ -92,6 +94,8 @@ export const invoicesText = {
     regenerate: "Regenerate invoice",
     regenerateHint:
       "Fully resets the invoice from the template and subscription (amounts, notes, payment instructions, billing period and dates) and clears previous credit/debt.",
+    regenerateConfirm:
+      "Rebilling recalculates the consumption month's sessions, resets the invoice to unpaid, and pauses the subscription until payment is confirmed. Continue?",
     edit: "Edit",
     print: "Print",
     markPaid: "Mark as paid",

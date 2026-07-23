@@ -10,10 +10,12 @@ import {
 } from "@aya/shared";
 import { prisma } from "@aya/db/prisma.client.js";
 import {
+  calendarMonthWindow,
   endOfMonth,
   firstOfNextMonth,
   monthRange,
   previousMonth,
+  usageMonthKey,
 } from "../../../shared/utility/dates.js";
 import { resolveUsageMinutes } from "./usageBilling.js";
 import {
@@ -32,7 +34,10 @@ import {
   priceForPeriod,
   roundMoney,
 } from "../../../shared/utility/pricing.js";
-import { minutesFromHours } from "../../../shared/utility/duration.js";
+import {
+  legacyValueToMinutes,
+  minutesFromHours,
+} from "../../../shared/utility/duration.js";
 import { userRepo } from "../../users/user.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { couponRepo } from "../coupons/coupon.repo.js";
@@ -44,6 +49,33 @@ import { invoiceRepo } from "../invoices/invoice.repo.js";
 import { subscriptionRepo } from "./subscription.repo.js";
 
 class SubscriptionUsecase {
+  sumSessionRowsMinutes(rows = []) {
+    return rows.reduce(
+      (total, row) =>
+        total +
+        (row.durationMinutes != null
+          ? Number(row.durationMinutes)
+          : (legacyValueToMinutes(row.durationHours) ?? 0)),
+      0,
+    );
+  }
+
+  usageSlotKey(
+    studentId,
+    startDate,
+    status = SUBSCRIPTION_STATUSES.UPCOMING,
+  ) {
+    if (
+      [
+        SUBSCRIPTION_STATUSES.CANCELLED,
+        SUBSCRIPTION_STATUSES.EXPIRED,
+      ].includes(status)
+    ) {
+      return null;
+    }
+    return usageMonthKey(studentId, startDate);
+  }
+
   /** Throws unless `authUser` may access the given subscription (by its studentId). */
   async assertCanAccess(authUser, studentId) {
     if (authUser.role === USER_ROLES.ADMIN) return;
@@ -80,7 +112,12 @@ class SubscriptionUsecase {
         plan,
         createdById: subscription.createdById ?? null,
       });
-    } catch {
+    } catch (error) {
+      console.error("[subscription-invoice-sync] invoice creation failed", {
+        subscriptionId: subscription.id,
+        code: error?.code,
+        message: error?.message,
+      });
       // swallow — invoice is best-effort; admin can generate it manually
     }
   }
@@ -100,7 +137,12 @@ class SubscriptionUsecase {
       if (existing.status !== INVOICE_STATUSES.UNPAID) return;
       const { invoiceUsecase } = await import("../invoices/invoice.usecase.js");
       await invoiceUsecase.refreshAmountsForSubscription(subscription.id);
-    } catch {
+    } catch (error) {
+      console.error("[subscription-invoice-sync] invoice refresh failed", {
+        subscriptionId: subscription.id,
+        code: error?.code,
+        message: error?.message,
+      });
       // best-effort; the subscription remains the source of truth
     }
   }
@@ -193,7 +235,10 @@ class SubscriptionUsecase {
   async prepareForNewSubscription(studentId, tx) {
     // Rule 1 — block while a currently-active subscription exists.
     // getCurrentlySubscribedStudentIds (usecase wrapper) returns a Set<number>.
-    const activeIds = await this.getCurrentlySubscribedStudentIds([studentId]);
+    const activeIds = await this.getCurrentlySubscribedStudentIds(
+      [studentId],
+      tx,
+    );
     if (activeIds.has(studentId)) {
       throw new AppError({
         statusCode: 409,
@@ -205,6 +250,7 @@ class SubscriptionUsecase {
     // Rule 2 — auto-replace any in-flight (PENDING) subscription(s).
     const pendings = await subscriptionRepo.findPendingSubscriptionsByStudent({
       studentId,
+      client: tx,
     });
     for (const p of pendings) {
       if (p.origin === SUBSCRIPTION_ORIGINS.USAGE) continue; // never delete usage bills
@@ -381,15 +427,28 @@ class SubscriptionUsecase {
     };
   }
 
-  /** End date for a billing cycle (1 month / 1 year) starting at `start`. */
+  /**
+   * Calendar-aligned end date. Monthly subscriptions always cover one complete
+   * calendar month. Yearly compatibility covers twelve complete months.
+   */
   computeEndDate(start, billingPeriod) {
-    const d = new Date(start);
+    const { startDate } = calendarMonthWindow(start);
     if (billingPeriod === BILLING_PERIODS.YEARLY) {
-      d.setFullYear(d.getFullYear() + 1);
-    } else {
-      d.setMonth(d.getMonth() + 1);
+      return endOfMonth(
+        new Date(
+          Date.UTC(
+            startDate.getUTCFullYear(),
+            startDate.getUTCMonth() + 11,
+            1,
+          ),
+        ),
+      );
     }
-    return d;
+    return endOfMonth(startDate);
+  }
+
+  computeStartDate(start) {
+    return calendarMonthWindow(start).startDate;
   }
 
   /**
@@ -478,9 +537,13 @@ class SubscriptionUsecase {
    * subscribed (status ACTIVE AND now within [startDate, endDate]). Batched,
    * no N+1. Returns a `Set<number>` for O(1) membership checks by callers.
    */
-  async getCurrentlySubscribedStudentIds(studentIds) {
+  async getCurrentlySubscribedStudentIds(studentIds, client) {
     const ids =
-      await subscriptionRepo.getCurrentlySubscribedStudentIds(studentIds);
+      await subscriptionRepo.getCurrentlySubscribedStudentIds(
+        studentIds,
+        new Date(),
+        client,
+      );
     return new Set(ids);
   }
 
@@ -491,6 +554,126 @@ class SubscriptionUsecase {
     }
     await this.assertCanAccess(authUser, subscription.studentId);
     return this.gateInvoiceForViewer(subscription, authUser);
+  }
+
+  async planOptions({ authUser, studentId }) {
+    await this.assertCanAccess(authUser, studentId);
+    const [plans, settings] = await Promise.all([
+      planRepo.listActiveWithCoupons(),
+      settingsUsecase.getEffective(),
+    ]);
+    const hourlyRate = Number(settings.hourlyRate);
+
+    return Promise.all(
+      plans.map(async (plan) => {
+        const buildCycle = async (billingPeriod, multiplier) => {
+          const minutes = minutesFromHours(Number(plan.hours) * multiplier);
+          const pricing = await this.computeUsagePricing({
+            subsMinutes: minutes,
+            hourlyRate,
+            planId: plan.id,
+            plan,
+            billingPeriod,
+            studentId,
+          });
+          const coupon = (plan.coupons ?? [])
+            .map((link) => link.coupon)
+            .find((candidate) => candidate.id === pricing.couponId);
+          return {
+            base: pricing.basePrice,
+            effective: pricing.priceCharged,
+            discount: coupon
+              ? {
+                  type: coupon.type,
+                  value: Number(coupon.value),
+                  code: coupon.code,
+                }
+              : null,
+          };
+        };
+
+        const [monthly, yearly] = await Promise.all([
+          buildCycle(BILLING_PERIODS.MONTHLY, 1),
+          buildCycle(BILLING_PERIODS.YEARLY, 12),
+        ]);
+        return {
+          id: plan.id,
+          titleAr: plan.titleAr,
+          titleEn: plan.titleEn,
+          descriptionAr: plan.descriptionAr,
+          descriptionEn: plan.descriptionEn,
+          hours: Number(plan.hours),
+          hourlyRate,
+          currency: settings.currency,
+          isFeatured: plan.isFeatured,
+          monthly,
+          yearly,
+        };
+      }),
+    );
+  }
+
+  async planQuote({
+    authUser,
+    studentId,
+    planId,
+    couponCode,
+    currentSubscriptionId,
+  }) {
+    await this.assertCanAccess(authUser, studentId);
+    if (currentSubscriptionId) {
+      const subscription = await subscriptionRepo.getById(currentSubscriptionId);
+      if (!subscription || subscription.studentId !== studentId) {
+        throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
+      }
+    }
+    const [plan, settings] = await Promise.all([
+      planRepo.getByIdWithCoupons(planId),
+      settingsUsecase.getEffective(),
+    ]);
+    if (!plan || !plan.isActive) {
+      throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
+    }
+    const base = priceFromMinutes(
+      minutesFromHours(plan.hours),
+      Number(settings.hourlyRate),
+    );
+    const code = String(couponCode ?? "").trim();
+    if (!code) {
+      return {
+        currency: settings.currency,
+        base,
+        net: base,
+        discount: null,
+        couponValid: null,
+        reason: null,
+      };
+    }
+    const validation = await couponUsecase.validateCoupon({
+      code,
+      planId,
+      billingPeriod: BILLING_PERIODS.MONTHLY,
+      studentId,
+      currentSubscriptionId,
+    });
+    if (!validation.valid) {
+      return {
+        currency: settings.currency,
+        base,
+        net: base,
+        discount: null,
+        couponValid: false,
+        reason: validation.reason,
+      };
+    }
+    return {
+      currency: settings.currency,
+      base,
+      net: roundMoney(applyDiscount(base, validation.discount)),
+      discount: { ...validation.discount, code },
+      couponValid: true,
+      reason: null,
+    };
   }
 
   /**
@@ -551,6 +734,7 @@ class SubscriptionUsecase {
         billingPeriod: BILLING_PERIODS.MONTHLY,
         startDate: paymentStart,
         endDate: endOfMonth(paymentStart),
+        usageMonthKey: this.usageSlotKey(studentId, paymentStart),
         subsMinutes: resolvedMinutes,
         remainingMinutes: resolvedMinutes,
         // Fresh sub carries no coupon yet, so price is the plain hours × rate.
@@ -593,6 +777,7 @@ class SubscriptionUsecase {
           subsMinutes: resolvedMinutes,
           remainingMinutes: resolvedMinutes,
           priceCharged: pricing.priceCharged,
+          usageMonthKey: this.usageSlotKey(studentId, paymentStart),
           plan: plan ? { connect: { id: plan.id } } : undefined,
           coupon: pricing.couponId
             ? { connect: { id: pricing.couponId } }
@@ -619,10 +804,44 @@ class SubscriptionUsecase {
    * @returns {Promise<{ processed:number, failed:number }>}
    */
   async seedOpenUsageSubscriptions(now = new Date()) {
-    const activeStudents = await subscriptionRepo.listCurrentPeriodStudents(now);
+    const range = monthRange(now);
+    const [activeStudents, sessionStudents] = await Promise.all([
+      subscriptionRepo.listCurrentPeriodStudents(now),
+      subscriptionRepo.listSessionStudentsForMonth(range),
+    ]);
+    const activeStudentIds = new Set(
+      activeStudents.map((row) => row.studentId),
+    );
+    const retrySessionStudents = [];
+    for (const row of sessionStudents) {
+      if (activeStudentIds.has(row.studentId)) continue;
+      const cancelled =
+        await subscriptionRepo.findLatestCancelledUsageSubscription({
+          studentId: row.studentId,
+          paymentStart: firstOfNextMonth(now),
+        });
+      // A cancelled bill stays cancelled until a session is created/edited
+      // after that cancellation. This preserves the user's explicit cancel
+      // while still giving failed immediate syncs a deterministic retry.
+      if (
+        !cancelled ||
+        (row.latestSessionAt &&
+          new Date(row.latestSessionAt) > new Date(cancelled.updatedAt))
+      ) {
+        retrySessionStudents.push(row);
+      }
+    }
+    const students = [
+      ...new Map(
+        [...activeStudents, ...retrySessionStudents].map((row) => [
+          row.studentId,
+          row,
+        ]),
+      ).values(),
+    ];
     let processed = 0;
     let failed = 0;
-    for (const { studentId } of activeStudents) {
+    for (const { studentId } of students) {
       try {
         await this.recomputeOpenUsageSubscription({ studentId, sessionDate: now });
         processed += 1;
@@ -692,6 +911,7 @@ class SubscriptionUsecase {
     const studentId = input.studentId;
     const startDate = monthRange(input.month).gte; // 1st of the chosen month (UTC)
     const endDate = endOfMonth(startDate);
+    const status = this.resolveStatus(startDate, endDate);
 
     // One USAGE bill per (student, month).
     const existing = await subscriptionRepo.findOpenUsageSubscription({
@@ -730,10 +950,11 @@ class SubscriptionUsecase {
 
     const data = {
       origin: SUBSCRIPTION_ORIGINS.USAGE,
-      status: this.resolveStatus(startDate, endDate),
+      status,
       billingPeriod: BILLING_PERIODS.MONTHLY,
       startDate,
       endDate,
+      usageMonthKey: this.usageSlotKey(studentId, startDate, status),
       subsMinutes,
       remainingMinutes: subsMinutes,
       priceCharged,
@@ -744,7 +965,7 @@ class SubscriptionUsecase {
       plan: plan ? { connect: { id: plan.id } } : undefined,
       coupon: couponId ? { connect: { id: couponId } } : undefined,
     };
-    const subscription = await prisma.$transaction(async (tx) => {
+    const subscription = await this.runTransaction(async (tx) => {
       const created = await subscriptionRepo.createSubscription(data, tx);
       await this.consumeCoupon({
         couponId,
@@ -791,6 +1012,7 @@ class SubscriptionUsecase {
     const studentId = input.studentId;
     const startDate = monthRange(input.month).gte; // 1st of the chosen month (UTC)
     const endDate = endOfMonth(startDate);
+    const status = this.resolveStatus(startDate, endDate);
 
     // Load + validate the plan (hours + price come from it).
     const plan = await planRepo.getByIdWithCoupons(input.planId);
@@ -826,10 +1048,11 @@ class SubscriptionUsecase {
 
     const data = {
       origin: SUBSCRIPTION_ORIGINS.USAGE,
-      status: this.resolveStatus(startDate, endDate),
+      status,
       billingPeriod: BILLING_PERIODS.MONTHLY,
       startDate,
       endDate,
+      usageMonthKey: this.usageSlotKey(studentId, startDate, status),
       subsMinutes,
       remainingMinutes: subsMinutes,
       priceCharged,
@@ -841,7 +1064,7 @@ class SubscriptionUsecase {
     };
     if (couponId) data.coupon = { connect: { id: couponId } };
 
-    const subscription = await prisma.$transaction(async (tx) => {
+    const subscription = await this.runTransaction(async (tx) => {
       const sub = await subscriptionRepo.createSubscription(data, tx);
       await this.consumeCoupon({
         couponId,
@@ -882,16 +1105,10 @@ class SubscriptionUsecase {
       return this.createByMonth({ authUser, ...input });
     }
 
-    if (input.endDate <= input.startDate) {
-      throw badRequest(
-        subscriptionMessagesCodes.INVALID_DATE_RANGE,
-        messagesNames.subscriptionMessages,
-      );
-    }
-
-    const status =
-      input.status ?? this.resolveStatus(input.startDate, input.endDate);
     const billingPeriod = input.billingPeriod ?? BILLING_PERIODS.MONTHLY;
+    const startDate = this.computeStartDate(input.startDate);
+    const endDate = this.computeEndDate(startDate, billingPeriod);
+    const status = input.status ?? this.resolveStatus(startDate, endDate);
     const settings = await settingsUsecase.getEffective();
     const subsMinutes =
       input.subsMinutes ?? minutesFromHours(input.subsHours);
@@ -904,8 +1121,8 @@ class SubscriptionUsecase {
     const data = {
       status,
       billingPeriod,
-      startDate: input.startDate,
-      endDate: input.endDate,
+      startDate,
+      endDate,
       subsMinutes,
       // Remaining duration inherits from the billed duration unless explicit.
       remainingMinutes,
@@ -1000,7 +1217,7 @@ class SubscriptionUsecase {
       );
     }
 
-    const subscription = await prisma.$transaction(async (tx) => {
+    const subscription = await this.runTransaction(async (tx) => {
       // Block a 2nd active + clear any in-flight PENDING before creating.
       await this.prepareForNewSubscription(input.studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
@@ -1037,6 +1254,22 @@ class SubscriptionUsecase {
     if (!existing) {
       throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
     }
+    const workflowFields = [
+      "studentId",
+      "planId",
+      "billingPeriod",
+      "status",
+      "startDate",
+      "endDate",
+      "priceCharged",
+      "couponId",
+    ];
+    if (workflowFields.some((field) => input[field] !== undefined)) {
+      throw badRequest(
+        subscriptionMessagesCodes.NO_EDITABLE_FIELDS,
+        messagesNames.subscriptionMessages,
+      );
+    }
 
     const startDate = input.startDate ?? existing.startDate;
     const endDate = input.endDate ?? existing.endDate;
@@ -1052,65 +1285,24 @@ class SubscriptionUsecase {
     // plan, recompute/freeze from sessions). Any billed duration in the input is
     // ignored here — the price is never recomputed from it. Only remainingMinutes
     // is manually editable.
-    const data = {
-      status: input.status,
-      billingPeriod: input.billingPeriod,
-      startDate: input.startDate,
-      endDate: input.endDate,
-      remainingMinutes:
-        input.remainingMinutes !== undefined
-          ? input.remainingMinutes
-          : input.remainingHours !== undefined
-            ? minutesFromHours(input.remainingHours)
-            : undefined,
-      priceCharged: input.priceCharged,
-      notes: input.notes,
-    };
-    if (input.studentId !== undefined) {
-      data.student = { connect: { id: input.studentId } };
+    const remainingMinutes =
+      input.remainingMinutes !== undefined
+        ? input.remainingMinutes
+        : input.remainingHours !== undefined
+          ? minutesFromHours(input.remainingHours)
+          : undefined;
+    if (
+      remainingMinutes !== undefined &&
+      existing.subsMinutes != null &&
+      remainingMinutes > existing.subsMinutes
+    ) {
+      throw badRequest(
+        subscriptionMessagesCodes.REMAINING_EXCEEDS_TOTAL,
+        messagesNames.subscriptionMessages,
+      );
     }
-    if (input.planId !== undefined) {
-      data.plan = { connect: { id: input.planId } };
-    }
-    if (input.couponId !== undefined) {
-      const coupon = await couponRepo.getById({ id: input.couponId });
-      if (!coupon) {
-        throw badRequest(
-          subscriptionMessagesCodes.COUPON_INVALID,
-          messagesNames.subscriptionMessages,
-        );
-      }
-      const targetStudentId = input.studentId ?? existing.studentId;
-      const result = await couponUsecase.validateCoupon({
-        code: coupon.code,
-        planId: input.planId ?? existing.planId ?? null,
-        billingPeriod: input.billingPeriod ?? existing.billingPeriod,
-        studentId: targetStudentId,
-        currentSubscriptionId:
-          targetStudentId === existing.studentId ? existing.id : null,
-      });
-      if (!result.valid) {
-        throw badRequest(result.reason, messagesNames.couponMessages);
-      }
-      data.coupon = { connect: { id: coupon.id } };
-    }
-
-    const subscription = await prisma.$transaction(async (tx) => {
-      if (input.couponId !== undefined) {
-        const targetStudentId = input.studentId ?? existing.studentId;
-        await this.consumeCoupon({
-          previousCouponId:
-            targetStudentId === existing.studentId
-              ? existing.couponId
-              : null,
-          couponId: input.couponId,
-          studentId: targetStudentId,
-          subscriptionId: existing.id,
-          tx,
-        });
-      }
-      return subscriptionRepo.updateSubscription(id, data, tx);
-    });
+    const data = { remainingMinutes, notes: input.notes };
+    const subscription = await subscriptionRepo.updateSubscription(id, data);
 
     // If the charged price was explicitly changed, best-effort regenerate the
     // demand invoice so its amount matches. Guarded so a notes-only edit doesn't
@@ -1154,16 +1346,7 @@ class SubscriptionUsecase {
   }
 
   async remove({ authUser, id }) {
-    if (authUser.role !== USER_ROLES.ADMIN) {
-      throw forbidden(subscriptionMessagesCodes.CANNOT_ACCESS_SUBSCRIPTION);
-    }
-    const existing = await subscriptionRepo.getById(id);
-    if (!existing) {
-      throw notFound(subscriptionMessagesCodes.SUBSCRIPTION_NOT_FOUND);
-    }
-    return subscriptionRepo.updateSubscription(id, {
-      status: SUBSCRIPTION_STATUSES.CANCELLED,
-    });
+    return this.cancel({ authUser, id });
   }
 
   /**
@@ -1187,7 +1370,7 @@ class SubscriptionUsecase {
     }
 
     const billingPeriod = input.billingPeriod ?? BILLING_PERIODS.MONTHLY;
-    const startDate = input.startDate ? new Date(input.startDate) : new Date();
+    const startDate = this.computeStartDate(input.startDate ?? new Date());
     const endDate = this.computeEndDate(startDate, billingPeriod);
 
     // Minutes scale with the cycle: a yearly subscription bundles 12× the plan.
@@ -1227,7 +1410,7 @@ class SubscriptionUsecase {
     if (couponId) data.coupon = { connect: { id: couponId } };
 
     // Create the subscription and consume any coupon atomically.
-    const subscription = await prisma.$transaction(async (tx) => {
+    const subscription = await this.runTransaction(async (tx) => {
       // Block while active + auto-replace any in-flight PENDING before creating.
       await this.prepareForNewSubscription(studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
@@ -1322,9 +1505,25 @@ class SubscriptionUsecase {
       : existing.notes;
 
     // Rejection never restores coupon eligibility for this student.
-    const updated = await subscriptionRepo.updateSubscription(id, {
-      status: SUBSCRIPTION_STATUSES.CANCELLED,
-      notes,
+    const updated = await this.runTransaction(async (tx) => {
+      const cancelled = await subscriptionRepo.updateSubscription(
+        id,
+        {
+          status: SUBSCRIPTION_STATUSES.CANCELLED,
+          usageMonthKey: null,
+          notes,
+        },
+        tx,
+      );
+      const invoice = await invoiceRepo.getBySubscriptionId(id, tx);
+      if (invoice?.status === INVOICE_STATUSES.UNPAID) {
+        await invoiceRepo.update({
+          id: invoice.id,
+          data: { status: INVOICE_STATUSES.VOID, sentAt: null },
+          client: tx,
+        });
+      }
+      return cancelled;
     });
 
     try {
@@ -1368,8 +1567,24 @@ class SubscriptionUsecase {
     }
 
     // Cancellation never restores coupon eligibility for this student.
-    const updated = await subscriptionRepo.updateSubscription(id, {
-      status: SUBSCRIPTION_STATUSES.CANCELLED,
+    const updated = await this.runTransaction(async (tx) => {
+      const cancelled = await subscriptionRepo.updateSubscription(
+        id,
+        {
+          status: SUBSCRIPTION_STATUSES.CANCELLED,
+          usageMonthKey: null,
+        },
+        tx,
+      );
+      const invoice = await invoiceRepo.getBySubscriptionId(id, tx);
+      if (invoice?.status === INVOICE_STATUSES.UNPAID) {
+        await invoiceRepo.update({
+          id: invoice.id,
+          data: { status: INVOICE_STATUSES.VOID, sentAt: null },
+          client: tx,
+        });
+      }
+      return cancelled;
     });
 
     try {
@@ -1431,7 +1646,7 @@ class SubscriptionUsecase {
       throw notFound(subscriptionMessagesCodes.PLAN_NOT_FOUND);
     }
 
-    const startDate = input.startDate ? new Date(input.startDate) : new Date();
+    const startDate = this.computeStartDate(input.startDate ?? new Date());
     const endDate = this.computeEndDate(startDate, billingPeriod);
 
     // Minutes scale with the cycle (yearly bundles 12× the monthly plan).
@@ -1469,7 +1684,7 @@ class SubscriptionUsecase {
     if (couponId) data.coupon = { connect: { id: couponId } };
 
     // Create the new subscription and consume any coupon atomically.
-    const subscription = await prisma.$transaction(async (tx) => {
+    const subscription = await this.runTransaction(async (tx) => {
       // Block while active + auto-replace any in-flight PENDING before creating.
       await this.prepareForNewSubscription(studentId, tx);
       const sub = await subscriptionRepo.createSubscription(data, tx);
@@ -1577,32 +1792,52 @@ class SubscriptionUsecase {
       studentId: existing.studentId,
       gte: consumption.gte,
       lt: consumption.lt,
+      includeBilledSubscriptionId: existing.id,
     });
 
     const data = { plan: { connect: { id: plan.id } } };
-    let priceChanged = false;
+    const settings = await settingsUsecase.getEffective();
+    const planMinutes = minutesFromHours(plan.hours);
+    const pricingMinutes =
+      usageMinutes > 0 ? existing.subsMinutes ?? usageMinutes : planMinutes;
+    const { priceCharged, couponId } = await this.computeUsagePricing({
+      subsMinutes: pricingMinutes,
+      couponCode: input.couponCode,
+      hourlyRate: Number(settings.hourlyRate),
+      planId: plan.id,
+      plan,
+      autoPlanCoupon: input.applyPlanCoupon ?? true,
+      studentId: existing.studentId,
+      currentSubscriptionId: existing.id,
+    });
+    const priceChanged =
+      Number(priceCharged) !== Number(existing.priceCharged) ||
+      couponId !== existing.couponId;
+
     if (usageMinutes === 0) {
-      const settings = await settingsUsecase.getEffective();
-      const planMinutes = minutesFromHours(plan.hours);
-      const { priceCharged } = await this.computeUsagePricing({
-        subsMinutes: planMinutes,
-        hourlyRate: Number(settings.hourlyRate),
-        planId: plan.id,
-        plan,
-        existingCoupon: existing.coupon ?? null,
-      });
       data.subsMinutes = planMinutes;
       data.remainingMinutes = planMinutes;
-      data.priceCharged = priceCharged;
-      priceChanged = Number(priceCharged) !== Number(existing.priceCharged);
     }
+    data.priceCharged = priceCharged;
+    data.coupon = couponId
+      ? { connect: { id: couponId } }
+      : { disconnect: true };
 
-    const updated = await subscriptionRepo.updateSubscription(id, data);
+    const updated = await this.runTransaction(async (tx) => {
+      await this.consumeCoupon({
+        previousCouponId: existing.couponId,
+        couponId,
+        studentId: existing.studentId,
+        subscriptionId: existing.id,
+        tx,
+      });
+      return subscriptionRepo.updateSubscription(id, data, tx);
+    });
 
     // 4b. When the hours/price were reset from the new plan, best-effort
     //     regenerate the still-unpaid demand invoice so its amount matches (the
     //     change-plan guard already ensured the invoice is UNPAID or absent).
-    if (usageMinutes === 0 && priceChanged) {
+    if (priceChanged) {
       try {
         const currentInvoice =
           invoice ?? (await invoiceRepo.getBySubscriptionId(id));
@@ -1718,7 +1953,7 @@ class SubscriptionUsecase {
     }
 
     // 4. Persist the link and permanently consume a newly attached coupon.
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await this.runTransaction(async (tx) => {
       await this.consumeCoupon({
         previousCouponId: existing.couponId,
         couponId,
@@ -1801,9 +2036,55 @@ class SubscriptionUsecase {
       });
     }
 
+    const activeIds = await this.getCurrentlySubscribedStudentIds([
+      existing.studentId,
+    ]);
+    if (activeIds.has(existing.studentId)) {
+      throw new AppError({
+        statusCode: 409,
+        code: subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE,
+        translationKey: messagesNames.subscriptionMessages,
+      });
+    }
+    if (existing.origin === SUBSCRIPTION_ORIGINS.USAGE) {
+      const replacement = await subscriptionRepo.findOpenUsageSubscription({
+        studentId: existing.studentId,
+        paymentStart: existing.startDate,
+      });
+      if (replacement && replacement.id !== existing.id) {
+        throw conflict(
+          subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS,
+          messagesNames.subscriptionMessages,
+        );
+      }
+    }
+
     // 3. Resolve the new status from the date window and persist.
     const status = this.resolveStatus(existing.startDate, existing.endDate);
-    const updated = await subscriptionRepo.updateSubscription(id, { status });
+    const updated = await this.runTransaction(async (tx) => {
+      const activated = await subscriptionRepo.updateSubscription(
+        id,
+        {
+          status,
+          usageMonthKey:
+            existing.origin === SUBSCRIPTION_ORIGINS.USAGE
+              ? this.usageSlotKey(existing.studentId, existing.startDate)
+              : undefined,
+        },
+        tx,
+      );
+      if (input.markInvoicePaid) {
+        const invoice = await invoiceRepo.getBySubscriptionId(id, tx);
+        if (invoice?.status === INVOICE_STATUSES.UNPAID) {
+          await invoiceRepo.update({
+            id: invoice.id,
+            data: { status: INVOICE_STATUSES.PAID },
+            client: tx,
+          });
+        }
+      }
+      return activated;
+    });
 
     // 4. Optionally mark the demand invoice paid using the SAME transition-guarded
     //    path the invoice edit uses (UNPAID → PAID). We do NOT pass
@@ -1864,8 +2145,18 @@ class SubscriptionUsecase {
     const settings = await settingsUsecase.getEffective();
     const hourlyRate = Number(settings.hourlyRate);
 
-    const activeStudents =
-      await subscriptionRepo.listCurrentPeriodStudents(now);
+    const [currentStudents, openUsageStudents] = await Promise.all([
+      subscriptionRepo.listCurrentPeriodStudents(now),
+      subscriptionRepo.listOpenUsageStudentsForPaymentMonth(paymentStart),
+    ]);
+    const activeStudents = [
+      ...new Map(
+        [...currentStudents, ...openUsageStudents].map((row) => [
+          row.studentId,
+          row,
+        ]),
+      ).values(),
+    ];
 
     let invoiced = 0;
     let skipped = 0;
@@ -1920,7 +2211,7 @@ class SubscriptionUsecase {
         // redemption was booked at attach time, so we do NOT re-validate it here:
         // re-validating can now return invalid (redemption consumed / window
         // elapsed) and abort the whole run. Apply the stored discount directly.
-        const { priceCharged, couponId } =
+        const { couponId } =
           await this.computeUsagePricing({
             subsMinutes,
             hourlyRate,
@@ -1931,11 +2222,43 @@ class SubscriptionUsecase {
             currentSubscriptionId: existingOpen?.id ?? null,
           });
 
-        const sub = await prisma.$transaction(async (tx) => {
+        const sub = await this.runTransaction(async (tx) => {
           let open = await subscriptionRepo.findOpenUsageSubscription({
             studentId,
             paymentStart,
             client: tx,
+          });
+          if (open && !this.isMutableUsageSubscription(open)) return null;
+          const sessionRows =
+            await subscriptionRepo.listBillableSessionsForStudentMonth({
+              studentId,
+              gte: consumption.gte,
+              lt: consumption.lt,
+              includeBilledSubscriptionId: open?.id ?? null,
+              client: tx,
+            });
+          const frozenUsageMinutes = this.sumSessionRowsMinutes(sessionRows);
+          const frozenSubsMinutes = resolveUsageMinutes({
+            usageMinutes: frozenUsageMinutes,
+            planMinutes,
+          });
+          if (!frozenSubsMinutes || frozenSubsMinutes <= 0) return null;
+
+          const selectedCoupon =
+            existingOpen?.coupon ??
+            (plan?.coupons ?? [])
+              .map((link) => link.coupon)
+              .find((coupon) => coupon.id === couponId) ??
+            null;
+          const frozenPricing = await this.computeUsagePricing({
+            subsMinutes: frozenSubsMinutes,
+            hourlyRate,
+            planId: plan?.id ?? null,
+            plan,
+            existingCoupon: selectedCoupon,
+            autoPlanCoupon: false,
+            studentId,
+            currentSubscriptionId: open?.id ?? null,
           });
           if (!open) {
             open = await subscriptionRepo.createSubscription(
@@ -1945,6 +2268,7 @@ class SubscriptionUsecase {
                 billingPeriod: BILLING_PERIODS.MONTHLY,
                 startDate: paymentStart,
                 endDate: paymentEnd,
+                usageMonthKey: this.usageSlotKey(studentId, paymentStart),
                 currency: settings.currency,
                 student: { connect: { id: studentId } },
                 // Inherit the student's plan so the sub is never plan-less and
@@ -1968,10 +2292,11 @@ class SubscriptionUsecase {
           const frozen = await subscriptionRepo.updateSubscription(
             open.id,
             {
-              subsMinutes,
-              remainingMinutes: subsMinutes,
-              priceCharged,
+              subsMinutes: frozenSubsMinutes,
+              remainingMinutes: frozenSubsMinutes,
+              priceCharged: frozenPricing.priceCharged,
               status: SUBSCRIPTION_STATUSES.PENDING,
+              usageMonthKey: this.usageSlotKey(studentId, paymentStart),
               plan: plan ? { connect: { id: plan.id } } : undefined,
               coupon: couponId
                 ? { connect: { id: couponId } }
@@ -1980,11 +2305,9 @@ class SubscriptionUsecase {
             tx,
           );
           // stamp the sessions that were just billed (only when real usage).
-          if (usageMinutes > 0) {
-            await subscriptionRepo.markSessionsBilled({
-              studentId,
-              gte: consumption.gte,
-              lt: consumption.lt,
+          if (frozenUsageMinutes > 0) {
+            await subscriptionRepo.markSessionIdsBilled({
+              ids: sessionRows.map((row) => row.id),
               subscriptionId: frozen.id,
               client: tx,
             });
@@ -1992,6 +2315,10 @@ class SubscriptionUsecase {
           return frozen;
         });
 
+        if (!sub) {
+          skipped += 1;
+          continue;
+        }
         await this.refreshOrEnsureInvoice(sub, { plan });
         invoiced += 1;
       } catch (err) {

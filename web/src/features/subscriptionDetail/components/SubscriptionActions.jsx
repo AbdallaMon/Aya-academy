@@ -180,7 +180,8 @@ export default function SubscriptionActions({
 
   const enableChangePlan = status !== "ACTIVE" && invoiceUnpaidOrNone;
   const enableCoupon = status !== "ACTIVE" && invoiceUnpaidOrNone;
-  const enableSend = !!invoice;
+  const enableSend =
+    !!invoice && invoice.status === "UNPAID" && status !== "CANCELLED";
   // Activatable when not yet started (PENDING/UPCOMING) OR cancelled (re-activate
   // a cancelled sub — it stays visible with an Activate action instead of vanishing).
   const enableActivate =

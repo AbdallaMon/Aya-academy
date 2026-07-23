@@ -24,7 +24,13 @@ async function syncUsageBill(studentId, sessionDate) {
       studentId,
       sessionDate,
     });
-  } catch {
+  } catch (error) {
+    console.error("[usage-billing-sync] session synchronization failed", {
+      studentId,
+      sessionDate,
+      code: error?.code,
+      message: error?.message,
+    });
     // swallow — billing sync must never fail session logging
   }
 }

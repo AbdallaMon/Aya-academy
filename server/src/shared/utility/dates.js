@@ -25,3 +25,17 @@ export function endOfMonth(firstOfMonth) {
 export function previousMonth(date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - 1, 1));
 }
+
+/** Inclusive calendar-month window: first day through the final second. */
+export function calendarMonthWindow(date) {
+  const { gte } = monthRange(new Date(date));
+  return { startDate: gte, endDate: endOfMonth(gte) };
+}
+
+/** Stable application key used by the nullable unique USAGE-month slot. */
+export function usageMonthKey(studentId, date) {
+  const start = monthRange(new Date(date)).gte;
+  return `${Number(studentId)}:${start.getUTCFullYear()}-${String(
+    start.getUTCMonth() + 1,
+  ).padStart(2, "0")}`;
+}

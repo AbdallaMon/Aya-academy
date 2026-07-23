@@ -58,7 +58,10 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
     <PlanPickerDialog
       open={open}
       onClose={onClose}
-      child={{ name: subscription?.student?.name || "" }}
+      child={{
+        id: subscription?.studentId ?? subscription?.student?.id,
+        name: subscription?.student?.name || "",
+      }}
       onRequest={submit}
       requesting={renewReq.isLoading}
       txt={childrenTxt}

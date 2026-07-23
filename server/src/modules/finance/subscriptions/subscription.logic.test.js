@@ -5,6 +5,8 @@ import { subscriptionRepo } from "./subscription.repo.js";
 import { planRepo } from "../plans/plan.repo.js";
 import { settingsUsecase } from "../../settings/settings.usecase.js";
 import { couponRepo } from "../coupons/coupon.repo.js";
+import { invoiceRepo } from "../invoices/invoice.repo.js";
+import { notificationUsecase } from "../../notifications/notification.usecase.js";
 
 const usecase = new SubscriptionUsecase();
 
@@ -32,6 +34,38 @@ test("a paid pending bill is immutable", () => {
       invoice: { status: "PAID" },
     }),
     false,
+  );
+});
+
+test("monthly subscriptions are aligned to the full calendar month", () => {
+  const subject = new SubscriptionUsecase();
+  const input = new Date("2026-01-31T18:30:00.000Z");
+  assert.equal(
+    subject.computeStartDate(input).toISOString(),
+    "2026-01-01T00:00:00.000Z",
+  );
+  assert.equal(
+    subject.computeEndDate(input, "MONTHLY").toISOString(),
+    "2026-01-31T23:59:59.000Z",
+  );
+});
+
+test("cancelled and expired usage rows release their month slot", () => {
+  const subject = new SubscriptionUsecase();
+  const start = new Date("2026-08-01T00:00:00.000Z");
+  assert.equal(subject.usageSlotKey(5, start, "CANCELLED"), null);
+  assert.equal(subject.usageSlotKey(5, start, "EXPIRED"), null);
+  assert.equal(subject.usageSlotKey(5, start, "UPCOMING"), "5:2026-08");
+});
+
+test("billing snapshots sum canonical and legacy session durations", () => {
+  const subject = new SubscriptionUsecase();
+  assert.equal(
+    subject.sumSessionRowsMinutes([
+      { durationMinutes: 45, durationHours: null },
+      { durationMinutes: null, durationHours: 1.5 },
+    ]),
+    135,
   );
 });
 
@@ -182,4 +216,121 @@ test("recomputes an unpaid PENDING next-month bill from its actual sessions", as
   assert.equal(updateData.remainingMinutes, 60);
   assert.equal(updateData.priceCharged, 12);
   assert.equal(result.subsMinutes, 60);
+});
+
+test("changing a plan keeps session-derived minutes and processes the chosen coupon", async (t) => {
+  const subject = new SubscriptionUsecase();
+  const existing = {
+    id: 41,
+    studentId: 7,
+    planId: 1,
+    status: "UPCOMING",
+    origin: "USAGE",
+    startDate: new Date("2026-07-01T00:00:00Z"),
+    subsMinutes: 75,
+    remainingMinutes: 75,
+    priceCharged: 15,
+    couponId: 9,
+    coupon: { id: 9 },
+  };
+  let usageArgs;
+  let pricingArgs;
+  let updateData;
+
+  t.mock.method(subscriptionRepo, "getById", async () => existing);
+  t.mock.method(invoiceRepo, "getBySubscriptionId", async () => ({
+    id: 5,
+    status: "UNPAID",
+  }));
+  t.mock.method(planRepo, "getByIdWithCoupons", async () => ({
+    id: 2,
+    hours: 8,
+    isActive: true,
+    coupons: [],
+  }));
+  t.mock.method(
+    subscriptionRepo,
+    "sumUsageMinutesForStudentMonth",
+    async (args) => {
+      usageArgs = args;
+      return 75;
+    },
+  );
+  t.mock.method(settingsUsecase, "getEffective", async () => ({
+    hourlyRate: 12,
+  }));
+  t.mock.method(subject, "computeUsagePricing", async (args) => {
+    pricingArgs = args;
+    return { priceCharged: 15, couponId: 9 };
+  });
+  t.mock.method(subject, "runTransaction", async (work) => work({}));
+  t.mock.method(subject, "consumeCoupon", async () => {});
+  t.mock.method(
+    subscriptionRepo,
+    "updateSubscription",
+    async (_id, data) => {
+      updateData = data;
+      return { ...existing, ...data };
+    },
+  );
+  t.mock.method(notificationUsecase, "createNotification", async () => {});
+
+  await subject.changePlan({
+    authUser: { id: 1, role: "ADMIN" },
+    id: 41,
+    planId: 2,
+    couponCode: "SAVE20",
+  });
+
+  assert.equal(usageArgs.includeBilledSubscriptionId, 41);
+  assert.equal(pricingArgs.couponCode, "SAVE20");
+  assert.equal(updateData.subsMinutes, undefined);
+  assert.equal(updateData.remainingMinutes, undefined);
+  assert.deepEqual(updateData.plan, { connect: { id: 2 } });
+});
+
+test("cancelling voids an unpaid invoice and releases the usage month slot atomically", async (t) => {
+  const subject = new SubscriptionUsecase();
+  const existing = {
+    id: 52,
+    studentId: 7,
+    status: "UPCOMING",
+    origin: "USAGE",
+  };
+  let subscriptionData;
+  let invoiceData;
+
+  t.mock.method(subscriptionRepo, "getById", async () => existing);
+  t.mock.method(subject, "runTransaction", async (work) => work({}));
+  t.mock.method(
+    subscriptionRepo,
+    "updateSubscription",
+    async (_id, data) => {
+      subscriptionData = data;
+      return { ...existing, ...data };
+    },
+  );
+  t.mock.method(invoiceRepo, "getBySubscriptionId", async () => ({
+    id: 8,
+    status: "UNPAID",
+  }));
+  t.mock.method(invoiceRepo, "update", async ({ data }) => {
+    invoiceData = data;
+    return { id: 8, ...data };
+  });
+  t.mock.method(notificationUsecase, "createNotification", async () => {});
+
+  await subject.cancel({
+    authUser: { id: 1, role: "ADMIN" },
+    id: 52,
+  });
+
+  assert.deepEqual(subscriptionData, {
+    status: "CANCELLED",
+    usageMonthKey: null,
+  });
+  assert.deepEqual(invoiceData, {
+    status: "VOID",
+    sentAt: null,
+  });
 });

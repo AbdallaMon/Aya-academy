@@ -23,6 +23,28 @@ subscriptionRoutes.get(
 );
 
 subscriptionRoutes.get(
+  "/plan-options/:studentId",
+  authMiddleware.requireAnyPermission([
+    SUBSCRIPTION_PERMISSIONS.CREATE,
+    SUBSCRIPTION_PERMISSIONS.REQUEST,
+    SUBSCRIPTION_PERMISSIONS.EDIT,
+  ]),
+  validate(SubscriptionValidation.planOptionsParamsSchema, "params"),
+  asyncHandler(subscriptionController.planOptions),
+);
+
+subscriptionRoutes.post(
+  "/plan-quote",
+  authMiddleware.requireAnyPermission([
+    SUBSCRIPTION_PERMISSIONS.CREATE,
+    SUBSCRIPTION_PERMISSIONS.REQUEST,
+    SUBSCRIPTION_PERMISSIONS.EDIT,
+  ]),
+  validate(SubscriptionValidation.planQuoteSchema),
+  asyncHandler(subscriptionController.planQuote),
+);
+
+subscriptionRoutes.get(
   "/:id",
   authMiddleware.requirePermissions([SUBSCRIPTION_PERMISSIONS.VIEW]),
   asyncHandler(subscriptionController.getOne),

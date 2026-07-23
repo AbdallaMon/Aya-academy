@@ -516,6 +516,11 @@ model Subscription {
   origin         SubscriptionOrigin @default(MANUAL)
   startDate      DateTime
   endDate        DateTime
+  // Application-owned key for one non-final USAGE subscription per student and
+  // calendar month. CANCELLED/EXPIRED rows keep this null, so a replacement can
+  // be created without deleting billing history. Existing rows are intentionally
+  // not backfilled by the schema migration.
+  usageMonthKey  String?             @unique @db.VarChar(32)
   // Legacy hour-based fields. Kept temporarily so the explicit minutes backfill
   // script can migrate production data without doing data work in the schema
   // migration. New application writes use subsMinutes/remainingMinutes only.

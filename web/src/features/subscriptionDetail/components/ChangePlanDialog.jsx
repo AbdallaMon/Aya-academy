@@ -6,7 +6,11 @@ import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
-import { SUBSCRIPTIONS_URL, PLANS_PUBLIC_URL } from "../config/constant.js";
+import {
+  SUBSCRIPTIONS_URL,
+  SUBSCRIPTION_PLAN_QUOTE_URL,
+  subscriptionPlanOptionsPath,
+} from "../../subscriptions/config/constant.js";
 
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
@@ -29,11 +33,11 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
   // MONTHLY-only in the UI for now — the yearly toggle is hidden.
   const billingPeriod = "MONTHLY";
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
+  const studentId = subscription?.studentId ?? subscription?.student?.id;
 
   const publicPlansReq = useRequest({
-    url: PLANS_PUBLIC_URL,
+    url: subscriptionPlanOptionsPath(studentId),
     method: "get",
-    isPublic: true,
     autoFetch: false,
     syncToUrl: false,
   });
@@ -73,14 +77,21 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
     setCoupon(initialCoupon(plan, billingPeriod));
   }
 
-  const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
+  const resolvedCoupon = resolveCoupon(
+    selectedPlan,
+    billingPeriod,
+    coupon,
+  );
 
   async function submit() {
     if (!planId) return;
     try {
       await changeReq.fetchData(`${subscription.id}/change-plan`, {
         planId: Number(planId),
-        ...(codeToSend ? { couponCode: codeToSend } : {}),
+        ...(resolvedCoupon.codeToSend
+          ? { couponCode: resolvedCoupon.codeToSend }
+          : {}),
+        applyPlanCoupon: resolvedCoupon.applyPlanCoupon,
       });
       onClose();
       onChanged?.();
@@ -126,6 +137,11 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
             billingPeriod={billingPeriod}
             coupon={coupon}
             onCoupon={setCoupon}
+            quoteUrl={SUBSCRIPTION_PLAN_QUOTE_URL}
+            quoteBody={{
+              studentId,
+              currentSubscriptionId: subscription.id,
+            }}
           />
         )}
       </Stack>
