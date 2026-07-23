@@ -21,7 +21,11 @@ import { useTranslation } from "../../../i18n/client.js";
 import { PageHeader } from "../../../shared/components/index.js";
 import FilterBar from "../../../shared/components/tables/FilterBar.jsx";
 import DataTablePagination from "../../../shared/components/tables/dataTable/DataTablePagination.jsx";
-import { SUBSCRIPTIONS_URL } from "../config/constant.js";
+import {
+  MY_STUDENTS_URL,
+  SUBSCRIPTIONS_URL,
+  USERS_URL,
+} from "../config/constant.js";
 import { useSubscriptionsText } from "../config/subscriptionsText.js";
 import { buildSubscriptionsFilters } from "../config/subscriptionsFilters.js";
 import SubscriptionCreateDialog from "../components/SubscriptionCreateDialog.jsx";
@@ -53,6 +57,7 @@ export default function SubscriptionsPage({
   const canList = hasPermission(PERMISSIONS.SUBSCRIPTION.LIST);
   const isAdmin = user?.role === USER_ROLES.ADMIN;
   const canCreate = hasPermission(PERMISSIONS.SUBSCRIPTION.CREATE) || isAdmin;
+  const isParent = user?.role === USER_ROLES.PARENT;
 
   const {
     data,
@@ -83,6 +88,42 @@ export default function SubscriptionsPage({
 
   const createDialog = useOpen();
 
+  const adminStudentsReq = useRequest({
+    url: USERS_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: canList && isAdmin && !embedded,
+    syncToUrl: false,
+    initialParams: { limit: 100, role: USER_ROLES.STUDENT },
+  });
+  const parentStudentsReq = useRequest({
+    url: MY_STUDENTS_URL,
+    method: "get",
+    autoFetch: canList && isParent && !embedded,
+    syncToUrl: false,
+  });
+  const parentsReq = useRequest({
+    url: USERS_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: canList && isAdmin && !embedded,
+    syncToUrl: false,
+    initialParams: { limit: 100, role: USER_ROLES.PARENT },
+  });
+  const filterStudents = useMemo(
+    () =>
+      isAdmin
+        ? adminStudentsReq.data || []
+        : isParent
+          ? parentStudentsReq.data || []
+          : [],
+    [adminStudentsReq.data, isAdmin, isParent, parentStudentsReq.data],
+  );
+  const filterParents = useMemo(
+    () => parentsReq.data || [],
+    [parentsReq.data],
+  );
+
   async function create(payload) {
     await mut.postRequest(null, payload);
     createDialog.close();
@@ -95,8 +136,16 @@ export default function SubscriptionsPage({
       : txt.pageDescriptionStudent;
 
   const filterConfig = useMemo(
-    () => buildSubscriptionsFilters({ txt }),
-    [txt],
+    () =>
+      embedded
+        ? []
+        : buildSubscriptionsFilters({
+            txt,
+            students: filterStudents,
+            parents: filterParents,
+            includeParents: isAdmin,
+          }),
+    [embedded, txt, filterStudents, filterParents, isAdmin],
   );
 
   // Detect the payload shape: summary rows are objects WITHOUT `id` that carry

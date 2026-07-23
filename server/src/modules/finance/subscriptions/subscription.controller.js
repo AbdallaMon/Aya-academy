@@ -5,13 +5,13 @@ import { subscriptionUsecase } from "./subscription.usecase.js";
 
 class SubscriptionController {
   async list(req, res) {
-    const { page, limit, studentId, status } = req.query;
+    const { page, limit, studentId, parentId } = req.query;
     const result = await subscriptionUsecase.list({
       authUser: req.auth,
       page,
       limit,
       studentId: optionalIntQuery(studentId),
-      status,
+      parentId: optionalIntQuery(parentId),
     });
     return ok(res, result);
   }

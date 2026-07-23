@@ -12,6 +12,7 @@ class SessionLogController {
       filters: {
         month: filters.month,
         studentId: optionalIntQuery(filters.studentId),
+        parentId: optionalIntQuery(filters.parentId),
       },
       authUser: req.auth,
     });

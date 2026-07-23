@@ -24,6 +24,7 @@ import {
 import {
   SESSION_LOGS_URL,
   MY_STUDENTS_URL,
+  USERS_URL,
   currentMonth,
   studentLabel,
 } from "../config/constant.js";
@@ -75,7 +76,8 @@ export default function SessionLogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Parent-only: the list of their children, used by the child (studentId) filter.
+  // Parent-only: their own children. Management gets full student + parent
+  // pickers so either filter can be cleared independently.
   const myStudentsReq = useRequest({
     url: MY_STUDENTS_URL,
     method: "get",
@@ -83,6 +85,26 @@ export default function SessionLogPage() {
     syncToUrl: false,
   });
   const myStudents = myStudentsReq.data || [];
+  const allStudentsReq = useRequest({
+    url: USERS_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: canList && isManagement,
+    syncToUrl: false,
+    initialParams: { limit: 100, role: "STUDENT" },
+  });
+  const parentsReq = useRequest({
+    url: USERS_URL,
+    method: "get",
+    isPaginated: true,
+    autoFetch: canList && isManagement,
+    syncToUrl: false,
+    initialParams: { limit: 100, role: "PARENT" },
+  });
+  const filterStudents = isManagement
+    ? allStudentsReq.data || []
+    : myStudents;
+  const filterParents = parentsReq.data || [];
 
   const form = useOpen();
   const [selected, setSelected] = useState(null);
@@ -122,6 +144,7 @@ export default function SessionLogPage() {
 
   const monthValue = filters.month || "";
   const studentValue = filters.studentId != null ? String(filters.studentId) : "";
+  const parentValue = filters.parentId != null ? String(filters.parentId) : "";
 
   const toolbar = (
     <Stack
@@ -141,24 +164,44 @@ export default function SessionLogPage() {
         size="small"
         sx={{ minWidth: 180 }}
       />
-      {!isManagement && (
+      <TextField
+        select
+        label={txt.studentFilterLabel}
+        value={studentValue}
+        onChange={(e) =>
+          setFilters((prev) => ({
+            ...prev,
+            studentId: e.target.value || undefined,
+          }))
+        }
+        size="small"
+        sx={{ minWidth: 200 }}
+      >
+        <MenuItem value="">{txt.allStudents}</MenuItem>
+        {filterStudents.map((s) => (
+          <MenuItem key={s.id} value={String(s.id)}>
+            {studentLabel(s)}
+          </MenuItem>
+        ))}
+      </TextField>
+      {isManagement && (
         <TextField
           select
-          label={txt.studentFilterLabel}
-          value={studentValue}
+          label={txt.parentFilterLabel}
+          value={parentValue}
           onChange={(e) =>
             setFilters((prev) => ({
               ...prev,
-              studentId: e.target.value || undefined,
+              parentId: e.target.value || undefined,
             }))
           }
           size="small"
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: 220 }}
         >
-          <MenuItem value="">{txt.allStudents}</MenuItem>
-          {myStudents.map((s) => (
-            <MenuItem key={s.id} value={String(s.id)}>
-              {studentLabel(s)}
+          <MenuItem value="">{txt.allParents}</MenuItem>
+          {filterParents.map((parent) => (
+            <MenuItem key={parent.id} value={String(parent.id)}>
+              {parent.name}
             </MenuItem>
           ))}
         </TextField>

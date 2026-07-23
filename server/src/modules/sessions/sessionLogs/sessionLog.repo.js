@@ -30,17 +30,33 @@ function parseMonthRange(month) {
 }
 
 class SessionLogRepo {
-  async buildListWhere(authUser, { month, studentId } = {}) {
+  async buildListWhere(authUser, { month, studentId, parentId } = {}) {
     const where = {};
     const range = parseMonthRange(month);
     if (range) where.sessionDate = { gte: range.gte, lt: range.lt };
 
     if (authUser.role === USER_ROLES.ADMIN) {
-      if (studentId) where.studentId = studentId;
+      const parentStudentIds = parentId
+        ? await userRepo.getStudentIdsForParent(parentId)
+        : null;
+      if (studentId) {
+        where.studentId =
+          parentStudentIds && !parentStudentIds.includes(studentId)
+            ? { in: [] }
+            : studentId;
+      } else if (parentStudentIds) {
+        where.studentId = { in: parentStudentIds };
+      }
     } else if (authUser.role === USER_ROLES.PARENT) {
       const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      const scoped =
-        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
+      const parentMatches = !parentId || parentId === authUser.id;
+      const scoped = !parentMatches
+        ? []
+        : studentId && studentIds.includes(studentId)
+          ? [studentId]
+          : studentId
+            ? []
+            : studentIds;
       where.studentId = { in: scoped };
     } else {
       // Students (and any other role) are never exposed to session logs.
@@ -54,6 +70,7 @@ class SessionLogRepo {
     const where = await this.buildListWhere(authUser, {
       month: filters.month,
       studentId: filters.studentId,
+      parentId: filters.parentId,
     });
     return this.listSessionLogs({ where, page, limit, client });
   }

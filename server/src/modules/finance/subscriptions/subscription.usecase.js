@@ -478,14 +478,14 @@ class SubscriptionUsecase {
    *     and `next` is the open UPCOMING USAGE sub (either may be null). The card
    *     grid renders current + next together.
    */
-  async list({ authUser, page, limit, studentId, status }) {
+  async list({ authUser, page, limit, studentId, parentId }) {
     const { skip, take, page: p, limit: l } = paginate({ page, limit });
 
     if (studentId) {
       // Student-scoped: all rows newest-first (bypasses the latest collapse).
       const { items, total } = await subscriptionRepo.listScoped({
         authUser,
-        filters: { studentId, status },
+        filters: { studentId, parentId },
         skip,
         take,
       });
@@ -496,7 +496,7 @@ class SubscriptionUsecase {
     // Global: one { studentId, current, next } summary per student.
     const { items, total } = await subscriptionRepo.summariesByStudent({
       authUser,
-      filters: { status },
+      filters: { parentId },
       skip,
       take,
     });

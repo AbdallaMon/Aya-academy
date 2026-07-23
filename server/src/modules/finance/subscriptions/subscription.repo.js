@@ -24,17 +24,31 @@ class SubscriptionRepo {
    *   PARENT → their linked students (narrowed to studentId when it's theirs)
    *   other  → just themselves
    */
-  async buildListWhere(authUser, { studentId, status } = {}) {
+  async buildListWhere(authUser, { studentId, parentId } = {}) {
     const where = {};
 
-    if (status) where.status = status;
-
     if (authUser.role === USER_ROLES.ADMIN) {
-      if (studentId) where.studentId = studentId;
+      const parentStudentIds = parentId
+        ? await userRepo.getStudentIdsForParent(parentId)
+        : null;
+      if (studentId) {
+        where.studentId =
+          parentStudentIds && !parentStudentIds.includes(studentId)
+            ? { in: [] }
+            : studentId;
+      } else if (parentStudentIds) {
+        where.studentId = { in: parentStudentIds };
+      }
     } else if (authUser.role === USER_ROLES.PARENT) {
       const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      const scoped =
-        studentId && studentIds.includes(studentId) ? [studentId] : studentIds;
+      const parentMatches = !parentId || parentId === authUser.id;
+      const scoped = !parentMatches
+        ? []
+        : studentId && studentIds.includes(studentId)
+          ? [studentId]
+          : studentId
+            ? []
+            : studentIds;
       where.studentId = { in: scoped };
     } else {
       where.studentId = authUser.id;
@@ -87,7 +101,7 @@ class SubscriptionRepo {
    */
   async summariesByStudent({ authUser, filters = {}, skip = 0, take = 20 } = {}) {
     const where = await this.buildListWhere(authUser, filters);
-    const { status, ...scopeWhere } = where;
+    const scopeWhere = where;
     const now = new Date();
     const nextMonth = monthRange(firstOfNextMonth(now));
     const slotWhere = {
@@ -95,19 +109,16 @@ class SubscriptionRepo {
       OR: [
         {
           ...currentSubscriptionWhere(now),
-          ...(status ? { status } : {}),
         },
         {
           origin: SUBSCRIPTION_ORIGINS.USAGE,
           startDate: { gte: nextMonth.gte, lt: nextMonth.lt },
-          status: status
-            ? status
-            : {
-                in: [
-                  SUBSCRIPTION_STATUSES.PENDING,
-                  SUBSCRIPTION_STATUSES.UPCOMING,
-                ],
-              },
+          status: {
+            in: [
+              SUBSCRIPTION_STATUSES.PENDING,
+              SUBSCRIPTION_STATUSES.UPCOMING,
+            ],
+          },
         },
       ],
     };

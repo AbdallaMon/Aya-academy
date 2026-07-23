@@ -23,7 +23,9 @@ export const sessionLogText = {
     // filters
     monthLabel: "الشهر",
     studentFilterLabel: "الطالب",
-    allStudents: "كل الأبناء",
+    allStudents: "كل الطلاب",
+    parentFilterLabel: "ولي الأمر",
+    allParents: "كل أولياء الأمور",
     // subjects
     QURAN_MEMORIZATION: "تحفيظ القرآن",
     TAJWEED_COURSES: "دورات التجويد",
@@ -90,7 +92,9 @@ export const sessionLogText = {
     moreItems: "+{count}",
     monthLabel: "Month",
     studentFilterLabel: "Student",
-    allStudents: "All children",
+    allStudents: "All students",
+    parentFilterLabel: "Parent",
+    allParents: "All parents",
     QURAN_MEMORIZATION: "Quran memorization",
     TAJWEED_COURSES: "Tajweed courses",
     ARABIC_READING: "Arabic for reading",
