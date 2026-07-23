@@ -77,6 +77,7 @@ export function useRequest({
       // Filtering always starts a new result set. This matters for scroll-loaded
       // pickers too: their filters are intentionally not synced to the URL.
       setPage(1);
+      setHasMore(true);
     },
     [setFiltersState]
   );

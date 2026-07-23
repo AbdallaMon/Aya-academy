@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Autocomplete, CircularProgress, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  CircularProgress,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import useDebounce from "../../../hooks/useDebounce.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -11,8 +17,7 @@ const PAGE_SIZE = 25;
 
 export function userOptionLabel(user) {
   if (!user) return "";
-  const name = user.nickname || user.name || "";
-  return user.email ? `${name} — ${user.email}` : name || `#${user.id}`;
+  return user.nickname || user.name || `#${user.id}`;
 }
 
 /**
@@ -124,6 +129,24 @@ export default function AsyncUserAutocomplete({
       noOptionsText={td.noData || "No data"}
       ListboxProps={{ onScroll: handleListScroll }}
       sx={sx}
+      renderOption={(props, user) => (
+        <Box component="li" {...props} sx={{ alignItems: "flex-start" }}>
+          <Box sx={{ minWidth: 0, py: 0.25 }}>
+            <Typography variant="body2" fontWeight={600}>
+              {userOptionLabel(user)}
+            </Typography>
+            {user.email && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", overflowWrap: "anywhere", whiteSpace: "normal" }}
+              >
+                {user.email}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      )}
       renderInput={(params) => (
         <TextField
           {...params}
