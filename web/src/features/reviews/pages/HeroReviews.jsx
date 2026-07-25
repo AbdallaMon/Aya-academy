@@ -1,9 +1,5 @@
-'use client';
-
 import { Box, ButtonBase, Container, Stack, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import { FaStar } from 'react-icons/fa';
-import { useTranslation } from '@/i18n/client.js';
 import { reviewScreenshots } from '@/features/reviews/reviewScreenshots.js';
 
 const CONTENT = {
@@ -22,14 +18,16 @@ const CONTENT = {
   },
 };
 
-export default function HeroReviews() {
-  const { lng } = useTranslation();
-  const c = CONTENT[lng === 'en' ? 'en' : 'ar'];
+// Static trust copy is rendered on the server. The in-page anchor is native,
+// so this section needs no translation hook or hydration.
+export default function HeroReviews({ lng = 'en' }) {
+  const language = lng === 'en' ? 'en' : 'ar';
+  const c = CONTENT[language];
   // Tie the rating to the real number of published review screenshots, so the
   // "4.9" is never an unsubstantiated aggregate.
   const reviewCount = reviewScreenshots.length;
   const reviewCountText =
-    lng === 'en' ? String(reviewCount) : reviewCount.toLocaleString('ar-EG');
+    language === 'en' ? String(reviewCount) : reviewCount.toLocaleString('ar-EG');
 
   return (
     <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -58,7 +56,7 @@ export default function HeroReviews() {
             <ButtonBase
               component="a"
               href="#proof"
-              aria-label={`${c.ratingLabel(reviewCountText)} — ${lng === 'en' ? 'see reviews' : 'عرض الآراء'}`}
+              aria-label={`${c.ratingLabel(reviewCountText)} — ${language === 'en' ? 'see reviews' : 'عرض الآراء'}`}
               sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -72,7 +70,7 @@ export default function HeroReviews() {
                 transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease',
                 '&:hover': {
                   borderColor: 'primary.main',
-                  boxShadow: (th) => `0 6px 18px ${alpha(th.palette.primary.main, 0.18)}`,
+                  boxShadow: '0 6px 18px rgba(26, 188, 156, 0.18)',
                   transform: 'translateY(-1px)',
                 },
               }}

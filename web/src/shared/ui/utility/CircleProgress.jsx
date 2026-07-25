@@ -7,10 +7,9 @@ export function ProgressBorderCircle({
   size = 64,
   thickness = 8,
   withText = true,
-  pageTheme,
 }) {
   const v = Math.max(0, Math.min(100, value));
-  const colors = getCurrentColorScheme(pageTheme);
+  const colors = getCurrentColorScheme();
 
   return (
     <Box

@@ -27,36 +27,8 @@ export const colors = {
   black: '#101318',
 };
 
-export const darkColors = {
-  // Brand (keep identity)
-  primary: '#1ABC9C',
-  lightPrimary: '#1abc9c33',
-  accent: '#F6C453',
-  support: '#1E6F5C',
-  danger: '#E74C3C',
-  warning: '#F39C12',
-  // Surfaces (DARK) - Aya "night" feel
-  background: '#0B1524', // deep navy
-  paperBackground: '#0F1D30', // cards/modals
-  elevatedBackground: '#13243B', // hover/raised
-  surface: '#122136', // inputs
-
-  // Text
-  text: '#EAF1FA',
-  mutedText: '#A7B5C9',
-  lightText: '#FFFFFF',
-
-  // Utility
-  border: '#1E3552',
-  overlay: 'rgba(11, 21, 36, 0.82)',
-
-  // Constants (keep literal meaning)
-  white: '#FFFFFF',
-  black: '#101318',
-};
-
-export function getCurrentColorScheme(mode) {
-  return mode === 'light' ? colors : darkColors;
+export function getCurrentColorScheme() {
+  return colors;
 }
 
 export const sectionYPadding = {

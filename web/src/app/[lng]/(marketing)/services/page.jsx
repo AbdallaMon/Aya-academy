@@ -10,9 +10,6 @@ export async function generateMetadata({ params }) {
     path: '/services',
     title: text.indexTitle,
     description: text.indexDescription,
-    keywords: lng === 'en'
-      ? ['online Quran classes', 'online Arabic classes', 'Islamic studies online']
-      : ['تعليم القرآن أونلاين', 'تعليم العربية أونلاين', 'الدراسات الإسلامية أونلاين'],
   });
 }
 

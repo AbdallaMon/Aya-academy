@@ -10,8 +10,8 @@
 //           {children}
 //           AppToastContainer → react-toastify viewport (direction follows lng)
 //
-// `lng` and `mode` are passed from the server layout (cookie-derived) so the
-// first paint matches the user's saved preference and avoids a flash.
+// `lng` is passed from the server layout. The visual theme is intentionally a
+// single stable Aya light/green theme; there is no mode cookie or toggle.
 
 import { MotionConfig } from "framer-motion";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -22,10 +22,10 @@ import { AuthProvider } from "./AuthProvider.jsx";
 import { AppToastContainer } from "./ToastProvider.jsx";
 import ConfirmProvider from "./ConfirmProvider.jsx";
 
-export default function AppProviders({ children, lng, mode }) {
+export default function AppProviders({ children, lng }) {
   return (
     <I18nProvider lng={lng}>
-      <ThemeRegistry mode={mode}>
+      <ThemeRegistry>
         {/* Honor the OS "reduce motion" setting everywhere: framer-motion
             auto-neutralizes the hero's infinite loops + every whileInView/hover. */}
         <MotionConfig reducedMotion="user">

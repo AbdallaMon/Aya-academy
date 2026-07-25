@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Box, Button, Chip, Container, Stack, Typography, useTheme } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Button, Chip, Container, Stack, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { GiStarShuriken } from 'react-icons/gi';
 import { MdSportsEsports } from 'react-icons/md';
@@ -23,7 +22,7 @@ const HERO = {
   },
   en: {
     eyebrow: 'Quran · Arabic · Islamic studies · Manners · Games',
-    title: 'A loving journey to learn the Quran and beautiful manners',
+    title: 'Learn Quran online with qualified teachers',
     subtitle:
       'Fun, safe lessons for students aged 5 and up — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
     primary: 'Book a free session',
@@ -37,17 +36,14 @@ const HERO = {
 const MotionBox = motion.create(Box);
 
 export default function Hero() {
-  const theme = useTheme();
   const { lng } = useTranslation();
   const t = HERO[lng === 'en' ? 'en' : 'ar'];
-  const isDark = theme.palette.mode === 'dark';
 
-  // WebP variants (generated from the source PNGs): the full-bleed backgrounds
-  // drop from ~2.2MB to ~30–60KB, the illustration ~200KB → ~115KB — a big
-  // mobile LCP/data win since the bg is a CSS background under a scrim.
-  const heroImg = isDark ? '/hero-dark.webp' : '/hero-light.webp';
-  const heroDims = isDark ? { width: 1080, height: 848 } : { width: 1082, height: 848 };
-  const bgImg = isDark ? '/hero-bg-dark.webp' : '/hero-bg-light.webp';
+  // Aya uses one stable light/green theme, so the hero no longer hydrates just
+  // to choose between light and dark assets.
+  const heroImg = '/hero-light.webp';
+  const heroDims = { width: 1082, height: 848 };
+  const bgImg = '/hero-bg-light.webp';
 
   return (
     <Box
@@ -84,9 +80,8 @@ export default function Hero() {
           position: 'absolute',
           inset: 0,
           zIndex: -1,
-          background: isDark
-            ? `linear-gradient(180deg, ${alpha('#0B1524', 0.55)} 0%, ${alpha('#0B1524', 0.35)} 45%, ${alpha('#0B1524', 0.75)} 100%)`
-            : `linear-gradient(180deg, ${alpha('#FFFFFF', 0.35)} 0%, ${alpha('#FFFFFF', 0.1)} 45%, ${alpha('#FFFFFF', 0.55)} 100%)`,
+          background:
+            'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.55) 100%)',
         }}
       />
 
@@ -203,9 +198,9 @@ export default function Hero() {
                 borderRadius: 999,
                 width: 'fit-content',
                 maxWidth: '100%',
-                bgcolor: (th) => alpha(th.palette.secondary.main, isDark ? 0.22 : 0.28),
+                bgcolor: 'rgba(246, 196, 83, 0.28)',
                 border: '1px solid',
-                borderColor: (th) => alpha(th.palette.secondary.main, 0.5),
+                borderColor: 'rgba(246, 196, 83, 0.5)',
               }}
             >
               <Box component="span" sx={{ fontSize: 16, lineHeight: 1 }}>

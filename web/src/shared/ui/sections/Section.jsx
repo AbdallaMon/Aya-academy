@@ -1,9 +1,8 @@
-'use client';
-
 // Section — the shared rhythm primitive for the marketing homepage. Gives every
 // section consistent vertical spacing, an optional centered heading block
-// (eyebrow + title + subtitle), and a container. Colors come from the LIVE MUI
-// theme (so light/dark toggling is instant) — never from a static pageTheme prop.
+// (eyebrow + title + subtitle), and a container. It has no browser state, so it
+// stays a Server Component; interactive children can still be small client
+// islands without pulling the whole section into the client bundle.
 
 import { Box, Container, Typography } from '@mui/material';
 import Eyebrow from '@/shared/ui/Eyebrow.jsx';

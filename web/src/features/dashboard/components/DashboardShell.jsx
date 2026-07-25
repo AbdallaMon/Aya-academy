@@ -8,7 +8,7 @@
 // - Sidebar links are role + permission gated (DashboardNav, inside
 //   DashboardSidebar).
 // - The sidebar (desktop) and drawer (mobile) both span the full viewport height.
-// - Topbar (DashboardTopbar) carries the theme toggle, notification bell + user menu.
+// - Topbar (DashboardTopbar) carries language, notifications + the user menu.
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -23,7 +23,6 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath, stripLocale } from "../../../i18n/routing.js";
-import { useThemeToggler } from "../../../providers/ThemeToggler.jsx";
 import DashboardSidebar from "./DashboardSidebar.jsx";
 import DashboardTopbar from "./DashboardTopbar.jsx";
 import { useDashboardText } from "../config/dashboardText.js";
@@ -38,7 +37,6 @@ export default function DashboardShell({ children }) {
   const pathname = usePathname();
   const txt = useDashboardText();
   const { lng } = useTranslation();
-  const { theme: mode, toggleTheme } = useThemeToggler();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isLoggedIn, validatingAuth, logout } = useAuth();
@@ -157,8 +155,6 @@ export default function DashboardShell({ children }) {
           txt={txt}
           role={role}
           pageTitle={pageTitle}
-          mode={mode}
-          toggleTheme={toggleTheme}
           displayName={displayName}
           initial={initial}
           lng={lng}

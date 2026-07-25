@@ -9,11 +9,13 @@ export default function ServiceDetailsPage({ lng, service }) {
   const text = getServicePageText(language);
   const serviceCopy = serviceText(service, language);
   const facts = [
-    { title: text.audienceTitle, body: text.audience },
+    { title: text.audienceTitle, body: serviceCopy.audience || text.audience },
     { title: text.focusTitle, body: serviceCopy.focus },
-    { title: text.formatTitle, body: text.format },
-    { title: text.durationTitle, body: text.duration },
+    { title: text.formatTitle, body: serviceCopy.format || text.format },
+    { title: text.durationTitle, body: serviceCopy.duration || text.duration },
   ];
+  const sections = serviceCopy.sections || [];
+  const faqs = serviceCopy.faqs || [];
 
   return (
     <>
@@ -37,6 +39,74 @@ export default function ServiceDetailsPage({ lng, service }) {
           ))}
         </Stack>
       </MarketingSection>
+
+      {sections.length > 0 && (
+        <MarketingSection
+          alt
+          maxWidth="md"
+          eyebrow={text.detailsEyebrow}
+          title={text.detailsTitle}
+        >
+          <Stack spacing={2.5}>
+            {sections.map((section) => (
+              <Box
+                key={section.title}
+                sx={{
+                  p: { xs: 2.5, md: 3.5 },
+                  borderRadius: 4,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                  {section.title}
+                </Typography>
+                <Typography color="text.secondary" sx={{ lineHeight: 1.9 }}>
+                  {section.body}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </MarketingSection>
+      )}
+
+      {faqs.length > 0 && (
+        <MarketingSection maxWidth="md" title={text.faqTitle}>
+          <Stack spacing={1.5}>
+            {faqs.map((item, index) => (
+              <Box
+                component="details"
+                key={item.q}
+                open={index === 0}
+                sx={{
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  component="summary"
+                  sx={{
+                    px: { xs: 2, md: 3 },
+                    py: 2,
+                    cursor: 'pointer',
+                    fontWeight: 800,
+                    color: 'text.primary',
+                  }}
+                >
+                  {item.q}
+                </Box>
+                <Typography color="text.secondary" sx={{ px: { xs: 2, md: 3 }, pb: 2.5, lineHeight: 1.9 }}>
+                  {item.a}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </MarketingSection>
+      )}
 
       <MarketingSection alt maxWidth="md">
         <Box sx={{ textAlign: 'center', p: { xs: 3, md: 5 }, borderRadius: 5, border: '1px solid', borderColor: 'primary.main', bgcolor: 'background.default' }}>

@@ -31,7 +31,6 @@ export async function generateMetadata({ params }) {
     path: `/blog/${slug}`,
     title: pickL(article.title, lng),
     description: pickL(article.description, lng),
-    keywords: (article.tags || []).map((t) => pickL(t, lng)).filter(Boolean),
     image: `/og/blog/${slug}-${lng === 'en' ? 'en' : 'ar'}.png`,
   });
 

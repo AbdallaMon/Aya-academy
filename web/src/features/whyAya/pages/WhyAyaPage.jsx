@@ -1,14 +1,12 @@
-'use client';
-
 // WhyAya — one merged "who we are / how it works / levels" section that replaces
 // the old About + HowItWorks + Levels + WhyAyah (which all repeated the same
 // "bilingual / kid-friendly / progress & badges" value props). Three internal
 // bands with their own rhythm so the page no longer reads as five identical
 // heading+grid blocks. Anchors preserved: section #why-ayah, bands #how-it-works
-// and #levels (the navbar links to these). Colours come from the live MUI theme.
+// and #levels (the navbar links to these). The copy and layout are static, so the
+// locale is passed from the route and the whole section renders on the server.
 
-import { Box, Chip, Stack, Typography, useTheme } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Chip, Stack, Typography } from '@mui/material';
 import { TbWorld } from 'react-icons/tb';
 import { FiHeart, FiBookOpen } from 'react-icons/fi';
 import { MdOutlinePersonAddAlt, MdStar } from 'react-icons/md';
@@ -17,10 +15,15 @@ import { PiHeadphonesLight } from 'react-icons/pi';
 import { SlBadge } from 'react-icons/sl';
 import Section from '@/shared/ui/sections/Section.jsx';
 import Eyebrow from '@/shared/ui/Eyebrow.jsx';
-import { useTranslation } from '@/i18n/client.js';
 
 const DIFF_ICONS = [TbWorld, FiHeart, FiBookOpen];
 const STEP_ICONS = [MdOutlinePersonAddAlt, IoVideocamOutline, PiHeadphonesLight, SlBadge];
+const ACCENTS = [
+  { main: '#F6C453', soft: 'rgba(246, 196, 83, 0.14)', shadow: 'rgba(246, 196, 83, 0.16)' },
+  { main: '#1ABC9C', soft: 'rgba(26, 188, 156, 0.14)', shadow: 'rgba(26, 188, 156, 0.16)' },
+  { main: '#1E6F5C', soft: 'rgba(30, 111, 92, 0.14)', shadow: 'rgba(30, 111, 92, 0.16)' },
+  { main: '#E74C3C', soft: 'rgba(231, 76, 60, 0.14)', shadow: 'rgba(231, 76, 60, 0.16)' },
+];
 
 const CONTENT = {
   ar: {
@@ -75,16 +78,8 @@ const CONTENT = {
   },
 };
 
-export function WhyAya() {
-  const theme = useTheme();
-  const { lng } = useTranslation();
+export function WhyAya({ lng = 'en' }) {
   const c = CONTENT[lng === 'en' ? 'en' : 'ar'];
-  const accents = [
-    theme.palette.secondary.main,
-    theme.palette.primary.main,
-    theme.palette.success.main,
-    theme.palette.error.main,
-  ];
 
   return (
     <Section id="why-ayah">
@@ -110,7 +105,7 @@ export function WhyAya() {
         <Stack spacing={1.5}>
           {c.diffs.map((d, i) => {
             const Icon = DIFF_ICONS[i];
-            const color = accents[(i + 1) % accents.length];
+            const accent = ACCENTS[(i + 1) % ACCENTS.length];
             return (
               <Stack
                 key={d.t}
@@ -125,7 +120,7 @@ export function WhyAya() {
                   borderColor: 'divider',
                 }}
               >
-                <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2.5, display: 'grid', placeItems: 'center', color, bgcolor: alpha(color, 0.12) }}>
+                <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent.main, bgcolor: accent.soft }}>
                   <Icon size={24} />
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
@@ -150,9 +145,9 @@ export function WhyAya() {
           scrollMarginTop: 90,
           borderRadius: { xs: 5, md: 6 },
           p: { xs: 3, md: 6 },
-          bgcolor: alpha(theme.palette.primary.main, 0.05),
+          bgcolor: 'rgba(26, 188, 156, 0.05)',
           border: '1px solid',
-          borderColor: alpha(theme.palette.primary.main, 0.12),
+          borderColor: 'rgba(26, 188, 156, 0.18)',
         }}
       >
         <Typography variant="h4" component="h3" fontWeight={800} sx={{ textAlign: 'center', mb: 1 }}>
@@ -167,7 +162,7 @@ export function WhyAya() {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: { xs: 4, md: 3 }, mt: 2 }}>
           {c.steps.map((s, i) => {
             const Icon = STEP_ICONS[i];
-            const accent = accents[i % accents.length];
+            const accent = ACCENTS[i % ACCENTS.length];
             return (
               <Box
                 key={s.t}
@@ -181,7 +176,7 @@ export function WhyAya() {
                   bgcolor: 'background.paper',
                   border: '1px solid',
                   borderColor: 'divider',
-                  boxShadow: `0 12px 28px ${alpha(accent, 0.12)}`,
+                  boxShadow: `0 12px 28px ${accent.shadow}`,
                   height: '100%',
                 }}
               >
@@ -200,13 +195,13 @@ export function WhyAya() {
                     height: 32,
                     px: 1,
                     borderRadius: 999,
-                    bgcolor: accent,
+                    bgcolor: accent.main,
                     color: '#fff',
                     fontSize: 15,
                     fontWeight: 900,
                     display: 'grid',
                     placeItems: 'center',
-                    boxShadow: `0 6px 14px ${alpha(accent, 0.4)}`,
+                    boxShadow: `0 6px 14px ${accent.shadow}`,
                     border: '3px solid',
                     borderColor: 'background.paper',
                   }}
@@ -224,8 +219,8 @@ export function WhyAya() {
                     borderRadius: '50%',
                     display: 'grid',
                     placeItems: 'center',
-                    color: accent,
-                    bgcolor: alpha(accent, 0.14),
+                    color: accent.main,
+                    bgcolor: accent.soft,
                   }}
                 >
                   <Icon size={32} />
@@ -249,7 +244,7 @@ export function WhyAya() {
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2.5 }}>
           {c.levels.map((level, i) => {
-            const accent = accents[i % accents.length];
+            const accent = ACCENTS[i % ACCENTS.length];
             return (
               <Box
                 key={level.title}
@@ -259,18 +254,18 @@ export function WhyAya() {
                   bgcolor: 'background.paper',
                   border: '1px solid',
                   borderColor: 'divider',
-                  borderTop: `4px solid ${accent}`,
-                  boxShadow: `0 10px 26px ${alpha(accent, 0.1)}`,
+                  borderTop: `4px solid ${accent.main}`,
+                  boxShadow: `0 10px 26px ${accent.shadow}`,
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                 }}
               >
                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                  <Box sx={{ width: 44, height: 44, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent, bgcolor: alpha(accent, 0.12) }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent.main, bgcolor: accent.soft }}>
                     <SlBadge size={22} />
                   </Box>
-                  <Chip size="small" label={level.age} sx={{ fontWeight: 700, bgcolor: alpha(accent, 0.1), color: accent }} />
+                  <Chip size="small" label={level.age} sx={{ fontWeight: 700, bgcolor: accent.soft, color: accent.main }} />
                 </Stack>
                 <Typography variant="h6" fontWeight={800}>
                   {level.title}
@@ -278,7 +273,7 @@ export function WhyAya() {
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5, lineHeight: 1.6, flex: 1 }}>
                   {level.desc}
                 </Typography>
-                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: accent }}>
+                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: accent.main }}>
                   <MdStar />
                   <Typography variant="caption" fontWeight={800}>
                     {level.reward}

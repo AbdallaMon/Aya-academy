@@ -1,5 +1,3 @@
-'use client';
-
 // Shared "playful gradient hero" surface — used by BOTH the real student
 // dashboard hero (StudentOverview) and the marketing dashboard preview
 // (childDashboard) so the two never drift. White text sits on the colored

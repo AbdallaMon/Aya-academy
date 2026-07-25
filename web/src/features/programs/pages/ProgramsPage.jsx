@@ -14,6 +14,8 @@ import { localePath } from '@/i18n/routing.js';
 
 const ICONS = {
   memorization: PiBookBookmark,
+  kidsQuran: PiBookBookmark,
+  adultQuran: PiBookOpenText,
   tajweed: PiWaveform,
   reading: PiBookOpenText,
   speaking: PiChatsCircle,
@@ -38,6 +40,8 @@ const CONTENT = {
 
 const FAMILY_BY_KEY = {
   memorization: 'quran',
+  kidsQuran: 'quran',
+  adultQuran: 'quran',
   tajweed: 'quran',
   reading: 'arabic',
   speaking: 'arabic',
@@ -49,6 +53,8 @@ const FAMILY_COLOR = { quran: 'primary', arabic: 'secondary', islamic: 'success'
 
 const PROGRAM_STYLE = {
   memorization: { color: '#0f766e', border: '#99d5cb' },
+  kidsQuran: { color: '#0e7490', border: '#9ccfdd' },
+  adultQuran: { color: '#4f46e5', border: '#bab7f4' },
   tajweed: { color: '#1d4ed8', border: '#a9bff5' },
   reading: { color: '#7c3aed', border: '#cbb6f6' },
   speaking: { color: '#c2410c', border: '#f2b99d' },

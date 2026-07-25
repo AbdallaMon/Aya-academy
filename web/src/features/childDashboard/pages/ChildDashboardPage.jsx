@@ -1,13 +1,11 @@
-'use client';
-
 // ChildDashboardHome — the ONE honest preview of the real product dashboard a
 // parent gets after signing up. It mirrors ONLY features that actually exist in
 // the dashboard: a gradient hero (points / level / rank), an active-subscription
 // chip with remaining hours, earned badges, and the top-students leaderboard.
 // It deliberately does NOT show per-Juz / per-ayah progress, "level progress %",
-// or streaks — those are not real features. Colours come from the live MUI theme.
+// or streaks — those are not real features. It has no browser state, so locale
+// copy is selected on the server and only native links remain interactive.
 
-import Link from 'next/link';
 import {
   Avatar,
   Box,
@@ -15,9 +13,7 @@ import {
   Chip,
   Stack,
   Typography,
-  useTheme,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import {
   MdStar,
   MdEmojiEvents,
@@ -27,9 +23,7 @@ import {
 import { GrAchievement } from 'react-icons/gr';
 import Section from '@/shared/ui/sections/Section.jsx';
 import Eyebrow from '@/shared/ui/Eyebrow.jsx';
-import { heroGradient, HeroStatPill } from '@/shared/ui/hero.jsx';
-import { iconColor } from '@/shared/ui/iconColor.js';
-import { useTranslation } from '@/i18n/client.js';
+import { HeroStatPill } from '@/shared/ui/hero.jsx';
 import { localePath } from '@/i18n/routing.js';
 
 const CONTENT = {
@@ -77,9 +71,7 @@ const CONTENT = {
 
 const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
-export function ChildDashboardHome() {
-  const theme = useTheme();
-  const { lng } = useTranslation();
+export function ChildDashboardHome({ lng = 'en' }) {
   const c = CONTENT[lng === 'en' ? 'en' : 'ar'];
   const card = c.card;
 
@@ -103,18 +95,18 @@ export function ChildDashboardHome() {
             bgcolor: 'background.paper',
             border: '1px solid',
             borderColor: 'divider',
-            boxShadow: `0 26px 60px ${alpha(theme.palette.primary.main, 0.18)}`,
+            boxShadow: '0 26px 60px rgba(26, 188, 156, 0.18)',
           }}
         >
           {/* faux app window bar */}
           <Stack direction="row" alignItems="center" spacing={0.75} sx={{ px: 1.25, py: 1 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: alpha(theme.palette.error.main, 0.7) }} />
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: alpha(theme.palette.warning.main, 0.8) }} />
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: alpha(theme.palette.success.main, 0.8) }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'rgba(231, 76, 60, 0.72)' }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'rgba(243, 156, 18, 0.82)' }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'rgba(30, 111, 92, 0.82)' }} />
             <Chip
               label={c.badgeOnCard}
               size="small"
-              sx={{ ml: 'auto', height: 22, fontSize: 11, fontWeight: 800, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' }}
+              sx={{ ml: 'auto', height: 22, fontSize: 11, fontWeight: 800, bgcolor: 'rgba(26, 188, 156, 0.1)', color: 'primary.main' }}
             />
           </Stack>
 
@@ -127,8 +119,8 @@ export function ChildDashboardHome() {
                 color: '#fff',
                 position: 'relative',
                 overflow: 'hidden',
-                background: heroGradient(theme),
-                boxShadow: `0 12px 28px ${alpha(theme.palette.primary.main, 0.4)}`,
+                background: 'linear-gradient(120deg, #1ABC9C 0%, #1E6F5C 100%)',
+                boxShadow: '0 12px 28px rgba(26, 188, 156, 0.32)',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
@@ -191,7 +183,7 @@ export function ChildDashboardHome() {
                 </Typography>
                 <Stack direction="row" gap={1} sx={{ mt: 1 }}>
                   <Stack alignItems="center" spacing={0.5} sx={{ flex: 1 }}>
-                    <Avatar sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.18), color: 'secondary.main', width: 38, height: 38 }}>
+                    <Avatar sx={{ bgcolor: 'rgba(246, 196, 83, 0.18)', color: 'secondary.main', width: 38, height: 38 }}>
                       <MdStar size={20} />
                     </Avatar>
                     <Typography variant="caption" align="center" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
@@ -199,7 +191,7 @@ export function ChildDashboardHome() {
                     </Typography>
                   </Stack>
                   <Stack alignItems="center" spacing={0.5} sx={{ flex: 1 }}>
-                    <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.15), color: 'primary.main', width: 38, height: 38 }}>
+                    <Avatar sx={{ bgcolor: 'rgba(26, 188, 156, 0.15)', color: 'primary.main', width: 38, height: 38 }}>
                       <GrAchievement size={18} />
                     </Avatar>
                     <Typography variant="caption" align="center" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
@@ -211,7 +203,9 @@ export function ChildDashboardHome() {
 
               <Box sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                 <Stack direction="row" alignItems="center" spacing={0.75}>
-                  <MdEmojiEvents color={iconColor(theme, 'secondary')} size={16} />
+                  <Box component="span" sx={{ display: 'inline-flex', color: 'secondary.main' }}>
+                    <MdEmojiEvents color="currentColor" size={16} />
+                  </Box>
                   <Typography variant="caption" fontWeight={800} color="text.secondary">
                     {card.leaderboard}
                   </Typography>
@@ -246,7 +240,7 @@ export function ChildDashboardHome() {
             {c.intro}
           </Typography>
           <Button
-            component={Link}
+            component="a"
             href={localePath(lng, '/register')}
             variant="contained"
             size="large"

@@ -1,5 +1,3 @@
-'use client';
-
 // FreeSessionPromo — a bold promo banner that drives registration BEFORE any
 // paid subscription: "Book a free session". Sits at the END of the homepage
 // funnel as the closing CTA, right after the FAQ. Single, unambiguous primary
@@ -7,11 +5,8 @@
 // in PROMO. Uses the shared Section primitive so its rhythm matches every other
 // homepage section.
 
-import Link from 'next/link';
-import { Box, Button, Typography, useTheme } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Button, Typography } from '@mui/material';
 import { GiStarShuriken } from 'react-icons/gi';
-import { useTranslation } from '@/i18n/client.js';
 import { localePath } from '@/i18n/routing.js';
 import Section from '@/shared/ui/sections/Section.jsx';
 
@@ -34,11 +29,8 @@ const PROMO = {
   },
 };
 
-export default function FreeSessionPromo() {
-  const theme = useTheme();
-  const { lng } = useTranslation();
+export default function FreeSessionPromo({ lng = 'en' }) {
   const t = PROMO[lng === 'en' ? 'en' : 'ar'];
-  const isDark = theme.palette.mode === 'dark';
 
   return (
     <Section id="free-trial">
@@ -51,12 +43,12 @@ export default function FreeSessionPromo() {
           py: { xs: 4, md: 6 },
           textAlign: 'center',
           border: '1px solid',
-          borderColor: (th) => alpha(th.palette.primary.main, 0.35),
-          background: (th) =>
-            `radial-gradient(700px 320px at 0% 0%, ${alpha(th.palette.secondary.main, isDark ? 0.28 : 0.35)} 0%, transparent 60%),` +
-            `radial-gradient(700px 320px at 100% 100%, ${alpha(th.palette.primary.main, isDark ? 0.3 : 0.22)} 0%, transparent 60%),` +
-            th.palette.background.paper,
-          boxShadow: (th) => `0 24px 60px ${alpha(th.palette.primary.main, 0.18)}`,
+          borderColor: 'rgba(26, 188, 156, 0.38)',
+          bgcolor: 'background.paper',
+          backgroundImage:
+            'radial-gradient(700px 320px at 0% 0%, rgba(246, 196, 83, 0.28) 0%, transparent 60%),' +
+            'radial-gradient(700px 320px at 100% 100%, rgba(26, 188, 156, 0.24) 0%, transparent 60%)',
+          boxShadow: '0 24px 60px rgba(26, 188, 156, 0.18)',
         }}
       >
         <Typography
@@ -69,7 +61,7 @@ export default function FreeSessionPromo() {
             borderRadius: 999,
             fontWeight: 800,
             fontSize: 14,
-            bgcolor: (th) => alpha(th.palette.secondary.main, 0.35),
+            bgcolor: 'rgba(246, 196, 83, 0.35)',
             color: 'text.primary',
           }}
         >
@@ -91,7 +83,7 @@ export default function FreeSessionPromo() {
         </Typography>
 
         <Button
-          component={Link}
+          component="a"
           href={localePath(lng, '/register')}
           variant="contained"
           size="large"

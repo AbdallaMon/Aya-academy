@@ -5,7 +5,7 @@
 // (/ar ↔ /en). The cookie + i18n context flip immediately so direction updates
 // without a full reload.
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@mui/material';
 import { TbWorld } from 'react-icons/tb';
 import { useTranslation } from '@/i18n/client.js';
@@ -17,15 +17,17 @@ const TARGET_LABEL = { ar: 'العربية', en: 'English' };
 export function LanguageSwitch({ size = 'small' }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { lng, changeLanguage } = useTranslation();
 
   const other = lng === 'ar' ? 'en' : 'ar';
 
   const go = () => {
     changeLanguage(other); // flips dir + cookie immediately
-    const query = searchParams?.toString();
-    router.push(swapLocale(pathname, other) + (query ? `?${query}` : ''));
+    // Read the query only inside the click handler. `useSearchParams` would make
+    // every public page bail out of static rendering merely because the switch
+    // appears in the shared navbar/footer.
+    const query = typeof window === 'undefined' ? '' : window.location.search;
+    router.push(`${swapLocale(pathname, other)}${query}`);
   };
 
   return (

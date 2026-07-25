@@ -17,7 +17,6 @@ import { navSections, navHref, pickNav } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { localePath } from '@/i18n/routing.js';
-import { ThemeSwitch } from '@/shared/ui/buttons/ThemeSwitch';
 import { LanguageSwitch } from '@/shared/ui/buttons/LanguageSwitch.jsx';
 import NavbarBrand from './NavbarBrand';
 import NavbarCtaButton from './NavbarCtaButton';
@@ -58,7 +57,6 @@ export default function NavbarDrawer() {
           <LoginIcon lng={lng} />
         </IconButton>
       )}
-      <ThemeSwitch />
       <IconButton onClick={() => setOpen(true)} size="medium" aria-label={txt.menu} color="inherit">
         <IoMdMenu />
       </IconButton>

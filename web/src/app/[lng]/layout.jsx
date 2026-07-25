@@ -3,10 +3,8 @@ import {
   Geist_Mono,
 } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
 import '../globals.css';
 import 'react-toastify/dist/ReactToastify.css';
-import ThemeTogglerProvider from '@/providers/ThemeToggler';
 import AppProviders from '@/providers/AppProviders.jsx';
 import WhatsAppButton from '@/shared/components/feedback/WhatsAppButton.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
@@ -73,15 +71,11 @@ export async function generateMetadata({ params }) {
 }
 
 // Root layout for every page. The active locale comes from the [lng] URL
-// segment (Arabic default, RTL). Light/dark mode is read from the cookie for a
-// flash-free first paint; the client ThemeToggler takes over after hydration.
+// segment; Aya uses one stable light/green theme across marketing and dashboard.
 export default async function LocaleLayout({ children, params }) {
   const { lng } = await params;
   if (!languages.includes(lng)) notFound();
 
-  const cookieStore = await cookies();
-  const themeCookie = cookieStore.get('theme');
-  const pageTheme = themeCookie?.value === 'dark' ? 'dark' : 'light';
   const dir = getDirection(lng);
 
   return (
@@ -91,13 +85,11 @@ export default async function LocaleLayout({ children, params }) {
       >
         {/* Site-wide structured data: who we are + the site/languages. */}
         <JsonLd data={[organizationSchema(lng), websiteSchema(lng)]} />
-        <ThemeTogglerProvider defaultTheme={pageTheme}>
-          {/* AppProviders: i18n -> theme(RTL cache) -> dates -> auth -> toast */}
-          <AppProviders lng={lng} mode={pageTheme}>
-            {children}
-            <WhatsAppButton />
-          </AppProviders>
-        </ThemeTogglerProvider>
+        {/* AppProviders: i18n -> fixed theme(RTL cache) -> dates -> auth -> toast */}
+        <AppProviders lng={lng}>
+          {children}
+          <WhatsAppButton />
+        </AppProviders>
       </body>
     </html>
   );

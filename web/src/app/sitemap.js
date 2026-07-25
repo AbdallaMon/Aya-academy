@@ -3,18 +3,23 @@ import { localePath } from '@/i18n/routing.js';
 import { sortedArticles } from '@/features/blog';
 import { services } from '@/features/services/data.js';
 
-// PUBLIC, indexable routes only (the dashboard is auth-gated + noindex). Each
-// entry is emitted once per locale and cross-links its other-language variants
-// via hreflang `alternates.languages`, so Google understands the ar/en pairing.
+// PUBLIC, canonical, indexable routes only (the dashboard is auth-gated +
+// noindex). Service records are the source of truth, so every new public program
+// is included automatically on the very next deployment.
+const MARKETING_LAST_MODIFIED = '2026-07-25';
+const latestArticleDate = sortedArticles[0]?.dateModified
+  || sortedArticles[0]?.datePublished;
+
 const PUBLIC_PATHS = [
-  { path: '/', priority: 1.0, changeFrequency: 'weekly' },
-  { path: '/services', priority: 0.9, changeFrequency: 'monthly' },
-  { path: '/blog', priority: 0.8, changeFrequency: 'weekly' },
+  { path: '/', priority: 1.0, changeFrequency: 'weekly', lastModified: MARKETING_LAST_MODIFIED },
+  { path: '/services', priority: 0.9, changeFrequency: 'monthly', lastModified: MARKETING_LAST_MODIFIED },
+  { path: '/blog', priority: 0.8, changeFrequency: 'weekly', lastModified: latestArticleDate },
   { path: '/free-game', priority: 0.8, changeFrequency: 'monthly' },
   ...services.map((service) => ({
     path: `/services/${service.slug}`,
     priority: 0.8,
     changeFrequency: 'monthly',
+    lastModified: service.dateModified,
   })),
   // Every blog article (data-driven — new posts appear automatically). Each
   // carries its publish date as lastModified so crawlers schedule sensibly.

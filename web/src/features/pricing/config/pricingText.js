@@ -1,7 +1,3 @@
-"use client";
-
-import { useTranslation } from "../../../i18n/client.js";
-
 export const pricingText = {
   ar: {
     eyebrow: "الأسعار",
@@ -50,8 +46,3 @@ export const pricingText = {
     ],
   },
 };
-
-export function usePricingText() {
-  const { lng } = useTranslation();
-  return pricingText[lng === "en" ? "en" : "ar"];
-}

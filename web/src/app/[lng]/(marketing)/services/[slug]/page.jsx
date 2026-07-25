@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import ServiceDetailsPage from '@/features/services/pages/ServiceDetailsPage.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
-import { breadcrumbSchema, buildMetadata, SITE_URL } from '@/shared/lib/seo';
+import { breadcrumbSchema, buildMetadata, faqSchema, SITE_URL } from '@/shared/lib/seo';
 import { getService, getServicePageText, services, serviceText } from '@/features/services/data.js';
 import { localePath } from '@/i18n/routing.js';
 
@@ -21,7 +21,6 @@ export async function generateMetadata({ params }) {
     path: `/services/${slug}`,
     title: copy.title,
     description: copy.description,
-    keywords: copy.keywords,
     image: `/og/services/${slug}-${lng === 'en' ? 'en' : 'ar'}.png`,
   });
 }
@@ -35,14 +34,18 @@ export default async function ServiceDetailsRoute({ params }) {
   const text = getServicePageText(language);
   const copy = serviceText(service, language);
   const absolute = (path) => `${SITE_URL}${localePath(language, path)}`;
+  const structuredData = [
+    breadcrumbSchema([
+      { name: language === 'en' ? 'Home' : 'الرئيسية', url: absolute('/') },
+      { name: text.backToServices, url: absolute('/services') },
+      { name: copy.title, url: absolute(`/services/${slug}`) },
+    ]),
+    ...(copy.faqs?.length ? [faqSchema(copy.faqs)] : []),
+  ];
 
   return (
     <>
-      <JsonLd data={breadcrumbSchema([
-        { name: language === 'en' ? 'Home' : 'الرئيسية', url: absolute('/') },
-        { name: text.backToServices, url: absolute('/services') },
-        { name: copy.title, url: absolute(`/services/${slug}`) },
-      ])} />
+      <JsonLd data={structuredData} />
       <ServiceDetailsPage lng={language} service={service} />
     </>
   );

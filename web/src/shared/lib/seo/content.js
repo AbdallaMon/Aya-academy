@@ -2,7 +2,9 @@
 // i18n locale sections, but kept OUT of the runtime translation bundle because
 // this text is only ever read on the server inside generateMetadata().
 //
-// Each page provides: title, description, and optional keywords[].
+// Each page provides title and description. The optional keywords arrays are
+// editorial query maps only; buildMetadata deliberately does not emit the
+// ignored `<meta name="keywords">` tag.
 // `titleAbsolute: true` means "use this title verbatim" (no "… | Brand" suffix)
 // — used for the homepage, whose title already carries the brand.
 
@@ -30,10 +32,10 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Aya Academy — Online Quran Memorization & Islamic Studies for Adults & Kids",
+      title: "Online Quran Classes for Kids & Adults | Aya Academy",
       titleAbsolute: true,
       description:
-        "Learn and memorize the Quran, Tajweed, Arabic and Islamic studies online with qualified teachers — for adults and children ages 5 and up. Live interactive classes, progress tracking and a free trial session.",
+        "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
       keywords: [
         "online Quran memorization",
         "learn Quran online",
@@ -69,10 +71,10 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Aya Academy — Online Quran Memorization & Islamic Studies for Adults & Kids",
+      title: "Online Quran Classes for Kids & Adults | Aya Academy",
       titleAbsolute: true,
       description:
-        "Book a free trial at Aya Academy: online Quran memorization, Tajweed, Arabic and Islamic studies for adults and kids, with qualified teachers and live interactive classes.",
+        "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
       keywords: [
         "online Quran memorization",
         "Quran classes for adults and kids",

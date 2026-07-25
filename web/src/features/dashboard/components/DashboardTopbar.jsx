@@ -16,14 +16,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
-import { MdMenu, MdLogout, MdLightMode, MdDarkMode } from "react-icons/md";
+import { MdMenu, MdLogout } from "react-icons/md";
 import { LanguageSwitch } from "../../../shared/ui/buttons/LanguageSwitch.jsx";
 import NotificationBell from "../../notifications/components/NotificationBell.jsx";
 import { roleLabelKey } from "../config/navModel.js";
 
 /**
  * DashboardTopbar — the sticky top AppBar: mobile menu button, route-driven
- * section title, language/theme toggles, notification bell and the user menu.
+ * section title, language switch, notification bell and the user menu.
  * Pure presentational extraction from DashboardShell (the user-menu anchor
  * state is local to the bar).
  */
@@ -32,8 +32,6 @@ export default function DashboardTopbar({
   txt,
   role,
   pageTitle,
-  mode,
-  toggleTheme,
   displayName,
   initial,
   lng,
@@ -83,12 +81,6 @@ export default function DashboardTopbar({
 
         <Stack direction="row" alignItems="center" gap={0.5}>
           <LanguageSwitch />
-
-          <Tooltip title={mode === "dark" ? "Light" : "Dark"}>
-            <IconButton onClick={toggleTheme} color="inherit">
-              {mode === "dark" ? <MdLightMode /> : <MdDarkMode />}
-            </IconButton>
-          </Tooltip>
 
           <NotificationBell />
 

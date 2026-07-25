@@ -1,21 +1,15 @@
-'use client';
-
 // FAQ — answers the parent's common objections in one place, right after pricing
 // and just before the closing CTA, to remove friction before they decide.
 // Content lives in ./faqData.js (shared with the homepage FAQPage JSON-LD so the
-// structured data always matches what the user sees). Keep answers honest.
+// structured data always matches what the user sees). Native details/summary
+// keeps the accordion accessible and interactive without client JavaScript.
 
-import { Stack, Typography } from '@mui/material';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
+import { Box, Stack, Typography } from '@mui/material';
 import { MdExpandMore } from 'react-icons/md';
 import Section from '@/shared/ui/sections/Section.jsx';
-import { useTranslation } from '@/i18n/client.js';
 import { getFaq } from '../faqData.js';
 
-export default function FAQ() {
-  const { lng } = useTranslation();
+export default function FAQ({ lng = 'en' }) {
   const c = getFaq(lng);
 
   return (
@@ -28,26 +22,36 @@ export default function FAQ() {
     >
       <Stack spacing={1.5}>
         {c.items.map((item, i) => (
-          <Accordion
-            key={i}
-            defaultExpanded={i === 0}
-            disableGutters
-            elevation={0}
+          <Box
+            component="details"
+            key={item.q}
+            open={i === 0}
             sx={{
               borderRadius: 3,
               border: '1px solid',
               borderColor: 'divider',
               bgcolor: 'background.paper',
-              '&:before': { display: 'none' },
               overflow: 'hidden',
+              '&[open] [data-faq-icon]': { transform: 'rotate(180deg)' },
             }}
           >
-            <AccordionSummary
-              expandIcon={<MdExpandMore size={24} />}
+            <Box
+              component="summary"
               sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
                 px: { xs: 2, md: 3 },
-                py: 1,
-                '& .MuiAccordionSummary-content': { my: 1.5 },
+                py: { xs: 2, md: 2.5 },
+                cursor: 'pointer',
+                listStyle: 'none',
+                '&::-webkit-details-marker': { display: 'none' },
+                '&:focus-visible': {
+                  outline: '3px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: -3,
+                },
               }}
             >
               <Typography
@@ -58,8 +62,15 @@ export default function FAQ() {
               >
                 {item.q}
               </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ px: { xs: 2, md: 3 }, pb: 2.5, pt: 0 }}>
+              <Box
+                data-faq-icon
+                component="span"
+                sx={{ display: 'inline-flex', flexShrink: 0, color: 'primary.main', transition: 'transform .2s ease' }}
+              >
+                <MdExpandMore size={24} />
+              </Box>
+            </Box>
+            <Box sx={{ px: { xs: 2, md: 3 }, pb: 2.5, pt: 0 }}>
               <Typography
                 variant="body1"
                 color="text.secondary"
@@ -67,8 +78,8 @@ export default function FAQ() {
               >
                 {item.a}
               </Typography>
-            </AccordionDetails>
-          </Accordion>
+            </Box>
+          </Box>
         ))}
       </Stack>
     </Section>

@@ -35,17 +35,17 @@ export default async function Home({ params }) {
       {/* FAQPage mirrors the visible accordion; Course describes the program. */}
       <JsonLd data={[faqSchema(faq.items), courseSchema(lng)]} />
       <Hero />
-      <HeroReviews />
-      <WhyAya />
+      <HeroReviews lng={lng} />
+      <WhyAya lng={lng} />
       <Programs lng={lng} />
-      <ChildDashboardHome />
-      <Testimonials />
+      <ChildDashboardHome lng={lng} />
+      <Testimonials lng={lng} />
       <SafetyStrip lng={lng} />
       <Suspense>
-        <PricingSection />
+        <PricingSection lng={lng} />
       </Suspense>
-      <FAQ />
-      <FreeSessionPromo />
+      <FAQ lng={lng} />
+      <FreeSessionPromo lng={lng} />
     </>
   );
 }
