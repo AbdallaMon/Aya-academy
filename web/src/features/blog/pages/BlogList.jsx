@@ -15,15 +15,12 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { motion } from 'framer-motion';
 import { MdSearch, MdMenuBook } from 'react-icons/md';
 import { useTranslation } from '@/i18n/client.js';
 import { sortedArticles, blogCategories, presentCategories } from '../data/articles';
 import { pickBlogUi } from '../data/ui';
 import { pick } from '../lib/helpers';
 import ArticleCard from '../components/ArticleCard';
-
-const MotionBox = motion.create(Box);
 
 export default function BlogList() {
   const { lng } = useTranslation();
@@ -57,7 +54,7 @@ export default function BlogList() {
   };
 
   return (
-    <Box component="main">
+    <Box>
       {/* Hero header */}
       <Box
         sx={{
@@ -86,7 +83,7 @@ export default function BlogList() {
             color="primary"
             sx={{ fontWeight: 800, mb: 2, px: 0.5 }}
           />
-          <Typography variant="h2" sx={{ mb: 2, fontWeight: 900 }}>
+          <Typography variant="h1" component="h1" sx={{ mb: 2, fontWeight: 900 }}>
             {ui.title}
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', lineHeight: 1.8 }}>
@@ -144,17 +141,13 @@ export default function BlogList() {
               gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
             }}
           >
-            {filtered.map((a, i) => (
-              <MotionBox
+            {filtered.map((a) => (
+              <Box
                 key={a.slug}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.3) }}
                 sx={{ height: '100%' }}
               >
                 <ArticleCard article={a} lng={lng} categoryLabel={catLabelOf(a)} />
-              </MotionBox>
+              </Box>
             ))}
           </Box>
         ) : (

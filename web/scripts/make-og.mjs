@@ -21,6 +21,8 @@ import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sortedArticles } from '../src/features/blog/data/articles.js';
+import { services } from '../src/features/services/data.js';
 
 const WEB_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PUBLIC = path.join(WEB_ROOT, 'public');
@@ -188,6 +190,48 @@ const cardHtml = (L) => {
 </div></body></html>`;
 };
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Unique, text-led cards for pages that people share individually. These use the
+// same browser-rendered Cairo setup as the brand card, so Arabic shaping stays
+// correct and no server-time image generation is required.
+function detailCardHtml({ lng, kind, title, description }) {
+  const isAr = lng === 'ar';
+  const eyebrow = kind === 'blog'
+    ? (isAr ? 'مدوّنة أكاديمية آية' : 'Aya Academy Blog')
+    : (isAr ? 'برنامج من أكاديمية آية' : 'Aya Academy Program');
+  const label = kind === 'blog'
+    ? (isAr ? 'اقرأ المقال' : 'Read the article')
+    : (isAr ? 'احجز حصة مجانية' : 'Book a free session');
+
+  return `<!doctype html><html dir="${isAr ? 'rtl' : 'ltr'}" lang="${lng}"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0} html,body{width:${W}px;height:${H}px} body{font-family:Cairo,sans-serif;-webkit-font-smoothing:antialiased}
+.card{position:relative;width:${W}px;height:${H}px;overflow:hidden;padding:68px 76px;background:radial-gradient(56% 80% at 0% 0%,rgba(26,188,156,.23),transparent 64%),radial-gradient(58% 80% at 100% 100%,rgba(246,196,83,.27),transparent 64%),${C.cream};color:${C.ink}}
+.frame{position:absolute;inset:18px;border:2px solid rgba(14,140,116,.2);border-radius:34px}.dots{position:absolute;inset:0;background-image:radial-gradient(rgba(14,140,116,.11) 2px,transparent 2px);background-size:34px 34px;opacity:.85}
+.copy{position:relative;width:72%;height:100%;display:flex;flex-direction:column;justify-content:center}.eyebrow{color:${C.goldDeep};font-size:24px;font-weight:800;letter-spacing:.3px;margin-bottom:20px}.title{font-size:54px;font-weight:800;line-height:1.28;letter-spacing:-.7px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.description{font-size:24px;font-weight:600;line-height:1.6;color:${C.mut};margin-top:20px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pill{margin-top:30px;align-self:flex-start;padding:12px 22px;border-radius:999px;background:rgba(26,188,156,.13);border:1.5px solid rgba(14,140,116,.4);font-size:20px;font-weight:800}.mark{position:absolute;${isAr ? 'left' : 'right'}:76px;top:72px;width:190px;height:190px;border-radius:42px;display:grid;place-items:center;background:linear-gradient(135deg,${C.teal},${C.tealDeep});box-shadow:0 24px 50px rgba(14,52,46,.22)}.mark img{width:142px;filter:drop-shadow(0 10px 16px rgba(14,52,46,.2))}.brand{position:absolute;bottom:48px;${isAr ? 'left' : 'right'}:82px;color:${C.tealDeep};font-size:20px;font-weight:800;letter-spacing:.5px}
+</style></head><body><div class="card"><div class="dots"></div><div class="frame"></div><div class="mark"><img src="${logo}" alt=""></div><div class="copy"><div class="eyebrow">${escapeHtml(eyebrow)}</div><div class="title">${escapeHtml(title)}</div><div class="description">${escapeHtml(description)}</div><div class="pill">${escapeHtml(label)}</div></div><div class="brand">ayah.academy</div></div></body></html>`;
+}
+
+async function renderPng(browser, html) {
+  const context = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
+  const page = await context.newPage();
+  await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
+  await page.evaluate(async () => { await document.fonts.ready; });
+  const shot = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: W, height: H } });
+  await context.close();
+  return sharp(shot).resize(W, H).png({ compressionLevel: 9 }).toBuffer();
+}
+
 const EXE = resolveChrome();
 console.log(`engine → ${EXE}`);
 const browser = await chromium.launch({ executablePath: EXE, headless: true, args: ['--no-sandbox'] });
@@ -210,6 +254,31 @@ try {
     fs.writeFileSync(path.join(PUBLIC, jpgName), jpg);
 
     console.log(`${L.id} → public/${pngName} (${Math.round(png.length / 1024)}KB) + public/${jpgName} (${Math.round(jpg.length / 1024)}KB)`);
+  }
+  const detailCards = [
+    ...sortedArticles.flatMap((article) => LOCALES.map((locale) => ({
+      kind: 'blog',
+      slug: article.slug,
+      lng: locale.id,
+      title: article.title[locale.id],
+      description: article.description[locale.id],
+    }))),
+    ...services.flatMap((service) => LOCALES.map((locale) => ({
+      kind: 'services',
+      slug: service.slug,
+      lng: locale.id,
+      title: service[locale.id].title,
+      description: service[locale.id].description,
+    }))),
+  ];
+
+  for (const card of detailCards) {
+    const dir = path.join(PUBLIC, 'og', card.kind);
+    fs.mkdirSync(dir, { recursive: true });
+    const png = await renderPng(browser, detailCardHtml(card));
+    const file = path.join(dir, `${card.slug}-${card.lng}.png`);
+    fs.writeFileSync(file, png);
+    console.log(`${card.kind}/${card.slug}-${card.lng}.png (${Math.round(png.length / 1024)}KB)`);
   }
 } finally {
   await browser.close();

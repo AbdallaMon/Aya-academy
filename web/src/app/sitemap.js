@@ -1,16 +1,21 @@
 import { SITE_URL, languages, fallbackLng } from '@/shared/lib/seo';
 import { localePath } from '@/i18n/routing.js';
 import { sortedArticles } from '@/features/blog';
+import { services } from '@/features/services/data.js';
 
 // PUBLIC, indexable routes only (the dashboard is auth-gated + noindex). Each
 // entry is emitted once per locale and cross-links its other-language variants
 // via hreflang `alternates.languages`, so Google understands the ar/en pairing.
 const PUBLIC_PATHS = [
   { path: '/', priority: 1.0, changeFrequency: 'weekly' },
+  { path: '/services', priority: 0.9, changeFrequency: 'monthly' },
   { path: '/blog', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/free-game', priority: 0.8, changeFrequency: 'monthly' },
-  { path: '/register', priority: 0.7, changeFrequency: 'monthly' },
-  { path: '/login', priority: 0.5, changeFrequency: 'yearly' },
+  ...services.map((service) => ({
+    path: `/services/${service.slug}`,
+    priority: 0.8,
+    changeFrequency: 'monthly',
+  })),
   // Every blog article (data-driven — new posts appear automatically). Each
   // carries its publish date as lastModified so crawlers schedule sensibly.
   ...sortedArticles.map((a) => ({

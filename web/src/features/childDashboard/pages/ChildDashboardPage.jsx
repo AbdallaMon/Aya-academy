@@ -18,7 +18,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { motion } from 'framer-motion';
 import {
   MdStar,
   MdEmojiEvents,
@@ -76,7 +75,6 @@ const CONTENT = {
   },
 };
 
-const MotionBox = motion.create(Box);
 const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
 export function ChildDashboardHome() {
@@ -96,11 +94,7 @@ export function ChildDashboardHome() {
         }}
       >
         {/* ── Live-looking, honest dashboard preview ───────────────── */}
-        <MotionBox
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.5 }}
+        <Box
           sx={{
             order: { xs: 2, md: 1 },
             position: 'relative',
@@ -240,7 +234,7 @@ export function ChildDashboardHome() {
               </Box>
             </Box>
           </Box>
-        </MotionBox>
+        </Box>
 
         {/* ── Copy + CTA (no feature list — that lives in WhyAya) ───── */}
         <Box sx={{ order: { xs: 1, md: 2 } }}>

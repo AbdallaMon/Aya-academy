@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { cookies } from 'next/headers';
 import Hero from '@/features/hero/pages/HeroPage.jsx';
 import HeroReviews from '@/features/reviews/pages/HeroReviews';
 import { WhyAya } from '@/features/whyAya/pages/WhyAyaPage.jsx';
@@ -29,26 +28,23 @@ export async function generateMetadata({ params }) {
 // biggest objection at the moment of decision.
 export default async function Home({ params }) {
   const { lng } = await params;
-  const cookieStore = await cookies();
-  const themeCookie = cookieStore.get('theme');
-  const pageTheme = themeCookie?.value === 'dark' ? 'dark' : 'light';
   // FAQPage structured data — mirrors the visible FAQ accordion (same source).
   const faq = getFaq(lng);
   return (
     <>
       {/* FAQPage mirrors the visible accordion; Course describes the program. */}
       <JsonLd data={[faqSchema(faq.items), courseSchema(lng)]} />
-      <Hero pageTheme={pageTheme} />
-      <HeroReviews pageTheme={pageTheme} />
+      <Hero />
+      <HeroReviews />
       <WhyAya />
-      <Programs />
+      <Programs lng={lng} />
       <ChildDashboardHome />
       <Testimonials />
-      <SafetyStrip />
+      <SafetyStrip lng={lng} />
       <Suspense>
         <PricingSection />
       </Suspense>
-      <FAQ pageTheme={pageTheme} />
+      <FAQ />
       <FreeSessionPromo />
     </>
   );

@@ -125,11 +125,7 @@ export default function Hero() {
           }}
         >
           {/* Copy */}
-          <MotionBox
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <Box>
             <Chip
               label={t.eyebrow}
               sx={{
@@ -230,7 +226,7 @@ export default function Hero() {
                 />
               ))}
             </Stack>
-          </MotionBox>
+          </Box>
 
           {/* Illustration */}
           <MotionBox

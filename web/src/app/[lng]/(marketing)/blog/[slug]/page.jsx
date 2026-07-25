@@ -6,7 +6,6 @@ import {
   articleSchema,
   breadcrumbSchema,
   SITE_URL,
-  ogImages,
   getSeo,
 } from '@/shared/lib/seo';
 import { localePath } from '@/i18n/routing.js';
@@ -26,14 +25,26 @@ export async function generateMetadata({ params }) {
   const article = getArticle(slug);
   if (!article) return buildMetadata({ lng, page: 'blog', path: '/blog' });
 
-  return buildMetadata({
+  const metadata = buildMetadata({
     lng,
     page: 'blog',
     path: `/blog/${slug}`,
     title: pickL(article.title, lng),
     description: pickL(article.description, lng),
     keywords: (article.tags || []).map((t) => pickL(t, lng)).filter(Boolean),
+    image: `/og/blog/${slug}-${lng === 'en' ? 'en' : 'ar'}.png`,
   });
+
+  return {
+    ...metadata,
+    openGraph: {
+      ...metadata.openGraph,
+      type: 'article',
+      publishedTime: article.datePublished,
+      modifiedTime: article.dateModified || article.datePublished,
+      authors: [lng === 'en' ? 'Aya Academy' : 'أكاديمية آية'],
+    },
+  };
 }
 
 export default async function BlogArticleRoute({ params }) {
@@ -41,6 +52,7 @@ export default async function BlogArticleRoute({ params }) {
   const article = getArticle(slug);
   if (!article) notFound();
 
+  const language = lng === 'en' ? 'en' : 'ar';
   const url = abs(lng, `/blog/${slug}`);
   const blogLabel = getSeo('blog', lng)?.title || (lng === 'en' ? 'Blog' : 'المدوّنة');
   const jsonLd = [
@@ -51,7 +63,7 @@ export default async function BlogArticleRoute({ params }) {
       description: pickL(article.description, lng),
       datePublished: article.datePublished,
       dateModified: article.dateModified || article.datePublished,
-      image: `${SITE_URL}${ogImages(lng)[0].url}`,
+      image: `${SITE_URL}/og/blog/${slug}-${language}.png`,
       keywords: (article.tags || []).map((t) => pickL(t, lng)).filter(Boolean),
     }),
     breadcrumbSchema([

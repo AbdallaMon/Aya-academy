@@ -9,7 +9,6 @@
 
 import { Box, Chip, Stack, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { motion } from 'framer-motion';
 import { TbWorld } from 'react-icons/tb';
 import { FiHeart, FiBookOpen } from 'react-icons/fi';
 import { MdOutlinePersonAddAlt, MdStar } from 'react-icons/md';
@@ -75,8 +74,6 @@ const CONTENT = {
     ],
   },
 };
-
-const MotionBox = motion.create(Box);
 
 export function WhyAya() {
   const theme = useTheme();
@@ -172,13 +169,8 @@ export function WhyAya() {
             const Icon = STEP_ICONS[i];
             const accent = accents[i % accents.length];
             return (
-              <MotionBox
+              <Box
                 key={s.t}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                whileHover={{ y: -6 }}
                 sx={{
                   position: 'relative',
                   textAlign: 'center',
@@ -244,7 +236,7 @@ export function WhyAya() {
                 <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                   {s.d}
                 </Typography>
-              </MotionBox>
+              </Box>
             );
           })}
         </Box>
@@ -259,13 +251,8 @@ export function WhyAya() {
           {c.levels.map((level, i) => {
             const accent = accents[i % accents.length];
             return (
-              <MotionBox
+              <Box
                 key={level.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                whileHover={{ y: -6 }}
                 sx={{
                   p: 2.5,
                   borderRadius: 4,
@@ -297,7 +284,7 @@ export function WhyAya() {
                     {level.reward}
                   </Typography>
                 </Stack>
-              </MotionBox>
+              </Box>
             );
           })}
         </Box>

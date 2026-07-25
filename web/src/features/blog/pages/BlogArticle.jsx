@@ -35,7 +35,7 @@ export default function BlogArticle({ slug }) {
   const catLabel = catKey && blogCategories[catKey] ? pick(blogCategories[catKey], lng) : null;
 
   return (
-    <Box component="main">
+    <Box>
       {/* Hero header */}
       <Box
         sx={{

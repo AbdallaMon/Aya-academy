@@ -1,11 +1,6 @@
 import {
   Cairo,
   Geist_Mono,
-  Amiri,
-  Scheherazade_New,
-  Reem_Kufi,
-  Aref_Ruqaa,
-  Noto_Naskh_Arabic,
 } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -36,43 +31,6 @@ const cairo = Cairo({
 const geistMono = Geist_Mono({
   variable: '--font-mono',
   subsets: ['latin'],
-});
-
-// Certificate display fonts (the admin-pickable heading/name styles). SELF-HOSTED
-// via next/font so they load same-origin from /_next/static. This is what makes
-// them embeddable by html-to-image at PDF/PNG/print time: the previous Google
-// Fonts @import served them cross-origin (fonts.gstatic.com), which the exporter
-// cannot inline — so exported certificates silently fell back to a default font.
-// Each is exposed as a CSS variable consumed by FONT_STACKS (certificates config).
-// Reem Kufi + Noto Naskh Arabic are variable fonts (no explicit weight); the rest
-// are static and must declare their weights.
-const amiri = Amiri({
-  variable: '--font-amiri',
-  weight: ['400', '700'],
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const scheherazade = Scheherazade_New({
-  variable: '--font-scheherazade',
-  weight: ['400', '700'],
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const reemKufi = Reem_Kufi({
-  variable: '--font-reem-kufi',
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const arefRuqaa = Aref_Ruqaa({
-  variable: '--font-aref-ruqaa',
-  weight: ['400', '700'],
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const notoNaskh = Noto_Naskh_Arabic({
-  variable: '--font-noto-naskh',
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
 });
 
 export function generateStaticParams() {
@@ -129,7 +87,7 @@ export default async function LocaleLayout({ children, params }) {
   return (
     <html lang={lng} dir={dir} suppressHydrationWarning>
       <body
-        className={`${cairo.variable} ${geistMono.variable} ${amiri.variable} ${scheherazade.variable} ${reemKufi.variable} ${arefRuqaa.variable} ${notoNaskh.variable}`}
+        className={`${cairo.variable} ${geistMono.variable}`}
       >
         {/* Site-wide structured data: who we are + the site/languages. */}
         <JsonLd data={[organizationSchema(lng), websiteSchema(lng)]} />

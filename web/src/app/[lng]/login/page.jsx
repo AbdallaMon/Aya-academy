@@ -4,7 +4,7 @@ import { buildMetadata } from '@/shared/lib/seo';
 
 export async function generateMetadata({ params }) {
   const { lng } = await params;
-  return buildMetadata({ lng, page: 'login', path: '/login' });
+  return buildMetadata({ lng, page: 'login', path: '/login', index: false });
 }
 
 export default function LoginPage() {

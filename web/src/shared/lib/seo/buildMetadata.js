@@ -52,6 +52,10 @@ export function buildMetadata({
   };
   const brandName = brand(lng);
   const canonical = localePath(lng, path);
+  const brandKeywords = lng === "en"
+    ? ["Aya Academy"]
+    : ["أكاديمية آية", "اكاديمية ايه", "اكاديمية اية"];
+  const keywords = [...new Set([...(seo.keywords || []), ...brandKeywords])];
 
   // Per-item override (e.g. a blog article cover) → that one image; otherwise the
   // brand card for THIS locale (Arabic vs English), in both PNG (crisp) and JPEG
@@ -77,7 +81,7 @@ export function buildMetadata({
     metadataBase: new URL(SITE_URL),
     title,
     description: seo.description,
-    ...(seo.keywords ? { keywords: seo.keywords } : {}),
+    keywords,
     alternates: {
       canonical,
       languages: buildLanguageAlternates(path),

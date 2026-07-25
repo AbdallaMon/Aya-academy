@@ -1,28 +1,17 @@
-'use client';
-
-// SafetyStrip — a slim trust band answering the parent's #1 unspoken objection
-// ("who teaches my child, and is this safe?") right before the pricing section.
-// Intentionally short (one tinted band, 3 items) — not a full section. Claims are
-// kept honest and reuse what the dashboard/FAQ already promise (parent control +
-// cancel anytime). Colors come from the live MUI theme.
-
-import { Box, Stack, Typography, useTheme } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Stack, Typography } from '@mui/material';
 import { MdVerifiedUser, MdHealthAndSafety, MdFamilyRestroom } from 'react-icons/md';
-import Section from '@/shared/ui/sections/Section.jsx';
-import Eyebrow from '@/shared/ui/Eyebrow.jsx';
-import { useTranslation } from '@/i18n/client.js';
+import MarketingSection from '@/shared/ui/sections/MarketingSection.jsx';
 
 const ICONS = [MdVerifiedUser, MdHealthAndSafety, MdFamilyRestroom];
 
 const CONTENT = {
   ar: {
-    eyebrow: 'الأمان أولاً',
+    eyebrow: 'الأمان أولًا',
     title: 'بيئة آمنة يطمئن إليها كل وليّ أمر',
     items: [
       { t: 'معلّم واحد ثابت للطالب', d: 'معلّم مخصّص يرافق الطالب في كل حصة بلطفٍ وصبر.' },
       { t: 'حصص آمنة وموجّهة', d: 'جلسات هادئة ومناسبة للطلاب تمامًا.' },
-      { t: 'أنت المتحكّم دائمًا', d: 'تابع الطالب من لوحة ولي الأمر، وألغِ في أي وقت.' },
+      { t: 'أنت المتحكّم دائمًا', d: 'تابع الطالب من لوحة وليّ الأمر، وألغِ في أي وقت.' },
     ],
   },
   en: {
@@ -36,62 +25,29 @@ const CONTENT = {
   },
 };
 
-export default function SafetyStrip() {
-  const theme = useTheme();
-  const { lng } = useTranslation();
+// Static reassurance copy does not need the translation/theme hooks. Rendering
+// it on the server keeps it in the initial HTML and removes its client bundle.
+export default function SafetyStrip({ lng = 'ar' }) {
   const c = CONTENT[lng === 'en' ? 'en' : 'ar'];
 
   return (
-    <Section id="safety" sx={{ py: { xs: 5, md: 7 } }}>
-      <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
-        <Eyebrow sx={{ mb: 1 }}>{c.eyebrow}</Eyebrow>
-        <Typography variant="h4" component="h2" fontWeight={800}>
-          {c.title}
-        </Typography>
-      </Box>
-
-      <Box
-        sx={{
-          borderRadius: 4,
-          p: { xs: 2.5, md: 3.5 },
-          border: '1px solid',
-          borderColor: (th) => alpha(th.palette.primary.main, 0.25),
-          bgcolor: (th) => alpha(th.palette.primary.main, theme.palette.mode === 'light' ? 0.05 : 0.12),
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-          gap: { xs: 2.5, sm: 3 },
-        }}
-      >
-        {c.items.map((item, i) => {
-          const Icon = ICONS[i];
+    <MarketingSection id="safety" eyebrow={c.eyebrow} title={c.title} maxWidth="lg">
+      <Box sx={{ borderRadius: 4, p: { xs: 2.5, md: 3.5 }, border: '1px solid', borderColor: 'primary.main', bgcolor: 'background.paper', display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: { xs: 2.5, sm: 3 } }}>
+        {c.items.map((item, index) => {
+          const Icon = ICONS[index];
           return (
             <Stack key={item.t} direction="row" spacing={1.75} alignItems="flex-start">
-              <Box
-                sx={{
-                  flexShrink: 0,
-                  width: 46,
-                  height: 46,
-                  borderRadius: 2.5,
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: 'primary.main',
-                  bgcolor: (th) => alpha(th.palette.primary.main, 0.14),
-                }}
-              >
+              <Box sx={{ flexShrink: 0, width: 46, height: 46, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: 'primary.main', bgcolor: 'background.default' }}>
                 <Icon size={24} aria-hidden />
               </Box>
               <Box sx={{ minWidth: 0 }}>
-                <Typography fontWeight={800} sx={{ mb: 0.25 }}>
-                  {item.t}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  {item.d}
-                </Typography>
+                <Typography component="h3" fontWeight={800} sx={{ mb: 0.25 }}>{item.t}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>{item.d}</Typography>
               </Box>
             </Stack>
           );
         })}
       </Box>
-    </Section>
+    </MarketingSection>
   );
 }

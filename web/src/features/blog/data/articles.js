@@ -43,6 +43,160 @@ export const blogCategories = {
 // 'warning'|'info'). Covers are composed from theme tokens so they stay crisp in
 // light/dark and RTL — no raster assets to manage.
 const articles = [
+  {
+    slug: 'busy-adults-quran-plan',
+    datePublished: '2026-07-25',
+    readingTime: 8,
+    categories: ['adults', 'memorization', 'tips'],
+    emoji: '⏳',
+    accent: 'primary',
+    tags: [
+      { ar: 'للكبار', en: 'For adults' },
+      { ar: 'خطة حفظ', en: 'Memorization plan' },
+      { ar: 'المراجعة', en: 'Review' },
+    ],
+    title: {
+      ar: 'خطة واقعية للكبار المشغولين: كيف تثبت وردك مع القرآن بلا ضغط',
+      en: 'A Realistic Quran Plan for Busy Adults: Build a Steady Routine Without Pressure',
+    },
+    description: {
+      ar: 'الانشغال لا يعني أن تؤجّل القرآن. هذه خطة هادئة للكبار: وقت ثابت يسير، حفظ أو تلاوة بقدر متاح، ومراجعة تحمي ما أخذته — مستندة إلى آيات وأحاديث صحيحة.',
+      en: 'Being busy does not mean postponing the Quran. This gentle adult plan uses a small fixed time, manageable recitation or memorization, and review that protects what you learned — grounded in Quran and authentic hadith.',
+    },
+    body: [
+      {
+        type: 'p',
+        text: {
+          ar: 'أصعب ما يواجه الكبير المشغول ليس قلة الرغبة، بل انتظار الوقت المثالي: ساعة هادئة، طاقة كاملة، وخطة كبيرة. وغالبًا لا يأتي هذا الوقت. الطريق الأهدأ أن تجعل للقرآن موضعًا ثابتًا في يومك، ولو كان يسيرًا، ثم تبني عليه بلا انقطاع.',
+          en: 'The hardest thing for a busy adult is not lack of desire, but waiting for the perfect time: a quiet hour, full energy, and a grand plan. That time often never comes. A gentler path is to give the Quran one fixed place in your day — even a small one — and build on it without breaking the chain.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'ابدأ بما تيسّر، لا بما يرهقك', en: 'Start with what is manageable, not what exhausts you' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'ليس المطلوب أن تحمل في أول أسبوع ما لا يحتمله جدولك. تذكّر أن الله سبحانه ذكر أحوال المرض والسفر وطلب الرزق، ثم وجّه إلى قراءة ما يتيسّر من القرآن. فاختر قدرًا تستطيع الرجوع إليه غدًا، لا قدرًا يقطعك بعد أيام.',
+          en: 'You are not asked to carry more in your first week than your schedule can bear. Allah mentions illness, travel, and seeking provision, then directs us to recite what is manageable from the Quran. Choose an amount you can return to tomorrow, not an amount that stops you after a few days.',
+        },
+      },
+      {
+        type: 'ayah',
+        arabic: 'فَاقْرَءُوا مَا تَيَسَّرَ مِنَ الْقُرْآنِ',
+        surah: { ar: 'سورة المزمل — ٢٠', en: 'Surah Al-Muzzammil — 20' },
+        meaning: {
+          ar: 'اجعل بدايتك قابلة للاستمرار: تلاوة قصيرة أو آيات قليلة للحفظ والمراجعة، ثم زد حين يستقر الورد في يومك.',
+          en: 'Make your beginning sustainable: a short recitation or a few verses for memorization and review, then add more once the routine settles into your day.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'قاعدة الخطة: القليل الدائم', en: 'The plan’s rule: small and consistent' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'اختر وقتًا ثابتًا قريبًا من عادة ثابتة عندك: بعد صلاة، قبل بدء العمل، أو قبل النوم. لا تجعل نجاحك مرتبطًا بكمية كبيرة؛ اجعل نجاح اليوم هو الحضور إلى وردك. الثبات هو الذي يصنع تراكم الحفظ والفهم.',
+          en: 'Choose a fixed time beside a habit that is already fixed: after prayer, before work begins, or before sleep. Do not tie success to a large quantity; make showing up to your Quran time today the success. Consistency is what accumulates memorization and understanding.',
+        },
+      },
+      {
+        type: 'hadith',
+        arabic: 'أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ',
+        narrator: { ar: 'عائشة أم المؤمنين رضي الله عنها', en: 'Aisha, Mother of the Believers (may Allah be pleased with her)' },
+        source: { ar: 'صحيح مسلم (٧٨٣)، وصحيح البخاري (٦٤٦٥)', en: 'Sahih Muslim (783) and Sahih al-Bukhari (6465)' },
+        grade: { ar: 'صحيح', en: 'Sahih (authentic)' },
+        muhaddith: 'مسلم',
+        dorarUrl: 'https://dorar.net/h/NpZLQ79z?osoul=1',
+        explanation: {
+          ar: 'بدل أن تضع لنفسك برنامجًا ثقيلًا ثم تنقطع، اجعل وردك صغيرًا وواضحًا وداوم عليه. الزيادة تأتي بعد أن يصبح الباب مفتوحًا كل يوم.',
+          en: 'Instead of setting a heavy program and then stopping, make your daily Quran portion small, clear, and steady. Increase only after the door is open every day.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'قسّم وردك إلى ثلاث مهام بسيطة', en: 'Divide your Quran time into three simple jobs' },
+      },
+      {
+        type: 'ol',
+        items: [
+          { ar: 'ابدأ بما سبق حفظه أو قراءته: راجعه أولًا بهدوء حتى يبقى حاضرًا.', en: 'Begin with what you already memorized or read: review it calmly first so it stays present.' },
+          { ar: 'خذ قدرًا جديدًا مناسبًا ليومك: آية أو آيات أو مقطع قصير، من غير منافسة مع أحد.', en: 'Take a new amount that fits your day: one verse, a few verses, or a short passage — without competing with anyone.' },
+          { ar: 'اختم بتسميع ما أخذت: لنفسك أو لمعلّمك في الحصة المباشرة، ثم دوّن ما يحتاج تكرارًا غدًا.', en: 'End by reciting what you took: to yourself or to your teacher in the live session, then note what needs repetition tomorrow.' },
+        ],
+      },
+      {
+        type: 'callout',
+        tone: 'tip',
+        title: { ar: 'إن فاتك يوم', en: 'If you miss a day' },
+        text: {
+          ar: 'لا تحاول أن تعاقب نفسك بورد مضاعف في اليوم التالي. ارجع إلى حجمك المعتاد؛ المقصود أن تعود السلسلة، لا أن تتحول إلى عبء.',
+          en: 'Do not punish yourself with a doubled portion the next day. Return to your usual size; the goal is to restore the chain, not turn it into a burden.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'المراجعة ليست مرحلة إضافية', en: 'Review is not an extra stage' },
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'قد يبدو الجديد أجمل من المراجعة، لكن ما لم تراجعه يضعف سريعًا. اجعل جزءًا من وقتك لما سبق دائمًا، ولو لم تضف جديدًا في ذلك اليوم. هذا يحفظ علاقتك بما أخذته ويمنع التراكم المرهق.',
+          en: 'New material can feel more exciting than review, but what is not reviewed fades quickly. Always reserve part of your time for what came before, even if you add nothing new that day. This protects your connection with what you learned and prevents exhausting buildup.',
+        },
+      },
+      {
+        type: 'hadith',
+        arabic: 'تَعَاهَدُوا الْقُرْآنَ، فَوَالَّذِي نَفْسِي بِيَدِهِ لَهُوَ أَشَدُّ تَفَلُّتًا مِنَ الإِبِلِ فِي عُقُلِهَا',
+        narrator: { ar: 'أبو موسى الأشعري رضي الله عنه', en: 'Abu Musa al-Ash‘ari (may Allah be pleased with him)' },
+        source: { ar: 'صحيح البخاري (٥٠٣٣)، وصحيح مسلم (٧٩١)', en: 'Sahih al-Bukhari (5033) and Sahih Muslim (791)' },
+        grade: { ar: 'صحيح', en: 'Sahih (authentic)' },
+        muhaddith: 'البخاري ومسلم',
+        dorarUrl: 'https://dorar.net/h/j0Kxezx1?osoul=1',
+        explanation: {
+          ar: 'تعاهد القرآن يعني أن تترك للمراجعة مكانًا ثابتًا في خطتك، لا أن تؤجلها إلى أن يتراكم عليك المحفوظ.',
+          en: 'Keeping close to the Quran means giving review a fixed place in your plan, not delaying it until your memorized material piles up.',
+        },
+      },
+      {
+        type: 'h2',
+        text: { ar: 'اجعل الخطة تناسب يومك الحقيقي', en: 'Make the plan fit your real day' },
+      },
+      {
+        type: 'ul',
+        items: [
+          { ar: 'في اليوم الهادئ: زد قليلًا بعد إتمام المراجعة.', en: 'On a calm day: add a little after finishing review.' },
+          { ar: 'في اليوم المزدحم: اكتفِ بالمراجعة أو التلاوة حتى لا تنقطع.', en: 'On a busy day: keep only review or recitation so the habit does not break.' },
+          { ar: 'في الحصة المباشرة: دوّن التصحيح والنقطة الواحدة التي ستكررها قبل الحصة التالية.', en: 'In a live session: note the correction and the one point you will repeat before the next session.' },
+        ],
+      },
+      {
+        type: 'p',
+        text: {
+          ar: 'لا تقارن برنامجك ببرنامج متفرغ أو طالب بدأ في عمر مختلف. القرآن ميسّر، والباب المفتوح اليوم خير من الخطة المثالية المؤجلة. ابدأ بما تستطيع، واطلب من الله الثبات، ثم عد غدًا.',
+          en: 'Do not compare your plan with someone who has more free time or began at a different age. The Quran is made easy, and the door you open today is better than a perfect plan postponed. Begin with what you can do, ask Allah for steadiness, then return tomorrow.',
+        },
+      },
+      {
+        type: 'ayah',
+        arabic: 'وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ',
+        surah: { ar: 'سورة القمر — ١٧', en: 'Surah Al-Qamar — 17' },
+        meaning: {
+          ar: 'خذ من هذا الوعد طمأنينة للبداية، ثم اجعل الاستمرار عملك اليومي الهادئ.',
+          en: 'Take reassurance for your beginning from this promise, then make steady continuation your quiet daily work.',
+        },
+      },
+    ],
+    related: ['adults-start-quran-journey', 'review-plan-quran-retention'],
+    sources: [
+      { ar: 'القرآن الكريم — سورة المزمل: ٢٠', en: 'The Noble Quran — Al-Muzzammil: 20', url: 'https://quran.com/73/20' },
+      { ar: 'القرآن الكريم — سورة القمر: ١٧', en: 'The Noble Quran — Al-Qamar: 17', url: 'https://quran.com/54:17' },
+      { ar: 'حديث «أحب الأعمال إلى الله أدومها وإن قل» — صحيح مسلم وصحيح البخاري، الدرر السنية', en: 'Hadith: “The most beloved deeds to Allah are those done consistently” — Sahih Muslim and Sahih al-Bukhari, Dorar.net', url: 'https://dorar.net/h/NpZLQ79z?osoul=1' },
+      { ar: 'حديث «تعاهدوا القرآن» — صحيح البخاري وصحيح مسلم، الدرر السنية', en: 'Hadith: “Keep close to the Quran” — Sahih al-Bukhari and Sahih Muslim, Dorar.net', url: 'https://dorar.net/h/j0Kxezx1?osoul=1' },
+    ],
+  },
   // ───────────────────────────────────────────────────────────────────────────
   {
     slug: 'adults-start-quran-journey',
