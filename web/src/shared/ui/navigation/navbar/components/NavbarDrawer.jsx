@@ -13,7 +13,7 @@ import {
   Stack,
 } from '@mui/material';
 import { IoMdClose, IoMdMenu } from 'react-icons/io';
-import { navSections, navHref, pickNav } from '@/shared/data/navigation/navbar';
+import { navbarSections, navHref, pickNav } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { localePath } from '@/i18n/routing.js';
@@ -78,7 +78,7 @@ export default function NavbarDrawer() {
 
           {/* Section links */}
           <List>
-            {navSections.map((s) => (
+            {navbarSections.map((s) => (
               <ListItemButton
                 key={s.id}
                 component={Link}

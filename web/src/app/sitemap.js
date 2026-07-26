@@ -6,12 +6,13 @@ import { services } from '@/features/services/data.js';
 // PUBLIC, canonical, indexable routes only (the dashboard is auth-gated +
 // noindex). Service records are the source of truth, so every new public program
 // is included automatically on the very next deployment.
-const MARKETING_LAST_MODIFIED = '2026-07-25';
+const MARKETING_LAST_MODIFIED = '2026-07-26';
 const latestArticleDate = sortedArticles[0]?.dateModified
   || sortedArticles[0]?.datePublished;
 
 const PUBLIC_PATHS = [
   { path: '/', priority: 1.0, changeFrequency: 'weekly', lastModified: MARKETING_LAST_MODIFIED },
+  { path: '/about', priority: 0.8, changeFrequency: 'monthly', lastModified: MARKETING_LAST_MODIFIED },
   { path: '/services', priority: 0.9, changeFrequency: 'monthly', lastModified: MARKETING_LAST_MODIFIED },
   { path: '/blog', priority: 0.8, changeFrequency: 'weekly', lastModified: latestArticleDate },
   { path: '/free-game', priority: 0.8, changeFrequency: 'monthly' },
