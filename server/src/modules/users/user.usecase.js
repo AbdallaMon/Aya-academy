@@ -252,37 +252,43 @@ class UserUsecase {
     const target = await userRepo.getIdentityById({ id });
     if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
 
-    if (input.email !== undefined) {
-      if (!input.email && !target.username) {
-        throw new AppError({
-          statusCode: 422,
-          code: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
+    const nextEmail =
+      input.email !== undefined ? input.email : target.email;
+    const nextUsername =
+      input.username !== undefined ? input.username : target.username;
+    if (!nextEmail && !nextUsername) {
+      throw new AppError({
+        statusCode: 422,
+        code: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
+        message: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
+        translationKey: messagesNames.userMessages,
+        details: ["email", "username"].map((field) => ({
+          field,
+          path: field,
           message: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
-          translationKey: messagesNames.userMessages,
-          details: [
-            {
-              field: "email",
-              path: "email",
-              message: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
-            },
-          ],
-        });
-      }
-      if (input.email !== target.email) {
-        await assertIdentityAvailable({ email: input.email, excludeId: id });
-      }
+        })),
+      });
     }
+
+    const emailChanged =
+      input.email !== undefined && input.email !== target.email;
+    const usernameChanged =
+      input.username !== undefined && input.username !== target.username;
+    await assertIdentityAvailable({
+      email: emailChanged ? input.email : null,
+      username: usernameChanged ? input.username : null,
+      excludeId: id,
+    });
 
     const data = {
       name: input.name,
       email: input.email,
+      username: input.username,
       phone: input.phone,
       locale: input.locale,
       nickname: input.nickname,
       birthDate: input.birthDate,
     };
-    const emailChanged =
-      input.email !== undefined && input.email !== target.email;
     // only admin can toggle active state
     if (authUser.role === USER_ROLES.ADMIN && input.isActive !== undefined) {
       data.isActive = input.isActive;
@@ -291,7 +297,7 @@ class UserUsecase {
     if (input.password) {
       data.passwordHash = await hashPassword(input.password);
     }
-    if (input.password || emailChanged) {
+    if (input.password || emailChanged || usernameChanged) {
       data.sessionVersion = { increment: 1 };
     }
     try {

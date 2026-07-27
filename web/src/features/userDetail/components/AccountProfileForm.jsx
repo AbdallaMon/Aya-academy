@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Box, Button, Card, CardContent, Grid, Stack, Typography } from "@mui/material";
+import { userMessagesCodes } from "@aya/shared";
 import {
   PhotoUpload,
   RHFPhoneField,
@@ -11,8 +12,11 @@ import {
 } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useAuth } from "../../../hooks/useAuth.js";
-import { useToast } from "../../../providers/ToastProvider.jsx";
-import { EMAIL_PATTERN } from "../../../shared/lib/userIdentity.js";
+import {
+  buildEditableIdentityPayload,
+  EMAIL_PATTERN,
+  USERNAME_PATTERN,
+} from "../../../shared/lib/userIdentity.js";
 import { USERS_URL } from "../config/constant.js";
 
 function defaults(user) {
@@ -34,7 +38,6 @@ export default function AccountProfileForm({
   isSelf = false,
 }) {
   const { user: authUser, setAuthUser, logout } = useAuth();
-  const { showToast } = useToast();
   const {
     control,
     handleSubmit,
@@ -66,7 +69,12 @@ export default function AccountProfileForm({
     onSuccess: (res) => {
       const emailChanged =
         String(res?.data?.email ?? "") !== String(user?.email ?? "");
-      if (isSelf && (Boolean(getValues("password")) || emailChanged)) {
+      const usernameChanged =
+        String(res?.data?.username ?? "") !== String(user?.username ?? "");
+      if (
+        isSelf &&
+        (Boolean(getValues("password")) || emailChanged || usernameChanged)
+      ) {
         logout();
         return;
       }
@@ -79,10 +87,18 @@ export default function AccountProfileForm({
         labelMap: {
           name: txt.nameLabel,
           email: txt.email,
+          username: txt.usernameLabel,
           nickname: txt.nicknameLabel,
           password: txt.newPassword,
         },
-        showToast,
+        messageMap: {
+          [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+            txt.identityRequired,
+          [userMessagesCodes.INVALID_EMAIL]: txt.invalidEmail,
+          [userMessagesCodes.INVALID_USERNAME]: txt.invalidUsername,
+          [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+            txt.usernameAlreadyExists,
+        },
         suppressFallbackToast: true,
       }),
   });
@@ -107,13 +123,24 @@ export default function AccountProfileForm({
   }
 
   function submit(values) {
-    const email = values.email?.trim().toLowerCase() || "";
-    if (!email && !user?.username) {
+    const { email, username } = buildEditableIdentityPayload(values);
+    if (!email && !username) {
       setError("email", { type: "validate", message: txt.identityRequired });
+      setError("username", {
+        type: "validate",
+        message: txt.identityRequired,
+      });
       return;
     }
     if (email && !EMAIL_PATTERN.test(email)) {
       setError("email", { type: "validate", message: txt.invalidEmail });
+      return;
+    }
+    if (username && !USERNAME_PATTERN.test(username)) {
+      setError("username", {
+        type: "validate",
+        message: txt.invalidUsername,
+      });
       return;
     }
     if (values.password && values.password.length < 6) {
@@ -130,7 +157,8 @@ export default function AccountProfileForm({
 
     const payload = {
       name: values.name.trim(),
-      email: email || null,
+      email,
+      username,
       phone: values.phone?.trim() || "",
       nickname: values.nickname?.trim() || null,
     };
@@ -189,8 +217,15 @@ export default function AccountProfileForm({
                   name="username"
                   control={control}
                   label={txt.usernameLabel}
-                  disabled
-                  helperText={txt.usernameImmutable}
+                  helperText={txt.usernameEditHint}
+                  rules={{
+                    validate: (value) =>
+                      !value && !getValues("email")
+                        ? txt.identityRequired
+                        : !value ||
+                            USERNAME_PATTERN.test(value.trim()) ||
+                            txt.invalidUsername,
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>

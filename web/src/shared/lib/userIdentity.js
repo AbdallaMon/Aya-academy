@@ -18,6 +18,15 @@ export function buildIdentityPayload({ email, username } = {}) {
   };
 }
 
+export function buildEditableIdentityPayload({ email, username } = {}) {
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedUsername = normalizeUsername(username);
+  return {
+    email: normalizedEmail || null,
+    username: normalizedUsername || null,
+  };
+}
+
 export function validateOptionalIdentity(
   { email, username } = {},
   { requiredMessage, invalidEmailMessage, invalidUsernameMessage } = {},

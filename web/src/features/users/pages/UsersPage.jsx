@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Box, Grid, Typography } from "@mui/material";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import {
+  PERMISSIONS,
+  USER_ROLES,
+  userMessagesCodes,
+} from "@aya/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { useToast } from "../../../providers/ToastProvider.jsx";
 import {
   DataTable,
   FormDialog,
@@ -30,6 +33,7 @@ import { buildUsersFilters } from "../config/usersFilters.js";
 import LinkParentDialog from "../components/LinkParentDialog.jsx";
 import ChildrenDialog from "../components/ChildrenDialog.jsx";
 import {
+  buildEditableIdentityPayload,
   buildIdentityPayload,
   EMAIL_PATTERN,
   USERNAME_PATTERN,
@@ -49,7 +53,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
   const txt = useUsersText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
-  const { showToast } = useToast();
   const { user } = useAuth();
   const { hasPermission } = usePermission();
   const isAdmin = user?.role === USER_ROLES.ADMIN;
@@ -181,10 +184,10 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     const avatarId = avatarAttachment?.id ? Number(avatarAttachment.id) : null;
     try {
       if (isEditing) {
-        // updateUserSchema: name, phone, locale, nickname, isActive, password
+        // updateUserSchema: editable identity + account/profile fields.
         const payload = {
           name: values.name,
-          email: values.email?.trim() || null,
+          ...buildEditableIdentityPayload(values),
           phone: values.phone || undefined,
           nickname: values.nickname?.trim() || null,
           locale: values.locale || undefined,
@@ -233,7 +236,14 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
             locale: txt.localeLabel,
             isActive: txt.isActive,
           },
-          showToast,
+          messageMap: {
+            [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+              txt.identityRequired,
+            [userMessagesCodes.INVALID_EMAIL]: txt.invalidEmail,
+            [userMessagesCodes.INVALID_USERNAME]: txt.invalidUsername,
+            [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+              txt.usernameAlreadyExists,
+          },
           suppressFallbackToast: true,
         },
       );
@@ -383,14 +393,22 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
                 </Grid>
               </>
             ) : (
-              // Username and role are immutable; email and password may change.
+              // Role is immutable; either login identity may be changed.
               <>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <RHFTextField
                     name="username"
                     control={control}
                     label={txt.usernameLabel}
-                    disabled
+                    helperText={txt.usernameEditHint}
+                    rules={{
+                      validate: (value) =>
+                        !value && !getValues("email")
+                          ? txt.identityRequired
+                          : !value ||
+                              USERNAME_PATTERN.test(value.trim()) ||
+                              txt.invalidUsername,
+                    }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>

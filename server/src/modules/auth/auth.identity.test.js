@@ -119,3 +119,24 @@ test("admin and parent user creation use the same identity rule", () => {
     true,
   );
 });
+
+test("user updates normalize, validate, and allow clearing a username", () => {
+  const updated = UserValidation.updateUserSchema.parse({
+    username: " New.Parent_Name ",
+  });
+  assert.equal(updated.username, "new.parent_name");
+
+  const cleared = UserValidation.updateUserSchema.parse({ username: "  " });
+  assert.equal(cleared.username, null);
+
+  const invalid = UserValidation.updateUserSchema.safeParse({
+    username: "not valid!",
+  });
+  assert.equal(invalid.success, false);
+  assert.equal(
+    invalid.error.issues.some(
+      (issue) => issue.message === userMessagesCodes.INVALID_USERNAME,
+    ),
+    true,
+  );
+});

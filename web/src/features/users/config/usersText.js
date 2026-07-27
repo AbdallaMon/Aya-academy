@@ -38,6 +38,10 @@ export const usersText = {
     nameLabel: "الاسم",
     emailLabel: "البريد الإلكتروني",
     usernameLabel: "اسم المستخدم",
+    usernameEditHint:
+      "يمكن تغييره بشرط ألا يكون مستخدمًا في حساب آخر.",
+    usernameAlreadyExists:
+      "اسم المستخدم مستخدم بالفعل، اختر اسم مستخدم آخر.",
     passwordLabel: "كلمة المرور",
     passwordEditLabel: "كلمة المرور الجديدة (اتركها فارغة لعدم التغيير)",
     passwordLeaveBlank: "اتركها فارغة إذا كنت لا تريد تغيير كلمة المرور.",
@@ -126,6 +130,10 @@ export const usersText = {
     nameLabel: "Name",
     emailLabel: "Email",
     usernameLabel: "Username",
+    usernameEditHint:
+      "You can change it as long as it is not used by another account.",
+    usernameAlreadyExists:
+      "This username is already in use. Choose another username.",
     passwordLabel: "Password",
     passwordEditLabel: "New password (leave blank to keep)",
     passwordLeaveBlank:

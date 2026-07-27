@@ -44,14 +44,22 @@ const editableEmail = z.preprocess(
   (value) =>
     typeof value === "string" && value.trim() === "" ? null : value,
   z
-    .union([
-      z
-        .string()
-        .trim()
-        .email(userMessagesCodes.INVALID_EMAIL)
-        .transform(normalizeEmail),
-      z.null(),
-    ])
+    .string()
+    .trim()
+    .email(userMessagesCodes.INVALID_EMAIL)
+    .transform(normalizeEmail)
+    .nullable()
+    .optional(),
+);
+const editableUsername = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim() === "" ? null : value,
+  z
+    .string()
+    .trim()
+    .regex(USERNAME_PATTERN, userMessagesCodes.INVALID_USERNAME)
+    .transform(normalizeUsername)
+    .nullable()
     .optional(),
 );
 const optionalNullableText = z.preprocess(
@@ -109,6 +117,7 @@ export class UserValidation {
   static updateUserSchema = z.object({
     name: z.string().min(1, userMessagesCodes.USER_NAME_REQUIRED).optional(),
     email: editableEmail,
+    username: editableUsername,
     phone: z.string().trim().optional(),
     locale: z.enum(["ar", "en"]).optional(),
     nickname: optionalNullableText,
