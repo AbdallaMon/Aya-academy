@@ -17,10 +17,10 @@ const floatUp = keyframes`
   100% { transform: translateY(-92vh) scale(1.15) rotate(18deg); opacity: 0; }
 `;
 const popIn = keyframes`
-  0%   { transform: translate(-50%, -50%) scale(0.2) rotate(-6deg); opacity: 0; }
-  18%  { transform: translate(-50%, -50%) scale(1.25) rotate(3deg); opacity: 1; }
-  82%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+  0%   { transform: scale(0.2) rotate(-6deg); opacity: 0; }
+  18%  { transform: scale(1.25) rotate(3deg); opacity: 1; }
+  82%  { transform: scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
 `;
 
 export default function ReactionOverlay({ ar = true }) {
@@ -110,27 +110,36 @@ export default function ReactionOverlay({ ar = true }) {
             ))}
             {burst.banner && (
               <Box
-                dir={ar ? "rtl" : "ltr"}
-                style={{ left: "50%" }}
                 sx={{
                   position: "absolute",
                   top: "38%",
-                  transform: "translate(-50%, -50%)",
-                  animation: `${popIn} 3.2s ease-out forwards`,
-                  width: "max-content",
-                  maxWidth: "92vw",
-                  fontSize: { xs: 32, sm: 46, md: 70 },
-                  fontWeight: 900,
-                  lineHeight: 1.2,
-                  textAlign: "center",
-                  color: burst.color,
-                  WebkitTextStroke: "2px #fff",
-                  textShadow: "0 4px 0 rgba(255,255,255,.9), 0 10px 24px rgba(0,0,0,.28)",
-                  whiteSpace: "normal",
-                  overflowWrap: "anywhere",
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                  transform: "translateY(-50%)",
                 }}
               >
-                {burst.emoji} {burst.banner}
+                <Box
+                  dir={ar ? "rtl" : "ltr"}
+                  sx={{
+                    animation: `${popIn} 3.2s ease-out forwards`,
+                    width: "max-content",
+                    maxWidth: "92vw",
+                    fontSize: { xs: 32, sm: 46, md: 70 },
+                    fontWeight: 900,
+                    lineHeight: 1.2,
+                    textAlign: "center",
+                    color: burst.color,
+                    WebkitTextStroke: "2px #fff",
+                    textShadow:
+                      "0 4px 0 rgba(255,255,255,.9), 0 10px 24px rgba(0,0,0,.28)",
+                    whiteSpace: "normal",
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {burst.emoji} {burst.banner}
+                </Box>
               </Box>
             )}
           </Box>

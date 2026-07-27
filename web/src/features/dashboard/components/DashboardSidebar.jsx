@@ -5,6 +5,7 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { MdLogout, MdClose } from "react-icons/md";
 import DashboardNav from "./DashboardNav.jsx";
 import { roleLabelKey } from "../config/navModel.js";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 
 /**
  * DashboardSidebar — the full-height sidebar column shared by the desktop
@@ -16,6 +17,7 @@ export default function DashboardSidebar({
   isDesktop,
   displayName,
   initial,
+  avatar,
   txt,
   onClose,
   onNavigate,
@@ -117,6 +119,7 @@ export default function DashboardSidebar({
           }}
         >
           <Avatar
+            src={buildFileUrl(avatar) || undefined}
             sx={{
               bgcolor: "primary.main",
               width: 42,

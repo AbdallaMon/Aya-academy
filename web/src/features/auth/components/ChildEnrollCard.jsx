@@ -17,6 +17,7 @@ import {
   MdPerson,
   MdEmojiEmotions,
   MdEmail,
+  MdAlternateEmail,
   MdCake,
   MdChildCare,
   MdCardGiftcard,
@@ -26,36 +27,9 @@ import {
 import PlanRadioCards from "./PlanRadioCards.jsx";
 import { PasswordField, CouponControl } from "../../../shared/components/index.js";
 import { initialCoupon } from "../../../shared/lib/couponPricing.js";
+import IdentityChoiceNotice from "./IdentityChoiceNotice.jsx";
 
 /** Eyebrow + title for a sub-section inside the card, to give the long form rhythm. */
-function SectionHeader({ step, title }) {
-  return (
-    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2.5 }}>
-      <Box
-        sx={{
-          width: 32,
-          height: 32,
-          borderRadius: "50%",
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-          color: "primary.contrastText",
-          background: (th) =>
-            `linear-gradient(135deg, ${th.palette.primary.main}, ${th.palette.primary.dark})`,
-          boxShadow: (th) => `0 4px 10px ${alpha(th.palette.primary.main, 0.35)}`,
-        }}
-      >
-        <Typography component="span" fontWeight={900} fontSize={15}>
-          {step}
-        </Typography>
-      </Box>
-      <Typography variant="h6" fontWeight={800}>
-        {title}
-      </Typography>
-    </Stack>
-  );
-}
-
 /** One benefit line in the reassurance strip (gift / no-payment). */
 function Benefit({ icon, children }) {
   return (
@@ -104,76 +78,51 @@ export default function ChildEnrollCard({
     <Card
       variant="outlined"
       sx={{
-        borderRadius: 4,
+        borderRadius: 3,
         overflow: "hidden",
-        boxShadow: (th) => `0 18px 40px ${alpha(th.palette.primary.main, 0.12)}`,
+        boxShadow: (th) => `0 8px 28px ${alpha(th.palette.primary.main, 0.07)}`,
       }}
     >
       {/* ── Vibrant identity header band ─────────────────────────────────── */}
       <Box
         sx={{
-          position: "relative",
-          px: { xs: 2.5, md: 3.5 },
-          py: 2.5,
-          color: "primary.contrastText",
-          background: (th) =>
-            `linear-gradient(120deg, ${th.palette.primary.dark} 0%, ${th.palette.primary.main} 60%, ${th.palette.secondary.main} 140%)`,
+          px: { xs: 2, sm: 2.5 },
+          py: 1.5,
+          bgcolor: (th) => alpha(th.palette.primary.main, 0.07),
+          borderBottom: 1,
+          borderColor: "divider",
         }}
       >
-        {/* decorative bubbles */}
-        <Box
-          sx={{
-            position: "absolute",
-            insetInlineEnd: -30,
-            top: -30,
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            bgcolor: alpha("#fff", 0.12),
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            insetInlineEnd: 60,
-            bottom: -45,
-            width: 80,
-            height: 80,
-            borderRadius: "50%",
-            bgcolor: alpha("#fff", 0.08),
-          }}
-        />
         <Stack
           direction="row"
           alignItems="center"
-          spacing={1.75}
-          sx={{ position: "relative" }}
+          spacing={1.25}
         >
           <Box
             sx={{
-              width: 54,
-              height: 54,
+              width: 42,
+              height: 42,
               borderRadius: "50%",
               display: "grid",
               placeItems: "center",
               flexShrink: 0,
-              bgcolor: alpha("#fff", 0.22),
-              border: `2px solid ${alpha("#fff", 0.5)}`,
+              color: "primary.main",
+              bgcolor: (th) => alpha(th.palette.primary.main, 0.13),
             }}
           >
-            <MdChildCare size={30} />
+            <MdChildCare size={24} />
           </Box>
           <Box sx={{ minWidth: 0, flexGrow: 1 }}>
             {canRemove && (
               <Typography
                 variant="caption"
                 fontWeight={800}
-                sx={{ opacity: 0.85, letterSpacing: "0.05em" }}
+                color="primary.main"
               >
                 {txt.childNumber} {index + 1}
               </Typography>
             )}
-            <Typography variant="h6" fontWeight={800} noWrap sx={{ color: "inherit" }}>
+            <Typography variant="subtitle1" fontWeight={800} noWrap>
               {child.name?.trim() || txt.childTitle}
             </Typography>
           </Box>
@@ -183,9 +132,8 @@ export default function ChildEnrollCard({
                 size="small"
                 onClick={onRemove}
                 sx={{
-                  color: "#fff",
-                  bgcolor: alpha("#fff", 0.15),
-                  "&:hover": { bgcolor: alpha("#fff", 0.28) },
+                  color: "error.main",
+                  bgcolor: (th) => alpha(th.palette.error.main, 0.07),
                 }}
               >
                 <MdDeleteOutline />
@@ -195,10 +143,8 @@ export default function ChildEnrollCard({
         </Stack>
       </Box>
 
-      <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         {/* ── 1. Student details ─────────────────────────────────────────── */}
-        <SectionHeader step="1" title={txt.childTitle} />
-
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -222,9 +168,12 @@ export default function ChildEnrollCard({
               slotProps={adorn(<MdEmojiEmotions size={18} />)}
             />
           </Grid>
+          <Grid size={{ xs: 12 }}>
+            <IdentityChoiceNotice txt={txt} />
+          </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label={txt.email}
+              label={txt.emailOptional}
               type="email"
               value={child.email}
               onChange={setField("email")}
@@ -233,6 +182,18 @@ export default function ChildEnrollCard({
               fullWidth
               size="small"
               slotProps={adorn(<MdEmail size={18} />)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label={txt.usernameOptional}
+              value={child.username}
+              onChange={setField("username")}
+              error={Boolean(errors.username)}
+              helperText={errors.username || txt.usernameFormatHint}
+              fullWidth
+              size="small"
+              slotProps={adorn(<MdAlternateEmail size={18} />)}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -287,7 +248,9 @@ export default function ChildEnrollCard({
 
         {/* ── 2. Choose a plan ───────────────────────────────────────────── */}
         <Box sx={{ mt: 3 }}>
-          <SectionHeader step="2" title={txt.choosePlan} />
+          <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>
+            {txt.choosePlan}
+          </Typography>
 
           <PlanRadioCards
             plans={plans}

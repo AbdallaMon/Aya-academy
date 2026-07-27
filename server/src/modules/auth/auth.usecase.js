@@ -26,6 +26,7 @@ import { minutesFromHours } from "../../shared/utility/duration.js";
 import { invoiceUsecase } from "../finance/invoices/invoice.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
 import { authRepo } from "./auth.repo.js";
+import { normalizeLoginIdentifier } from "../../shared/utility/userIdentity.js";
 
 // Password-reset links are short-lived and single-use.
 const RESET_TOKEN_TTL_MINUTES = 60;
@@ -36,29 +37,79 @@ function hashResetToken(rawToken) {
   return crypto.createHash("sha256").update(rawToken).digest("hex");
 }
 
+function identityConflict(code, field) {
+  return new AppError({
+    statusCode: 409,
+    code,
+    message: code,
+    translationKey: messagesNames.authMessages,
+    details: [{ field, path: field, message: code }],
+  });
+}
+
+async function assertIdentityAvailable({ email, username, child = false }) {
+  if (email && (await authRepo.findByEmail({ email }))) {
+    throw identityConflict(
+      child
+        ? authMessagesCodes.CHILD_EMAIL_EXISTS
+        : authMessagesCodes.EMAIL_ALREADY_EXISTS,
+      "email",
+    );
+  }
+  if (username && (await authRepo.findByUsername({ username }))) {
+    throw identityConflict(
+      child
+        ? authMessagesCodes.CHILD_USERNAME_EXISTS
+        : authMessagesCodes.USERNAME_ALREADY_EXISTS,
+      "username",
+    );
+  }
+}
+
+function rethrowIdentityConstraint(error, { child = false } = {}) {
+  if (error?.code !== "P2002") throw error;
+  const target = Array.isArray(error?.meta?.target)
+    ? error.meta.target.join(" ")
+    : String(error?.meta?.target ?? "");
+  if (target.toLowerCase().includes("username")) {
+    throw identityConflict(
+      child
+        ? authMessagesCodes.CHILD_USERNAME_EXISTS
+        : authMessagesCodes.USERNAME_ALREADY_EXISTS,
+      "username",
+    );
+  }
+  if (target.toLowerCase().includes("email")) {
+    throw identityConflict(
+      child
+        ? authMessagesCodes.CHILD_EMAIL_EXISTS
+        : authMessagesCodes.EMAIL_ALREADY_EXISTS,
+      "email",
+    );
+  }
+  throw error;
+}
+
 class AuthUsecase {
   /** Public self-registration — always creates a PARENT account. */
-  async register({ name, email, password, phone, locale }) {
-    const existing = await authRepo.findByEmail({ email });
-    if (existing) {
-      throw new AppError({
-        statusCode: 409,
-        code: authMessagesCodes.EMAIL_ALREADY_EXISTS,
-        message: authMessagesCodes.EMAIL_ALREADY_EXISTS,
-        translationKey: messagesNames.authMessages,
-      });
-    }
+  async register({ name, email, username, password, phone, locale }) {
+    await assertIdentityAvailable({ email, username });
     const passwordHash = await hashPassword(password);
-    return authRepo.createUser({
-      data: {
-        name,
-        email,
-        passwordHash,
-        phone,
-        locale: locale ?? "ar",
-        role: USER_ROLES.PARENT,
-      },
-    });
+    try {
+      return await authRepo.createUser({
+        data: {
+          name,
+          email,
+          username,
+          passwordHash,
+          phone,
+          locale: locale ?? "ar",
+          role: USER_ROLES.PARENT,
+        },
+      });
+    } catch (error) {
+      rethrowIdentityConstraint(error);
+    }
   }
 
   /**
@@ -67,37 +118,37 @@ class AuthUsecase {
    * Pricing (incl. coupon) is recomputed server-side. Admins are notified.
    */
   async enrollFamily({ parent, children }) {
-    // 1. Reject duplicate emails within the payload (children + parent).
-    const seen = new Set();
-    for (const child of children) {
-      const key = child.email.trim().toLowerCase();
-      if (seen.has(key) || key === parent.email.trim().toLowerCase()) {
+    // 1. Reject duplicate e-mails/usernames within the family payload.
+    const seenEmails = new Set();
+    const seenUsernames = new Set();
+    for (const account of [parent, ...children]) {
+      if (account.email && seenEmails.has(account.email)) {
         throw badRequest(
           authMessagesCodes.CHILD_EMAIL_DUPLICATE,
           messagesNames.authMessages,
         );
       }
-      seen.add(key);
+      if (account.username && seenUsernames.has(account.username)) {
+        throw badRequest(
+          authMessagesCodes.CHILD_USERNAME_DUPLICATE,
+          messagesNames.authMessages,
+        );
+      }
+      if (account.email) seenEmails.add(account.email);
+      if (account.username) seenUsernames.add(account.username);
     }
 
-    // 2. Reject already-registered emails (parent first, then each child).
-    if (await authRepo.findByEmail({ email: parent.email })) {
-      throw new AppError({
-        statusCode: 409,
-        code: authMessagesCodes.EMAIL_ALREADY_EXISTS,
-        message: authMessagesCodes.EMAIL_ALREADY_EXISTS,
-        translationKey: messagesNames.authMessages,
-      });
-    }
+    // 2. Reject already-registered identities.
+    await assertIdentityAvailable({
+      email: parent.email,
+      username: parent.username,
+    });
     for (const child of children) {
-      if (await userRepo.findByEmail(child.email)) {
-        throw new AppError({
-          statusCode: 409,
-          code: authMessagesCodes.CHILD_EMAIL_EXISTS,
-          message: authMessagesCodes.CHILD_EMAIL_EXISTS,
-          translationKey: messagesNames.authMessages,
-        });
-      }
+      await assertIdentityAvailable({
+        email: child.email,
+        username: child.username,
+        child: true,
+      });
     }
 
     // 3. Load global settings + payment template once.
@@ -158,11 +209,14 @@ class AuthUsecase {
     );
 
     // 6. Atomic write: parent + children + links + subscriptions + invoices.
-    const result = await prisma.$transaction(async (tx) => {
-      const parentUser = await userRepo.createUser(
+    let result;
+    try {
+      result = await prisma.$transaction(async (tx) => {
+        const parentUser = await userRepo.createUser(
         {
           name: parent.name,
           email: parent.email,
+          username: parent.username,
           passwordHash: parentHash,
           role: USER_ROLES.PARENT,
           phone: parent.phone,
@@ -171,13 +225,14 @@ class AuthUsecase {
         tx,
       );
 
-      const createdChildren = [];
-      for (let i = 0; i < priced.length; i += 1) {
-        const p = priced[i];
-        const studentUser = await userRepo.createUser(
+        const createdChildren = [];
+        for (let i = 0; i < priced.length; i += 1) {
+          const p = priced[i];
+          const studentUser = await userRepo.createUser(
           {
             name: p.child.name,
             email: p.child.email,
+            username: p.child.username,
             passwordHash: childHashes[i],
             role: USER_ROLES.STUDENT,
             nickname: p.child.nickname,
@@ -187,14 +242,14 @@ class AuthUsecase {
           },
           tx,
         );
-        await userRepo.linkParentStudent(
-          parentUser.id,
-          studentUser.id,
-          PARENT_RELATIONS.GUARDIAN,
-          tx,
-        );
+          await userRepo.linkParentStudent(
+            parentUser.id,
+            studentUser.id,
+            PARENT_RELATIONS.GUARDIAN,
+            tx,
+          );
 
-        const subData = {
+          const subData = {
           status: SUBSCRIPTION_STATUSES.PENDING,
           billingPeriod: p.billingPeriod,
           startDate: p.startDate,
@@ -207,33 +262,36 @@ class AuthUsecase {
           plan: { connect: { id: p.plan.id } },
           createdBy: { connect: { id: parentUser.id } },
         };
-        if (p.couponId) subData.coupon = { connect: { id: p.couponId } };
+          if (p.couponId) subData.coupon = { connect: { id: p.couponId } };
 
-        const subscription = await subscriptionRepo.createSubscription(subData, tx);
-        await couponUsecase.consumeOnce({
-          couponId: p.couponId,
-          studentId: studentUser.id,
-          subscriptionId: subscription.id,
-          client: tx,
-        });
+          const subscription = await subscriptionRepo.createSubscription(subData, tx);
+          await couponUsecase.consumeOnce({
+            couponId: p.couponId,
+            studentId: studentUser.id,
+            subscriptionId: subscription.id,
+            client: tx,
+          });
 
-        const invoice = await invoiceUsecase.generateForSubscription(subscription, {
-          template,
-          settings,
-          plan: p.plan,
-          createdById: parentUser.id,
-          tx,
-        });
+          const invoice = await invoiceUsecase.generateForSubscription(subscription, {
+            template,
+            settings,
+            plan: p.plan,
+            createdById: parentUser.id,
+            tx,
+          });
 
-        createdChildren.push({
-          studentId: studentUser.id,
-          subscriptionId: subscription.id,
-          invoiceId: invoice?.id ?? null,
-        });
-      }
+          createdChildren.push({
+            studentId: studentUser.id,
+            subscriptionId: subscription.id,
+            invoiceId: invoice?.id ?? null,
+          });
+        }
 
-      return { parentId: parentUser.id, children: createdChildren };
-    });
+        return { parentId: parentUser.id, children: createdChildren };
+      });
+    } catch (error) {
+      rethrowIdentityConstraint(error, { child: true });
+    }
 
     // 7. Notify admins (the teacher) — best-effort, must not fail the request.
     try {
@@ -253,8 +311,11 @@ class AuthUsecase {
     return result;
   }
 
-  async login({ email, password }) {
-    const user = await authRepo.findByEmail({ email });
+  async login({ identifier, email, password }) {
+    const loginIdentifier = normalizeLoginIdentifier(identifier ?? email);
+    const user = await authRepo.findByIdentifier({
+      identifier: loginIdentifier,
+    });
     if (!user) {
       throw new AppError({
         statusCode: 401,

@@ -67,3 +67,66 @@ export const passwordResetRateLimiter = rateLimit({
     );
   },
 });
+
+// Per-IP failed-login limit. Successful responses are removed from the count,
+// so normal sign-ins do not consume the allowance.
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX = 10;
+
+export const loginRateLimiter = rateLimit({
+  windowMs: LOGIN_WINDOW_MS,
+  limit: LOGIN_MAX,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  handler: (req, _res, next) => {
+    const resetMs =
+      req.rateLimit?.resetTime instanceof Date
+        ? req.rateLimit.resetTime.getTime() - Date.now()
+        : LOGIN_WINDOW_MS;
+    const retryAfterSeconds = Math.max(1, Math.ceil(resetMs / 1000));
+    return next(
+      tooManyRequests(
+        authMessagesCodes.LOGIN_RATE_LIMITED,
+        messagesNames.authMessages,
+        {
+          retryAfterSeconds,
+          retryAfterMinutes: Math.max(1, Math.ceil(retryAfterSeconds / 60)),
+          limit: LOGIN_MAX,
+          windowMinutes: Math.round(LOGIN_WINDOW_MS / 60000),
+        },
+      ),
+    );
+  },
+});
+
+// Public account creation is deliberately stricter than login. It protects both
+// the simple parent registration and the heavier family-enrollment endpoint.
+const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
+const REGISTRATION_MAX = 5;
+
+export const registrationRateLimiter = rateLimit({
+  windowMs: REGISTRATION_WINDOW_MS,
+  limit: REGISTRATION_MAX,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: (req, _res, next) => {
+    const resetMs =
+      req.rateLimit?.resetTime instanceof Date
+        ? req.rateLimit.resetTime.getTime() - Date.now()
+        : REGISTRATION_WINDOW_MS;
+    const retryAfterSeconds = Math.max(1, Math.ceil(resetMs / 1000));
+    return next(
+      tooManyRequests(
+        authMessagesCodes.REGISTRATION_RATE_LIMITED,
+        messagesNames.authMessages,
+        {
+          retryAfterSeconds,
+          retryAfterMinutes: Math.max(1, Math.ceil(retryAfterSeconds / 60)),
+          limit: REGISTRATION_MAX,
+          windowMinutes: Math.round(REGISTRATION_WINDOW_MS / 60000),
+        },
+      ),
+    );
+  },
+});

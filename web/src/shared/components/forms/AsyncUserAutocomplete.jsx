@@ -17,7 +17,7 @@ const PAGE_SIZE = 25;
 
 export function userOptionLabel(user) {
   if (!user) return "";
-  return user.nickname || user.name || `#${user.id}`;
+  return user.name || user.nickname || user.username || user.email || `#${user.id}`;
 }
 
 /**
@@ -133,8 +133,13 @@ export default function AsyncUserAutocomplete({
         <Box component="li" {...props} sx={{ alignItems: "flex-start" }}>
           <Box sx={{ minWidth: 0, py: 0.25 }}>
             <Typography variant="body2" fontWeight={600}>
-              {userOptionLabel(user)}
+              {user.name || userOptionLabel(user)}
             </Typography>
+            {user.nickname && user.nickname !== user.name && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                {user.nickname}
+              </Typography>
+            )}
             {user.email && (
               <Typography
                 variant="caption"
@@ -142,6 +147,15 @@ export default function AsyncUserAutocomplete({
                 sx={{ display: "block", overflowWrap: "anywhere", whiteSpace: "normal" }}
               >
                 {user.email}
+              </Typography>
+            )}
+            {user.username && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", overflowWrap: "anywhere" }}
+              >
+                @{user.username}
               </Typography>
             )}
           </Box>

@@ -80,6 +80,13 @@ export function buildUsersColumns({ txt, lng, lockedRole, can, actions }) {
     renderCell: ({ row }) => row.email || "—",
   };
 
+  const usernameCol = {
+    field: "username",
+    headerName: txt.username,
+    width: 180,
+    renderCell: ({ row }) => row.username || "—",
+  };
+
   const phoneCol = {
     field: "phone",
     headerName: txt.phone,
@@ -243,13 +250,32 @@ export function buildUsersColumns({ txt, lng, lockedRole, can, actions }) {
   // Parents and students are genuinely different surfaces, so each gets its
   // own column set rather than one shared table with half-empty cells.
   if (lockedRole === "PARENT") {
-    return [nameCol, emailCol, phoneCol, childrenCol, activeCol, createdCol, actionsCol];
+    return [
+      nameCol,
+      usernameCol,
+      emailCol,
+      phoneCol,
+      childrenCol,
+      activeCol,
+      createdCol,
+      actionsCol,
+    ];
   }
   if (lockedRole === "STUDENT") {
-    return [nameCol, emailCol, parentsCol, subscriptionCol, activeCol, createdCol, actionsCol];
+    return [
+      nameCol,
+      usernameCol,
+      emailCol,
+      parentsCol,
+      subscriptionCol,
+      activeCol,
+      createdCol,
+      actionsCol,
+    ];
   }
   return [
     nameCol,
+    usernameCol,
     emailCol,
     roleCol,
     parentsCol,

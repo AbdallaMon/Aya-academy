@@ -10,6 +10,7 @@
 // NEVER call ApiFetch directly from a component — always go through this hook.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { generalMessagesCodes } from '@aya/shared';
 import { useLoading } from '../useLoading.js';
 import apiFetch from '../../lib/api/ApiFetch.js';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constant.js';
@@ -301,8 +302,15 @@ export function useRequest({
         translationKey: err?.data?.translationKey || err?.translationKey,
       });
     };
-    apiFetch.onTooManyRequests = (code) => {
-      showToast({ message: code, severity: 'error' });
+    apiFetch.onTooManyRequests = (err) => {
+      showToast({
+        message:
+          err?.data?.message ||
+          err?.message ||
+          generalMessagesCodes.TOO_MANY_REQUESTS,
+        severity: 'error',
+        translationKey: err?.data?.translationKey || err?.translationKey,
+      });
     };
     return () => {
       apiFetch.onError = null;

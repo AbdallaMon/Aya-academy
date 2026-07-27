@@ -3,7 +3,7 @@
 // useGameSounds — warm, kid-friendly Web Audio toy-instrument. NO speech / NO TTS.
 //
 // Exposes:
-//   const s = useGameSounds();
+//   const s = useGameSounds(game.slug);
 //   s.play(name)        → a named cue (see PLAY below)
 //   s.playDigit(key)    → a per-digit "ring" tone (0-9 → a little pentatonic note,
 //                          so dialing a number plays a happy melody)
@@ -24,6 +24,7 @@
 // audio until then). Mute state is persisted to localStorage under "aya_muted".
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getGameSoundFile } from "../config/gameSoundFiles.js";
 
 const NOTES = {
   C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0, B4: 493.88,
@@ -66,17 +67,33 @@ function buildImpulse(ctx, seconds = 1.6, decay = 3.2) {
   return impulse;
 }
 
-export function useGameSounds() {
+export function useGameSounds(gameSlug) {
   const [muted, setMutedState] = useState(readMuted);
   const mutedRef = useRef(muted);
   const ctxRef = useRef(null);
   const busRef = useRef(null); // dry bus (after compressor)
   const reverbInRef = useRef(null); // wet send input
   const noiseBufRef = useRef(null); // cached white-noise buffer
+  const customAudioRef = useRef(new Set());
 
   useEffect(() => {
     mutedRef.current = muted;
+    if (muted) {
+      customAudioRef.current.forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      customAudioRef.current.clear();
+    }
   }, [muted]);
+
+  useEffect(
+    () => () => {
+      customAudioRef.current.forEach((audio) => audio.pause());
+      customAudioRef.current.clear();
+    },
+    [],
+  );
 
   // Lazily create / resume the AudioContext + master chain (needs a gesture).
   const audioCtx = useCallback(() => {
@@ -124,6 +141,38 @@ export function useGameSounds() {
     }
     return ctxRef.current;
   }, []);
+
+  const playConfiguredFile = useCallback(
+    (soundNames, fallback) => {
+      const names = Array.isArray(soundNames) ? soundNames : [soundNames];
+      const filePath = names
+        .map((soundName) => getGameSoundFile(gameSlug, soundName))
+        .find(Boolean);
+
+      if (!filePath) return false;
+      if (mutedRef.current || typeof window === "undefined") return true;
+
+      const audio = new window.Audio(filePath);
+      audio.preload = "auto";
+      audio.volume = 0.85;
+      customAudioRef.current.add(audio);
+
+      let fallbackPlayed = false;
+      const cleanup = () => customAudioRef.current.delete(audio);
+      const useFallback = () => {
+        cleanup();
+        if (fallbackPlayed) return;
+        fallbackPlayed = true;
+        fallback();
+      };
+
+      audio.addEventListener("ended", cleanup, { once: true });
+      audio.addEventListener("error", useFallback, { once: true });
+      audio.play()?.catch(useFallback);
+      return true;
+    },
+    [gameSlug],
+  );
 
   // One warm marimba/bell voice: detuned pair + sub-octave, pluck envelope,
   // per-voice low-pass, mixed dry + a touch of reverb.
@@ -304,7 +353,7 @@ export function useGameSounds() {
   );
 
   // ── named cues ──────────────────────────────────────────────────────────────
-  const play = useCallback(
+  const playGenerated = useCallback(
     (name) => {
       switch (name) {
         // tiny taps / UI
@@ -450,14 +499,30 @@ export function useGameSounds() {
     [blip, noise, note, melody, chord],
   );
 
+  const play = useCallback(
+    (name) => {
+      const fallback = () => playGenerated(name);
+      if (!playConfiguredFile(name, fallback)) fallback();
+    },
+    [playConfiguredFile, playGenerated],
+  );
+
   // A per-digit "ring" tone — every dial key sounds a different happy note (with
   // a soft telephone fifth on top), so dialing a number plays a little melody.
   const playDigit = useCallback(
     (key) => {
-      const freq = DIGIT_NOTES[String(key)] || NOTES.A5;
-      blip(freq, 0, 0.16, { type: "triangle", gain: 0.07, partial: 0.8, wet: 0.18 });
+      const fallback = () => {
+        const freq = DIGIT_NOTES[String(key)] || NOTES.A5;
+        blip(freq, 0, 0.16, {
+          type: "triangle",
+          gain: 0.07,
+          partial: 0.8,
+          wet: 0.18,
+        });
+      };
+      if (!playConfiguredFile([`digit-${key}`, "digit"], fallback)) fallback();
     },
-    [blip],
+    [blip, playConfiguredFile],
   );
 
   // A live pitched blip for sliders / compass: ratio 0..1 → low..high. Use while
@@ -465,11 +530,14 @@ export function useGameSounds() {
   // never pile up.
   const playTick = useCallback(
     (ratio) => {
-      const r = Math.max(0, Math.min(1, ratio || 0));
-      const freq = 330 + r * 990;
-      blip(freq, 0, 0.06, { type: "sine", gain: 0.04 });
+      const fallback = () => {
+        const r = Math.max(0, Math.min(1, ratio || 0));
+        const freq = 330 + r * 990;
+        blip(freq, 0, 0.06, { type: "sine", gain: 0.04 });
+      };
+      if (!playConfiguredFile("liveTick", fallback)) fallback();
     },
-    [blip],
+    [blip, playConfiguredFile],
   );
 
   const setMuted = useCallback((next) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import { MdAdd } from "react-icons/md";
 import ChildEnrollCard from "./ChildEnrollCard.jsx";
 
@@ -17,6 +17,7 @@ export default function ChildrenStep({
   removeChild,
   addChild,
   formError,
+  goBack,
   goNext,
   txt,
   lng,
@@ -57,7 +58,15 @@ export default function ChildrenStep({
           {formError}
         </Typography>
       )}
-      <Box>
+      <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={1.5}>
+        <Button
+          variant="text"
+          size="large"
+          onClick={goBack}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
+          {txt.back}
+        </Button>
         <Button
           variant="contained"
           size="large"
@@ -66,7 +75,7 @@ export default function ChildrenStep({
         >
           {txt.next}
         </Button>
-      </Box>
+      </Stack>
     </Stack>
   );
 }

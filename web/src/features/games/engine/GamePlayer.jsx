@@ -43,7 +43,7 @@ export default function GamePlayer({ game, demo = false }) {
   const { t, lng } = useTranslation();
   const gd = useMemo(() => t("gamesData", { returnObjects: true }) || {}, [t]);
   const { user } = useAuth();
-  const sounds = useGameSounds();
+  const sounds = useGameSounds(game?.slug);
 
   const config = game?.configJson || {};
   const theme = { ...DEFAULT_THEME, ...(config.theme || {}) };

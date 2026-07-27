@@ -51,7 +51,12 @@ export function applyApiErrorsToForm(
   const failedLabels = [];
 
   details.forEach((detail) => {
-    const path = typeof detail?.path === "string" ? detail.path : "";
+    const path =
+      typeof detail?.path === "string"
+        ? detail.path
+        : typeof detail?.field === "string"
+          ? detail.field
+          : "";
     if (!path) return;
     const label = labelMap[path];
     setError(path, {

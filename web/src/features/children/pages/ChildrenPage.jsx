@@ -32,6 +32,7 @@ import {
 } from "../config/constant.js";
 import PlanPickerDialog from "../components/PlanPickerDialog.jsx";
 import AddChildDialog from "../components/AddChildDialog.jsx";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 
 export default function ChildrenPage() {
   const txt = useChildrenText();
@@ -130,8 +131,11 @@ export default function ChildrenPage() {
               <Card variant="outlined" sx={{ height: "100%" }}>
                 <CardContent>
                   <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                    <Avatar sx={{ bgcolor: "primary.main", width: 52, height: 52 }}>
-                      <MdChildCare size={26} />
+                    <Avatar
+                      src={buildFileUrl(child.avatar) || undefined}
+                      sx={{ bgcolor: "primary.main", width: 52, height: 52 }}
+                    >
+                      {!child.avatar && <MdChildCare size={26} />}
                     </Avatar>
                     <Box>
                       <Typography variant="h6" fontWeight={800}>
@@ -145,6 +149,15 @@ export default function ChildrenPage() {
                       {child.email && (
                         <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: "break-all" }}>
                           {txt.emailLabel}: {child.email}
+                        </Typography>
+                      )}
+                      {child.username && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          {txt.usernameLabel}: @{child.username}
                         </Typography>
                       )}
                     </Box>

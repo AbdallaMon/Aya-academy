@@ -1,5 +1,37 @@
 // Playful, asset-free sounds via Web Audio. One AudioContext, lazily created and
 // resumed on the first user gesture (the reaction click itself is a gesture).
+//
+// Set a value to a public audio URL to replace its generated sound. Files inside
+// web/public are served from "/". Keep a value null to use the original sound.
+export const BOARD_SOUND_FILES = {
+  // Reaction buttons
+  balloons: null,
+  star: "/sounds/success.wav",
+  clap: "/sounds/clapping-short.wav",
+  heart: null,
+  firework: "/sounds/firework.wav",
+  mashallah: null,
+  trophy: null,
+  thumbs: null,
+  rainbow: null,
+  flowers: null,
+  party: "/sounds/celebration.wav",
+  laugh: null,
+
+  // Sounds used by the board tools
+  cheer: null,
+  pop: null,
+  magnet: null,
+  letter: null,
+  tick: null,
+  ding: null,
+  whoosh: null,
+  sticker: null,
+  spin: null,
+  win: null,
+  sparkle: null,
+};
+
 let ctx = null;
 function ac() {
   if (typeof window === "undefined") return null;
@@ -124,13 +156,30 @@ const MOTIFS = {
   },
 };
 
-export function playReactionSound(kind) {
-  (MOTIFS[kind] || MOTIFS.cheer)();
+function playConfiguredSound(name, fallback) {
+  const filePath = BOARD_SOUND_FILES[name];
+
+  if (!filePath) {
+    fallback();
+    return;
+  }
+
+  if (typeof window === "undefined") return;
+
+  const audio = new Audio(filePath);
+  audio.preload = "auto";
+
+  // Preserve the generated sound if the file is missing or cannot be played.
+  audio.play().catch(() => fallback());
+}
+
+export function playReactionSound(kind, reactionKey = kind) {
+  playConfiguredSound(reactionKey, MOTIFS[kind] || MOTIFS.cheer);
 }
 
 // Generic entry point for the board tools (laser, timer, letters, wheel, …).
 // Unknown names are ignored silently so a tool can never crash the board.
 export function playBoardSound(name) {
   const motif = MOTIFS[name];
-  if (motif) motif();
+  if (motif) playConfiguredSound(name, motif);
 }

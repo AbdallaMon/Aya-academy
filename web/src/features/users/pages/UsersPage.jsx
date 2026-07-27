@@ -29,6 +29,11 @@ import { buildUsersColumns } from "../config/usersColumns.js";
 import { buildUsersFilters } from "../config/usersFilters.js";
 import LinkParentDialog from "../components/LinkParentDialog.jsx";
 import ChildrenDialog from "../components/ChildrenDialog.jsx";
+import {
+  buildIdentityPayload,
+  EMAIL_PATTERN,
+  USERNAME_PATTERN,
+} from "../../../shared/lib/userIdentity.js";
 
 /**
  * Shared user-list screen.
@@ -116,6 +121,8 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     if (selected) {
       return {
         name: selected.name ?? "",
+        email: selected.email ?? "",
+        username: selected.username ?? "",
         password: "",
         phone: selected.phone ?? "",
         nickname: selected.nickname ?? "",
@@ -126,6 +133,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     return {
       name: "",
       email: "",
+      username: "",
       password: "",
       role: "STUDENT",
       phone: "",
@@ -134,7 +142,9 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     };
   }, [selected]);
 
-  const { control, handleSubmit, reset, setError } = useForm({ defaultValues });
+  const { control, handleSubmit, reset, setError, getValues } = useForm({
+    defaultValues,
+  });
 
   // Re-seed the form each time the dialog opens (or the edited row changes) so
   // create starts blank and edit is pre-filled.
@@ -174,8 +184,9 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
         // updateUserSchema: name, phone, locale, nickname, isActive, password
         const payload = {
           name: values.name,
+          email: values.email?.trim() || null,
           phone: values.phone || undefined,
-          nickname: values.nickname || undefined,
+          nickname: values.nickname?.trim() || null,
           locale: values.locale || undefined,
           isActive: Boolean(values.isActive),
         };
@@ -189,7 +200,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
         // createUserSchema: name, email, password, role, phone, nickname, avatarId
         const payload = {
           name: values.name,
-          email: values.email,
+          ...buildIdentityPayload(values),
           password: values.password,
           role: values.role,
           phone: values.phone || undefined,
@@ -214,6 +225,7 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
           labelMap: {
             name: txt.nameLabel,
             email: txt.emailLabel,
+            username: txt.usernameLabel,
             password: txt.passwordLabel,
             role: txt.roleLabel,
             phone: txt.phoneLabel,
@@ -318,7 +330,37 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
                     control={control}
                     label={txt.emailLabel}
                     type="email"
-                    rules={{ required: txt.required }}
+                    rules={{
+                      validate: (value) => {
+                        if (!value && !getValues("username")) {
+                          return txt.identityRequired;
+                        }
+                        return (
+                          !value ||
+                          EMAIL_PATTERN.test(value.trim()) ||
+                          txt.invalidEmail
+                        );
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="username"
+                    control={control}
+                    label={txt.usernameLabel}
+                    rules={{
+                      validate: (value) => {
+                        if (!value && !getValues("email")) {
+                          return txt.identityRequired;
+                        }
+                        return (
+                          !value ||
+                          USERNAME_PATTERN.test(value.trim()) ||
+                          txt.invalidUsername
+                        );
+                      },
+                    }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -341,15 +383,48 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
                 </Grid>
               </>
             ) : (
-              // email + role are immutable on the update endpoint → omit them.
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField
-                  name="password"
-                  control={control}
-                  label={txt.passwordEditLabel}
-                  type="password"
-                />
-              </Grid>
+              // Username and role are immutable; email and password may change.
+              <>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="username"
+                    control={control}
+                    label={txt.usernameLabel}
+                    disabled
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="email"
+                    control={control}
+                    label={txt.emailLabel}
+                    type="email"
+                    rules={{
+                      validate: (value) =>
+                        !value && !getValues("username")
+                          ? txt.identityRequired
+                          : !value ||
+                              EMAIL_PATTERN.test(value.trim()) ||
+                              txt.invalidEmail,
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="password"
+                    control={control}
+                    label={txt.passwordEditLabel}
+                    type="password"
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 0.75 }}
+                  >
+                    {txt.passwordLeaveBlank}
+                  </Typography>
+                </Grid>
+              </>
             )}
 
             <Grid size={{ xs: 12, sm: 6 }}>

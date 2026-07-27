@@ -241,7 +241,7 @@ enum AttachmentOwnerType {
 model User {
   id             Int         @id @default(autoincrement())
   name           String
-  email          String      @unique
+  email          String?     @unique
   username       String?     @unique
   passwordHash   String
   role           UserRole    @default(STUDENT)

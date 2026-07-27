@@ -68,7 +68,8 @@ export default function DashboardShell({ children }) {
   }
 
   const role = user.role;
-  const displayName = user.nickname || user.name || user.email;
+  const displayName =
+    user.nickname || user.name || user.username || user.email;
   const initial = String(displayName).charAt(0).toUpperCase();
 
   // Derive the current section title from the nav model (route-driven).
@@ -88,6 +89,7 @@ export default function DashboardShell({ children }) {
       isDesktop={isDesktop}
       displayName={displayName}
       initial={initial}
+      avatar={user.avatar}
       txt={txt}
       onClose={() => setMobileOpen(false)}
       onNavigate={() => setMobileOpen(false)}
@@ -157,6 +159,7 @@ export default function DashboardShell({ children }) {
           pageTitle={pageTitle}
           displayName={displayName}
           initial={initial}
+          avatar={user.avatar}
           lng={lng}
           logout={logout}
           onOpenMobile={() => setMobileOpen(true)}

@@ -17,7 +17,7 @@ class AttachmentRepo {
   getById(id) {
     return prisma.attachment.findUnique({
       where: { id },
-      select: { ...attachmentSelect, storageKey: true },
+      select: { ...attachmentSelect, storageKey: true, uploadedById: true },
     });
   }
 

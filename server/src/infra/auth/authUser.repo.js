@@ -8,10 +8,15 @@ export function getAuthUserById(id) {
       id: true,
       name: true,
       email: true,
+      username: true,
+      phone: true,
+      nickname: true,
       role: true,
       locale: true,
       isActive: true,
       sessionVersion: true,
+      avatarId: true,
+      avatar: { select: { id: true, url: true } },
     },
   });
 }

@@ -18,6 +18,7 @@ export const userDetailText = {
     noPhone: "لا يوجد هاتف",
     // tabs
     tabOverview: "نظرة عامة",
+    tabProfile: "بيانات الحساب",
     tabBadges: "الأوسمة",
     tabCertificates: "الشهادات",
     tabEvaluations: "التقييمات",
@@ -47,6 +48,28 @@ export const userDetailText = {
     contactTitle: "معلومات الاتصال",
     profileTitle: "الملف الشخصي",
     joinedOn: "تاريخ الانضمام",
+    accountDetailsTitle: "بيانات الحساب",
+    childAccountHint:
+      "يمكن لولي الأمر تعديل بيانات الطفل وصورته وكلمة مروره. اسم المستخدم ثابت ولا يمكن تغييره.",
+    parentAccountHint:
+      "حدّث بياناتك وصورتك وكلمة المرور. اسم المستخدم ثابت ولا يمكن تغييره.",
+    nameLabel: "الاسم",
+    usernameLabel: "اسم المستخدم",
+    usernameImmutable: "اسم المستخدم لا يمكن تغييره بعد إنشاء الحساب",
+    nicknameLabel: "اللقب",
+    emailRecoveryHint:
+      "البريد اختياري إذا كان للحساب اسم مستخدم، لكنه مطلوب لاسترداد كلمة المرور.",
+    identityRequired: "يجب أن يحتوي الحساب على بريد إلكتروني أو اسم مستخدم على الأقل",
+    invalidEmail: "أدخل بريدًا إلكترونيًا صحيحًا",
+    newPassword: "كلمة مرور جديدة",
+    passwordLeaveBlank:
+      "اترك كلمة المرور فارغة إذا كنت لا تريد تغييرها.",
+    confirmPassword: "تأكيد كلمة المرور",
+    passwordShort: "كلمة المرور يجب ألا تقل عن 6 أحرف",
+    passwordsDontMatch: "كلمتا المرور غير متطابقتين",
+    saveAccount: "حفظ بيانات الحساب",
+    myProfileTitle: "ملفي الشخصي",
+    myProfileDescription: "عدّل بيانات حسابك وصورتك وكلمة المرور.",
     // badges
     awardBadge: "منح وسام",
     revoke: "سحب",
@@ -147,6 +170,7 @@ export const userDetailText = {
     noEmail: "No email",
     noPhone: "No phone",
     tabOverview: "Overview",
+    tabProfile: "Account",
     tabBadges: "Badges",
     tabCertificates: "Certificates",
     tabEvaluations: "Evaluations",
@@ -174,6 +198,28 @@ export const userDetailText = {
     contactTitle: "Contact information",
     profileTitle: "Profile",
     joinedOn: "Joined on",
+    accountDetailsTitle: "Account details",
+    childAccountHint:
+      "A parent can update the child's details, photo, and password. The username cannot be changed.",
+    parentAccountHint:
+      "Update your details, photo, and password. The username cannot be changed.",
+    nameLabel: "Name",
+    usernameLabel: "Username",
+    usernameImmutable: "The username cannot be changed after account creation",
+    nicknameLabel: "Nickname",
+    emailRecoveryHint:
+      "Email is optional when the account has a username, but it is required for password recovery.",
+    identityRequired: "The account must keep an email or username",
+    invalidEmail: "Enter a valid email address",
+    newPassword: "New password",
+    passwordLeaveBlank:
+      "Leave the password blank if you do not want to change it.",
+    confirmPassword: "Confirm password",
+    passwordShort: "Password must be at least 6 characters",
+    passwordsDontMatch: "Passwords do not match",
+    saveAccount: "Save account",
+    myProfileTitle: "My profile",
+    myProfileDescription: "Update your account details, photo, and password.",
     awardBadge: "Award badge",
     revoke: "Revoke",
     revokeConfirm: "Revoke this badge from the student?",

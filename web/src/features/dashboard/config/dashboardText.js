@@ -13,6 +13,7 @@ export const dashboardText = {
     close: "إغلاق",
     // nav labels
     overview: "الرئيسية",
+    profile: "ملفي الشخصي",
     users: "المستخدمون",
     plans: "الباقات",
     subscriptions: "الاشتراكات",
@@ -154,6 +155,7 @@ export const dashboardText = {
     menu: "Menu",
     close: "Close",
     overview: "Overview",
+    profile: "My profile",
     users: "Users",
     plans: "Plans",
     subscriptions: "Subscriptions",

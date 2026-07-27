@@ -36,7 +36,7 @@ class UserRepo {
     const where = {};
     const or = buildSearchQuery({
       search: typeof search === "string" ? search : undefined,
-      keys: ["name", "email", "nickname"],
+      keys: ["name", "email", "username", "nickname"],
     });
     if (or) where.OR = or;
 
@@ -96,7 +96,27 @@ class UserRepo {
 
   // FROZEN — externally called (positional). Auth uses findByEmail(email).
   findByEmail(email) {
+    if (!email) return null;
     return prisma.user.findUnique({ where: { email } });
+  }
+
+  findByUsername(username) {
+    if (!username) return null;
+    return prisma.user.findUnique({ where: { username } });
+  }
+
+  getIdentityById({ id, client } = {}) {
+    return (client ?? prisma).user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        role: true,
+        email: true,
+        username: true,
+        nickname: true,
+        avatarId: true,
+      },
+    });
   }
 
   // FROZEN — externally called (positional). Auth uses createUser(data, tx).

@@ -42,6 +42,7 @@ import {
   MdDescription,
   MdMenuBook,
   MdDraw,
+  MdAccountCircle,
 } from 'react-icons/md';
 
 const ICONS = {
@@ -68,6 +69,7 @@ const ICONS = {
   paymentTemplate: MdReceiptLong,
   settings: MdSettings,
   whiteboard: MdDraw,
+  profile: MdAccountCircle,
 };
 
 // The lone Overview link, shared by every role as the first (header-less) group.
@@ -305,6 +307,13 @@ function parentGroups() {
       key: 'account',
       labelKey: 'navGroupAccount',
       items: [
+        {
+          key: 'profile',
+          labelKey: 'profile',
+          href: '/dashboard/profile',
+          icon: ICONS.profile,
+          permission: PERMISSIONS.USER.EDIT,
+        },
         {
           key: 'subscriptions',
           labelKey: 'subscriptions',

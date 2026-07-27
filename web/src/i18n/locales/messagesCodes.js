@@ -63,9 +63,18 @@ const ar = {
     [authMessagesCodes.LOGOUT_SUCCESS]: 'تم تسجيل الخروج',
     [authMessagesCodes.TOKEN_REFRESHED]: 'تم تحديث الجلسة',
     [authMessagesCodes.INVALID_CREDENTIALS]:
-      'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+      'البريد الإلكتروني أو اسم المستخدم أو كلمة المرور غير صحيحة',
     [authMessagesCodes.EMAIL_ALREADY_EXISTS]: 'البريد الإلكتروني مستخدم بالفعل',
-    [authMessagesCodes.USERNAME_ALREADY_EXISTS]: 'اسم المستخدم مستخدم بالفعل',
+    [authMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'اسم المستخدم مستخدم بالفعل، اختر اسم مستخدم آخر',
+    [authMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'أدخل البريد الإلكتروني أو اسم المستخدم',
+    [authMessagesCodes.INVALID_USERNAME]:
+      'اسم المستخدم يجب أن يكون من 3 إلى 30 حرفًا، ويمكن أن يحتوي على حروف وأرقام ونقطة وشرطة فقط',
+    [authMessagesCodes.LOGIN_RATE_LIMITED]:
+      'محاولات تسجيل دخول كثيرة، حاول مرة أخرى بعد قليل',
+    [authMessagesCodes.REGISTRATION_RATE_LIMITED]:
+      'تم إجراء محاولات تسجيل كثيرة، حاول مرة أخرى لاحقًا',
     [authMessagesCodes.ACCOUNT_INACTIVE]: 'الحساب غير مفعّل',
     [authMessagesCodes.UNAUTHORIZED]: 'انتهت الجلسة، يرجى تسجيل الدخول',
     [authMessagesCodes.FORBIDDEN]: 'ليس لديك صلاحية',
@@ -94,6 +103,10 @@ const ar = {
       'هناك بريد إلكتروني مكرر بين الأبناء في نفس الطلب',
     [authMessagesCodes.CHILD_EMAIL_EXISTS]:
       'البريد الإلكتروني لأحد الأبناء مستخدم بالفعل',
+    [authMessagesCodes.CHILD_USERNAME_DUPLICATE]:
+      'هناك اسم مستخدم مكرر بين الأبناء في نفس الطلب',
+    [authMessagesCodes.CHILD_USERNAME_EXISTS]:
+      'اسم المستخدم لأحد الأبناء مستخدم بالفعل، اختر اسمًا آخر',
     [authMessagesCodes.NO_CHILDREN]: 'يجب إضافة ابن واحد على الأقل',
     [authMessagesCodes.PLAN_REQUIRED]: 'يجب اختيار خطة لكل ابن',
     [authMessagesCodes.COUPON_INVALID_FOR_PLAN]:
@@ -104,10 +117,16 @@ const ar = {
     [userMessagesCodes.USER_NOT_FOUND]: 'المستخدم غير موجود',
     [userMessagesCodes.USER_NAME_REQUIRED]: 'اسم المستخدم مطلوب',
     [userMessagesCodes.USER_EMAIL_REQUIRED]: 'البريد الإلكتروني مطلوب',
+    [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'أدخل البريد الإلكتروني أو اسم المستخدم',
     [userMessagesCodes.INVALID_EMAIL]: 'بريد إلكتروني غير صالح',
+    [userMessagesCodes.INVALID_USERNAME]:
+      'اسم المستخدم يجب أن يكون من 3 إلى 30 حرفًا، ويمكن أن يحتوي على حروف وأرقام ونقطة وشرطة فقط',
     [userMessagesCodes.USER_ROLE_REQUIRED]: 'الدور مطلوب',
     [userMessagesCodes.USER_PASSWORD_REQUIRED]: 'كلمة المرور مطلوبة',
     [userMessagesCodes.EMAIL_ALREADY_EXISTS]: 'البريد الإلكتروني مستخدم بالفعل',
+    [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'اسم المستخدم مستخدم بالفعل، اختر اسم مستخدم آخر',
     [userMessagesCodes.CANNOT_ACCESS_USER]: 'لا يمكنك الوصول لهذا المستخدم',
     [userMessagesCodes.CANNOT_MODIFY_USER]: 'لا يمكنك تعديل هذا المستخدم',
     [userMessagesCodes.CANNOT_LINK_STUDENT]: 'لا يمكن ربط الطالب',
@@ -545,9 +564,19 @@ const en = {
     [authMessagesCodes.LOGIN_SUCCESS]: 'Logged in successfully',
     [authMessagesCodes.LOGOUT_SUCCESS]: 'Logged out',
     [authMessagesCodes.TOKEN_REFRESHED]: 'Session refreshed',
-    [authMessagesCodes.INVALID_CREDENTIALS]: 'Email or password is incorrect',
+    [authMessagesCodes.INVALID_CREDENTIALS]:
+      'Email, username, or password is incorrect',
     [authMessagesCodes.EMAIL_ALREADY_EXISTS]: 'Email already in use',
-    [authMessagesCodes.USERNAME_ALREADY_EXISTS]: 'Username already in use',
+    [authMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'Username is already in use. Choose another username',
+    [authMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'Enter an email address or username',
+    [authMessagesCodes.INVALID_USERNAME]:
+      'Username must be 3–30 characters and may contain letters, numbers, dots, underscores, and hyphens',
+    [authMessagesCodes.LOGIN_RATE_LIMITED]:
+      'Too many sign-in attempts. Please try again shortly',
+    [authMessagesCodes.REGISTRATION_RATE_LIMITED]:
+      'Too many registration attempts. Please try again later',
     [authMessagesCodes.ACCOUNT_INACTIVE]: 'Account is inactive',
     [authMessagesCodes.UNAUTHORIZED]: 'Session expired, please log in',
     [authMessagesCodes.FORBIDDEN]: "You don't have permission",
@@ -576,6 +605,10 @@ const en = {
       'A child email is duplicated within the same request',
     [authMessagesCodes.CHILD_EMAIL_EXISTS]:
       'A child email is already registered',
+    [authMessagesCodes.CHILD_USERNAME_DUPLICATE]:
+      'A child username is duplicated within the same request',
+    [authMessagesCodes.CHILD_USERNAME_EXISTS]:
+      'A child username is already registered. Choose another username',
     [authMessagesCodes.NO_CHILDREN]: 'Add at least one child',
     [authMessagesCodes.PLAN_REQUIRED]: 'Select a plan for each child',
     [authMessagesCodes.COUPON_INVALID_FOR_PLAN]:
@@ -585,10 +618,16 @@ const en = {
     [userMessagesCodes.USER_NOT_FOUND]: 'User not found',
     [userMessagesCodes.USER_NAME_REQUIRED]: 'User name is required',
     [userMessagesCodes.USER_EMAIL_REQUIRED]: 'Email is required',
+    [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'Enter an email address or username',
     [userMessagesCodes.INVALID_EMAIL]: 'Invalid email',
+    [userMessagesCodes.INVALID_USERNAME]:
+      'Username must be 3–30 characters and may contain letters, numbers, dots, underscores, and hyphens',
     [userMessagesCodes.USER_ROLE_REQUIRED]: 'Role is required',
     [userMessagesCodes.USER_PASSWORD_REQUIRED]: 'Password is required',
     [userMessagesCodes.EMAIL_ALREADY_EXISTS]: 'Email already in use',
+    [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'Username is already in use. Choose another username',
     [userMessagesCodes.CANNOT_ACCESS_USER]: 'You cannot access this user',
     [userMessagesCodes.CANNOT_MODIFY_USER]: 'You cannot modify this user',
     [userMessagesCodes.CANNOT_LINK_STUDENT]: 'Student cannot be linked',

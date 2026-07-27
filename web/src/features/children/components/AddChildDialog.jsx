@@ -14,13 +14,16 @@ import {
   PLANS_PUBLIC_URL,
   SUBSCRIPTION_REQUEST_URL,
 } from "../config/constant.js";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import {
+  buildIdentityPayload,
+  validateOptionalIdentity,
+} from "../../../shared/lib/userIdentity.js";
 
 function emptyChild() {
   return {
     name: "",
     email: "",
+    username: "",
     password: "",
     nickname: "",
     birthDate: "",
@@ -88,6 +91,7 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
   const fieldErrors = {
     ...(childErrs.name ? { name: childErrs.name.message } : {}),
     ...(childErrs.email ? { email: childErrs.email.message } : {}),
+    ...(childErrs.username ? { username: childErrs.username.message } : {}),
     ...(childErrs.password ? { password: childErrs.password.message } : {}),
     ...(childErrs.planId ? { planId: childErrs.planId.message } : {}),
   };
@@ -95,12 +99,17 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
   function validate(values) {
     clearErrors();
     let ok = true;
+    const identityErrors = validateOptionalIdentity(values, {
+      requiredMessage: authTxt.identityRequired,
+      invalidEmailMessage: authTxt.invalidEmail,
+      invalidUsernameMessage: authTxt.invalidUsername,
+    });
+    Object.entries(identityErrors).forEach(([field, message]) => {
+      setError(`child.${field}`, { type: "validate", message });
+      ok = false;
+    });
     if (!values.name.trim()) {
       setError("child.name", { type: "validate", message: authTxt.required });
-      ok = false;
-    }
-    if (!EMAIL_RE.test(values.email.trim())) {
-      setError("child.email", { type: "validate", message: authTxt.invalidEmail });
       ok = false;
     }
     if ((values.password || "").length < 6) {
@@ -138,7 +147,7 @@ export default function AddChildDialog({ open, onClose, lng, txt, onCreated }) {
     try {
       res = await createChildMut.postRequest(null, {
         name: values.name.trim(),
-        email: values.email.trim(),
+        ...buildIdentityPayload(values),
         password: values.password,
         nickname: values.nickname.trim() || undefined,
         birthDate: values.birthDate || undefined,

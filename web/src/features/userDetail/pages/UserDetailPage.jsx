@@ -27,6 +27,7 @@ import GrantPointsDialog from "../components/GrantPointsDialog.jsx";
 import SendReportDialog from "../components/SendReportDialog.jsx";
 import SendInviteDialog from "../components/SendInviteDialog.jsx";
 import BanDialog from "../components/BanDialog.jsx";
+import AccountProfileForm from "../components/AccountProfileForm.jsx";
 
 export default function UserDetailPage({ userId }) {
   const txt = useUserDetailText();
@@ -44,6 +45,7 @@ export default function UserDetailPage({ userId }) {
   const canSendInvite = hasPermission(PERMISSIONS.QUIZ.CREATE_INVITE);
   const canAssignGame = hasPermission(PERMISSIONS.GAME.ASSIGN);
   const canCreateCert = hasPermission(PERMISSIONS.CERTIFICATE.CREATE);
+  const canEditProfile = hasPermission(PERMISSIONS.USER.EDIT);
 
   const {
     data: overview,
@@ -95,17 +97,30 @@ export default function UserDetailPage({ userId }) {
   // ── Tabs (role-adaptive) ──────────────────────────────────────────────────
   const validTabs = useMemo(() => {
     if (isStudent) {
-      const tabs = ["overview", "badges", "certificates", "games", "evaluations", "subscriptions"];
+      const tabs = [
+        "overview",
+        ...(canEditProfile ? ["profile"] : []),
+        "badges",
+        "certificates",
+        "games",
+        "evaluations",
+        "subscriptions",
+      ];
       return viewerIsParent ? tabs.filter((t) => t !== "games") : tabs;
     }
-    if (isParent) return ["overview", "children"];
-    return ["overview"];
-  }, [isStudent, isParent, viewerIsParent]);
+    if (isParent) {
+      return ["overview", ...(canEditProfile ? ["profile"] : []), "children"];
+    }
+    return ["overview", ...(canEditProfile ? ["profile"] : [])];
+  }, [isStudent, isParent, viewerIsParent, canEditProfile]);
 
   const sections = useMemo(() => {
     if (isStudent) {
       const tabs = [
         { key: "overview", label: txt.tabOverview },
+        ...(canEditProfile
+          ? [{ key: "profile", label: txt.tabProfile }]
+          : []),
         { key: "badges", label: txt.tabBadges, count: overview?.badges?.length ?? 0 },
         { key: "certificates", label: txt.tabCertificates },
         { key: "games", label: txt.tabGames },
@@ -117,11 +132,19 @@ export default function UserDetailPage({ userId }) {
     if (isParent) {
       return [
         { key: "overview", label: txt.tabOverview },
+        ...(canEditProfile
+          ? [{ key: "profile", label: txt.tabProfile }]
+          : []),
         { key: "children", label: txt.tabChildren, count: overview?.children?.length ?? 0 },
       ];
     }
-    return [{ key: "overview", label: txt.tabOverview }];
-  }, [isStudent, isParent, viewerIsParent, overview, txt]);
+    return [
+      { key: "overview", label: txt.tabOverview },
+      ...(canEditProfile
+        ? [{ key: "profile", label: txt.tabProfile }]
+        : []),
+    ];
+  }, [isStudent, isParent, viewerIsParent, canEditProfile, overview, txt]);
 
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -239,6 +262,14 @@ export default function UserDetailPage({ userId }) {
         );
       case "children":
         return <ParentChildrenTab overview={overview} txt={txt} canView={canView} />;
+      case "profile":
+        return (
+          <AccountProfileForm
+            user={user}
+            txt={txt}
+            onSaved={triggerRefetch}
+          />
+        );
       default:
         return null;
     }

@@ -37,6 +37,9 @@ export const childUserSelect = {
   id: true,
   name: true,
   nickname: true,
+  email: true,
+  username: true,
+  avatar: { select: { id: true, url: true } },
 };
 
 /**
@@ -67,6 +70,9 @@ export function toChildItem(link) {
     id: link.student.id,
     name: link.student.name,
     nickname: link.student.nickname,
+    email: link.student.email,
+    username: link.student.username,
+    avatar: link.student.avatar,
     relation: link.relation,
   };
 }
@@ -78,7 +84,10 @@ export const overviewUserSelect = {
   name: true,
   nickname: true,
   email: true,
+  username: true,
   phone: true,
+  locale: true,
+  birthDate: true,
   role: true,
   isActive: true,
   bannedAt: true,
@@ -87,13 +96,22 @@ export const overviewUserSelect = {
   points: true,
   level: true,
   avatar: { select: { id: true, url: true } },
+  avatarId: true,
   createdAt: true,
 };
 
 // A student's parents (with contact) via studentLinks.
 export const overviewParentSelect = {
   relation: true,
-  parent: { select: { id: true, name: true, phone: true, email: true } },
+  parent: {
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      username: true,
+    },
+  },
 };
 
 // A parent's child (with the fields the overview needs).
@@ -101,9 +119,12 @@ export const overviewChildSelect = {
   id: true,
   name: true,
   nickname: true,
+  email: true,
+  username: true,
   studentLevel: true,
   points: true,
   isActive: true,
+  avatar: { select: { id: true, url: true } },
 };
 
 /** Flatten studentLinks → a parents[] array with contact + relation. */
@@ -113,6 +134,7 @@ export function toOverviewParents(studentLinks) {
     name: link.parent.name,
     phone: link.parent.phone,
     email: link.parent.email,
+    username: link.parent.username,
     relation: link.relation,
   }));
 }

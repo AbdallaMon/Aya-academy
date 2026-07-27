@@ -16,10 +16,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
-import { MdMenu, MdLogout } from "react-icons/md";
+import { MdAccountCircle, MdLogout, MdMenu } from "react-icons/md";
+import Link from "next/link";
+import { USER_ROLES } from "@aya/shared";
 import { LanguageSwitch } from "../../../shared/ui/buttons/LanguageSwitch.jsx";
 import NotificationBell from "../../notifications/components/NotificationBell.jsx";
 import { roleLabelKey } from "../config/navModel.js";
+import { localePath } from "../../../i18n/routing.js";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 
 /**
  * DashboardTopbar — the sticky top AppBar: mobile menu button, route-driven
@@ -34,6 +38,7 @@ export default function DashboardTopbar({
   pageTitle,
   displayName,
   initial,
+  avatar,
   lng,
   logout,
   onOpenMobile,
@@ -87,6 +92,7 @@ export default function DashboardTopbar({
           <Tooltip title={displayName}>
             <IconButton onClick={(e) => setUserMenu(e.currentTarget)} sx={{ p: 0.5 }}>
               <Avatar
+                src={buildFileUrl(avatar) || undefined}
                 sx={{ bgcolor: "primary.main", width: 38, height: 38, fontWeight: 800 }}
               >
                 {initial}
@@ -117,6 +123,18 @@ export default function DashboardTopbar({
             </Typography>
           </Box>
           <Divider />
+          {role === USER_ROLES.PARENT && (
+            <MenuItem
+              component={Link}
+              href={localePath(lng, "/dashboard/profile")}
+              onClick={() => setUserMenu(null)}
+            >
+              <ListItemIcon>
+                <MdAccountCircle />
+              </ListItemIcon>
+              {txt.profile}
+            </MenuItem>
+          )}
           <MenuItem
             onClick={() => {
               setUserMenu(null);

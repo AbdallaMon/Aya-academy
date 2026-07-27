@@ -11,10 +11,9 @@ import { MdCheck } from "react-icons/md";
 export default function WizardStepper({ steps, step }) {
   return (
     <Stack
-      direction="row"
-      spacing={{ xs: 1.5, sm: 2.5 }}
-      justifyContent="center"
-      sx={{ mb: 4 }}
+      direction={{ xs: "row", md: "column" }}
+      spacing={{ xs: 1, md: 1.25 }}
+      sx={{ width: "100%" }}
     >
       {steps.map((label, i) => {
         const active = i === step;
@@ -24,13 +23,30 @@ export default function WizardStepper({ steps, step }) {
             key={label}
             direction="row"
             alignItems="center"
-            spacing={1}
-            sx={{ opacity: active || done ? 1 : 0.55 }}
+            spacing={1.25}
+            sx={{
+              minWidth: 0,
+              flex: { xs: 1, md: "initial" },
+              px: { xs: 1, sm: 1.25, md: 1.5 },
+              py: { xs: 1, md: 1.25 },
+              borderRadius: 2.5,
+              border: 1,
+              borderColor: (theme) =>
+                active
+                  ? alpha(theme.palette.primary.main, 0.34)
+                  : "transparent",
+              bgcolor: (theme) =>
+                active
+                  ? alpha(theme.palette.primary.main, 0.09)
+                  : "transparent",
+              opacity: active || done ? 1 : 0.58,
+              transition: "all .2s ease",
+            }}
           >
             <Box
               sx={{
-                width: 30,
-                height: 30,
+                width: 32,
+                height: 32,
                 borderRadius: "50%",
                 display: "grid",
                 placeItems: "center",
@@ -40,32 +56,21 @@ export default function WizardStepper({ steps, step }) {
                 color: active || done ? "primary.contrastText" : "text.secondary",
                 bgcolor: (th) =>
                   active || done ? "primary.main" : alpha(th.palette.text.primary, 0.08),
-                boxShadow: (th) =>
-                  active ? `0 0 0 5px ${alpha(th.palette.primary.main, 0.18)}` : "none",
-                transition: "all .2s ease",
               }}
             >
               {done ? <MdCheck size={18} /> : i + 1}
             </Box>
             <Typography
-              variant="body2"
+              variant="caption"
               fontWeight={active ? 800 : 600}
-              sx={{ display: { xs: "none", sm: "block" } }}
+              sx={{
+                display: { xs: "none", sm: "block" },
+                lineHeight: 1.35,
+                color: active ? "text.primary" : "text.secondary",
+              }}
             >
               {label}
             </Typography>
-            {i < steps.length - 1 && (
-              <Box
-                sx={{
-                  width: { xs: 24, sm: 48 },
-                  height: 3,
-                  borderRadius: 2,
-                  ml: { xs: 0.5, sm: 1 },
-                  bgcolor: (th) =>
-                    done ? "primary.main" : alpha(th.palette.text.primary, 0.12),
-                }}
-              />
-            )}
           </Stack>
         );
       })}

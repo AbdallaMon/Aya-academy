@@ -120,12 +120,20 @@ class ApiFetch {
     }
 
     if (status === 429) {
-      if (this.onTooManyRequests && windowExists) {
-        this.onTooManyRequests(generalMessagesCodes.TOO_MANY_REQUESTS);
-      }
-      const error = new Error(generalMessagesCodes.TOO_MANY_REQUESTS);
+      const message =
+        result.message || generalMessagesCodes.TOO_MANY_REQUESTS;
+      const error = new Error(message);
       error.status = status;
       error.data = result;
+      error.translationKey = result.translationKey;
+      if (
+        this.onTooManyRequests &&
+        windowExists &&
+        !_public &&
+        !suppressGlobalError
+      ) {
+        this.onTooManyRequests(error);
+      }
       throw error;
     }
 

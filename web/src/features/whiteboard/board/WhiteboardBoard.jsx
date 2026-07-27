@@ -303,7 +303,7 @@ export default function WhiteboardBoard({
 
   const fire = (key, studentName) => {
     const def = REACTIONS.find((r) => r.key === key);
-    playReactionSound(def?.sound);
+    playReactionSound(def?.sound, def?.key);
     boardChannel.emitReaction({ id: ++burstId.current, key, studentName });
   };
 

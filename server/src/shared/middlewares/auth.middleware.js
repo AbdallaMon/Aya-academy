@@ -33,10 +33,15 @@ class AuthMiddleware {
         id: user.id,
         name: user.name,
         email: user.email,
+        username: user.username,
+        phone: user.phone,
+        nickname: user.nickname,
         role: user.role,
         locale: user.locale,
         isActive: user.isActive,
         sessionVersion: user.sessionVersion,
+        avatarId: user.avatarId,
+        avatar: user.avatar,
         permissions: getPermissionsForRole(user.role),
       };
       return next();

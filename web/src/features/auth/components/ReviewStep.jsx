@@ -1,45 +1,105 @@
 "use client";
 
-import { Button, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Divider, Paper, Stack, Typography } from "@mui/material";
+import {
+  MdAlternateEmail,
+  MdEdit,
+  MdEmail,
+  MdPerson,
+  MdPhone,
+} from "react-icons/md";
 import EnrollSummaryTable from "./EnrollSummaryTable.jsx";
-import ParentDetailsForm from "./ParentDetailsForm.jsx";
 
-/**
- * ReviewStep — RegisterWizard step 1: enrollment summary table, the parent
- * details form, inline form error and the back/submit actions. Pure
- * presentational extraction; all state/handlers stay in RegisterWizard.
- */
+function SummaryLine({ icon, children }) {
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Box sx={{ color: "text.secondary", display: "flex", flexShrink: 0 }}>
+        {icon}
+      </Box>
+      <Typography variant="body2">{children}</Typography>
+    </Stack>
+  );
+}
+
 export default function ReviewStep({
   childrenList,
   plans,
   parent,
-  parentErrors,
-  patchParent,
   formError,
   goBack,
+  onEditParent,
   submit,
   isSubmitting,
   txt,
   lng,
 }) {
   return (
-    <Stack spacing={3}>
-      <Typography variant="h6" fontWeight={800}>
-        {txt.summaryTitle}
-      </Typography>
-      <EnrollSummaryTable items={childrenList} plans={plans} lng={lng} txt={txt} />
+    <Stack spacing={2.5}>
+      <Paper
+        variant="outlined"
+        sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 3 }}
+      >
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 1.5 }}
+        >
+          <Typography variant="subtitle1" fontWeight={800}>
+            {txt.parentTitle}
+          </Typography>
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<MdEdit />}
+            onClick={onEditParent}
+          >
+            {txt.edit}
+          </Button>
+        </Stack>
+        <Divider sx={{ mb: 1.5 }} />
+        <Stack spacing={1}>
+          <SummaryLine icon={<MdPerson size={18} />}>{parent.name}</SummaryLine>
+          {parent.email && (
+            <SummaryLine icon={<MdEmail size={18} />}>
+              {parent.email}
+            </SummaryLine>
+          )}
+          {parent.username && (
+            <SummaryLine icon={<MdAlternateEmail size={18} />}>
+              @{parent.username}
+            </SummaryLine>
+          )}
+          <SummaryLine icon={<MdPhone size={18} />}>{parent.phone}</SummaryLine>
+        </Stack>
+      </Paper>
 
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}>
-        <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>
-          {txt.parentTitle}
-        </Typography>
-        <ParentDetailsForm
-          parent={parent}
-          onChange={patchParent}
-          errors={parentErrors}
+      <Box>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 1.5 }}
+        >
+          <Typography variant="subtitle1" fontWeight={800}>
+            {txt.summaryTitle}
+          </Typography>
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<MdEdit />}
+            onClick={goBack}
+          >
+            {txt.edit}
+          </Button>
+        </Stack>
+        <EnrollSummaryTable
+          items={childrenList}
+          plans={plans}
+          lng={lng}
           txt={txt}
         />
-      </Paper>
+      </Box>
 
       {formError && (
         <Typography color="error" variant="body2">
@@ -47,9 +107,10 @@ export default function ReviewStep({
         </Typography>
       )}
 
-      <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
+      <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={1.5}>
         <Button
           variant="text"
+          size="large"
           onClick={goBack}
           disabled={isSubmitting}
           sx={{ width: { xs: "100%", sm: "auto" } }}
@@ -61,7 +122,7 @@ export default function ReviewStep({
           size="large"
           onClick={submit}
           disabled={isSubmitting}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
+          sx={{ width: { xs: "100%", sm: "auto" }, minWidth: 170 }}
         >
           {isSubmitting ? txt.submitting : txt.submit}
         </Button>
