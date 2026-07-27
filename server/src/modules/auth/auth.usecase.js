@@ -103,7 +103,7 @@ class AuthUsecase {
           username,
           passwordHash,
           phone,
-          locale: locale ?? "ar",
+          locale: locale ?? "en",
           role: USER_ROLES.PARENT,
         },
       });
@@ -220,7 +220,7 @@ class AuthUsecase {
           passwordHash: parentHash,
           role: USER_ROLES.PARENT,
           phone: parent.phone,
-          locale: parent.locale ?? "ar",
+          locale: parent.locale ?? "en",
         },
         tx,
       );
@@ -237,7 +237,7 @@ class AuthUsecase {
             role: USER_ROLES.STUDENT,
             nickname: p.child.nickname,
             birthDate: p.child.birthDate,
-            locale: parent.locale ?? "ar",
+            locale: parent.locale ?? "en",
             createdById: parentUser.id,
           },
           tx,
@@ -372,7 +372,7 @@ class AuthUsecase {
 
     // The e-mail (and its link) follow the language the user is currently using,
     // falling back to the account locale.
-    const emailLocale = locale ?? user.locale ?? "ar";
+    const emailLocale = locale ?? user.locale ?? "en";
     const resetUrl = `${ENV.appUrl}/${emailLocale}/reset-password?token=${rawToken}`;
     const { subject, html, text } = buildPasswordResetEmail({
       name: user.name,

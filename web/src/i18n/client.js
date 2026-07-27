@@ -16,7 +16,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { cookieName, fallbackLng, getDirection, languages } from "./settings.js";
+import { cookieName, defaultLng, getDirection, languages } from "./settings.js";
 import { getLanguageResources } from "./resources.js";
 import translation from "./locales/translation.js";
 
@@ -34,7 +34,7 @@ function readCookieLng() {
 export function I18nProviderClient({ children, lng: initialLng }) {
   const [lng, setLng] = useState(() => {
     if (languages.includes(initialLng)) return initialLng;
-    return readCookieLng() ?? fallbackLng;
+    return readCookieLng() ?? defaultLng;
   });
 
   const resources = useMemo(() => getLanguageResources(translation, lng), [lng]);
@@ -83,15 +83,15 @@ export function useTranslation() {
   if (!ctx) {
     // Graceful fallback so components used outside the provider (e.g. isolated
     // tests) still render with default-language strings instead of crashing.
-    const resources = getLanguageResources(translation, fallbackLng);
+    const resources = getLanguageResources(translation, defaultLng);
     const t = (section, options) =>
       options?.returnObjects ? resources[section] ?? {} : resources[section] ?? section;
     return {
       t,
-      lng: fallbackLng,
+      lng: defaultLng,
       changeLanguage: () => {},
       toggleLanguage: () => {},
-      i18n: { language: fallbackLng, changeLanguage: () => {} },
+      i18n: { language: defaultLng, changeLanguage: () => {} },
     };
   }
   return ctx;

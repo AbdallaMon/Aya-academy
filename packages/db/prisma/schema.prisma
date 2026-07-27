@@ -246,7 +246,7 @@ model User {
   passwordHash   String
   role           UserRole    @default(STUDENT)
   phone          String?
-  locale         String      @default("ar")
+  locale         String      @default("en")
   isActive       Boolean     @default(true)
   sessionVersion Int         @default(0)
   avatarId       Int?

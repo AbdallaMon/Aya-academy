@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `User` MODIFY `locale` VARCHAR(191) NOT NULL DEFAULT 'en';

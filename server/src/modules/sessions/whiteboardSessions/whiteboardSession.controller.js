@@ -81,7 +81,7 @@ class WhiteboardSessionController {
       title: req.body.title,
       studentIds: req.body.studentIds,
       isPublic: req.body.isPublic,
-      locale: req.auth.locale || "ar",
+      locale: req.auth.locale || "en",
       authUser: req.auth,
     });
     return created(res, session, whiteboardMessagesCodes.SESSION_CREATED, TK);
@@ -104,7 +104,7 @@ class WhiteboardSessionController {
   async makePublic(req, res) {
     const result = await whiteboardSessionUsecase.makePublic({
       id: idParam(req.params.id),
-      locale: req.auth.locale || "ar",
+      locale: req.auth.locale || "en",
     });
     return ok(res, result, whiteboardMessagesCodes.SESSION_MADE_PUBLIC, TK);
   }

@@ -1,4 +1,4 @@
-import { SITE_URL, languages, fallbackLng } from '@/shared/lib/seo';
+import { SITE_URL, languages, defaultLng } from '@/shared/lib/seo';
 import { localePath } from '@/i18n/routing.js';
 import { sortedArticles } from '@/features/blog';
 import { services } from '@/features/services/data.js';
@@ -39,7 +39,7 @@ export default function sitemap() {
     for (const lng of languages) {
       languagesMap[lng] = `${SITE_URL}${localePath(lng, path)}`;
     }
-    languagesMap['x-default'] = `${SITE_URL}${localePath(fallbackLng, path)}`;
+    languagesMap['x-default'] = `${SITE_URL}${localePath(defaultLng, path)}`;
 
     for (const lng of languages) {
       entries.push({

@@ -1,9 +1,9 @@
-import { SITE_URL, brand, fallbackLng } from '@/shared/lib/seo';
+import { SITE_URL, brand, defaultLng } from '@/shared/lib/seo';
 import { seoContent } from '@/shared/lib/seo';
 import { localePath } from '@/i18n/routing.js';
 import { sortedArticles, blogCategories } from '@/features/blog';
 
-// RSS 2.0 feed for the blog, in the default locale (Arabic). Linked from the
+// RSS 2.0 feed for the blog, in the default locale (English). Linked from the
 // blog page <head> via alternates.types. Data-driven: every article in
 // features/blog/data/articles.js appears automatically, newest first.
 
@@ -19,7 +19,7 @@ const esc = (s = '') =>
 const abs = (lng, path) => `${SITE_URL}${localePath(lng, path)}`;
 
 export async function GET() {
-  const lng = fallbackLng;
+  const lng = defaultLng;
   const self = `${SITE_URL}/rss.xml`;
   const blogUrl = abs(lng, '/blog');
   const channel = seoContent.blog[lng];

@@ -186,7 +186,7 @@ class UserUsecase {
           passwordHash,
           role,
           phone: input.phone,
-          locale: input.locale ?? "ar",
+          locale: input.locale ?? "en",
           nickname: input.nickname,
           birthDate: input.birthDate,
           avatarId: input.avatarId,
@@ -285,7 +285,6 @@ class UserUsecase {
       email: input.email,
       username: input.username,
       phone: input.phone,
-      locale: input.locale,
       nickname: input.nickname,
       birthDate: input.birthDate,
     };

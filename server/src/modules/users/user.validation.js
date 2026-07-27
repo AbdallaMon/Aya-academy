@@ -119,7 +119,6 @@ export class UserValidation {
     email: editableEmail,
     username: editableUsername,
     phone: z.string().trim().optional(),
-    locale: z.enum(["ar", "en"]).optional(),
     nickname: optionalNullableText,
     birthDate: z.coerce.date().optional(),
     isActive: z.boolean().optional(),

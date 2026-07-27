@@ -11,7 +11,7 @@
 //   }
 
 import { localePath } from "@/i18n/routing.js";
-import { languages, fallbackLng } from "@/i18n/settings.js";
+import { defaultLng, languages } from "@/i18n/settings.js";
 import {
   SITE_URL,
   ogImages,
@@ -31,12 +31,12 @@ function buildLanguageAlternates(path) {
     map[lng] = absoluteUrl(localePath(lng, path));
   }
   // English is the configured fallback and the primary acquisition locale.
-  map["x-default"] = absoluteUrl(localePath(fallbackLng, path));
+  map["x-default"] = absoluteUrl(localePath(defaultLng, path));
   return map;
 }
 
 export function buildMetadata({
-  lng = fallbackLng,
+  lng = defaultLng,
   page = "site",
   path = "/",
   index = true,

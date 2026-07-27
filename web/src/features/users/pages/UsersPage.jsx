@@ -129,7 +129,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
         password: "",
         phone: selected.phone ?? "",
         nickname: selected.nickname ?? "",
-        locale: selected.locale ?? "",
         isActive: selected.isActive ?? true,
       };
     }
@@ -141,7 +140,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
       role: "STUDENT",
       phone: "",
       nickname: "",
-      locale: "",
     };
   }, [selected]);
 
@@ -190,7 +188,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
           ...buildEditableIdentityPayload(values),
           phone: values.phone || undefined,
           nickname: values.nickname?.trim() || null,
-          locale: values.locale || undefined,
           isActive: Boolean(values.isActive),
         };
         if (values.password) payload.password = values.password;
@@ -233,7 +230,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
             role: txt.roleLabel,
             phone: txt.phoneLabel,
             nickname: txt.nicknameLabel,
-            locale: txt.localeLabel,
             isActive: txt.isActive,
           },
           messageMap: {
@@ -452,17 +448,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
             <Grid size={{ xs: 12, sm: 6 }}>
               <RHFTextField name="nickname" control={control} label={txt.nicknameLabel} />
             </Grid>
-
-            {isEditing && (
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFSelect
-                  name="locale"
-                  control={control}
-                  label={txt.localeLabel}
-                  options={{ ar: txt.arabic, en: txt.english }}
-                />
-              </Grid>
-            )}
 
             {isEditing && (
               <Grid size={{ xs: 12, sm: 6 }}>

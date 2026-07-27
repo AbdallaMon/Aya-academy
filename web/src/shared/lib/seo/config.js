@@ -5,7 +5,11 @@
 // in the deploy env (e.g. https://ayah.academy). We fall back to the brand domain
 // so builds never produce relative/broken OG URLs.
 
-import { fallbackLng, languages } from "@/i18n/settings.js";
+import {
+  defaultLng,
+  fallbackLng,
+  languages,
+} from "@/i18n/settings.js";
 
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://ayah.academy"
@@ -24,7 +28,7 @@ export const BRAND = {
 // PNG is the canonical card; the lighter JPEG is a fallback for scrapers that
 // drop large images (WhatsApp / Facebook). Listed PNG-first so quality-capable
 // platforms (Twitter/X, LinkedIn) pick the crisp one.
-export const DEFAULT_OG_IMAGE = "/og.png"; // Arabic card — the brand default.
+export const DEFAULT_OG_IMAGE = "/og-en.png";
 export const OG_IMAGES = {
   ar: [
     { url: "/og.png", type: "image/png" },
@@ -49,7 +53,7 @@ export const OG_LOCALE = {
 export const THEME_COLOR = "#1ABC9C";
 export const BACKGROUND_COLOR = "#ffffff";
 
-export { fallbackLng, languages };
+export { defaultLng, fallbackLng, languages };
 
 export function brand(lng) {
   return BRAND[lng] || BRAND[fallbackLng];

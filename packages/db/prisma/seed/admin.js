@@ -23,7 +23,7 @@ export async function seedAdmin() {
       name: "مدير الأكاديمية",
       passwordHash,
       role: "ADMIN",
-      locale: "ar",
+      locale: "en",
       isActive: true,
     },
   });
