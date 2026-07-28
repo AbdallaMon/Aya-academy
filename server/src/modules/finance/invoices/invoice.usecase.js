@@ -7,8 +7,8 @@ import {
   invoiceMessagesCodes,
   messagesNames,
   subscriptionMessagesCodes,
-} from "@aya/shared";
-import { prisma } from "@aya/db/prisma.client.js";
+} from "@ayah/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { AppError, badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { messagingService } from "../../../infra/messaging/messagingService.js";
 import {

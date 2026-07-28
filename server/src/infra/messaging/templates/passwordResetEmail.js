@@ -38,19 +38,19 @@ const COPY = {
   en: {
     dir: "ltr",
     align: "left",
-    subject: "Reset your password — Aya Academy",
+    subject: "Reset your password — Ayah Academy",
     preheader: (m) => `Your password reset link is valid for ${m} minutes.`,
-    brand: "Aya Academy",
+    brand: "Ayah Academy",
     heading: "Reset your password",
     greeting: (name) => (name ? `Hi ${name},` : "Hi there,"),
     intro:
-      "We received a request to reset the password for your Aya Academy account. Tap the button below to choose a new password.",
+      "We received a request to reset the password for your Ayah Academy account. Tap the button below to choose a new password.",
     button: "Reset password",
     fallback: "Button not working? Copy and paste this link into your browser:",
     expiry: (m) => `This link is valid for ${m} minutes only and can be used once.`,
     security:
       "If you didn't request this, you can safely ignore this email — nothing will change on your account.",
-    footerBrand: "Aya Academy — Quran & manners for kids",
+    footerBrand: "Ayah Academy — Quran & manners for kids",
     footerAuto: "This is an automated message, please do not reply.",
   },
 };

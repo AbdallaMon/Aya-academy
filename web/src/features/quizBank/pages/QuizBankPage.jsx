@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, Button } from "@mui/material";
 import { MdCategory } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";

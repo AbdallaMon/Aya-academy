@@ -41,7 +41,7 @@ export async function generateMetadata({ params }) {
       type: 'article',
       publishedTime: article.datePublished,
       modifiedTime: article.dateModified || article.datePublished,
-      authors: [lng === 'en' ? 'Aya Academy' : 'أكاديمية آية'],
+      authors: [lng === 'en' ? 'Ayah Academy' : 'أكاديمية آية'],
     },
   };
 }

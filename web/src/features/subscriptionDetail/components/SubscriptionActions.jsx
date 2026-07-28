@@ -25,7 +25,7 @@ import {
   MdReceiptLong,
   MdMoreVert,
 } from "react-icons/md";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useOpen } from "../../../hooks/useOpen.js";

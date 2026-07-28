@@ -1,12 +1,12 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   USER_ROLES,
   WHITEBOARD_SESSION_STATUSES,
   WHITEBOARD_VISIBILITIES,
   whiteboardMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import {
   badRequest,
   conflict,

@@ -3,7 +3,7 @@ import { prisma } from "../../prisma.client.js";
 import bcrypt from "bcrypt";
 
 export async function seedAdmin() {
-  const email = process.env.SEED_ADMIN_EMAIL || "admin@aya.academy";
+  const email = process.env.SEED_ADMIN_EMAIL || "admin@ayah.academy";
   // Fail closed: never ship a hardcoded admin password. Set SEED_ADMIN_PASSWORD
   // in the (gitignored) packages/db/.env before seeding.
   const rawPassword = process.env.SEED_ADMIN_PASSWORD;

@@ -3,7 +3,7 @@
 import { Alert, Grid, MenuItem, TextField, Typography } from "@mui/material";
 import { Controller } from "react-hook-form";
 import { MdInfoOutline } from "react-icons/md";
-import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
+import { CERTIFICATE_TEMPLATE_TYPES } from "@ayah/shared";
 import { RHFTextField, RHFSwitch } from "@/shared/components/index.js";
 import { TEMPLATE_TYPES } from "../../config/constant.js";
 import { TYPE_LABEL_KEY } from "./constants.js";

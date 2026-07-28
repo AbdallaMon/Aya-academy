@@ -18,7 +18,7 @@ import {
 import { MdNotifications } from "react-icons/md";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { useNotifications } from "../hooks/useNotifications.js";
 import { useNotificationsText, localizedField } from "../config/notificationsText.js";
 

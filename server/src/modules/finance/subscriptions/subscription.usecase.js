@@ -7,8 +7,8 @@ import {
   USER_ROLES,
   messagesNames,
   subscriptionMessagesCodes,
-} from "@aya/shared";
-import { prisma } from "@aya/db/prisma.client.js";
+} from "@ayah/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   calendarMonthWindow,
   endOfMonth,

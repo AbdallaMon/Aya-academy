@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authMessagesCodes, BILLING_PERIODS } from "@aya/shared";
+import { authMessagesCodes, BILLING_PERIODS } from "@ayah/shared";
 import {
   normalizeEmail,
   normalizeUsername,

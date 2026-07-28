@@ -1,4 +1,4 @@
-import { DEFAULT_APP_SETTINGS } from "@aya/shared";
+import { DEFAULT_APP_SETTINGS } from "@ayah/shared";
 import { settingsRepo } from "./settings.repo.js";
 
 class SettingsUsecase {

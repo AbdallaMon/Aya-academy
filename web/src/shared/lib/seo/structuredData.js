@@ -3,7 +3,7 @@
 // <script type="application/ld+json"> tag via the <JsonLd> component.
 //
 // We emit ONLY data that is true and visible on the page:
-//   - EducationalOrganization : who Aya Academy is (site-wide)
+//   - EducationalOrganization : who Ayah Academy is (site-wide)
 //   - WebSite                 : the site itself + its languages (site-wide)
 //   - FAQPage                 : mirrors the visible FAQ accordion on the homepage
 // We deliberately do NOT emit Review/AggregateRating — the on-page reviews are
@@ -16,7 +16,7 @@ import { SITE_URL, brand } from "./config.js";
 
 const DESCRIPTION = {
   ar: "أكاديمية آية — تعلّم القرآن الكريم وتحفيظه، والتجويد، واللغة العربية، والعلوم الشرعية أونلاين، للكبار والأطفال من ٥ سنوات فأكثر، عبر حصص مباشرة تفاعلية مع معلّمين مؤهّلين ومتابعة مستمرة.",
-  en: "Aya Academy — learn and memorize the Quran, Tajweed, Arabic and Islamic studies online, for adults and children ages 5 and up, through live interactive sessions with qualified teachers and ongoing progress tracking.",
+  en: "Ayah Academy — learn and memorize the Quran, Tajweed, Arabic and Islamic studies online, for adults and children ages 5 and up, through live interactive sessions with qualified teachers and ongoing progress tracking.",
 };
 
 // A stable @id for the organization so other nodes can reference it.
@@ -66,7 +66,7 @@ export function organizationSchema(lng) {
     "@type": "EducationalOrganization",
     "@id": ORG_ID,
     name: brand(lng),
-    alternateName: isEn ? "أكاديمية آية" : "Aya Academy",
+    alternateName: isEn ? "أكاديمية آية" : "Ayah Academy",
     url: `${SITE_URL}${localePath(lng, "/")}`,
     logo: `${SITE_URL}/logos/logo.png`,
     image: `${SITE_URL}/og.png`,

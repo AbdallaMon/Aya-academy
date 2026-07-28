@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { messagesNames } from "@aya/shared";
+import { messagesNames } from "@ayah/shared";
 import { authController } from "./auth.controller.js";
 import { AuthValidation } from "./auth.validation.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";

@@ -7,7 +7,7 @@
 //
 // Mirrors C:\coding\asmaa\web\src\shared\data\messages\domain\backupMessages.js.
 
-import { backupMessagesCodes } from "@aya/shared";
+import { backupMessagesCodes } from "@ayah/shared";
 
 export const backupMessages = {
   ar: {

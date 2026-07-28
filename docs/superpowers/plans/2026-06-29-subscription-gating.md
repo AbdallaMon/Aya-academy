@@ -6,7 +6,7 @@
 
 **Architecture:** Subscription is a STATUS gate, orthogonal to role permissions. A single backend helper (`subscriptionAccess`) is the one place that answers "is this student currently subscribed?", built on the existing `subscriptionRepo.getCurrentlySubscribedStudentIds`. Backend usecases call it to throw `SUBSCRIPTION_INACTIVE` or to null out fields; the API surfaces capability flags (`hasActiveSubscription`, per-game `locked`, per-child `isActive`) so the React client renders locked states without trial-and-error 403s. The student locked state is gentle/kid-appropriate; the parent locked state is actionable (renew CTA).
 
-**Tech Stack:** Express + Prisma (ESM JS, layered route→controller→usecase→repo), `@aya/shared` constants, Next.js App Router + MUI + self-built i18n.
+**Tech Stack:** Express + Prisma (ESM JS, layered route→controller→usecase→repo), `@ayah/shared` constants, Next.js App Router + MUI + self-built i18n.
 
 ## Global Constraints
 
@@ -167,7 +167,7 @@ Expected: FAIL — `subscriptionAccess.js` does not exist.
 // Subscription STATUS gate — the single place that answers "is this student
 // currently subscribed?". Orthogonal to role permissions. Built on the existing
 // activeSubscriptionWhere() (via subscriptionRepo) so "active" has one definition.
-import { messagesNames, subscriptionMessagesCodes } from "@aya/shared";
+import { messagesNames, subscriptionMessagesCodes } from "@ayah/shared";
 import { AppError } from "../errors/AppError.js";
 import { subscriptionRepo } from "../../modules/subscriptions/subscription.repo.js";
 
@@ -197,7 +197,7 @@ export async function filterActiveStudentIds(studentIds) {
 }
 ```
 
-> **Confirmed:** `@aya/shared` exports both `subscriptionMessagesCodes` and `messagesNames` (the subscriptions module re-exports the codes from there). Use the single `@aya/shared` import shown above.
+> **Confirmed:** `@ayah/shared` exports both `subscriptionMessagesCodes` and `messagesNames` (the subscriptions module re-exports the codes from there). Use the single `@ayah/shared` import shown above.
 >
 > **Confirmed — `forbidden()` signature:** `forbidden(message)` in `AppError.js` takes ONE arg and always sets `translationKey` to the auth namespace. It CANNOT carry the subscription translationKey. Therefore, every other gate in this plan must **reuse `assertActiveForStudent(studentId)`** (which throws the correct `AppError` with `translationKey: messagesNames.subscriptionMessages` and `dontRedirect: true`) rather than calling `forbidden(SUBSCRIPTION_INACTIVE, ...)`. Where a task below shows `forbidden(subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE, ...)`, replace it with `await assertActiveForStudent(studentId)`.
 
@@ -703,7 +703,7 @@ Run: `npm test -w server -- auth.controller` → FAIL.
 Add imports:
 
 ```js
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { hasActiveSubscription } from "../../shared/access/subscriptionAccess.js";
 ```
 
@@ -916,7 +916,7 @@ Add near the top of the component (after `usePermission`):
 
 ```jsx
 import { useAuth } from "../../../hooks/useAuth.js";
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { SubscriptionLockedState } from "../../../shared/components/index.js";
 ```
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { NOTIFICATION_PERMISSIONS } from "@aya/shared";
+import { NOTIFICATION_PERMISSIONS } from "@ayah/shared";
 import { notificationController } from "./notification.controller.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";

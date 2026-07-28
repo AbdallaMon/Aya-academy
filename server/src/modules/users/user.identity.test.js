@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   USER_ROLES,
   messagesNames,
   userMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { UserUsecase } from "./user.usecase.js";
 import { userRepo } from "./user.repo.js";
 

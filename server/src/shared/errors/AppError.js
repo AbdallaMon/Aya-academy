@@ -2,7 +2,7 @@ import {
   authMessagesCodes,
   generalMessagesCodes,
   messagesNames,
-} from "@aya/shared";
+} from "@ayah/shared";
 
 /**
  * Operational error carrying a language-neutral code + translationKey so the

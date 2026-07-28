@@ -1,8 +1,8 @@
-# Aya Academy Codebase Instructions
+# Ayah Academy Codebase Instructions
 
 ## Project Overview
 
-**Aya Academy** is a Next.js 16 + React 19 web application for Quran memorization education. It's a content-driven landing/dashboard site with Material-UI theming, real-time updates via Socket.io, and form handling using React Hook Form.
+**Ayah Academy** is a Next.js 16 + React 19 web application for Quran memorization education. It's a content-driven landing/dashboard site with Material-UI theming, real-time updates via Socket.io, and form handling using React Hook Form.
 
 **Tech Stack:** Next.js 16, TypeScript, Material-UI v7, React Hook Form, Framer Motion, Socket.io-client, Emotion
 

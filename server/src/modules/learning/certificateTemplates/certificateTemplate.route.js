@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { certificateTemplateController } from "./certificateTemplate.controller.js";
 import { CertificateTemplateValidation } from "./certificateTemplate.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

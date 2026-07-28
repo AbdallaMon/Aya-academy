@@ -50,7 +50,7 @@ export const faqContent = {
     items: [
       {
         q: 'What ages is it for?',
-        a: 'Aya Academy is built for students aged 5 and up, with levels organized by age and experience so every student progresses at their own pace.',
+        a: 'Ayah Academy is built for students aged 5 and up, with levels organized by age and experience so every student progresses at their own pace.',
       },
       {
         q: 'Are lessons live or recorded?',

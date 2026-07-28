@@ -5,7 +5,7 @@
 // is accepted. Size limit 200MB. multer errors are mapped to language-neutral
 // codes. The usecase deletes the temp file after the check.
 //
-// multer v2 (Aya): the diskStorage/single/fileFilter API used here is unchanged
+// multer v2 (Ayah): the diskStorage/single/fileFilter API used here is unchanged
 // from v1, so this is compatible.
 // ===========================================================================
 
@@ -14,7 +14,7 @@ import path from "path";
 import crypto from "crypto";
 import multer from "multer";
 import { AppError } from "../../shared/errors/AppError.js";
-import { backupMessagesCodes, messagesNames } from "@aya/shared";
+import { backupMessagesCodes, messagesNames } from "@ayah/shared";
 
 const TK = messagesNames.backupMessages;
 const MAX_BYTES = 200 * 1024 * 1024; // 200MB

@@ -1,4 +1,4 @@
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   activeSubscriptionWhere,
   currentSubscriptionWhere,
@@ -6,7 +6,7 @@ import {
   SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { userRepo } from "../../users/user.repo.js";
 import { subscriptionSelect, toSubscription } from "./subscription.dto.js";
 import { legacyValueToMinutes } from "../../../shared/utility/duration.js";

@@ -7,7 +7,7 @@ import {
   PERMISSIONS,
   USER_ROLES,
   userMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

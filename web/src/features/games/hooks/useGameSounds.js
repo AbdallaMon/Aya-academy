@@ -21,7 +21,7 @@
 // feel rounded and "produced" rather than like raw beeps.
 //
 // The AudioContext is created lazily on the first user gesture (browsers block
-// audio until then). Mute state is persisted to localStorage under "aya_muted".
+// audio until then). Mute state is persisted to localStorage under "ayah_muted".
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getGameSoundFile } from "../config/gameSoundFiles.js";
@@ -41,7 +41,7 @@ const DIGIT_NOTES = {
   "0": NOTES.A6, "*": NOTES.A4, "#": NOTES.B5,
 };
 
-const STORAGE_KEY = "aya_muted";
+const STORAGE_KEY = "ayah_muted";
 
 function readMuted() {
   if (typeof window === "undefined") return false;

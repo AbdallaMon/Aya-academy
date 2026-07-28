@@ -9,7 +9,7 @@
 // The failure path goes through AppError + errorHandler.
 // ===========================================================================
 
-import { generalMessagesCodes } from "@aya/shared";
+import { generalMessagesCodes } from "@ayah/shared";
 
 export function ok(res, data, message = generalMessagesCodes.OK, translationKey = null) {
   return res.status(200).json({ success: true, message, data, translationKey });

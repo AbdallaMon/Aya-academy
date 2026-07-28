@@ -18,7 +18,7 @@ import {
 import { useTheme, alpha } from "@mui/material/styles";
 import { MdAccountCircle, MdLogout, MdMenu } from "react-icons/md";
 import Link from "next/link";
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { LanguageSwitch } from "../../../shared/ui/buttons/LanguageSwitch.jsx";
 import NotificationBell from "../../notifications/components/NotificationBell.jsx";
 import { roleLabelKey } from "../config/navModel.js";

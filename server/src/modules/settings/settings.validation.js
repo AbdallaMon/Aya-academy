@@ -4,7 +4,7 @@ import {
   settingsMessagesCodes,
   WHITEBOARD_RETENTION_MAX_DAYS,
   WHITEBOARD_RETENTION_MIN_DAYS,
-} from "@aya/shared";
+} from "@ayah/shared";
 
 export class SettingsValidation {
   static updateSchema = z.object({

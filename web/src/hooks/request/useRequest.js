@@ -10,7 +10,7 @@
 // NEVER call ApiFetch directly from a component — always go through this hook.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { generalMessagesCodes } from '@aya/shared';
+import { generalMessagesCodes } from '@ayah/shared';
 import { useLoading } from '../useLoading.js';
 import apiFetch from '../../lib/api/ApiFetch.js';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constant.js';

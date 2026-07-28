@@ -4,7 +4,7 @@
 // and returns { items, total, page, pageSize }.)
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { paginate } from "../../../shared/utility/pagination.js";
 import { pointSelect, leaderboardStudentSelect } from "./point.dto.js";
 

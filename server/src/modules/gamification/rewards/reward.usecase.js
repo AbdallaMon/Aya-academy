@@ -4,7 +4,7 @@ import {
   USER_ROLES,
   messagesNames,
   rewardMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { conflict, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { assertActiveForStudent } from "../../../shared/access/subscriptionAccess.js";
 import { userRepo } from "../../users/user.repo.js";

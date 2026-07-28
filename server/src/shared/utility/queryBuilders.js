@@ -6,10 +6,10 @@
 // Convention: the repo receives raw query params (search / isActive / ...) and
 // builds `where` via these helpers instead of repeating filter logic per module.
 //
-// NOTE (aya): our boolean field is `isActive` and the frontend sends
+// NOTE (ayah): our boolean field is `isActive` and the frontend sends
 // "ALL" | "true" | "false". buildIsActiveFilter adapts those (and the
 // reference's "active" | "inactive") to true | false | undefined, preserving
-// aya's "undefined ⇒ no filter (show all)" behavior.
+// ayah's "undefined ⇒ no filter (show all)" behavior.
 // ===========================================================================
 
 /**
@@ -19,7 +19,7 @@
  *      • searchType="multiKeySearch": each key searched with its own value.
  *      • searchType="initial": the general `search` searched across keys with a value.
  *      • keyOr="k1,k2": restrict to specific keys with their values.
- *  - Legacy aya form: ({ search, keys }) → array | undefined
+ *  - Legacy ayah form: ({ search, keys }) → array | undefined
  *      • kept during the convention migration; callers migrate to the form above.
  */
 export function buildSearchQuery({ searchType, search, keysValues, keys, keyOr } = {}) {
@@ -74,9 +74,9 @@ export function buildFilterQuery({ filters = {}, keys = [] }) {
 }
 
 /**
- * Active filter. Accepts aya's "ALL" | "true" | "false" (and booleans), plus the
+ * Active filter. Accepts ayah's "ALL" | "true" | "false" (and booleans), plus the
  * reference's "active" | "inactive". Returns true | false | undefined.
- * undefined ⇒ caller omits the filter (show all) — aya's behavior.
+ * undefined ⇒ caller omits the filter (show all) — ayah's behavior.
  */
 export function buildIsActiveFilter({ isActive } = {}) {
   if (isActive === undefined || isActive === null || isActive === "" || isActive === "ALL") {

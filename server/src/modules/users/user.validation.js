@@ -5,7 +5,7 @@ import {
   USER_ROLES,
   authMessagesCodes,
   userMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import {
   normalizeEmail,
   normalizeUsername,

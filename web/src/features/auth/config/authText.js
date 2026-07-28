@@ -135,7 +135,7 @@ export const authText = {
   },
   en: {
     loginTitle: "Sign in",
-    loginSubtitle: "Welcome back to Aya Academy",
+    loginSubtitle: "Welcome back to Ayah Academy",
     loginButton: "Log in",
     registerTitle: "Create a parent account",
     registerSubtitle: "Start your child's Quran journey",
@@ -187,7 +187,7 @@ export const authText = {
     requestNewLink: "Request a new link",
     backToLogin: "Back to sign in",
     // wizard
-    appName: "Aya Academy",
+    appName: "Ayah Academy",
     registrationEyebrow: "Create a new account",
     wizardTitle: "Create a parent account",
     wizardSubtitle:

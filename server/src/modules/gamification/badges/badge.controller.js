@@ -1,4 +1,4 @@
-import { badgeMessagesCodes, generalMessagesCodes, messagesNames } from "@aya/shared";
+import { badgeMessagesCodes, generalMessagesCodes, messagesNames } from "@ayah/shared";
 import { created, ok, updated } from "../../../shared/http/response.js";
 import { idParam } from "../../../shared/http/params.js";
 import { badgeUsecase } from "./badge.usecase.js";

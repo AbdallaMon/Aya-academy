@@ -1,5 +1,5 @@
-import { prisma } from "@aya/db/prisma.client.js";
-import { USER_ROLES } from "@aya/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
+import { USER_ROLES } from "@ayah/shared";
 import { filterActiveStudentIds } from "../../../shared/access/subscriptionAccess.js";
 import { paginate } from "../../../shared/utility/pagination.js";
 import { userRepo } from "../../users/user.repo.js";

@@ -3,7 +3,7 @@ import {
   SESSION_SUBJECTS,
   USER_ROLES,
   sessionLogMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { minutesFromHours } from "../../../shared/utility/duration.js";
 import { userRepo } from "../../users/user.repo.js";

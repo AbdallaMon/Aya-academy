@@ -17,7 +17,7 @@ import fs from "fs";
 import { Readable } from "stream";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { ENV } from "../../../config/env.js";
-import { backupMessagesCodes, messagesNames, DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { backupMessagesCodes, messagesNames, DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 import { encrypt, decrypt } from "../../../shared/crypto/crypto.js";
 import { driveAccountsRepo } from "../../../modules/backups/driveAccount.repo.js";
 import { encryptionKeysRepo } from "../../../modules/encryptionKeys/encryptionKeys.repo.js";
@@ -337,7 +337,7 @@ class DriveProvider {
     if (account && account.folderId) return account.folderId;
 
     const drive = await this.getClientForAccount(accountId);
-    const folderName = ENV.google.driveFolderName || "Aya Academy Backups";
+    const folderName = ENV.google.driveFolderName || "Ayah Academy Backups";
     try {
       const res = await drive.files.list({
         q: `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g, "\\'")}' and trashed=false`,

@@ -20,7 +20,7 @@ export const blogUi = {
     ctaButton: 'احجز حصة مجانية',
   },
   en: {
-    eyebrow: 'Aya Blog',
+    eyebrow: 'Ayah Blog',
     title: 'Articles to Light Up Your Child’s Quran Journey',
     subtitle: 'A practical guide for parents on memorization, review and good character — grounded in the Quran and authentic Sunnah, in plain words and a warm heart.',
     searchPlaceholder: 'Search articles…',
@@ -32,7 +32,7 @@ export const blogUi = {
     share: 'Share article',
     minRead: 'min read',
     sources: 'Sources & references',
-    ctaTitle: 'Start your child’s journey with Aya',
+    ctaTitle: 'Start your child’s journey with Ayah',
     ctaText: 'Fun Quran & manners sessions, with calm parent tracking. Book a free trial session now.',
     ctaButton: 'Book a free session',
   },

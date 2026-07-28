@@ -1,5 +1,5 @@
 import { rateLimit } from "express-rate-limit";
-import { authMessagesCodes, gameMessagesCodes, messagesNames } from "@aya/shared";
+import { authMessagesCodes, gameMessagesCodes, messagesNames } from "@ayah/shared";
 import { tooManyRequests } from "../errors/AppError.js";
 
 // Per-IP rate limit for the public free-trial game. After FREE_GAME_MAX loads

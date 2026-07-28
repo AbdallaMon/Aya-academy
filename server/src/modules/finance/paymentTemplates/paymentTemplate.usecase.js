@@ -1,4 +1,4 @@
-import { DEFAULT_PAYMENT_TEMPLATE } from "@aya/shared";
+import { DEFAULT_PAYMENT_TEMPLATE } from "@ayah/shared";
 import { paymentTemplateRepo } from "./paymentTemplate.repo.js";
 
 class PaymentTemplateUsecase {

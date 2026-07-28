@@ -3,7 +3,7 @@ import {
   BILLING_PERIODS,
   SUBSCRIPTION_STATUSES,
   subscriptionMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 
 const statuses = [
   SUBSCRIPTION_STATUSES.PENDING,

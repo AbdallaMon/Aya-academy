@@ -3,7 +3,7 @@ import {
   generalMessagesCodes,
   messagesNames,
   userMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { created, ok } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
 import { userUsecase } from "./user.usecase.js";

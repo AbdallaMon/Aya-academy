@@ -25,7 +25,7 @@ const FOOTER_TEXT = {
     developerName: 'عبدالله عبدالصبور',
   },
   en: {
-    brand: 'Aya Academy',
+    brand: 'Ayah Academy',
     tagline: 'A joyful journey for kids to learn the Quran and beautiful manners — gentle, safe and fun.',
     explore: 'Explore',
     account: 'Account',

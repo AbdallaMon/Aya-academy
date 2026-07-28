@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import { ENV } from "../../config/env.js";
 
-export const AUTH_COOKIE = "aya_access";
-export const REFRESH_COOKIE = "aya_refresh";
+export const AUTH_COOKIE = "ayah_access";
+export const REFRESH_COOKIE = "ayah_refresh";
 
 export const ACCESS_MAX_AGE = 15 * 60 * 1000; // 15m
 export const REFRESH_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30d

@@ -161,7 +161,7 @@ export const certificatesText = {
     issuedOn: "Issued on",
     loading: "Loading...",
     // academy brand (shown on every certificate)
-    academyName: "Aya Academy for Quran",
+    academyName: "Ayah Academy for Quran",
     academyTagline: "Learning Quran & good manners through play",
     signatureLabel: "Signature",
     defaultSignature: "Academy Management",

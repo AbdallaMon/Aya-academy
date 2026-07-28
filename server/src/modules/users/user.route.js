@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { USER_PERMISSIONS, messagesNames } from "@aya/shared";
+import { USER_PERMISSIONS, messagesNames } from "@ayah/shared";
 import { userController } from "./user.controller.js";
 import { UserValidation } from "./user.validation.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";

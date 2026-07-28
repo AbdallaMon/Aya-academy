@@ -4,7 +4,7 @@ import {
   SESSION_RATINGS,
   SESSION_SUBJECTS,
   sessionLogMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 
 const SUBJECT_VALUES = Object.values(SESSION_SUBJECTS);
 const RATING_VALUES = Object.values(SESSION_RATINGS);

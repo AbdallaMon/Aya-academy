@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { badgeMessagesCodes } from "@aya/shared";
+import { badgeMessagesCodes } from "@ayah/shared";
 
 const hexColor = z
   .string()

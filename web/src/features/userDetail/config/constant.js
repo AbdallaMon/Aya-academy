@@ -1,7 +1,7 @@
 "use client";
 
 // Shared constants for the unified user-detail surface.
-import { STUDENT_LEVELS, STUDENT_LEVEL_ORDER } from "@aya/shared";
+import { STUDENT_LEVELS, STUDENT_LEVEL_ORDER } from "@ayah/shared";
 
 export const USERS_URL = "users";
 export const BADGES_URL = "badges";

@@ -48,7 +48,7 @@ export const ENV = {
   },
 
   // Backup destination + scheduler. Default "drive" (multi-account Google Drive)
-  // | "local" | "s3". No Settings model in Aya — schedule time + retention come
+  // | "local" | "s3". No Settings model in Ayah — schedule time + retention come
   // from the env.
   backup: {
     provider: process.env.BACKUP_PROVIDER || "drive",
@@ -78,7 +78,7 @@ export const ENV = {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     redirectUri: process.env.GOOGLE_REDIRECT_URI,
-    driveFolderName: process.env.GOOGLE_DRIVE_FOLDER_NAME || "Aya Academy Backups",
+    driveFolderName: process.env.GOOGLE_DRIVE_FOLDER_NAME || "Ayah Academy Backups",
   },
 
   // AWS S3 (only used when backup.provider === "s3"). Lazy — never built unless used.
@@ -110,7 +110,7 @@ export const ENV = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
-    fromName: process.env.SMTP_FROM_NAME || "Aya Academy",
+    fromName: process.env.SMTP_FROM_NAME || "Ayah Academy",
     // Reject invalid TLS certs by default; opt out only for self-signed servers.
     rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
   },

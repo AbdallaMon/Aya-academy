@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";

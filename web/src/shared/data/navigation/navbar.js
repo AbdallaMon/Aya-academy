@@ -8,7 +8,7 @@
 export const navSections = [
   { id: 'home', ar: 'الرئيسية', en: 'Home' },
   { id: 'about', href: '/about', ar: 'من نحن', en: 'About' },
-  { id: 'why-ayah', ar: 'لماذا آية', en: 'Why Aya' },
+  { id: 'why-ayah', ar: 'لماذا آية', en: 'Why Ayah' },
   { id: 'how-it-works', ar: 'كيف نتعلّم', en: 'How it works' },
   { id: 'levels', ar: 'المستويات', en: 'Levels' },
   { id: 'services', href: '/services', ar: 'البرامج', en: 'Programs' },
@@ -42,7 +42,7 @@ export const navText = {
     menu: 'القائمة',
   },
   en: {
-    brand: 'Aya Academy',
+    brand: 'Ayah Academy',
     dashboard: 'Dashboard',
     login: 'Login',
     signup: 'Sign up',

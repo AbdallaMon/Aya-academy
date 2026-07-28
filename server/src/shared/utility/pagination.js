@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@aya/shared";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@ayah/shared";
 
 export function paginate({ page, limit }) {
   const p = Math.max(1, Number(page) || 1);

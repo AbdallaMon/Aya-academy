@@ -1,4 +1,4 @@
-import { messagesNames, settingsMessagesCodes } from "@aya/shared";
+import { messagesNames, settingsMessagesCodes } from "@ayah/shared";
 import { ok } from "../../shared/http/response.js";
 import { settingsUsecase } from "./settings.usecase.js";
 

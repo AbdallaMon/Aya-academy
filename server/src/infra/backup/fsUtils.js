@@ -14,17 +14,17 @@ export const BACKUPS_DIR = path.isAbsolute(ENV.backup.dir)
   ? ENV.backup.dir
   : path.resolve(process.cwd(), ENV.backup.dir);
 
-export const EXTERNAL_TMP_PREFIX = "aya-academy-external-"; // temp check dir prefix (for the sweep)
+export const EXTERNAL_TMP_PREFIX = "ayah-academy-external-"; // temp check dir prefix (for the sweep)
 
 export function ensureBackupsDir() {
   if (!fs.existsSync(BACKUPS_DIR)) fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 }
 
-/** aya-academy-YYYY-MM-DD-HHmm.enc */
+/** ayah-academy-YYYY-MM-DD-HHmm.enc */
 export function datedFileName(date = new Date()) {
   const p = (n) => String(n).padStart(2, "0");
   const stamp = `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}`;
-  return `aya-academy-${stamp}.enc`;
+  return `ayah-academy-${stamp}.enc`;
 }
 
 export function safeUnlink(p) {

@@ -7,9 +7,9 @@ import {
   authMessagesCodes,
   messagesNames,
   planMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import crypto from "node:crypto";
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { AppError, badRequest, notFound } from "../../shared/errors/AppError.js";
 import { comparePassword, hashPassword } from "../../infra/security/hash.js";
 import { ENV } from "../../config/env.js";

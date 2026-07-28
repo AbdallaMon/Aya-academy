@@ -5,7 +5,7 @@ import {
   USER_ROLES,
   attachmentMessagesCodes,
   messagesNames,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { AppError, notFound } from "../../shared/errors/AppError.js";
 import { attachmentRepo } from "./attachment.repo.js";
 import { userRepo } from "../users/user.repo.js";

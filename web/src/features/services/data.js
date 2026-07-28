@@ -313,8 +313,8 @@ export const servicePageText = {
   },
   en: {
     indexTitle: 'Online Quran, Arabic & Islamic Studies Programs',
-    indexDescription: 'Explore Aya Academy programs for children and adults, with a plan that fits the student’s level, live sessions and guided lessons.',
-    indexEyebrow: 'Aya Academy programs',
+    indexDescription: 'Explore Ayah Academy programs for children and adults, with a plan that fits the student’s level, live sessions and guided lessons.',
+    indexEyebrow: 'Ayah Academy programs',
     indexCta: 'Explore the program',
     audienceTitle: 'Who is this program for?',
     audience: 'Programs for all ages — from young learners to adults — on a plan that fits the student’s level.',

@@ -22,13 +22,13 @@ export const aboutContent = {
     keywords: ['فريق أكاديمية آية', 'معلمو قرآن لغير الناطقين بالعربية', 'تعليم الدراسات الإسلامية أونلاين', 'تعليم العربية أونلاين'],
   },
   en: {
-    eyebrow: 'Aya Academy',
-    title: 'About Aya Academy',
+    eyebrow: 'Ayah Academy',
+    title: 'About Ayah Academy',
     description: 'A dedicated team teaching the Qur’an, Islamic Studies and Arabic to non-Arabic speakers of all ages.',
     points: [
       {
         title: 'Experience across all ages',
-        body: 'Aya Academy has a team of dedicated Qur’an and Islamic Studies teachers with years of experience teaching non-Arabic speakers of all ages.',
+        body: 'Ayah Academy has a team of dedicated Qur’an and Islamic Studies teachers with years of experience teaching non-Arabic speakers of all ages.',
       },
       {
         title: 'Authentic and interactive learning',
@@ -40,8 +40,8 @@ export const aboutContent = {
       },
     ],
     metaTitle: 'About Our Qur’an and Islamic Studies Teachers',
-    metaDescription: 'Meet Aya Academy’s experienced Qur’an and Islamic Studies teachers for non-Arabic speakers of all ages, with authentic and interactive lessons.',
-    keywords: ['Aya Academy teachers', 'Quran teachers for non-Arabic speakers', 'online Islamic Studies teachers', 'online Arabic teachers'],
+    metaDescription: 'Meet Ayah Academy’s experienced Qur’an and Islamic Studies teachers for non-Arabic speakers of all ages, with authentic and interactive lessons.',
+    keywords: ['Ayah Academy teachers', 'Quran teachers for non-Arabic speakers', 'online Islamic Studies teachers', 'online Arabic teachers'],
   },
 };
 

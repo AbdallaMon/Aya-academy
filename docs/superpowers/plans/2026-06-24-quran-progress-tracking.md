@@ -6,14 +6,14 @@
 
 **Architecture:** Layered Express + Prisma backend (route → controller → usecase → repo → validation → dto + messages). New `quran` module for reference reads + per-student progress; the existing `sessions` module is extended with a `/plan` action. Reference data (surahs, juz', juz-segments) is seeded once and read-only at runtime. Frontend follows the config-driven `features/<x>` shape (DataTable/useRequest, AppForm + RHF, `usePermission` gating, i18n).
 
-**Tech Stack:** Node ESM, Express 5, Prisma 7 (MySQL/MariaDB adapter), Zod 4, `@aya/shared` (constants + message codes), Next.js App Router + MUI + react-hook-form.
+**Tech Stack:** Node ESM, Express 5, Prisma 7 (MySQL/MariaDB adapter), Zod 4, `@ayah/shared` (constants + message codes), Next.js App Router + MUI + react-hook-form.
 
 ## Global Constraints
 
 - **No TypeScript in app source** — backend and seed are `.js` ESM; web app code is `.jsx`/`.js` (never `.tsx` for app components — stale `.tsx` shadows are a known bug; see memory).
 - **Prisma only in repos** — no `prisma` import outside `*.repo.js` / `seed.js`. No business logic in routes/controllers.
 - **Authorize on permission codes, never role names.** Every mutating endpoint also enforces object-scope (admin=all, parent=linked children, student=self).
-- **Language-neutral message CODES only** — never raw user-facing strings in errors. Every new code defined in `@aya/shared` and given **ar + en** localization on the web side.
+- **Language-neutral message CODES only** — never raw user-facing strings in errors. Every new code defined in `@ayah/shared` and given **ar + en** localization on the web side.
 - **Enums mirrored in three places** must stay in sync: `packages/db/prisma/schema.prisma`, `packages/shared/constants/enums.js`.
 - **No test runner exists** in this repo. "Verify" steps use: `prisma validate`, `prisma migrate dev`, `npm run db:seed`, a one-off node assertion script, `npm run build -w web`, and manual endpoint smoke checks via `curl`. Do **not** add a test framework.
 - **No audit logging** for these endpoints — the sibling `sessions` module does not audit; follow that precedent.
@@ -211,7 +211,7 @@ git commit -m "feat(schema): Quran reference + progress + lesson-assignment mode
 
 - [ ] **Step 1: Create the migration**
 
-Run: `npm run db:migrate -- --name quran_progress` (from repo root; this runs `prisma migrate dev` in `@aya/db`).
+Run: `npm run db:migrate -- --name quran_progress` (from repo root; this runs `prisma migrate dev` in `@ayah/db`).
 Expected: a new folder `packages/db/prisma/migrations/<ts>_quran_progress/migration.sql` and "Your database is now in sync with your schema."
 
 - [ ] **Step 2: Regenerate the client (if not auto-run)**
@@ -436,7 +436,7 @@ Expected: log line `[seed] quran — 114 surahs, 30 juz, <N> segments` and no er
 
 - [ ] **Step 5: Verify in DB**
 
-Run: `node -e "import('@aya/db/prisma.client.js').then(async({prisma})=>{console.log(await prisma.quranSurah.count(), await prisma.quranJuz.count(), await prisma.quranJuzSegment.count()); process.exit(0)})"`
+Run: `node -e "import('@ayah/db/prisma.client.js').then(async({prisma})=>{console.log(await prisma.quranSurah.count(), await prisma.quranJuz.count(), await prisma.quranJuzSegment.count()); process.exit(0)})"`
 Expected: `114 30 <N>`
 
 - [ ] **Step 6: Commit**
@@ -527,7 +527,7 @@ export const sessionMessagesCodes = {
 
 - [ ] **Step 8: Smoke-check the barrel exports**
 
-Run: `node -e "import('@aya/shared').then(m=>{console.log(m.QURAN_PERMISSIONS, m.quranMessagesCodes.JUZ_NOT_FOUND, m.messagesNames.quranMessages); process.exit(0)})"`
+Run: `node -e "import('@ayah/shared').then(m=>{console.log(m.QURAN_PERMISSIONS, m.quranMessagesCodes.JUZ_NOT_FOUND, m.messagesNames.quranMessages); process.exit(0)})"`
 Expected: prints the object, `JUZ_NOT_FOUND`, `quran-messages`.
 
 - [ ] **Step 9: Commit**
@@ -554,7 +554,7 @@ git commit -m "feat(shared): quran permissions + message codes"
 - [ ] **Step 1: Create `quran.messages.js`** (re-export from shared, mirroring `session.messages.js` style).
 
 ```js
-export { quranMessagesCodes } from "@aya/shared";
+export { quranMessagesCodes } from "@ayah/shared";
 ```
 
 - [ ] **Step 2: Create `quran.dto.js`**
@@ -590,7 +590,7 @@ export const juzWithSegmentsSelect = {
 - [ ] **Step 3: Create `quran.repo.js`**
 
 ```js
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { surahSelect, juzWithSegmentsSelect } from "./quran.dto.js";
 
 class QuranRepo {
@@ -666,7 +666,7 @@ export const quranController = new QuranController();
 
 ```js
 import { Router } from "express";
-import { QURAN_PERMISSIONS } from "@aya/shared";
+import { QURAN_PERMISSIONS } from "@ayah/shared";
 import { quranController } from "./quran.controller.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
@@ -741,7 +741,7 @@ export const progressSelect = {
 
 ```js
 import { surahSelect, juzWithSegmentsSelect, progressSelect } from "./quran.dto.js";
-import { SEGMENT_STATUSES } from "@aya/shared";
+import { SEGMENT_STATUSES } from "@ayah/shared";
 ```
 
 ```js
@@ -811,7 +811,7 @@ git commit -m "feat(quran): progress repo methods + projection"
 - [ ] **Step 1: Replace `quran.usecase.js`** with the full version.
 
 ```js
-import { USER_ROLES, SEGMENT_STATUSES, messagesNames } from "@aya/shared";
+import { USER_ROLES, SEGMENT_STATUSES, messagesNames } from "@ayah/shared";
 import { badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
 import { quranRepo } from "./quran.repo.js";
@@ -956,7 +956,7 @@ git commit -m "feat(quran): progress usecase (scope, percentages, bulk set)"
 
 ```js
 import { z } from "zod";
-import { SEGMENT_STATUSES } from "@aya/shared";
+import { SEGMENT_STATUSES } from "@ayah/shared";
 
 export class QuranValidation {
   static setJuzProgressSchema = z.object({
@@ -978,7 +978,7 @@ export class QuranValidation {
 
 ```js
 import { ok } from "../../shared/http/response.js";
-import { generalMessagesCodes } from "@aya/shared";
+import { generalMessagesCodes } from "@ayah/shared";
 import { badRequest } from "../../shared/errors/AppError.js";
 import { quranUsecase } from "./quran.usecase.js";
 
@@ -1131,7 +1131,7 @@ Add to `sessionSelect` (after `notes: true,`):
 - [ ] **Step 3: Add `setPlanSchema` to `session.validation.js`** (import `LESSON_ASSIGNMENT_KINDS`).
 
 ```js
-import { LESSON_STATUSES, LESSON_ASSIGNMENT_KINDS } from "@aya/shared";
+import { LESSON_STATUSES, LESSON_ASSIGNMENT_KINDS } from "@ayah/shared";
 ```
 
 ```js

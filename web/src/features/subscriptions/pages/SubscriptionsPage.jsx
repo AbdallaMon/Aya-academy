@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdAdd } from "react-icons/md";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

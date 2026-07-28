@@ -1,4 +1,4 @@
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   PARENT_RELATIONS,
   STUDENT_LEVELS,
@@ -7,7 +7,7 @@ import {
   attachmentMessagesCodes,
   messagesNames,
   userMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { AppError, badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { attachmentRepo } from "../attachments/attachment.repo.js";
 import { attachmentUsecase } from "../attachments/attachment.usecase.js";

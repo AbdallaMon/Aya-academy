@@ -3,9 +3,9 @@
 //
 // Files are stored under UPLOAD_DIR with a collision-safe name. Only image mime
 // types (png/jpeg/jpg/webp/gif) are accepted, max ~5MB. multer errors are mapped
-// to language-neutral codes from @aya/shared.
+// to language-neutral codes from @ayah/shared.
 //
-// multer v2 (Aya): the diskStorage/single/fileFilter API used here is unchanged
+// multer v2 (Ayah): the diskStorage/single/fileFilter API used here is unchanged
 // from v1, so this is compatible.
 // ===========================================================================
 
@@ -13,7 +13,7 @@ import path from "path";
 import crypto from "crypto";
 import multer from "multer";
 import { AppError } from "../../shared/errors/AppError.js";
-import { attachmentMessagesCodes, messagesNames } from "@aya/shared";
+import { attachmentMessagesCodes, messagesNames } from "@ayah/shared";
 import { UPLOAD_DIR } from "./storage.js";
 
 const TK = messagesNames.attachmentMessages;

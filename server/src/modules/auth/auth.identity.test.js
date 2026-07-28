@@ -4,7 +4,7 @@ import {
   USER_ROLES,
   authMessagesCodes,
   userMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { AuthValidation } from "./auth.validation.js";
 import { UserValidation } from "../users/user.validation.js";
 

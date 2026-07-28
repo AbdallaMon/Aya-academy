@@ -6,7 +6,7 @@
 
 **Architecture:** New public `POST /auth/enroll` runs everything in one Prisma transaction, reusing existing `subscriptionUsecase.computePricing` (authoritative pricing + coupon) and a new system-level invoice generator. A new public `POST /plans/quote` powers the live per-child coupon "verify". The frontend becomes a multi-step wizard built from small presentational components.
 
-**Tech Stack:** Express + Prisma (backend, layered route→controller→usecase→repo→validation), Zod validation, Next.js App Router + MUI + `useRequest` (frontend), `@aya/shared` for codes/enums.
+**Tech Stack:** Express + Prisma (backend, layered route→controller→usecase→repo→validation), Zod validation, Next.js App Router + MUI + `useRequest` (frontend), `@ayah/shared` for codes/enums.
 
 ## Global Constraints
 
@@ -35,7 +35,7 @@
 **Interfaces:**
 - Produces: new `authMessagesCodes` keys `ENROLLED_SUCCESS`, `CHILD_EMAIL_DUPLICATE`, `CHILD_EMAIL_EXISTS`, `NO_CHILDREN`, `PLAN_REQUIRED`, `COUPON_INVALID_FOR_PLAN`. Used by Task 4 (enroll) and the frontend.
 
-- [ ] **Step 1: Add the codes to `@aya/shared`**
+- [ ] **Step 1: Add the codes to `@ayah/shared`**
 
 In `packages/shared/messages-codes/auth.js`, inside the `authMessagesCodes` object, add to the `// success` group and a new `// enroll` group:
 
@@ -85,8 +85,8 @@ In the same file inside `const en = { ... [messagesNames.authMessages]: { ... } 
 
 - [ ] **Step 3: Verify the shared barrel still imports cleanly**
 
-Run: `node -e "import('@aya/shared').then(m=>console.log(m.authMessagesCodes.ENROLLED_SUCCESS, m.authMessagesCodes.COUPON_INVALID_FOR_PLAN))"`
-(Run from `Server/` so the workspace resolves `@aya/shared`; if it does not resolve there, run from repo root.)
+Run: `node -e "import('@ayah/shared').then(m=>console.log(m.authMessagesCodes.ENROLLED_SUCCESS, m.authMessagesCodes.COUPON_INVALID_FOR_PLAN))"`
+(Run from `Server/` so the workspace resolves `@ayah/shared`; if it does not resolve there, run from repo root.)
 Expected: prints `ENROLLED_SUCCESS AUTH_COUPON_INVALID_FOR_PLAN`
 
 - [ ] **Step 4: Commit**
@@ -316,7 +316,7 @@ In `Server/src/modules/plans/plan.validation.js`, add the `BILLING_PERIODS` impo
 
 ```js
 import { z } from "zod";
-import { BILLING_PERIODS } from "@aya/shared";
+import { BILLING_PERIODS } from "@ayah/shared";
 import { planMessagesCodes } from "./plan.messages.js";
 
 const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];
@@ -389,7 +389,7 @@ In `Server/src/modules/auth/auth.validation.js`, add the imports + schema:
 
 ```js
 import { z } from "zod";
-import { authMessagesCodes, BILLING_PERIODS } from "@aya/shared";
+import { authMessagesCodes, BILLING_PERIODS } from "@ayah/shared";
 
 const billingPeriods = [BILLING_PERIODS.MONTHLY, BILLING_PERIODS.YEARLY];
 
@@ -442,8 +442,8 @@ import {
   authMessagesCodes,
   messagesNames,
   planMessagesCodes,
-} from "@aya/shared";
-import { prisma } from "@aya/db/prisma.client.js";
+} from "@ayah/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { AppError, badRequest, conflict, notFound } from "../../shared/errors/AppError.js";
 import { comparePassword, hashPassword } from "../../infra/security/hash.js";
 import { userRepo } from "../users/user.repo.js";
@@ -769,7 +769,7 @@ In `web/src/features/auth/config/authText.js`, add these keys to **both** the `a
 
 `en` additions:
 ```js
-    wizardTitle: "Join Aya Academy",
+    wizardTitle: "Join Ayah Academy",
     wizardSubtitle: "Add your children and choose a plan",
     stepChildren: "Children & plans",
     stepReview: "Review & parent details",
@@ -1712,8 +1712,8 @@ export default function RegisterWizard() {
     <Box sx={{ py: { xs: 4, md: 6 } }}>
       <Container maxWidth="md">
         <Stack spacing={1} alignItems="center" sx={{ mb: 3 }}>
-          <Box component={Link} href={localePath(lng, "/")} aria-label="Aya Academy">
-            <Box component="img" src="/logos/logo.png" alt="Aya Academy" sx={{ height: 56 }} />
+          <Box component={Link} href={localePath(lng, "/")} aria-label="Ayah Academy">
+            <Box component="img" src="/logos/logo.png" alt="Ayah Academy" sx={{ height: 56 }} />
           </Box>
           <Typography variant="h4" fontWeight={800} textAlign="center">
             {txt.wizardTitle}

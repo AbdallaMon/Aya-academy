@@ -39,7 +39,7 @@ export default function Hero() {
   const { lng } = useTranslation();
   const t = HERO[lng === 'en' ? 'en' : 'ar'];
 
-  // Aya uses one stable light/green theme, so the hero no longer hydrates just
+  // Ayah uses one stable light/green theme, so the hero no longer hydrates just
   // to choose between light and dark assets.
   const heroImg = '/hero-light.webp';
   const heroDims = { width: 1082, height: 848 };

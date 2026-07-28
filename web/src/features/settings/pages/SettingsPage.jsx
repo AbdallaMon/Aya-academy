@@ -11,7 +11,7 @@ import {
   Grid,
   Stack,
 } from "@mui/material";
-import { PERMISSIONS, CURRENCY_OPTIONS, DEFAULT_APP_SETTINGS } from "@aya/shared";
+import { PERMISSIONS, CURRENCY_OPTIONS, DEFAULT_APP_SETTINGS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import {

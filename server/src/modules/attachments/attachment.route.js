@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ATTACHMENT_PERMISSIONS } from "@aya/shared";
+import { ATTACHMENT_PERMISSIONS } from "@ayah/shared";
 import { attachmentController } from "./attachment.controller.js";
 import { AttachmentValidation } from "./attachment.validation.js";
 import { uploadImageFile } from "../../infra/upload/attachment.upload.js";

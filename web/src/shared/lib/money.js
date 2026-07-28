@@ -1,7 +1,7 @@
 // Currency-aware money formatting, used everywhere so the single global currency
 // renders consistently. `narrowSymbol` makes USD show as "$" (not "US$"), GBP as
-// "£", etc. Falls back to the @aya/shared symbol table if Intl can't.
-import { currencySymbol, DEFAULT_CURRENCY } from "@aya/shared";
+// "£", etc. Falls back to the @ayah/shared symbol table if Intl can't.
+import { currencySymbol, DEFAULT_CURRENCY } from "@ayah/shared";
 
 export function formatMoney(value, currency = DEFAULT_CURRENCY) {
   if (value === null || value === undefined || value === "") return "—";

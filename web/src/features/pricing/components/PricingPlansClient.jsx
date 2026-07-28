@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { MdCheckCircle } from 'react-icons/md';
-import { currencySymbol } from '@aya/shared';
+import { currencySymbol } from '@ayah/shared';
 import { useRequest } from '@/hooks/request/useRequest.js';
 import { localePath } from '@/i18n/routing.js';
 import { pricingText } from '../config/pricingText.js';

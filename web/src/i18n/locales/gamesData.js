@@ -143,7 +143,7 @@ export const gamesData = {
     errorLoading: "حصل خطأ بسيط، جرّب تاني 💛",
   },
   en: {
-    pageTitle: "Aya Academy Games",
+    pageTitle: "Ayah Academy Games",
     pageSubtitle: "Play and learn beautiful manners — collect stars and medals! 🌟",
     playNow: "Let's play! 🚀",
     freeBadge: "Free",
@@ -244,9 +244,9 @@ export const gamesData = {
     studioToCert: "Get the certificate 🏆",
     studioAdded: "You added a lovely sticker! You can add up to 5! ✨",
 
-    certAcademy: "Aya Academy for Quran",
+    certAcademy: "Ayah Academy for Quran",
     certDefaultTitle: "Golden Champion Medal",
-    certBody: "Aya Academy certifies that our creative champion has learned and mastered all the beautiful manners!",
+    certBody: "Ayah Academy certifies that our creative champion has learned and mastered all the beautiful manners!",
     certWho: "The crowned champion:",
     certDefaultName: "Our little champion",
     certNamePlaceholder: "Type your name here",

@@ -2,7 +2,7 @@ import {
   USER_ROLES,
   SUBSCRIPTION_STATUSES,
   dashboardMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { forbidden } from "../../shared/errors/AppError.js";
 import { userRepo } from "../users/user.repo.js";
 import { dashboardRepo } from "./dashboard.repo.js";

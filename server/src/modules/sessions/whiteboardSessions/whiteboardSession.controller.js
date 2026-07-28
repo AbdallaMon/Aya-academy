@@ -3,7 +3,7 @@ import {
   messagesNames,
   PERMISSIONS,
   whiteboardMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { created, deleted, ok } from "../../../shared/http/response.js";
 import { idParam } from "../../../shared/http/params.js";
 import { AUTH_COOKIE, JwtService } from "../../../infra/security/jwt.js";

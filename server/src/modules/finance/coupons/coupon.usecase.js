@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { badRequest, conflict, notFound } from "../../../shared/errors/AppError.js";
-import { couponMessagesCodes, messagesNames } from "@aya/shared";
+import { couponMessagesCodes, messagesNames } from "@ayah/shared";
 import { couponRepo } from "./coupon.repo.js";
 
 class CouponUsecase {
@@ -39,8 +39,8 @@ class CouponUsecase {
     return coupon;
   }
 
-  /** Generate a unique, human-friendly coupon code (e.g. AYA-3F9A2C). */
-  async generateUniqueCode(prefix = "AYA") {
+  /** Generate a unique, human-friendly coupon code (e.g. AYAH-3F9A2C). */
+  async generateUniqueCode(prefix = "AYAH") {
     for (let i = 0; i < 8; i += 1) {
       const token = randomBytes(3).toString("hex").toUpperCase();
       const code = `${prefix}-${token}`;

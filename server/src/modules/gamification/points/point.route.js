@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { POINT_PERMISSIONS } from "@aya/shared";
+import { POINT_PERMISSIONS } from "@ayah/shared";
 import { pointController } from "./point.controller.js";
 import { PointValidation } from "./point.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

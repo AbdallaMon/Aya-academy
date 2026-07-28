@@ -6,7 +6,7 @@
 // are Coupons; a plan-scoped coupon may target a specific cycle (or both, when
 // `billingPeriod` is null).
 
-import { BILLING_PERIODS, DISCOUNT_TYPES } from "@aya/shared";
+import { BILLING_PERIODS, DISCOUNT_TYPES } from "@ayah/shared";
 import { MINUTES_PER_HOUR } from "./duration.js";
 
 /** Effective monthly price: hours × global hourly rate. */

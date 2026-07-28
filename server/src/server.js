@@ -3,7 +3,7 @@ import { ENV } from "./config/env.js";
 import { initRealtime } from "./infra/realtime/socket.js";
 
 const server = app.listen(ENV.PORT, () => {
-  console.log(`Aya Academy API running on http://localhost:${ENV.PORT}/api/v1`);
+  console.log(`Ayah Academy API running on http://localhost:${ENV.PORT}/api/v1`);
 });
 
 // Attach the realtime (socket.io) server to the same HTTP server so notification

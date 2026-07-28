@@ -7,8 +7,8 @@
 // consumed cross-module (subscriptions) and its signature is frozen.
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
-import { USER_ROLES } from "@aya/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
+import { USER_ROLES } from "@ayah/shared";
 import { paginate } from "../../../shared/utility/pagination.js";
 import { userRepo } from "../../users/user.repo.js";
 import { invoiceSelect, toInvoice } from "./invoice.dto.js";

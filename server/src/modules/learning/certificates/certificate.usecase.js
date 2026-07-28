@@ -5,7 +5,7 @@ import {
   USER_ROLES,
   certificateMessagesCodes,
   messagesNames,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { userRepo } from "../../users/user.repo.js";
 import { badgeUsecase } from "../../gamification/badges/badge.usecase.js";

@@ -123,7 +123,7 @@ Engine collects `answersJson` (per-task chosen option ids / slider value / dial 
 computed `correctCount` + `totalQuestions`, then `POST /games/:id/attempt`. Server returns
 `{ attempt, passed, certificate }`. The engine shows the **reward studio** then the **certificate**.
 
-## Phase D kinds — now LIVE in the enum (schema + @aya/shared + prisma generated)
+## Phase D kinds — now LIVE in the enum (schema + @ayah/shared + prisma generated)
 `MATCHING`, `COMPASS`, `CALENDAR_DROP`, `COLORING` are implemented as renderers
 (registered in `engine/renderers/index.js`) and seeded as: `letters-match`, `qibla-compass`,
 `ramadan-hero`, `decorate-mosque`. See the per-kind `mediaJson` shapes above.

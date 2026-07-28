@@ -12,8 +12,8 @@
 //   node scripts/backfill-user-points.js
 // ===========================================================================
 
-import { USER_ROLES } from "@aya/shared";
-import { prisma } from "@aya/db/prisma.client.js";
+import { USER_ROLES } from "@ayah/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
 
 async function main() {
   const sums = await prisma.point.groupBy({

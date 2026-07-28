@@ -1,4 +1,4 @@
-import { generalMessagesCodes } from "@aya/shared";
+import { generalMessagesCodes } from "@ayah/shared";
 import { created, ok } from "../../../shared/http/response.js";
 import { idParam } from "../../../shared/http/params.js";
 import { certificateTemplateUsecase } from "./certificateTemplate.usecase.js";

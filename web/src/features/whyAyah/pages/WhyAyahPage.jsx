@@ -1,4 +1,4 @@
-// WhyAya — one merged "who we are / how it works / levels" section that replaces
+// WhyAyah — one merged "who we are / how it works / levels" section that replaces
 // the old About + HowItWorks + Levels + WhyAyah (which all repeated the same
 // "bilingual / kid-friendly / progress & badges" value props). Three internal
 // bands with their own rhythm so the page no longer reads as five identical
@@ -52,7 +52,7 @@ const CONTENT = {
     ],
   },
   en: {
-    eyebrow: 'Why Aya',
+    eyebrow: 'Why Ayah',
     title: 'Quran learning made simple for every student',
     slogan: 'Quran in the language that suits the student — clear levels, a gentle pace, and progress you can see.',
     diffs: [
@@ -60,7 +60,7 @@ const CONTENT = {
       { t: 'Student-friendly pacing', d: 'Short lessons, gentle repetition, no pressure.' },
       { t: 'Meaning, not just memorizing', d: 'They understand what they recite, not just memorize.' },
     ],
-    howTitle: 'How Aya Academy works',
+    howTitle: 'How Ayah Academy works',
     howSub: 'Four simple steps from sign-up to the first badge 🌟',
     steps: [
       { t: 'Sign up & pick a level', d: "Tell us the student’s age — we match the right level." },
@@ -78,7 +78,7 @@ const CONTENT = {
   },
 };
 
-export function WhyAya({ lng = 'en' }) {
+export function WhyAyah({ lng = 'en' }) {
   const c = CONTENT[lng === 'en' ? 'en' : 'ar'];
 
   return (
@@ -288,4 +288,4 @@ export function WhyAya({ lng = 'en' }) {
   );
 }
 
-export default WhyAya;
+export default WhyAyah;

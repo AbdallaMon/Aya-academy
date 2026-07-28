@@ -13,7 +13,7 @@ import {
   formatDurationMinutes,
   formatMoney,
 } from "../config/constant.js";
-import { DEFAULT_PAYMENT_TEMPLATE } from "@aya/shared";
+import { DEFAULT_PAYMENT_TEMPLATE } from "@ayah/shared";
 
 function hideOnError(e) {
   e.currentTarget.style.display = "none";

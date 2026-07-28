@@ -3,9 +3,9 @@ import {
   USER_ROLES,
   badgeMessagesCodes,
   messagesNames,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { assertActiveForStudent } from "../../../shared/access/subscriptionAccess.js";
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { badRequest, conflict, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { userRepo } from "../../users/user.repo.js";
 import { pointUsecase } from "../points/point.usecase.js";

@@ -1,4 +1,4 @@
-// Unified API client for the Aya Academy web app.
+// Unified API client for the Ayah Academy web app.
 //
 // One coherent client wrapping fetch. Every response is the standard envelope
 // `{ success, message, data, translationKey }`. Errors are normalized into an
@@ -13,7 +13,7 @@
 // Never call this client directly inside a component — go through useRequest /
 // useMultiRequest.
 
-import { authMessagesCodes, generalMessagesCodes } from '@aya/shared';
+import { authMessagesCodes, generalMessagesCodes } from '@ayah/shared';
 import { config } from '../../config/config.js';
 import { EXCLUDED_FROM_ERROR_REDIRECT } from '../../utils/constant.js';
 import { buildUrl, buildPaginatedPath } from './urlBuilder.js';

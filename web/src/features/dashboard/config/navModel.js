@@ -17,7 +17,7 @@
 // any section left empty, so this stays declarative. Role decides WHICH sections
 // exist; permission decides whether each gated link is visible at all.
 
-import { PERMISSIONS, USER_ROLES } from '@aya/shared';
+import { PERMISSIONS, USER_ROLES } from '@ayah/shared';
 import {
   MdSpaceDashboard,
   MdWorkspacePremium,

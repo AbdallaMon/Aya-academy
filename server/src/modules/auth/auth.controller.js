@@ -3,7 +3,7 @@ import {
   getPermissionsForRole,
   messagesNames,
   USER_ROLES,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { hasActiveSubscription } from "../../shared/access/subscriptionAccess.js";
 import { created, ok } from "../../shared/http/response.js";
 import {

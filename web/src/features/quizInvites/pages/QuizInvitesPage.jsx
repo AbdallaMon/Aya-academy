@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

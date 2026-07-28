@@ -1,10 +1,10 @@
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   ASSIGNMENT_STATUSES,
   NOTIFICATION_TYPES,
   USER_ROLES,
   gameMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
 import {
   hasActiveSubscription,

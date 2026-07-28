@@ -4,8 +4,8 @@
 // returns { items, total, page, pageSize }.)
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
-import { activeSubscriptionWhere, USER_ROLES } from "@aya/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
+import { activeSubscriptionWhere, USER_ROLES } from "@ayah/shared";
 import { paginate } from "../../../shared/utility/pagination.js";
 import {
   buildSearchQuery,

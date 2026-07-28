@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-08
 **Status:** Draft (pending user review)
-**Related:** [2026-06-28 subscription renewal + invoice flow](2026-06-28-subscription-renewal-invoice-flow-design.md), memory `project-aya-subscription-hours-renewal`
+**Related:** [2026-06-28 subscription renewal + invoice flow](2026-06-28-subscription-renewal-invoice-flow-design.md), memory `project-ayah-subscription-hours-renewal`
 
 ---
 
@@ -68,7 +68,7 @@ subsHours  = usageHours > 0        ? usageHours          // (١) الفعلي د
 2. **`SessionLog.billedSubscriptionId Int?`** (FK → Subscription, `onDelete: SetNull`) — يتحدد لما الحصة تتضم لفاتورة USAGE متجمّدة. المجموع الشهري بيعُدّ الحصص **غير المفوترة** بس (`billedSubscriptionId IS NULL`) → يمنع الازدواج ويكنس أي حصة اتضافت متأخر (بتروح لأقرب فاتورة جاية). **مُفعّل من البداية** (قرار محسوم).
 3. مفيش status جديد — بنعيد استخدام `SubscriptionStatus` الموجود (شوف §7).
 
-> **قرار الترحيل:** الاشتراكات الحالية كلها تبقى `origin = MANUAL` تلقائياً. لا migration بيانات. (زي عرف [[project-aya-subscription-hours-renewal]] مع `subsHours @map`.)
+> **قرار الترحيل:** الاشتراكات الحالية كلها تبقى `origin = MANUAL` تلقائياً. لا migration بيانات. (زي عرف [[project-ayah-subscription-hours-renewal]] مع `subsHours @map`.)
 
 **EN:** Add `Subscription.origin (MANUAL|USAGE)`, default MANUAL — additive, no backfill. Optional `SessionLog.billedSubscriptionId` for idempotency hardening (skip for MVP). Reuse existing statuses.
 
@@ -192,7 +192,7 @@ subsHours  = usageHours > 0        ? usageHours          // (١) الفعلي د
 - `server/src/infra/scheduler/subscriptionScheduler.js` — يستدعي الاسم الجديد.
 - `server/src/modules/invoices/invoice.usecase.js` — إعادة استخدام `generateForSubscription`/`send` (غالباً بدون تغيير).
 - `web/` — عرض الاشتراك المفتوح + العدّاد الحي في الداشبورد.
-- `@aya/shared` message codes (لو فيه رسائل/إشعارات جديدة، بلغتين ar+en — عرف [[feedback-message-codes-bilingual]]).
+- `@ayah/shared` message codes (لو فيه رسائل/إشعارات جديدة، بلغتين ar+en — عرف [[feedback-message-codes-bilingual]]).
 
 > **ملاحظة مسارات:** بعد الـ refactor الأخير المسارات بقت: الاشتراكات `server/src/modules/finance/subscriptions/`، الحصص `server/src/modules/sessions/sessionLogs/`.
 
@@ -200,7 +200,7 @@ subsHours  = usageHours > 0        ? usageHours          // (١) الفعلي د
 
 ## 14. أمثلة كود (سكتشات إرشادية) / Code sketches (indicative)
 
-> الأكواد دي **سكتشات** مطابقة للـ patterns الحالية في الكود — مش نسخة نهائية. الأسماء والتوقيعات بتتبع الموجود (class methods، `{ ...args, client }`، ثوابت `@aya/shared`، `AppError`/`badRequest`، `priceFromHours`، `settingsUsecase.getEffective`).
+> الأكواد دي **سكتشات** مطابقة للـ patterns الحالية في الكود — مش نسخة نهائية. الأسماء والتوقيعات بتتبع الموجود (class methods، `{ ...args, client }`، ثوابت `@ayah/shared`، `AppError`/`badRequest`، `priceFromHours`، `settingsUsecase.getEffective`).
 
 ### 14.1 Schema — `packages/db/prisma/schema.prisma`
 
@@ -226,7 +226,7 @@ model SessionLog {
 }
 ```
 
-وثابت مطابق في `@aya/shared` (عرف enum-constant sync):
+وثابت مطابق في `@ayah/shared` (عرف enum-constant sync):
 
 ```js
 // packages/shared/.../subscription.constants.js
@@ -249,7 +249,7 @@ async sumUsageHoursByStudent({ gte, lt }) {
     by: ["studentId"],
     where: {
       sessionDate: { gte, lt },
-      attendance: "PRESENT",     // ATTENDANCE.PRESENT من @aya/shared
+      attendance: "PRESENT",     // ATTENDANCE.PRESENT من @ayah/shared
       billedSubscriptionId: null, // غير المفوترة بس
     },
     _sum: { durationHours: true },
@@ -275,7 +275,7 @@ async findOpenUsageSubscription({ studentId, paymentStart, client }) {
 /** كل الطلاب النشطين (اللي المفروض يتفوترولهم الشهر ده) + خطتهم الحالية للـ fallback. */
 async listActiveStudentsWithPlan(now = new Date()) {
   const subs = await prisma.subscription.findMany({
-    where: activeSubscriptionWhere(now), // من @aya/shared
+    where: activeSubscriptionWhere(now), // من @ayah/shared
     select: { studentId: true, plan: { select: { hours: true } } },
     distinct: ["studentId"],
   });
@@ -507,7 +507,7 @@ function previousMonth(date) {
 
 ```js
 // web/src/features/subscriptions/config/subscriptionView.js
-import { SUBSCRIPTION_ORIGINS } from "@aya/shared";
+import { SUBSCRIPTION_ORIGINS } from "@ayah/shared";
 
 /**
  * يحوّل (origin, status) لعرض بصري موحّد يستعمله كل سطح (كروت/chips/CTAs).

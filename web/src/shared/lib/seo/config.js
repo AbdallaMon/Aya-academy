@@ -18,7 +18,7 @@ export const SITE_URL = (
 // Brand name per locale — appended to page titles via the title template.
 export const BRAND = {
   ar: "أكاديمية آية",
-  en: "Aya Academy",
+  en: "Ayah Academy",
 };
 
 // Social-share cards — dedicated 1200×630 art-directed brand cards, ONE per

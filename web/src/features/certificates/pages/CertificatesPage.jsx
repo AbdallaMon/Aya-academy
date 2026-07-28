@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdClose, MdPrint, MdDownload, MdPictureAsPdf } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";

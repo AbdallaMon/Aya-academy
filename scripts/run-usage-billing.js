@@ -35,7 +35,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../server/.env") });
 
 // Dynamic imports so the dotenv load above runs first.
-const { prisma } = await import("@aya/db/prisma.client.js");
+const { prisma } = await import("@ayah/db/prisma.client.js");
 const { subscriptionUsecase } = await import(
   "../server/src/modules/finance/subscriptions/subscription.usecase.js"
 );

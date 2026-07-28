@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { MdEmojiEvents, MdArrowForward } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { iconColor } from "@/shared/ui/iconColor.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

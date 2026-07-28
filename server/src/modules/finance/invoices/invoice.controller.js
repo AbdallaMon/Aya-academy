@@ -1,4 +1,4 @@
-import { invoiceMessagesCodes, messagesNames } from "@aya/shared";
+import { invoiceMessagesCodes, messagesNames } from "@ayah/shared";
 import { ok, created } from "../../../shared/http/response.js";
 import { idParam } from "../../../shared/http/params.js";
 import { invoiceUsecase } from "./invoice.usecase.js";

@@ -1,4 +1,4 @@
-import { generalMessagesCodes } from "@aya/shared";
+import { generalMessagesCodes } from "@ayah/shared";
 import { AppError } from "../errors/AppError.js";
 
 // Our message codes are SCREAMING_SNAKE_CASE (e.g. USER_NAME_REQUIRED). A Zod

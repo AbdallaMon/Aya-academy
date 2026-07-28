@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { Box, CircularProgress, Stack } from "@mui/material";
 import { usePathname, useSearchParams } from "next/navigation";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

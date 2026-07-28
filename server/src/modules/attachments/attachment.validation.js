@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ATTACHMENT_OWNER_TYPES } from "@aya/shared";
+import { ATTACHMENT_OWNER_TYPES } from "@ayah/shared";
 
 const ownerTypes = Object.values(ATTACHMENT_OWNER_TYPES);
 

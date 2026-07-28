@@ -8,7 +8,7 @@ const plan = {
     base: 100,
     effective: 80,
     discount: {
-      code: "AYA-WELCOME15",
+      code: "AYAH-WELCOME15",
       type: "PERCENT",
       value: 20,
     },

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   SESSION_ATTENDANCE,
   SESSION_SUBJECTS,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { SessionLogValidation } from "./sessionLog.validation.js";
 
 const validInput = {

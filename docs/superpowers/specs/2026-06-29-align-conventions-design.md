@@ -1,4 +1,4 @@
-# Align aya-academy code conventions to reference projects — Design / Conversion Playbook
+# Align ayah-academy code conventions to reference projects — Design / Conversion Playbook
 
 **Date:** 2026-06-29
 **Branch:** `refactor/align-conventions` (cut from `master`)
@@ -6,7 +6,7 @@
 
 ## 1. Goal
 
-Make **the way code is written** in aya-academy match the reference projects
+Make **the way code is written** in ayah-academy match the reference projects
 `C:\coding\school-system` and `C:\coding\Transaction-app`, for both backend and
 frontend. This is a *convention / idiom* migration, **not** a behavior change and
 **not** a re-architecture. The architecture already matches; we are aligning
@@ -22,9 +22,9 @@ When the two references differ, **school-system is canonical** (per decision).
 - The Prisma **schema** (`packages/db/prisma/schema.prisma`) — no field renames,
   no model changes. Field names stay (`isActive`, `*Ar`/`*En`, etc.).
 - The **i18n system** and `[lng]` locale routing — kept as-is. Text continues to
-  come from aya's per-feature `useXText()` / `txt` objects, **not** `t()` /
+  come from ayah's per-feature `useXText()` / `txt` objects, **not** `t()` /
   i18next namespaces.
-- **Audit log** — was removed from aya; it is NOT reintroduced (schema/behavior).
+- **Audit log** — was removed from ayah; it is NOT reintroduced (schema/behavior).
 - Encryption-at-rest wiring, crypto, attachments/S3 behavior.
 - The HTTP **response envelope** shape `{ success, message, data, translationKey }`
   and the **message-code contract** — already matches; do not change codes.
@@ -37,7 +37,7 @@ and behaves identically.
 
 | # | Decision | Choice |
 |---|----------|--------|
-| 1 | i18n | Keep aya's (`[lng]` routing + per-feature text). Not migrated. |
+| 1 | i18n | Keep ayah's (`[lng]` routing + per-feature text). Not migrated. |
 | 2 | Rollout | Big-bang across all modules/features on the branch, in safe waves. |
 | 3 | Canonical reference when they differ | **school-system** |
 | 4 | TypeScript | Convert the 3 `.tsx` files → `.jsx`, switch `tsconfig`→`jsconfig` (pure JS) |
@@ -58,12 +58,12 @@ Reference files locked in this session:
 - Create: `usecase.createX({ ...req.body, authUser: req.auth })`.
 - Update: `usecase.updateX({ id: parseInt(req.params.id, 10), ...req.body, authUser: req.auth })`.
 - Respond only via helpers: `ok / created / updated / deleted` with `(res, data, CODE, TK)`.
-- `const TK = messagesNames.xMessages;` at top; import codes directly from `@aya/shared`
+- `const TK = messagesNames.xMessages;` at top; import codes directly from `@ayah/shared`
   (drop the per-module `x.messages.js` re-export indirection).
 
 ```js
 import { ok, created, updated } from "../../shared/http/response.js";
-import { xMessagesCodes, messagesNames } from "@aya/shared";
+import { xMessagesCodes, messagesNames } from "@ayah/shared";
 import { xUsecase } from "./x.usecase.js";
 const TK = messagesNames.xMessages;
 class XController {
@@ -106,7 +106,7 @@ export { XController };
       keysValues: [{ key: "nameAr", value: search }, { key: "nameEn", value: search }] });
     if (searchWhere.OR) where.OR = searchWhere.OR;
     const activeFilter = buildIsActiveFilter({ isActive });        // see 5.1 note
-    if (activeFilter !== undefined) where.isActive = activeFilter; // aya field = isActive
+    if (activeFilter !== undefined) where.isActive = activeFilter; // ayah field = isActive
     const [items, total] = await Promise.all([
       db.x.findMany({ where, skip, take, orderBy: { createdAt: "desc" }, select: xSelect }),
       db.x.count({ where }),
@@ -128,15 +128,15 @@ export { XController };
   consts and the transformer object.
 
 ### 4.5 Shared backend foundations (Wave 0)
-Align aya's shared utils to school-system's **API shape** (keep aya field names/values):
+Align ayah's shared utils to school-system's **API shape** (keep ayah field names/values):
 - `shared/http/response.js`: add `updated`, `deleted`, `noContent`, `paginated`
-  (copy school-system signatures; keep `@aya/shared` import). Keep `ok`/`created`.
-- `shared/utility/helper.js`: replace aya's `buildSearchQuery({search,keys})→array`
+  (copy school-system signatures; keep `@ayah/shared` import). Keep `ok`/`created`.
+- `shared/utility/helper.js`: replace ayah's `buildSearchQuery({search,keys})→array`
   with school-system's full API: `buildSearchQuery({searchType,search,keysValues,keyOr})→{OR}|{}`,
   `buildFilterQuery`, `buildIsActiveFilter`, `buildDateRangeFilter`, `buildOrderBy`,
-  `parseIdList`, `excludeIdsFromString`, `normalizeText`. **Caveat:** aya's boolean
+  `parseIdList`, `excludeIdsFromString`, `normalizeText`. **Caveat:** ayah's boolean
   field is `isActive` and the frontend currently sends `ALL|true|false`. To preserve
-  the data contract, `buildIsActiveFilter` must accept aya's values — keep a thin
+  the data contract, `buildIsActiveFilter` must accept ayah's values — keep a thin
   adapter (`"ALL"|""|undefined → undefined`; `"true"/"active"→true`; `"false"/"inactive"→false`)
   rather than school-system's `active|inactive`-only parsing. Retain `parseBooleanFilter`
   as an alias if any call site still needs it.
@@ -159,14 +159,14 @@ Reference files locked: `DepartmentsPage.jsx`, `config/{departmentsColumns,depar
   names to consistent **camelCase** (e.g. keep `quizBank`, `userDetail`; the layout
   is already correct). Resolve any `.jsx`/`.tsx` shadowing by deleting stale `.tsx`.
 - `config/constant.js` (URLs + keys), `config/<feature>Columns.js`,
-  `config/<feature>Filters.js`, `config/<feature>Text.js` (aya i18n text — kept).
+  `config/<feature>Filters.js`, `config/<feature>Text.js` (ayah i18n text — kept).
 
 ### 5.2 List page
 - `"use client"`, permission gate via `usePermission()` + early return on no-list.
 - One `useRequest({ url, method:"get", isPaginated:true, autoFetch: canList })` for data.
 - `PageHeader` (already exists) for title/description/create — replace inline headers.
 - Columns from a **factory** `<feature>Columns({ ... })` returning the array;
-  filters from `<feature>Filters()` returning a config array. (aya is already close.)
+  filters from `<feature>Filters()` returning a config array. (ayah is already close.)
 - `<DataTable .../>` config-driven (existing component, existing props).
 
 ### 5.3 Create/Edit form — manual RHF in FormDialog (school-system idiom)
@@ -185,17 +185,17 @@ const { fetchData, isLoading } = useRequest({
 - Use `useRequest({method})` **or** `useMultiRequest` (both fine; `useMultiRequest`
   kept). Field errors via **`applyApiErrorsToForm`** — port this helper from
   school-system into `web/src/shared/components/forms/rhf/applyApiErrorsToForm.js`
-  and export it from the shared barrel (Wave 0-FE). Text args come from aya `txt`.
+  and export it from the shared barrel (Wave 0-FE). Text args come from ayah `txt`.
 
 ### 5.4 Frontend shared foundations (Wave 0-FE)
-- Port `applyApiErrorsToForm` from school-system → aya shared barrel.
+- Port `applyApiErrorsToForm` from school-system → ayah shared barrel.
 - Ensure RHF wrappers exist (`RHFTextField/RHFSelect/RHFSwitch/...` — they do).
 - Remove the lone `className="review-badge"` outlier → `sx`. Drop unused emotion `styled` if any.
 
 ### 5.5 Frontend out-of-scope features
 Pure marketing/static features have no tables/forms/CRUD and are **not** part of the
 table/form convention pass (only trivial styling/import rules apply): `blog`, `faq`,
-`hero`, `pricing`, `promo`, `trust`, `whyAya`, `reviews`. CRUD/dashboard features ARE
+`hero`, `pricing`, `promo`, `trust`, `whyAyah`, `reviews`. CRUD/dashboard features ARE
 in scope (see §7).
 
 ## 6. TypeScript → JS (Decision 4)
@@ -241,7 +241,7 @@ subscriptions, userDetail, users.
   and convert in the same wave; build immediately.
 - **DTO select→transformer leaks sensitive fields** → keep security `select`s; never
   expose new fields. Diff each DTO's output keys vs the old `select` keys.
-- **`isActive` contract drift** → keep aya values (`ALL|true|false`), adapter in
+- **`isActive` contract drift** → keep ayah values (`ALL|true|false`), adapter in
   `buildIsActiveFilter`; do not adopt school-system's `active|inactive` strings.
 - **Route guard regressions** → never edit guard chains; only swap controller method
   references (same names) and response idiom.

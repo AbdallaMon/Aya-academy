@@ -1,7 +1,7 @@
 // backup.validation — Zod schemas for the mutating routes + filters.
 
 import { z } from "zod";
-import { BACKUP_STATUSES, DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { BACKUP_STATUSES, DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 
 export class BackupsValidation {
   // Connect Drive: the new account type (KEY|DB, default DB) + optional reconnectId.

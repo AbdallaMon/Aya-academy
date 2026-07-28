@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { SESSION_LOG_PERMISSIONS } from "@aya/shared";
+import { SESSION_LOG_PERMISSIONS } from "@ayah/shared";
 import { sessionLogController } from "./sessionLog.controller.js";
 import { SessionLogValidation } from "./sessionLog.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

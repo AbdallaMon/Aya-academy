@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FiRefreshCw } from "react-icons/fi";
-import { DRIVE_ACCOUNT_TYPES, backupMessagesCodes } from "@aya/shared";
+import { DRIVE_ACCOUNT_TYPES, backupMessagesCodes } from "@ayah/shared";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useBackupsText } from "../hooks/useBackupsText.js";
 import ConfirmDialog from "./ConfirmDialog.jsx";

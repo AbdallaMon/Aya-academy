@@ -5,12 +5,12 @@
 // Heavy work (dump/encrypt/upload/download/restore/schema-check) lives in
 // infra/backup. Here: validation, filter `where` building, enrichment with
 // localPresent (fs) + Drive connection state, output shaping via DTO. Prisma only
-// via repos. No audit (Aya has no audit infra wired).
+// via repos. No audit (Ayah has no audit infra wired).
 // ===========================================================================
 
 import fs from "fs";
 import path from "path";
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import {
   BACKUP_TRIGGERS,
@@ -18,7 +18,7 @@ import {
   DRIVE_ACCOUNT_TYPES,
   backupMessagesCodes,
   messagesNames,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
 import { backupsRepo } from "./backup.repo.js";
 import { driveAccountsRepo } from "./driveAccount.repo.js";
@@ -126,7 +126,7 @@ class BackupsUsecase {
    * (the file may already be gone).
    */
   async remove({ id, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const backupId = Number(id);
     const row = await backupsRepo.findById({ id: backupId });
     if (!row) {
@@ -177,7 +177,7 @@ class BackupsUsecase {
   }
 
   async setActiveAccount({ id, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const accountId = Number(id);
     const account = await driveAccountsRepo.findById({ id: accountId });
     if (!account) throw new AppError({ statusCode: 404, code: backupMessagesCodes.DRIVE_ACCOUNT_NOT_FOUND, translationKey: TK });
@@ -196,7 +196,7 @@ class BackupsUsecase {
   }
 
   async disconnectAccount({ id, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const accountId = Number(id);
     const account = await driveAccountsRepo.findById({ id: accountId });
     if (!account) throw new AppError({ statusCode: 404, code: backupMessagesCodes.DRIVE_ACCOUNT_NOT_FOUND, translationKey: TK });
@@ -205,7 +205,7 @@ class BackupsUsecase {
   }
 
   async removeAccount({ id, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const accountId = Number(id);
     const account = await driveAccountsRepo.findById({ id: accountId });
     if (!account) throw new AppError({ statusCode: 404, code: backupMessagesCodes.DRIVE_ACCOUNT_NOT_FOUND, translationKey: TK });

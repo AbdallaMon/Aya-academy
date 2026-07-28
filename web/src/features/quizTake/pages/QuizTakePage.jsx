@@ -13,7 +13,7 @@ import { useState } from "react";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { MdArrowBack, MdCardGiftcard, MdPlayArrow } from "react-icons/md";
 import NextLink from "next/link";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

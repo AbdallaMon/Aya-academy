@@ -24,7 +24,7 @@ import {
   MdAlternateEmail,
   MdPhone,
 } from "react-icons/md";
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { buildFileUrl } from "../../../shared/lib/fileUrl.js";

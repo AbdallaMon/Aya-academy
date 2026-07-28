@@ -16,7 +16,7 @@ import os from "os";
 import path from "path";
 import mysql from "mysql2/promise";
 import { AppError } from "../../shared/errors/AppError.js";
-import { backupMessagesCodes, messagesNames } from "@aya/shared";
+import { backupMessagesCodes, messagesNames } from "@ayah/shared";
 import { parseDatabaseConnection } from "./dbUrl.js";
 
 const TK = messagesNames.backupMessages;
@@ -46,7 +46,7 @@ export async function createDump() {
     throw connectError(err);
   }
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "aya-academy-dump-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ayah-academy-dump-"));
   const outPath = path.join(tmpDir, `${database || "db"}.sql`);
   const out = fs.createWriteStream(outPath, { encoding: "utf8" });
 

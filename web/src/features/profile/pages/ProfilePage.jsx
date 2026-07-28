@@ -3,7 +3,7 @@
 import { Box } from "@mui/material";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { PageHeader } from "../../../shared/components/index.js";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import AccountProfileForm from "../../userDetail/components/AccountProfileForm.jsx";
 import { useUserDetailText } from "../../userDetail/config/userDetailText.js";
 import { usePermission } from "../../../hooks/usePermission.js";

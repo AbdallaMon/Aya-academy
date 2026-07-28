@@ -1,6 +1,6 @@
 // Eyebrow — the small uppercase teal kicker that sits above a section title.
 // The exact recipe (teal brand text, 800 weight, wide tracking, 13px, uppercase)
-// was hand-copied in Section, WhyAya and the child-dashboard preview; this is the
+// was hand-copied in Section, WhyAyah and the child-dashboard preview; this is the
 // single source so the brand accent stays consistent if it ever changes.
 
 import { Typography } from '@mui/material';

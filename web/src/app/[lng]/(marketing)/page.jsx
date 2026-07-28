@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Hero from '@/features/hero/pages/HeroPage.jsx';
 import HeroReviews from '@/features/reviews/pages/HeroReviews';
-import { WhyAya } from '@/features/whyAya/pages/WhyAyaPage.jsx';
+import { WhyAyah } from '@/features/whyAyah/pages/WhyAyahPage.jsx';
 import { Programs } from '@/features/programs/pages/ProgramsPage.jsx';
 import { ChildDashboardHome } from '@/features/childDashboard/pages/ChildDashboardPage.jsx';
 import PricingSection from '@/features/pricing/pages/PricingSection.jsx';
@@ -36,7 +36,7 @@ export default async function Home({ params }) {
       <JsonLd data={[faqSchema(faq.items), courseSchema(lng)]} />
       <Hero />
       <HeroReviews lng={lng} />
-      <WhyAya lng={lng} />
+      <WhyAyah lng={lng} />
       <Programs lng={lng} />
       <ChildDashboardHome lng={lng} />
       <Testimonials lng={lng} />

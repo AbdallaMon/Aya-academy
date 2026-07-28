@@ -1,4 +1,4 @@
-# رفع Aya Academy على VPS — Ubuntu + PM2 + Nginx (إدارة يدوية كاملة)
+# رفع Ayah Academy على VPS — Ubuntu + PM2 + Nginx (إدارة يدوية كاملة)
 
 > الطريقة دي بتديك تحكّم كامل: انت اللي بتثبّت Node و MySQL، وبتدير الـ
 > processes بـ **PM2**، وبتعمل reverse proxy و SSL بـ **Nginx + Certbot**.
@@ -25,8 +25,8 @@
    │
    ▼
  Nginx (443 / 80, SSL)
-   ├── aya.example.com       ──► Next.js  (127.0.0.1:3000)
-   └── api.aya.example.com   ──► Express  (127.0.0.1:4000)  + socket.io (WebSocket)
+   ├── ayah.example.com       ──► Next.js  (127.0.0.1:3000)
+   └── api.ayah.example.com   ──► Express  (127.0.0.1:4000)  + socket.io (WebSocket)
                                      │
                                      ▼
                                   MySQL (127.0.0.1:3306)
@@ -63,17 +63,17 @@ ufw enable
 
 ### 1.2 إنشاء مستخدم مخصّص للتشغيل (مهم للصلاحيات)
 
-ما نشغّلش الـ app كـ root. نعمل مستخدم اسمه `aya`:
+ما نشغّلش الـ app كـ root. نعمل مستخدم اسمه `ayah`:
 
 ```bash
-adduser --disabled-password --gecos "" aya
-usermod -aG sudo aya          # اختياري لو محتاجه يعمل sudo
+adduser --disabled-password --gecos "" ayah
+usermod -aG sudo ayah          # اختياري لو محتاجه يعمل sudo
 ```
 
-كل اللي جاي (تثبيت node عبر nvm، الكود، PM2) هيتعمل **وانت داخل بالمستخدم `aya`**:
+كل اللي جاي (تثبيت node عبر nvm، الكود، PM2) هيتعمل **وانت داخل بالمستخدم `ayah`**:
 
 ```bash
-su - aya
+su - ayah
 ```
 
 ---
@@ -81,7 +81,7 @@ su - aya
 ## 2) تثبيت Node.js (الإصدار المناسب)
 
 Next.js 16 و Prisma 7 محتاجين **Node 20.9+**. هنركّب **Node 22 LTS** عبر `nvm`
-(تحت المستخدم `aya`):
+(تحت المستخدم `ayah`):
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
@@ -112,9 +112,9 @@ sudo mysql
 ```
 
 ```sql
-CREATE DATABASE aya_academy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'aya_user'@'localhost' IDENTIFIED BY 'STRONG_DB_PASSWORD_HERE';
-GRANT ALL PRIVILEGES ON aya_academy.* TO 'aya_user'@'localhost';
+CREATE DATABASE ayah_academy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'ayah_user'@'localhost' IDENTIFIED BY 'STRONG_DB_PASSWORD_HERE';
+GRANT ALL PRIVILEGES ON ayah_academy.* TO 'ayah_user'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -127,14 +127,14 @@ EXIT;
 
 ## 4) جلب الكود + تركيب الاعتماديات
 
-اختار مكان للمشروع، مثلاً `/var/www/aya`، ومملوك لـ `aya`:
+اختار مكان للمشروع، مثلاً `/var/www/ayah`، ومملوك لـ `ayah`:
 
 ```bash
-sudo mkdir -p /var/www/aya
-sudo chown -R aya:aya /var/www/aya
-# (وانت بالمستخدم aya)
-git clone <REPO_URL> /var/www/aya
-cd /var/www/aya
+sudo mkdir -p /var/www/ayah
+sudo chown -R ayah:ayah /var/www/ayah
+# (وانت بالمستخدم ayah)
+git clone <REPO_URL> /var/www/ayah
+cd /var/www/ayah
 ```
 
 ثبّت كل الـ workspaces دفعة واحدة من الجذر:
@@ -158,25 +158,25 @@ npm ci          # بيركّب server + web + packages كلها مع بعض
 ### 5.1 `packages/db/.env`
 
 ```env
-DATABASE_URL="mysql://aya_user:STRONG_DB_PASSWORD_HERE@127.0.0.1:3306/aya_academy"
+DATABASE_URL="mysql://ayah_user:STRONG_DB_PASSWORD_HERE@127.0.0.1:3306/ayah_academy"
 ```
 
 ### 5.2 `server/.env`
 
 ```env
 # قاعدة البيانات — الـ migrations بتقرأ URL، والـ runtime بيقرأ الأجزاء
-DATABASE_URL="mysql://aya_user:STRONG_DB_PASSWORD_HERE@127.0.0.1:3306/aya_academy"
+DATABASE_URL="mysql://ayah_user:STRONG_DB_PASSWORD_HERE@127.0.0.1:3306/ayah_academy"
 DATABASE_HOST=127.0.0.1
 DATABASE_PORT=3306
-DATABASE_USER=aya_user
+DATABASE_USER=ayah_user
 DATABASE_PASSWORD=STRONG_DB_PASSWORD_HERE
-DATABASE_NAME=aya_academy
+DATABASE_NAME=ayah_academy
 
 # السيرفر
 PORT=4000
 NODE_ENV=production
-CORS_ORIGINS=https://aya.example.com
-APP_URL=https://aya.example.com
+CORS_ORIGINS=https://ayah.example.com
+APP_URL=https://ayah.example.com
 
 # JWT — ولّد أسرار قوية (انظر تحت)
 JWT_ACCESS_SECRET=__PUT_64_HEX_HERE__
@@ -189,8 +189,8 @@ COOKIE_DOMAIN=.example.com
 MASTER_KEY=__PUT_BASE64_32_BYTES__
 
 # 📁 مسارات التخزين — خليها خارج مجلد الكود (قسم 8)
-UPLOAD_DIR=/var/www/aya-storage/uploads
-BACKUP_DIR=/var/www/aya-storage/backups
+UPLOAD_DIR=/var/www/ayah-storage/uploads
+BACKUP_DIR=/var/www/ayah-storage/backups
 
 # الباك أب
 BACKUP_PROVIDER=local        # أو drive / s3
@@ -201,15 +201,15 @@ BACKUP_RETENTION_MAX=30
 # Google Drive (لو BACKUP_PROVIDER=drive)
 # GOOGLE_CLIENT_ID=...
 # GOOGLE_CLIENT_SECRET=...
-# GOOGLE_REDIRECT_URI=https://api.aya.example.com/api/v1/...
+# GOOGLE_REDIRECT_URI=https://api.ayah.example.com/api/v1/...
 ```
 
 ### 5.3 `web/.env.local`
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.aya.example.com/api/v1
-NEXT_PUBLIC_APP_URL=https://aya.example.com
-NEXT_PUBLIC_SITE_URL=https://aya.example.com
+NEXT_PUBLIC_API_URL=https://api.ayah.example.com/api/v1
+NEXT_PUBLIC_APP_URL=https://ayah.example.com
+NEXT_PUBLIC_SITE_URL=https://ayah.example.com
 ```
 
 ### 5.4 توليد الأسرار
@@ -228,7 +228,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ## 6) تجهيز قاعدة البيانات + بناء الواجهة
 
-من جذر المشروع (بالمستخدم `aya`):
+من جذر المشروع (بالمستخدم `ayah`):
 
 ```bash
 npm run db:generate          # prisma generate
@@ -245,7 +245,7 @@ npm run build:web            # بناء Next.js للإنتاج
 
 ## 7) تشغيل الـ processes بـ PM2
 
-ثبّت PM2 عالمياً (بالمستخدم `aya`):
+ثبّت PM2 عالمياً (بالمستخدم `ayah`):
 
 ```bash
 npm install -g pm2
@@ -254,33 +254,33 @@ npm install -g pm2
 اعمل ملف `ecosystem.config.cjs` في جذر المشروع:
 
 ```bash
-nano /var/www/aya/ecosystem.config.cjs
+nano /var/www/ayah/ecosystem.config.cjs
 ```
 
 ```js
-// /var/www/aya/ecosystem.config.cjs
+// /var/www/ayah/ecosystem.config.cjs
 module.exports = {
   apps: [
     {
-      name: "aya-api",
-      cwd: "/var/www/aya/server",
+      name: "ayah-api",
+      cwd: "/var/www/ayah/server",
       script: "src/server.js",
       interpreter: "node",
       env: { NODE_ENV: "production" },
       max_memory_restart: "500M",
-      out_file: "/var/www/aya-storage/logs/api-out.log",
-      error_file: "/var/www/aya-storage/logs/api-err.log",
+      out_file: "/var/www/ayah-storage/logs/api-out.log",
+      error_file: "/var/www/ayah-storage/logs/api-err.log",
     },
     {
-      name: "aya-web",
-      cwd: "/var/www/aya/web",
+      name: "ayah-web",
+      cwd: "/var/www/ayah/web",
       // next start على البورت 3000
       script: "node_modules/next/dist/bin/next",
       args: "start -p 3000",
       env: { NODE_ENV: "production" },
       max_memory_restart: "500M",
-      out_file: "/var/www/aya-storage/logs/web-out.log",
-      error_file: "/var/www/aya-storage/logs/web-err.log",
+      out_file: "/var/www/ayah-storage/logs/web-out.log",
+      error_file: "/var/www/ayah-storage/logs/web-err.log",
     },
   ],
 };
@@ -292,8 +292,8 @@ module.exports = {
 شغّل وثبّت على البوت:
 
 ```bash
-mkdir -p /var/www/aya-storage/logs     # هنعمله رسمياً في قسم 8
-cd /var/www/aya
+mkdir -p /var/www/ayah-storage/logs     # هنعمله رسمياً في قسم 8
+cd /var/www/ayah
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup systemd        # نفّذ السطر اللي هيطلعلك (بـ sudo) عشان يشتغل بعد الـ reboot
@@ -303,9 +303,9 @@ pm2 startup systemd        # نفّذ السطر اللي هيطلعلك (بـ s
 
 ```bash
 pm2 status
-pm2 logs aya-api
-pm2 logs aya-web
-pm2 restart aya-api
+pm2 logs ayah-api
+pm2 logs ayah-web
+pm2 restart ayah-api
 pm2 reload all       # إعادة تشغيل بدون downtime تقريباً
 ```
 
@@ -317,7 +317,7 @@ pm2 reload all       # إعادة تشغيل بدون downtime تقريباً
 
 ### 8.1 ليه نطلّع `uploads/` و `backups/` بره الكود؟
 
-- لو سيبتهم جوه `/var/www/aya/server/uploads`، أي `git pull` / إعادة نشر /
+- لو سيبتهم جوه `/var/www/ayah/server/uploads`، أي `git pull` / إعادة نشر /
   استبدال للمجلد ممكن **يمسح ملفات المستخدمين**.
 - الكود بيقرأ المسار من `UPLOAD_DIR` و `BACKUP_DIR` (في `server/.env`)، فممكن
   نوجّههم لمجلد ثابت بره.
@@ -325,33 +325,33 @@ pm2 reload all       # إعادة تشغيل بدون downtime تقريباً
 ### 8.2 إنشاء مجلد التخزين وضبط الملكية
 
 ```bash
-sudo mkdir -p /var/www/aya-storage/uploads
-sudo mkdir -p /var/www/aya-storage/backups
-sudo mkdir -p /var/www/aya-storage/logs
+sudo mkdir -p /var/www/ayah-storage/uploads
+sudo mkdir -p /var/www/ayah-storage/backups
+sudo mkdir -p /var/www/ayah-storage/logs
 
-# الملكية للمستخدم اللي بيشغّل الـ Node (aya)
-sudo chown -R aya:aya /var/www/aya-storage
+# الملكية للمستخدم اللي بيشغّل الـ Node (ayah)
+sudo chown -R ayah:ayah /var/www/ayah-storage
 
 # صلاحيات: المالك يقرأ/يكتب/يدخل، الباقي يدخل بس
-sudo chmod -R 750 /var/www/aya-storage
+sudo chmod -R 750 /var/www/ayah-storage
 ```
 
 اتأكد إن `server/.env` بيشاور عليهم:
 
 ```env
-UPLOAD_DIR=/var/www/aya-storage/uploads
-BACKUP_DIR=/var/www/aya-storage/backups
+UPLOAD_DIR=/var/www/ayah-storage/uploads
+BACKUP_DIR=/var/www/ayah-storage/backups
 ```
 
 ### 8.3 ملكية مجلد الكود نفسه
 
 ```bash
-sudo chown -R aya:aya /var/www/aya
+sudo chown -R ayah:ayah /var/www/ayah
 ```
 
 > **مهم أمنياً:** الـ uploads **مش** بتتقدّم static من Nginx — الـ API بيبثّها
 > بعد التحقق من تسجيل الدخول. يعني **ما تعملش** location في Nginx يفتح
-> `/var/www/aya-storage/uploads` للعامة. سيبها ورا الـ API.
+> `/var/www/ayah-storage/uploads` للعامة. سيبها ورا الـ API.
 
 ### 8.4 لو شغّال الباك أب لـ Google Drive / S3
 
@@ -376,13 +376,13 @@ sudo apt install -y nginx
 ### 9.1 vhost للواجهة (Next.js)
 
 ```bash
-sudo nano /etc/nginx/sites-available/aya-web
+sudo nano /etc/nginx/sites-available/ayah-web
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name aya.example.com;
+    server_name ayah.example.com;
 
     client_max_body_size 20M;   # عشان رفع الصور
 
@@ -402,13 +402,13 @@ server {
 ### 9.2 vhost للـ API (Express + socket.io)
 
 ```bash
-sudo nano /etc/nginx/sites-available/aya-api
+sudo nano /etc/nginx/sites-available/ayah-api
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name api.aya.example.com;
+    server_name api.ayah.example.com;
 
     client_max_body_size 200M;  # عشان رفع ملفات الاستعادة الكبيرة
 
@@ -434,8 +434,8 @@ server {
 ### 9.3 تفعيل المواقع
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/aya-web /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/aya-api /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/ayah-web /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/ayah-api /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t        # اختبار الإعداد
 sudo systemctl reload nginx
@@ -447,7 +447,7 @@ sudo systemctl reload nginx
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d aya.example.com -d api.aya.example.com
+sudo certbot --nginx -d ayah.example.com -d api.ayah.example.com
 ```
 
 Certbot هيعدّل الـ vhosts ويضيف 443 ويعمل redirect من 80. التجديد تلقائي
@@ -465,14 +465,14 @@ sudo certbot renew --dry-run
 
 ```bash
 # الـ API بيرد؟
-curl -i https://api.aya.example.com/api/v1
+curl -i https://api.ayah.example.com/api/v1
 # الواجهة بترجع HTML؟
-curl -I https://aya.example.com
+curl -I https://ayah.example.com
 # الـ processes شغّالة؟
 pm2 status
-# اختبار كتابة الصلاحيات (لازم ينجح كـ aya):
-sudo -u aya touch /var/www/aya-storage/uploads/_test && \
-  sudo -u aya rm /var/www/aya-storage/uploads/_test && echo "uploads OK"
+# اختبار كتابة الصلاحيات (لازم ينجح كـ ayah):
+sudo -u ayah touch /var/www/ayah-storage/uploads/_test && \
+  sudo -u ayah rm /var/www/ayah-storage/uploads/_test && echo "uploads OK"
 ```
 
 افتح الموقع في المتصفح، سجّل دخول، ارفع صورة، واتأكد إنها بتتعرض (ده بيختبر
@@ -484,8 +484,8 @@ sudo -u aya touch /var/www/aya-storage/uploads/_test && \
 ## 12) إعادة النشر (Deploy جديد)
 
 ```bash
-su - aya
-cd /var/www/aya
+su - ayah
+cd /var/www/ayah
 git pull
 npm ci
 npm run db:migrate:deploy     # لو فيه migrations جديدة
@@ -513,9 +513,9 @@ sudo systemctl status mariadb nginx
 
 ## ملخّص نقاط الصلاحيات (للمراجعة السريعة)
 
-1. ما تشغّلش الـ app كـ root — استخدم مستخدم `aya`.
+1. ما تشغّلش الـ app كـ root — استخدم مستخدم `ayah`.
 2. `uploads/` و `backups/` **بره** مجلد الكود، عبر `UPLOAD_DIR`/`BACKUP_DIR`.
-3. `chown -R aya:aya` على مجلد الكود ومجلد التخزين.
+3. `chown -R ayah:ayah` على مجلد الكود ومجلد التخزين.
 4. `chmod 750` على مجلد التخزين، و`chmod 600` على ملفات `.env`.
 5. الـ uploads مش static — سيبها ورا الـ API، ما تفتحهاش في Nginx.
-6. اتأكد إن المستخدم `aya` يقدر يكتب في `uploads/` و`backups/` و`/tmp`.
+6. اتأكد إن المستخدم `ayah` يقدر يكتب في `uploads/` و`backups/` و`/tmp`.

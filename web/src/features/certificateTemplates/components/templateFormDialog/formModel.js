@@ -2,7 +2,7 @@
 // form values (fresh / from an existing template) and serialize the theme back
 // into the stored themeJson shape.
 
-import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
+import { CERTIFICATE_TEMPLATE_TYPES } from "@ayah/shared";
 import { DEFAULT_TEMPLATE_THEME } from "../../config/constant.js";
 
 // Brand-new template: theme defaults + the fixed texts PRE-FILLED with the same

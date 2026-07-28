@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PAYMENT_TEMPLATE_PERMISSIONS } from "@aya/shared";
+import { PAYMENT_TEMPLATE_PERMISSIONS } from "@ayah/shared";
 import { paymentTemplateController } from "./paymentTemplate.controller.js";
 import { PaymentTemplateValidation } from "./paymentTemplate.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

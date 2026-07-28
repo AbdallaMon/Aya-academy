@@ -23,7 +23,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { useCallback } from "react";
 import { useTranslation } from "../i18n/client.js";
 import { getDirection } from "../i18n/settings.js";
-import { messagesNames } from "@aya/shared";
+import { messagesNames } from "@ayah/shared";
 
 const SEVERITY_TO_TYPE = {
   success: "success",

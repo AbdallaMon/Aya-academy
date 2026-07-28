@@ -1,4 +1,4 @@
-import { SUBSCRIPTION_ORIGINS } from "@aya/shared";
+import { SUBSCRIPTION_ORIGINS } from "@ayah/shared";
 
 // (origin, status) → a unified visual "view" used by every subscription surface
 // (list chip, detail chip, parent cards). A USAGE subscription that is still

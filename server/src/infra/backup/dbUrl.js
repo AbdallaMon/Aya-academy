@@ -1,5 +1,5 @@
 // ===========================================================================
-// Resolves DB connection parts for dump/restore. Aya's runtime adapter uses the
+// Resolves DB connection parts for dump/restore. Ayah's runtime adapter uses the
 // separate DATABASE_HOST/USER/PASSWORD/NAME parts (DATABASE_URL is for prisma
 // migrations only), so we prefer the parts and fall back to parsing the URL.
 // Never logs any secret.

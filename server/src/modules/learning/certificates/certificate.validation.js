@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { certificateMessagesCodes } from "@aya/shared";
+import { certificateMessagesCodes } from "@ayah/shared";
 
 export class CertificateValidation {
   // Admin manually creating a MANUAL certificate for a student.

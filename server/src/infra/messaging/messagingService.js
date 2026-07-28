@@ -7,7 +7,7 @@
 // they never fail the caller.
 // ===========================================================================
 
-import { NOTIFICATION_TYPES } from "@aya/shared";
+import { NOTIFICATION_TYPES } from "@ayah/shared";
 import { notificationUsecase } from "../../modules/notifications/notification.usecase.js";
 import { ENV, isWhatsAppConfigured } from "../../config/env.js";
 import { whatsappProvider } from "./providers/whatsapp.js";

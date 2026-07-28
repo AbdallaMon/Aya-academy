@@ -230,7 +230,7 @@ export function ChildDashboardHome({ lng = 'en' }) {
           </Box>
         </Box>
 
-        {/* ── Copy + CTA (no feature list — that lives in WhyAya) ───── */}
+        {/* ── Copy + CTA (no feature list — that lives in WhyAyah) ───── */}
         <Box sx={{ order: { xs: 1, md: 2 } }}>
           <Eyebrow>{c.eyebrow}</Eyebrow>
           <Typography variant="h2" sx={{ mb: 2 }}>

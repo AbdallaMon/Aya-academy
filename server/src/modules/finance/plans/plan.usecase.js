@@ -1,4 +1,4 @@
-import { BILLING_PERIODS, planMessagesCodes } from "@aya/shared";
+import { BILLING_PERIODS, planMessagesCodes } from "@ayah/shared";
 import { notFound } from "../../../shared/errors/AppError.js";
 import {
   applyDiscount,

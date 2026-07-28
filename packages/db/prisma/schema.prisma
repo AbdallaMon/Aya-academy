@@ -1,6 +1,6 @@
-// Aya Academy — Prisma schema (PostgreSQL)
+// Ayah Academy — Prisma schema (PostgreSQL)
 // Conventions: Int autoincrement ids, createdAt/updatedAt on operational models,
-// @db.Text for long text, real enums for closed sets (mirrored in @aya/shared),
+// @db.Text for long text, real enums for closed sets (mirrored in @ayah/shared),
 // @@index on FKs/hot filters. Dynamic user-facing text stored as *Ar / *En pairs.
 
 generator client {
@@ -1033,7 +1033,7 @@ model CertificateTemplate {
   congratsEn       String? @db.Text
   thanksAr         String? @db.Text
   thanksEn         String? @db.Text
-  signatureName    String? // e.g. "Aya"
+  signatureName    String? // e.g. "Ayah"
   signatureTitleAr String? // e.g. "المعلمة"
   signatureTitleEn String? // e.g. "Teacher"
 

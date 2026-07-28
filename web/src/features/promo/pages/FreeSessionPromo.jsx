@@ -23,7 +23,7 @@ const PROMO = {
     badge: '🎁 Special offer',
     title: 'Sign up now and get a free trial session',
     subtitle:
-      'Try Aya Academy before any subscription — a full session with a teacher, no card and no commitment.',
+      'Try Ayah Academy before any subscription — a full session with a teacher, no card and no commitment.',
     primary: 'Book a free session',
     note: 'No card required · Cancel anytime',
   },

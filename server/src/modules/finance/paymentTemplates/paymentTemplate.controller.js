@@ -1,4 +1,4 @@
-import { messagesNames, paymentTemplateMessagesCodes } from "@aya/shared";
+import { messagesNames, paymentTemplateMessagesCodes } from "@ayah/shared";
 import { ok } from "../../../shared/http/response.js";
 import { paymentTemplateUsecase } from "./paymentTemplate.usecase.js";
 

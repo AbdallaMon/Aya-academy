@@ -1,4 +1,4 @@
-import { messagesNames, pointMessagesCodes } from "@aya/shared";
+import { messagesNames, pointMessagesCodes } from "@ayah/shared";
 import { created, ok } from "../../../shared/http/response.js";
 import { badRequest } from "../../../shared/errors/AppError.js";
 import { pointUsecase } from "./point.usecase.js";

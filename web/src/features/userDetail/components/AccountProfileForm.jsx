@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Box, Button, Card, CardContent, Grid, Stack, Typography } from "@mui/material";
-import { userMessagesCodes } from "@aya/shared";
+import { userMessagesCodes } from "@ayah/shared";
 import {
   PhotoUpload,
   RHFPhoneField,

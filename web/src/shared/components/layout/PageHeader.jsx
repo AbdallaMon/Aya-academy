@@ -8,7 +8,7 @@ import { useTranslation } from "../../../i18n/client.js";
  * PageHeader — title + description + optional Create action for a list page.
  *
  * Text can be passed two ways:
- *   - Directly: `title` / `description` / `createLabel` (the aya per-feature
+ *   - Directly: `title` / `description` / `createLabel` (the ayah per-feature
  *     `txt` approach — preferred for dashboard features).
  *   - Via `translationKey`: an i18n section key whose pageTitle / pageDescription
  *     / createButton keys are read from the global i18n table.

@@ -1,6 +1,6 @@
 // Admin certificate-templates feature constants.
 
-import { CERTIFICATE_TEMPLATE_TYPES } from "@aya/shared";
+import { CERTIFICATE_TEMPLATE_TYPES } from "@ayah/shared";
 
 export const CERTIFICATE_TEMPLATES_URL = "certificate-templates";
 

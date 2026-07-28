@@ -3,14 +3,14 @@
 // single object args with optional `client`; keep select projections.)
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   USER_ROLES,
   activeSubscriptionWhere,
   currentSubscriptionWhere,
   SUBSCRIPTION_ORIGINS,
   SUBSCRIPTION_STATUSES,
-} from "@aya/shared";
+} from "@ayah/shared";
 import {
   firstOfNextMonth,
   monthRange,

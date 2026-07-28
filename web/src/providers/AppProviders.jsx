@@ -11,7 +11,7 @@
 //           AppToastContainer → react-toastify viewport (direction follows lng)
 //
 // `lng` is passed from the server layout. The visual theme is intentionally a
-// single stable Aya light/green theme; there is no mode cookie or toggle.
+// single stable Ayah light/green theme; there is no mode cookie or toggle.
 
 import { MotionConfig } from "framer-motion";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";

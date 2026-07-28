@@ -1,4 +1,4 @@
-import { messagesNames, subscriptionMessagesCodes } from "@aya/shared";
+import { messagesNames, subscriptionMessagesCodes } from "@ayah/shared";
 import { created, ok } from "../../../shared/http/response.js";
 import { idParam, optionalIntQuery } from "../../../shared/http/params.js";
 import { subscriptionUsecase } from "./subscription.usecase.js";

@@ -30,7 +30,7 @@ export async function seedCertificateTemplates() {
       congratsEn: "Congratulations on this wonderful achievement!",
       thanksAr: "بارك الله فيك",
       thanksEn: "May Allah reward you",
-      signatureName: "Aya",
+      signatureName: "Ayah",
       signatureTitleAr: "المعلمة",
       signatureTitleEn: "Teacher",
       themeJson: {
@@ -73,7 +73,7 @@ export async function seedCertificateTemplates() {
       congratsEn: "Congratulations on this well-deserved distinction!",
       thanksAr: "زادك الله علمًا وتوفيقًا",
       thanksEn: "May Allah increase you in knowledge",
-      signatureName: "Aya",
+      signatureName: "Ayah",
       signatureTitleAr: "إدارة الأكاديمية",
       signatureTitleEn: "Academy Management",
       themeJson: {
@@ -114,7 +114,7 @@ export async function seedCertificateTemplates() {
       congratsEn: "Wonderful work!",
       thanksAr: "بارك الله فيك",
       thanksEn: "May Allah bless you",
-      signatureName: "Aya",
+      signatureName: "Ayah",
       signatureTitleAr: "المعلمة",
       signatureTitleEn: "Teacher",
       themeJson: {
@@ -156,7 +156,7 @@ export async function seedCertificateTemplates() {
       congratsEn: "Great job — keep shining! 🌟",
       thanksAr: "بارك الله فيك",
       thanksEn: "May Allah bless you",
-      signatureName: "Aya",
+      signatureName: "Ayah",
       signatureTitleAr: "المعلمة",
       signatureTitleEn: "Teacher",
       themeJson: {
@@ -197,7 +197,7 @@ export async function seedCertificateTemplates() {
       congratsEn: "Congratulations on passing — keep up the great work! 🌟",
       thanksAr: "بارك الله فيك",
       thanksEn: "May Allah bless you",
-      signatureName: "Aya",
+      signatureName: "Ayah",
       signatureTitleAr: "المعلمة",
       signatureTitleEn: "Teacher",
       themeJson: {

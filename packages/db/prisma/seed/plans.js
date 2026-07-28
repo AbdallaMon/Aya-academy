@@ -49,7 +49,7 @@ export async function seedPlans() {
   // monthly price of the featured plan) — idempotent-ish.
   const featured = plans.Standard;
   if (featured) {
-    const code = "AYA-WELCOME15";
+    const code = "AYAH-WELCOME15";
     const hasCoupon = await prisma.coupon.findUnique({ where: { code } });
     if (!hasCoupon) {
       await prisma.coupon.create({

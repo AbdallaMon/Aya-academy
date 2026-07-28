@@ -5,7 +5,7 @@ import { MdEdit, MdDelete, MdCheckCircle } from "react-icons/md";
 import {
   AUTO_CERTIFICATE_TEMPLATE_TYPES,
   CERTIFICATE_TEMPLATE_TYPES,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { RowActionsMenu } from "../../../shared/components/index.js";
 
 /**

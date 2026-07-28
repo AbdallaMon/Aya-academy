@@ -8,7 +8,7 @@
 // ===========================================================================
 
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";

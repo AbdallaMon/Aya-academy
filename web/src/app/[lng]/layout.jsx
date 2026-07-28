@@ -71,7 +71,7 @@ export async function generateMetadata({ params }) {
 }
 
 // Root layout for every page. The active locale comes from the [lng] URL
-// segment; Aya uses one stable light/green theme across marketing and dashboard.
+// segment; Ayah uses one stable light/green theme across marketing and dashboard.
 export default async function LocaleLayout({ children, params }) {
   const { lng } = await params;
   if (!languages.includes(lng)) notFound();

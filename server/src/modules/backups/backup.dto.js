@@ -1,7 +1,7 @@
 // backup.dto — output shaping. No secrets leak (no tokens, no cipher/iv/tag).
 // driveFileId may be shown (non-sensitive id). storageKey is internal — not leaked.
 
-import { BACKUP_STATUSES, BACKUP_PROVIDERS, backupMessagesCodes } from "@aya/shared";
+import { BACKUP_STATUSES, BACKUP_PROVIDERS, backupMessagesCodes } from "@ayah/shared";
 
 /**
  * Computes restore eligibility per row and the reason code when blocked.

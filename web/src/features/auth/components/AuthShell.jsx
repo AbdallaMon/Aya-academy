@@ -29,12 +29,12 @@ export default function AuthShell({ title, subtitle, children, footer }) {
               component={Link}
               href="/"
               sx={{ display: "inline-flex" }}
-              aria-label="Aya Academy"
+              aria-label="Ayah Academy"
             >
               <Box
                 component="img"
                 src="/logos/logo.png"
-                alt="Aya Academy"
+                alt="Ayah Academy"
                 sx={{ height: 64 }}
               />
             </Box>

@@ -3,8 +3,8 @@ import {
   USER_ROLES,
   messagesNames,
   pointMessagesCodes,
-} from "@aya/shared";
-import { prisma } from "@aya/db/prisma.client.js";
+} from "@ayah/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { badRequest, forbidden } from "../../../shared/errors/AppError.js";
 import { userRepo } from "../../users/user.repo.js";
 import { pointRepo } from "./point.repo.js";

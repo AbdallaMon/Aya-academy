@@ -6,7 +6,7 @@
 // file/fingerprint/primary). The material lives on Drive only.
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 
 class EncryptionKeysRepo {
   list({ client } = {}) {

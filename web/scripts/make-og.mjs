@@ -1,4 +1,4 @@
-// Generates the Open Graph / Twitter share cards (1200×630) for Aya Academy —
+// Generates the Open Graph / Twitter share cards (1200×630) for Ayah Academy —
 // ONE per locale, each in its own language + reading direction:
 //   ar → og.png        + og-share.jpg        (Arabic, RTL — the canonical card)
 //   en → og-en.png     + og-en-share.jpg     (English, LTR)
@@ -102,7 +102,7 @@ const LOCALES = [
     jpg: 'og-en-share.jpg',
     copy: {
       eyebrow: 'Online Quran & Islamic studies',
-      name: 'Aya Academy',
+      name: 'Ayah Academy',
       role: 'Learn the Quran, Tajweed and Islamic studies:<br>live interactive classes for adults and kids.',
       pill: '★ Free trial session · All ages',
       trust: 'Loved by adults & kids',
@@ -205,8 +205,8 @@ function escapeHtml(value = '') {
 function detailCardHtml({ lng, kind, title, description }) {
   const isAr = lng === 'ar';
   const eyebrow = kind === 'blog'
-    ? (isAr ? 'مدوّنة أكاديمية آية' : 'Aya Academy Blog')
-    : (isAr ? 'برنامج من أكاديمية آية' : 'Aya Academy Program');
+    ? (isAr ? 'مدوّنة أكاديمية آية' : 'Ayah Academy Blog')
+    : (isAr ? 'برنامج من أكاديمية آية' : 'Ayah Academy Program');
   const label = kind === 'blog'
     ? (isAr ? 'اقرأ المقال' : 'Read the article')
     : (isAr ? 'احجز حصة مجانية' : 'Book a free session');

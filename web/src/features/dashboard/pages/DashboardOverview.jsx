@@ -3,7 +3,7 @@
 // Role-aware dashboard overview. The shell already guarantees an authenticated
 // user, so we branch on user.role to render the right overview.
 
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { useAuth } from "../../../hooks/useAuth.js";
 import AdminOverview from "../components/AdminOverview.jsx";
 import ParentOverview from "../components/ParentOverview.jsx";

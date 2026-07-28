@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { REPORT_PERMISSIONS } from "@aya/shared";
+import { REPORT_PERMISSIONS } from "@ayah/shared";
 import { reportController } from "./report.controller.js";
 import { ReportValidation } from "./report.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

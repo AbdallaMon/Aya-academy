@@ -2,7 +2,7 @@
 
 // ThemeRegistry — wires the RTL-aware emotion cache + MUI theme for the App
 // Router. Direction follows the active i18n language (Arabic => RTL). The
-// Palette is REUSED from the existing buildTheme factory. Aya intentionally uses
+// Palette is REUSED from the existing buildTheme factory. Ayah intentionally uses
 // one stable light/green visual theme; only locale direction can change.
 
 import { useEffect, useMemo } from 'react';

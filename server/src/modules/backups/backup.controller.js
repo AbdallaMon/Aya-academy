@@ -3,7 +3,7 @@
 
 import { ok, created } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
-import { backupMessagesCodes, generalMessagesCodes, messagesNames } from "@aya/shared";
+import { backupMessagesCodes, generalMessagesCodes, messagesNames } from "@ayah/shared";
 import { ENV } from "../../config/env.js";
 import { backupsUsecase } from "./backup.usecase.js";
 

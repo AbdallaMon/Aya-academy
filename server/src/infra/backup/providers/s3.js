@@ -7,7 +7,7 @@
 
 import { AppError } from "../../../shared/errors/AppError.js";
 import { ENV } from "../../../config/env.js";
-import { backupMessagesCodes, messagesNames } from "@aya/shared";
+import { backupMessagesCodes, messagesNames } from "@ayah/shared";
 import { getS3Client, getS3Bucket } from "../clients/s3.client.js";
 
 const TK = messagesNames.backupMessages;

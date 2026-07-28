@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVOICE_STATUSES } from "@aya/shared";
+import { INVOICE_STATUSES } from "@ayah/shared";
 import { paymentTemplateConfigSchema } from "../paymentTemplates/paymentTemplate.validation.js";
 
 const statuses = [

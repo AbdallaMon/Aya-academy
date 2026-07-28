@@ -19,7 +19,7 @@
 export const DEFAULT_PAYMENT_TEMPLATE = {
   company: {
     nameAr: "أكاديمية آية لتعليم القرآن",
-    nameEn: "Aya Academy",
+    nameEn: "Ayah Academy",
     addressAr: "",
     addressEn: "",
     phone: "",
@@ -48,7 +48,7 @@ export const DEFAULT_PAYMENT_TEMPLATE = {
     },
   ],
   footerAr: "شكراً لثقتكم بأكاديمية آية.",
-  footerEn: "Thank you for trusting Aya Academy.",
+  footerEn: "Thank you for trusting Ayah Academy.",
   paymentInstructionsAr: "",
   paymentInstructionsEn: "",
   dueDays: 7,

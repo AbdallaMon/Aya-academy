@@ -1,7 +1,7 @@
-# Frontend Guide — Aya Academy
+# Frontend Guide — Ayah Academy
 
 App overview
-- Aya Academy: a Next.js-based frontend for a Quran learning app for kids.
+- Ayah Academy: a Next.js-based frontend for a Quran learning app for kids.
 - Primary UI lives under `app/src` with feature modules in `app/src/features` and shared UI in `app/src/shared`.
 
 Tech stack (detected)

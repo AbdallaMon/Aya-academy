@@ -10,7 +10,7 @@
 import fs from "fs";
 import mysql from "mysql2/promise";
 import { AppError } from "../../shared/errors/AppError.js";
-import { backupMessagesCodes, messagesNames } from "@aya/shared";
+import { backupMessagesCodes, messagesNames } from "@ayah/shared";
 import { parseDatabaseConnection } from "./dbUrl.js";
 
 const TK = messagesNames.backupMessages;

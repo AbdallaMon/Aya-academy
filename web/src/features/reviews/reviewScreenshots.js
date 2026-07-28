@@ -12,7 +12,7 @@ const review = (n) => ({
   src: `/reviews/review-${n}.jpeg`,
   alt: {
     ar: 'رسالة شكر حقيقية من ولي أمر لأكاديمية آية',
-    en: 'A real thank-you message from a parent to Aya Academy',
+    en: 'A real thank-you message from a parent to Ayah Academy',
   },
 });
 

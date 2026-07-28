@@ -4,7 +4,7 @@ import {
   COUPON_SOURCES,
   DISCOUNT_TYPES,
   couponMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 
 const discountTypes = [DISCOUNT_TYPES.PERCENT, DISCOUNT_TYPES.FIXED];
 

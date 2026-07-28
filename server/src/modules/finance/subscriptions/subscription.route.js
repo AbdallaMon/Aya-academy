@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { SUBSCRIPTION_PERMISSIONS } from "@aya/shared";
+import { SUBSCRIPTION_PERMISSIONS } from "@ayah/shared";
 import { subscriptionController } from "./subscription.controller.js";
 import { SubscriptionValidation } from "./subscription.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

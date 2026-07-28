@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 
 const MINUTES_PER_HOUR = 60;
 const ALREADY_MINUTES_THRESHOLD = 30;

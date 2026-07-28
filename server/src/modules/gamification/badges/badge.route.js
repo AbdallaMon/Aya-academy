@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { BADGE_PERMISSIONS } from "@aya/shared";
+import { BADGE_PERMISSIONS } from "@ayah/shared";
 import { badgeController } from "./badge.controller.js";
 import { BadgeValidation } from "./badge.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

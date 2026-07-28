@@ -1,4 +1,4 @@
-# رفع Aya Academy على VPS — Ubuntu + CloudPanel
+# رفع Ayah Academy على VPS — Ubuntu + CloudPanel
 
 > CloudPanel لوحة تحكم مجانية بتدير لك **Nginx + شهادات SSL + قواعد البيانات +
 > مستخدمي المواقع** من واجهة رسومية، وانت بتدير الـ Node processes بـ PM2.
@@ -21,15 +21,15 @@ CloudPanel بيوفّر عليك كتير، بس في حالتنا فيه حاج
 
 | الجزء | المكان | البورت الداخلي | موقع CloudPanel |
 |------|--------|----------------|-----------------|
-| **Web** (Next.js 16) | `web/` | `3000` | موقع `aya.example.com` |
-| **API** (Express 5 + socket.io) | `server/` | `4000` | موقع `api.aya.example.com` |
+| **Web** (Next.js 16) | `web/` | `3000` | موقع `ayah.example.com` |
+| **API** (Express 5 + socket.io) | `server/` | `4000` | موقع `api.ayah.example.com` |
 | **DB** (Prisma 7) | `packages/db/` | — | قاعدة بيانات من CloudPanel |
 | **MySQL** | يديره CloudPanel | `3306` | Databases tab |
 
 ```
 الإنترنت ─► CloudPanel/Nginx (443, SSL تلقائي)
-              ├── aya.example.com      ─► Next.js (127.0.0.1:3000)
-              └── api.aya.example.com  ─► Express (127.0.0.1:4000) + WebSocket
+              ├── ayah.example.com      ─► Next.js (127.0.0.1:3000)
+              └── api.ayah.example.com  ─► Express (127.0.0.1:4000) + WebSocket
                                               └─► MySQL (CloudPanel)
 ```
 
@@ -59,8 +59,8 @@ sudo CLOUD=do bash install.sh        # CLOUD حسب مزوّدك (do/aws/gce/...
 من مزوّد الدومين، وجّه:
 
 ```
-A   aya.example.com        ─►  SERVER_IP
-A   api.aya.example.com    ─►  SERVER_IP
+A   ayah.example.com        ─►  SERVER_IP
+A   api.ayah.example.com    ─►  SERVER_IP
 ```
 
 استنى الـ DNS يتحدّث قبل ما تطلب SSL.
@@ -75,19 +75,19 @@ CloudPanel فيه نوع موقع **Node.js** بيخليك تختار إصدار
 ### 3.1 موقع الواجهة (Web)
 
 1. **Sites → Add Site → Create a Node.js Site**.
-2. Domain: `aya.example.com`
+2. Domain: `ayah.example.com`
 3. Node.js version: **22** (أو أحدث LTS متاح)
 4. App Port: **3000**
-5. Site User: سيب CloudPanel يولّد مستخدم (مثلاً `aya-web`) — **احفظ اسمه**،
+5. Site User: سيب CloudPanel يولّد مستخدم (مثلاً `ayah-web`) — **احفظ اسمه**،
    هتحتاجه للصلاحيات.
 
 ### 3.2 موقع الـ API
 
 1. **Sites → Add Site → Create a Node.js Site**.
-2. Domain: `api.aya.example.com`
+2. Domain: `api.ayah.example.com`
 3. Node.js version: **22**
 4. App Port: **4000**
-5. Site User: مثلاً `aya-api` — **احفظ اسمه**.
+5. Site User: مثلاً `ayah-api` — **احفظ اسمه**.
 
 > ليه موقعين؟ عشان كل موقع reverse proxy لبورت واحد، وعندنا processin مختلفين.
 > ممكن نظرياً تخلّيهم تحت نفس الموقع وتعمل location يدوي، بس موقعين أنضف وأسهل
@@ -102,8 +102,8 @@ CloudPanel فيه نوع موقع **Node.js** بيخليك تختار إصدار
 ## 4) إنشاء قاعدة البيانات من CloudPanel
 
 1. **Databases → Add Database**.
-2. Database Name: `aya_academy`
-3. User: `aya_user` — وكلمة سر قوية.
+2. Database Name: `ayah_academy`
+3. User: `ayah_user` — وكلمة سر قوية.
 4. احفظ البيانات (host = `127.0.0.1`، port = `3306`).
 
 > CloudPanel بيخلّي MySQL على `127.0.0.1` بس (مش مفتوح للخارج) — وده اللي إحنا
@@ -124,8 +124,8 @@ CloudPanel فيه نوع موقع **Node.js** بيخليك تختار إصدار
 
 ```bash
 ssh root@SERVER_IP
-su - aya-api          # مستخدم موقع الـ API
-cd ~/htdocs/api.aya.example.com
+su - ayah-api          # مستخدم موقع الـ API
+cd ~/htdocs/api.ayah.example.com
 ```
 
 امسح أي ملفات افتراضية وحط الكود:
@@ -152,23 +152,23 @@ npm ci         # بيركّب كل الـ workspaces
 ### 6.1 `packages/db/.env`
 
 ```env
-DATABASE_URL="mysql://aya_user:DB_PASSWORD@127.0.0.1:3306/aya_academy"
+DATABASE_URL="mysql://ayah_user:DB_PASSWORD@127.0.0.1:3306/ayah_academy"
 ```
 
 ### 6.2 `server/.env`
 
 ```env
-DATABASE_URL="mysql://aya_user:DB_PASSWORD@127.0.0.1:3306/aya_academy"
+DATABASE_URL="mysql://ayah_user:DB_PASSWORD@127.0.0.1:3306/ayah_academy"
 DATABASE_HOST=127.0.0.1
 DATABASE_PORT=3306
-DATABASE_USER=aya_user
+DATABASE_USER=ayah_user
 DATABASE_PASSWORD=DB_PASSWORD
-DATABASE_NAME=aya_academy
+DATABASE_NAME=ayah_academy
 
 PORT=4000
 NODE_ENV=production
-CORS_ORIGINS=https://aya.example.com
-APP_URL=https://aya.example.com
+CORS_ORIGINS=https://ayah.example.com
+APP_URL=https://ayah.example.com
 
 JWT_ACCESS_SECRET=__64_HEX__
 JWT_REFRESH_SECRET=__64_HEX__
@@ -179,8 +179,8 @@ COOKIE_DOMAIN=.example.com
 MASTER_KEY=__BASE64_32_BYTES__
 
 # 📁 مسارات التخزين — جوه مجلد مستخدم الموقع بس بره مجلد الـ git (قسم 7)
-UPLOAD_DIR=/home/aya-api/storage/uploads
-BACKUP_DIR=/home/aya-api/storage/backups
+UPLOAD_DIR=/home/ayah-api/storage/uploads
+BACKUP_DIR=/home/ayah-api/storage/backups
 
 BACKUP_PROVIDER=local
 BACKUP_ENABLED=true
@@ -191,9 +191,9 @@ BACKUP_RETENTION_MAX=30
 ### 6.3 `web/.env.local`
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.aya.example.com/api/v1
-NEXT_PUBLIC_APP_URL=https://aya.example.com
-NEXT_PUBLIC_SITE_URL=https://aya.example.com
+NEXT_PUBLIC_API_URL=https://api.ayah.example.com/api/v1
+NEXT_PUBLIC_APP_URL=https://ayah.example.com
+NEXT_PUBLIC_SITE_URL=https://ayah.example.com
 ```
 
 ### 6.4 توليد الأسرار + تقفيل الملفات
@@ -222,27 +222,27 @@ npm run build:web
 
 ### 7.1 المبدأ
 
-- الكود كله جوه `/home/aya-api/htdocs/api.aya.example.com`.
+- الكود كله جوه `/home/ayah-api/htdocs/api.ayah.example.com`.
 - ملفات المستخدمين (`uploads/`) والنسخ الاحتياطية (`backups/`) لازم يكونوا:
   - **بره مجلد الكود** (عشان `git pull` ما يمسحهمش) → حطّيناهم في
-    `/home/aya-api/storage/...`.
-  - **مملوكين لمستخدم الموقع** `aya-api` (هو اللي بيشغّل الـ Node).
+    `/home/ayah-api/storage/...`.
+  - **مملوكين لمستخدم الموقع** `ayah-api` (هو اللي بيشغّل الـ Node).
 
 ### 7.2 إنشاء مجلد التخزين
 
-وانت بمستخدم `aya-api`:
+وانت بمستخدم `ayah-api`:
 
 ```bash
-mkdir -p /home/aya-api/storage/uploads
-mkdir -p /home/aya-api/storage/backups
-mkdir -p /home/aya-api/storage/logs
+mkdir -p /home/ayah-api/storage/uploads
+mkdir -p /home/ayah-api/storage/backups
+mkdir -p /home/ayah-api/storage/logs
 
-chmod -R 750 /home/aya-api/storage
+chmod -R 750 /home/ayah-api/storage
 ```
 
-> لأنك أصلاً بتعمل ده **بمستخدم الموقع**، الملكية تلقائياً `aya-api:aya-api` —
+> لأنك أصلاً بتعمل ده **بمستخدم الموقع**، الملكية تلقائياً `ayah-api:ayah-api` —
 > ده بالظبط المطلوب. لو عملته بـ root بالغلط، صحّحها:
-> `chown -R aya-api:aya-api /home/aya-api/storage`.
+> `chown -R ayah-api:ayah-api /home/ayah-api/storage`.
 
 اتأكد إن `server/.env` بيشاور على المسارات دي (`UPLOAD_DIR`/`BACKUP_DIR`).
 
@@ -265,47 +265,47 @@ CloudPanel مابيشغّلش الـ Node عنك بشكل دائم بطريقة 
 بتاعتنا (process اتنين)، فالأنضف نستخدم PM2 تحت مستخدم الموقع.
 
 ```bash
-# بمستخدم aya-api
+# بمستخدم ayah-api
 npm install -g pm2     # أو npx pm2 لو مفيش صلاحية global
 ```
 
 اعمل `ecosystem.config.cjs` في جذر المشروع:
 
 ```js
-// /home/aya-api/htdocs/api.aya.example.com/ecosystem.config.cjs
-const ROOT = "/home/aya-api/htdocs/api.aya.example.com";
+// /home/ayah-api/htdocs/api.ayah.example.com/ecosystem.config.cjs
+const ROOT = "/home/ayah-api/htdocs/api.ayah.example.com";
 module.exports = {
   apps: [
     {
-      name: "aya-api",
+      name: "ayah-api",
       cwd: ROOT + "/server",
       script: "src/server.js",
       env: { NODE_ENV: "production" },
-      out_file: "/home/aya-api/storage/logs/api-out.log",
-      error_file: "/home/aya-api/storage/logs/api-err.log",
+      out_file: "/home/ayah-api/storage/logs/api-out.log",
+      error_file: "/home/ayah-api/storage/logs/api-err.log",
     },
     {
-      name: "aya-web",
+      name: "ayah-web",
       cwd: ROOT + "/web",
       script: "node_modules/next/dist/bin/next",
       args: "start -p 3000",
       env: { NODE_ENV: "production" },
-      out_file: "/home/aya-api/storage/logs/web-out.log",
-      error_file: "/home/aya-api/storage/logs/web-err.log",
+      out_file: "/home/ayah-api/storage/logs/web-out.log",
+      error_file: "/home/ayah-api/storage/logs/web-err.log",
     },
   ],
 };
 ```
 
 ```bash
-cd /home/aya-api/htdocs/api.aya.example.com
+cd /home/ayah-api/htdocs/api.ayah.example.com
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup        # نفّذ السطر اللي يطلع (محتاج sudo/root مرة واحدة)
 ```
 
 > لاحظ: الـ Web بيشتغل من نفس نسخة الكود بتاعة موقع الـ API (`ROOT/web`).
-> CloudPanel هيعمل reverse proxy لموقع `aya.example.com` على بورت 3000 —
+> CloudPanel هيعمل reverse proxy لموقع `ayah.example.com` على بورت 3000 —
 > والـ process هو اللي شغّال هنا. (مش لازم تنسخ الكود في مجلد موقع الـ web.)
 
 ---
@@ -315,7 +315,7 @@ pm2 startup        # نفّذ السطر اللي يطلع (محتاج sudo/root
 الـ real-time محتاج تمرير ترويسات الـ Upgrade. CloudPanel بيخليك تعدّل الـ
 Vhost لكل موقع:
 
-1. **Sites → api.aya.example.com → Vhost**.
+1. **Sites → api.ayah.example.com → Vhost**.
 2. جوه الـ `location` اللي بيعمل `proxy_pass` للبورت 4000، اتأكد إن فيه:
 
 ```nginx
@@ -329,7 +329,7 @@ proxy_read_timeout 86400;
 client_max_body_size 200M;     # لرفع ملفات الاستعادة الكبيرة
 ```
 
-3. لموقع الواجهة `aya.example.com`، زوّد `client_max_body_size 20M;` (رفع الصور)
+3. لموقع الواجهة `ayah.example.com`، زوّد `client_max_body_size 20M;` (رفع الصور)
    ونفس ترويسات الـ Upgrade.
 4. احفظ — CloudPanel بيعمل reload للـ Nginx تلقائياً.
 
@@ -339,8 +339,8 @@ client_max_body_size 200M;     # لرفع ملفات الاستعادة الكب
 
 من CloudPanel:
 
-1. **Sites → aya.example.com → SSL/TLS → Let's Encrypt → Issue**.
-2. كرّر لموقع `api.aya.example.com`.
+1. **Sites → ayah.example.com → SSL/TLS → Let's Encrypt → Issue**.
+2. كرّر لموقع `api.ayah.example.com`.
 
 CloudPanel بيجدّدها تلقائياً. بعد كده اتأكد إن كل متغيرات البيئة بـ `https://`.
 
@@ -350,12 +350,12 @@ CloudPanel بيجدّدها تلقائياً. بعد كده اتأكد إن كل
 
 ```bash
 pm2 status
-curl -I https://aya.example.com
-curl -i https://api.aya.example.com/api/v1
+curl -I https://ayah.example.com
+curl -i https://api.ayah.example.com/api/v1
 
 # اختبار صلاحية الكتابة كمستخدم الموقع:
-sudo -u aya-api touch /home/aya-api/storage/uploads/_t && \
-  sudo -u aya-api rm /home/aya-api/storage/uploads/_t && echo "uploads OK"
+sudo -u ayah-api touch /home/ayah-api/storage/uploads/_t && \
+  sudo -u ayah-api rm /home/ayah-api/storage/uploads/_t && echo "uploads OK"
 ```
 
 من المتصفح: سجّل دخول، ارفع صورة، اتأكد إنها بتتعرض (يختبر `uploads/` + البثّ
@@ -366,8 +366,8 @@ sudo -u aya-api touch /home/aya-api/storage/uploads/_t && \
 ## 12) إعادة النشر
 
 ```bash
-su - aya-api
-cd ~/htdocs/api.aya.example.com
+su - ayah-api
+cd ~/htdocs/api.ayah.example.com
 git pull
 npm ci
 npm run db:migrate:deploy
@@ -375,20 +375,20 @@ npm run build:web
 pm2 reload all
 ```
 
-> `uploads/` و `backups/` في `/home/aya-api/storage` — بره مجلد الكود، فمش
+> `uploads/` و `backups/` في `/home/ayah-api/storage` — بره مجلد الكود، فمش
 > بيتأثروا. ده سبب وضعهم هناك.
 
 ---
 
 ## ملخّص نقاط الصلاحيات (CloudPanel)
 
-1. كل الأوامر بمستخدم الموقع (`aya-api`)، مش root → الملكية تطلع صح تلقائياً.
-2. `uploads/`+`backups/` في `/home/aya-api/storage` (بره الكود) عبر
+1. كل الأوامر بمستخدم الموقع (`ayah-api`)، مش root → الملكية تطلع صح تلقائياً.
+2. `uploads/`+`backups/` في `/home/ayah-api/storage` (بره الكود) عبر
    `UPLOAD_DIR`/`BACKUP_DIR`.
 3. `chmod 750` على `storage/`، و`chmod 600` على ملفات `.env`.
 4. الـ uploads مش static — ما تفتحهاش في الـ Vhost، سيبها ورا الـ API.
 5. لو شغّلت أي أمر بـ root بالغلط، صحّح الملكية:
-   `chown -R aya-api:aya-api /home/aya-api/storage` (و مجلد الكود لو لزم).
+   `chown -R ayah-api:ayah-api /home/ayah-api/storage` (و مجلد الكود لو لزم).
 6. `MASTER_KEY` ثابت ولا يتغيّر بعد أول ربط Drive (وإلا التوكِنز ما تتفكّش).
 
 ---
@@ -399,7 +399,7 @@ pm2 reload all
 |--|------|-----------|
 | Nginx vhosts | تكتبها بإيدك | واجهة + محرر Vhost |
 | SSL | Certbot CLI | زر Issue + تجديد تلقائي |
-| المستخدمين | تعملهم بنفسك (`aya`) | مستخدم لكل موقع تلقائي |
+| المستخدمين | تعملهم بنفسك (`ayah`) | مستخدم لكل موقع تلقائي |
 | قواعد البيانات | mysql CLI | واجهة Databases |
 | الـ Node processes | PM2 (انت) | PM2 (انت برضه) |
 | الصلاحيات | انت تضبطها | أوضح (مستخدم لكل موقع) |

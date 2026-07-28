@@ -1,4 +1,4 @@
-# خطة إعادة التنظيم — aya-academy
+# خطة إعادة التنظيم — ayah-academy
 
 > الهدف: توحيد تنظيم الملفات (مش اللوجيك) عشان يبقى مطابق للـ ref.
 > المرجع الأساسي = **school-system** (الهيكل + الـ validation + فصل ملفات الـ config).
@@ -22,7 +22,7 @@ modules/<feature>/
   <feature>.dto.js          # select + mappers
 ```
 - بناء الـ `where` في الـ **repo** عن طريق `shared/utility/helper.js` (`buildSearchQuery`…).
-- رسائل الأكواد من `@aya/shared` مباشرة — **من غير** ملفات `.messages.js` محلية.
+- رسائل الأكواد من `@ayah/shared` مباشرة — **من غير** ملفات `.messages.js` محلية.
 - الموديولات المترابطة تتجمّع تحت parent + aggregator route.
 
 **فرونت اند — كل feature:**
@@ -71,7 +71,7 @@ features/<feature>/
 | `auth/auth.usecase.js` | 365 | |
 
 ## 🟡 1-C. حذف shims الـ `.messages.js` (18 ملف)
-كلها re-export سطر واحد من `@aya/shared` — تتحذف والـ importers تروح على `@aya/shared` مباشرة (زي ما `auth`/`backups`/`users`/`encryptionKeys` عاملين بالفعل).
+كلها re-export سطر واحد من `@ayah/shared` — تتحذف والـ importers تروح على `@ayah/shared` مباشرة (زي ما `auth`/`backups`/`users`/`encryptionKeys` عاملين بالفعل).
 > attachments, badges, certificateTemplates, certificates, coupons, dashboard, games, invoices, notifications, paymentTemplates, plans, points, quizzes, reports, rewards, sessionLogs, settings, subscriptions, whiteboardSessions.
 
 ## 🟡 1-D. تجميع الموديولات المتفرّقة (parent + aggregator route)
@@ -144,7 +144,7 @@ Components كبيرة (candidate split, >~330): `dashboard/ParentOverview.jsx` (
 ## 🟡 2-E. الـ features المسطحة (marketing) — تدّي `pages/` على الأقل
 - `blog/` → `BlogArticle.jsx`,`BlogList.jsx` ينزلوا `pages/`.
 - `pricing/PricingSection.jsx` → `pages/`.
-- `faq/`, `hero/`, `programs/`, `whyAya/`, `promo/`, `trust/`, `reviews/`, `childDashboard/` → تجميع بسيط في `pages/` (+`data/`).
+- `faq/`, `hero/`, `programs/`, `whyAyah/`, `promo/`, `trust/`, `reviews/`, `childDashboard/` → تجميع بسيط في `pages/` (+`data/`).
 
 ## 🟡 2-F. توحيد التسميات
 - `backups/config/backupText.js` → `backupsText.js` (يطابق `backupsColumns.js`).

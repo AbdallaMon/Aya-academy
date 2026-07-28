@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { INVOICE_PERMISSIONS } from "@aya/shared";
+import { INVOICE_PERMISSIONS } from "@ayah/shared";
 import { invoiceController } from "./invoice.controller.js";
 import { InvoiceValidation } from "./invoice.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

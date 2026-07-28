@@ -3,7 +3,7 @@
 // Singleton socket.io-client connection for realtime notifications.
 //
 // One shared connection for the whole app. The server authenticates the socket
-// using the SAME httpOnly cookie (aya_access) as the REST API, so we connect
+// using the SAME httpOnly cookie (ayah_access) as the REST API, so we connect
 // with `withCredentials: true` and never touch a token by hand. The socket
 // retries silently if the server is down — creating it must never throw.
 

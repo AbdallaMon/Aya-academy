@@ -6,7 +6,7 @@
 
 **Architecture:** New layered backend module `whiteboardSessions` (route → controller → usecase → repo → validation → dto, Prisma only in repo) persisting session + attached-student rows. Frontend feature `whiteboard` with a config-driven list page, a session detail page, and a full-screen board (dynamically-imported Excalidraw + a custom reaction overlay) mounted OUTSIDE the dashboard shell. A thin `boardChannel` seam writes drawings/reactions locally today and is the future socket swap point.
 
-**Tech Stack:** Express + Prisma (MySQL) backend, `@aya/shared` constants/message-codes; Next.js 16 App Router + MUI + react-hook-form frontend; `@excalidraw/excalidraw` for the board; existing `socket.io` infra reserved for later.
+**Tech Stack:** Express + Prisma (MySQL) backend, `@ayah/shared` constants/message-codes; Next.js 16 App Router + MUI + react-hook-form frontend; `@excalidraw/excalidraw` for the board; existing `socket.io` infra reserved for later.
 
 ## Global Constraints
 
@@ -143,8 +143,8 @@ Also confirm `WHITEBOARD_SESSION_STATUSES`, `WHITEBOARD_VISIBILITIES`, and `WHIT
 
 - [ ] **Step 7: Verify the barrel resolves**
 
-Run: `node -e "const s=require('@aya/shared'); console.log(s.PERMISSIONS.WHITEBOARD, s.WHITEBOARD_SESSION_STATUSES, s.whiteboardMessagesCodes.SESSION_CREATED, s.messagesNames.whiteboardMessages)"`
-(from the repo root; if the package is ESM-only, use `node --input-type=module -e "import('@aya/shared').then(s=>console.log(s.PERMISSIONS.WHITEBOARD, s.messagesNames.whiteboardMessages))"`).
+Run: `node -e "const s=require('@ayah/shared'); console.log(s.PERMISSIONS.WHITEBOARD, s.WHITEBOARD_SESSION_STATUSES, s.whiteboardMessagesCodes.SESSION_CREATED, s.messagesNames.whiteboardMessages)"`
+(from the repo root; if the package is ESM-only, use `node --input-type=module -e "import('@ayah/shared').then(s=>console.log(s.PERMISSIONS.WHITEBOARD, s.messagesNames.whiteboardMessages))"`).
 Expected: prints the permission object, the statuses object, `SESSION_CREATED`, and `whiteboard-messages` with no import error.
 
 - [ ] **Step 8: Commit**
@@ -251,15 +251,15 @@ git commit -m "feat(db): add WhiteboardSession + WhiteboardSessionStudent models
 - Create: `server/src/modules/whiteboardSessions/whiteboardSession.messages.js`
 
 **Interfaces:**
-- Consumes: Prisma client `@aya/db/prisma.client.js`, `paginate` from `../../shared/utility/pagination.js`.
+- Consumes: Prisma client `@ayah/db/prisma.client.js`, `paginate` from `../../shared/utility/pagination.js`.
 - Produces: `whiteboardSessionRepo` with methods: `list({ where, page, limit })`, `getById({ id })`, `getByIdWithStudents({ id })`, `getByTokenHash({ tokenHash })`, `create({ title, createdById })`, `updateStatus({ id, status })`, `setPublic({ id, tokenHash })`, `setPrivate({ id })`, `remove({ id })`, `addStudent({ sessionId, studentId })`, `removeStudent({ sessionId, studentId })`, `findStudentLink({ sessionId, studentId })`. Plus selects `sessionListSelect`, `sessionDetailSelect`, `sessionPublicSelect`.
 
 - [ ] **Step 1: Create `whiteboardSession.messages.js`**
 
 ```js
-// Re-exported from @aya/shared so the codes are a single source of truth
+// Re-exported from @ayah/shared so the codes are a single source of truth
 // shared with the frontend (localized in web/src/i18n/locales/messagesCodes.js).
-export { whiteboardMessagesCodes } from "@aya/shared";
+export { whiteboardMessagesCodes } from "@ayah/shared";
 ```
 
 - [ ] **Step 2: Create `whiteboardSession.dto.js`**
@@ -322,7 +322,7 @@ export function toPublicSession(session) {
 // WhiteboardSessionStudent. Single object args with an optional `client`.
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { paginate } from "../../shared/utility/pagination.js";
 import { sessionDetailSelect, sessionListSelect } from "./whiteboardSession.dto.js";
 
@@ -439,7 +439,7 @@ git commit -m "feat(whiteboard): add whiteboard-sessions dto + repo"
 - Create: `server/src/modules/whiteboardSessions/whiteboardSession.usecase.js`
 
 **Interfaces:**
-- Consumes: `whiteboardSessionRepo` (Task 3); `userRepo.getById`/equivalent from `../users/user.repo.js` to verify a target is a STUDENT; `AppError` factories; `USER_ROLES`, `WHITEBOARD_SESSION_STATUSES`, `WHITEBOARD_VISIBILITIES` from `@aya/shared`; `crypto` (node builtin); `ENV.appUrl` (config).
+- Consumes: `whiteboardSessionRepo` (Task 3); `userRepo.getById`/equivalent from `../users/user.repo.js` to verify a target is a STUDENT; `AppError` factories; `USER_ROLES`, `WHITEBOARD_SESSION_STATUSES`, `WHITEBOARD_VISIBILITIES` from `@ayah/shared`; `crypto` (node builtin); `ENV.appUrl` (config).
 - Produces: `whiteboardSessionUsecase` with: `list({ page, limit, filters, authUser })`, `getById({ id, authUser })`, `create({ title, authUser })`, `activate({ id, authUser })`, `end({ id, authUser })`, `makePublic({ id, authUser, locale })` → `{ session, token, url }`, `makePrivate({ id, authUser })`, `remove({ id, authUser })`, `addStudent({ id, studentId, authUser })`, `removeStudent({ id, studentId, authUser })`, `getPublicByToken({ token })` → public dto or throws notFound.
 
 - [ ] **Step 1: Confirm the student-lookup helper.** Open `server/src/modules/users/user.repo.js` and note the method that fetches a user by id with their `role` (used to reject non-students). If it's `getById({ id })` returning `{ id, role, ... }`, use that. If the exact name differs, use the actual one — record it here before writing the usecase.
@@ -450,12 +450,12 @@ git commit -m "feat(whiteboard): add whiteboard-sessions dto + repo"
 
 ```js
 import crypto from "node:crypto";
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   USER_ROLES,
   WHITEBOARD_SESSION_STATUSES,
   WHITEBOARD_VISIBILITIES,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { badRequest, conflict, notFound } from "../../shared/errors/AppError.js";
 import { buildSearchQuery } from "../../shared/utility/helper.js";
 import { ENV } from "../../config/env.js"; // adjust to the real config path (Step 2)
@@ -616,7 +616,7 @@ git commit -m "feat(whiteboard): add whiteboard-sessions usecase with share-toke
 - Modify: `server/src/routes.js`
 
 **Interfaces:**
-- Consumes: `whiteboardSessionUsecase` (Task 4); `ok`/`created`/`deleted` from `../../shared/http/response.js`; `idParam` from `../../shared/http/params.js`; `messagesNames`, `whiteboardMessagesCodes`, `PERMISSIONS` from `@aya/shared`; `validate`, `asyncHandler`, `authMiddleware`.
+- Consumes: `whiteboardSessionUsecase` (Task 4); `ok`/`created`/`deleted` from `../../shared/http/response.js`; `idParam` from `../../shared/http/params.js`; `messagesNames`, `whiteboardMessagesCodes`, `PERMISSIONS` from `@ayah/shared`; `validate`, `asyncHandler`, `authMiddleware`.
 - Produces: mounted router at `/whiteboard-sessions` (public token route first, then guarded routes).
 
 - [ ] **Step 1: Create `whiteboardSession.validation.js`**
@@ -642,7 +642,7 @@ export class WhiteboardSessionValidation {
 - [ ] **Step 2: Create `whiteboardSession.controller.js`**
 
 ```js
-import { messagesNames, whiteboardMessagesCodes } from "@aya/shared";
+import { messagesNames, whiteboardMessagesCodes } from "@ayah/shared";
 import { created, deleted, ok } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
 import { whiteboardSessionUsecase } from "./whiteboardSession.usecase.js";
@@ -754,7 +754,7 @@ export { WhiteboardSessionController };
 
 ```js
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { whiteboardSessionController } from "./whiteboardSession.controller.js";
 import { WhiteboardSessionValidation } from "./whiteboardSession.validation.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
@@ -825,7 +825,7 @@ Expected: `HTTP/1.1 404` with a JSON envelope `{"success":false,"message":"SESSI
 `curl -s -i http://localhost:4000/api/v1/whiteboard-sessions`
 Expected: `HTTP/1.1 401` (guarded — no auth cookie).
 
-- [ ] **Step 6: End-to-end smoke with an admin cookie.** Log in as admin via the app or `curl` the login endpoint to capture the `aya_access` cookie into a jar, then:
+- [ ] **Step 6: End-to-end smoke with an admin cookie.** Log in as admin via the app or `curl` the login endpoint to capture the `ayah_access` cookie into a jar, then:
 ```bash
 # create
 curl -s -b cookies.txt -X POST http://localhost:4000/api/v1/whiteboard-sessions \
@@ -910,7 +910,7 @@ export const PROTECTED_PREFIXES = ['/dashboard', '/board'];
 - [ ] **Step 5: Create `web/src/features/whiteboard/config/constant.js`**
 
 ```js
-import { WHITEBOARD_SESSION_STATUSES, WHITEBOARD_VISIBILITIES } from "@aya/shared";
+import { WHITEBOARD_SESSION_STATUSES, WHITEBOARD_VISIBILITIES } from "@ayah/shared";
 import { localePath } from "../../../i18n/routing.js";
 
 export const WHITEBOARD_URL = "whiteboard-sessions";
@@ -1082,7 +1082,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@mui/material";
 import { MdAdd } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
@@ -1265,7 +1265,7 @@ export default function SessionStudentsPanel({ session, onChanged }) {
 import { useState } from "react";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { MdOpenInFull, MdContentCopy, MdPlayArrow, MdStop, MdPublic, MdLock } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";

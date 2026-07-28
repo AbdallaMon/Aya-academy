@@ -22,7 +22,7 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import useDebounce from "../../../hooks/useDebounce.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";

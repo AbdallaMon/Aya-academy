@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { planController } from "./plan.controller.js";
 import { PlanValidation } from "./plan.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

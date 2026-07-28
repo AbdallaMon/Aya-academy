@@ -10,7 +10,7 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-import { DEFAULT_APP_SETTINGS } from "@aya/shared";
+import { DEFAULT_APP_SETTINGS } from "@ayah/shared";
 import {
   AsyncUserAutocomplete,
   FormDialog,

@@ -6,7 +6,7 @@ import {
   USER_ROLES,
   messagesNames,
   quizMessagesCodes,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { v4 as uuidv4 } from "uuid";
 import {
   badRequest,

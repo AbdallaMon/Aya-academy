@@ -149,7 +149,7 @@ export const dashboardText = {
     viewAll: "كل الاشتراكات",
   },
   en: {
-    appName: "Aya Academy",
+    appName: "Ayah Academy",
     logout: "Log out",
     loading: "Loading...",
     menu: "Menu",

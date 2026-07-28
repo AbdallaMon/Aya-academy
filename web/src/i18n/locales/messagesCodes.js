@@ -2,7 +2,7 @@
 // resolver (see useRequest). The resolver tries, in order:
 //   table[translationKey][code] -> table[code] -> table.generalMessages[code] -> raw code
 //
-// Keys are grouped by the @aya/shared `messagesNames` namespace values
+// Keys are grouped by the @ayah/shared `messagesNames` namespace values
 // (e.g. "auth-messages", "general-messages", "user-messages").
 //
 // EVERY message code thrown by the backend must have an entry in BOTH `ar`
@@ -32,7 +32,7 @@ import {
   settingsMessagesCodes,
   whiteboardMessagesCodes,
   messagesNames,
-} from '@aya/shared';
+} from '@ayah/shared';
 
 const ar = {
   // ── general-messages ──────────────────────────────────────────────────────

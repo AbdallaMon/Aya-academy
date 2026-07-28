@@ -6,7 +6,7 @@ import { Grid } from "@mui/material";
 import {
   SESSION_ATTENDANCE,
   SESSION_RATING_ORDER,
-} from "@aya/shared";
+} from "@ayah/shared";
 import {
   FormDialog,
   AsyncUserAutocomplete,

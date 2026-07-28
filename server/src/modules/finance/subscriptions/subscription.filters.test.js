@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { userRepo } from "../../users/user.repo.js";
 import { subscriptionRepo } from "./subscription.repo.js";
 

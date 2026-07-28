@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Stack } from "@mui/material";
 import { FiStar, FiTrash2 } from "react-icons/fi";
-import { DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useBackupsText } from "../hooks/useBackupsText.js";
 import {
@@ -30,7 +30,7 @@ import KeysListCard from "./KeysListCard.jsx";
  * a (short) fingerprint. The generate-once key is handed to the save form via
  * GenerateKeyDialog's onUseKey; saving persists it to the chosen KEY account.
  *
- * ConfirmDialog/RowActions are feature-local in aya (not in the shared barrel),
+ * ConfirmDialog/RowActions are feature-local in ayah (not in the shared barrel),
  * so they are imported from this folder. The generate/save card and the keys
  * list (+ row) are extracted into KeySaveCard/KeysListCard/KeyRow; this stays a
  * thin composer holding state, requests and handlers.

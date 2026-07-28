@@ -6,13 +6,13 @@
 
 **Architecture:** New subscription actions (`renew`, `change-plan`, `activate`) and an invoice `send` action layer on the existing layered Express+Prisma backend (route → controller → usecase → repo). A new `infra/messaging/` module (facade + Meta WhatsApp provider, mirroring `infra/backup/providers/`) handles outbound. The frontend list collapses to latest-per-student and a new `subscriptionDetail` feature + App Router page hosts all actions.
 
-**Tech Stack:** Express 5, Prisma (MySQL), Next.js App Router (`web/`), MUI 7, react-hook-form, `@aya/shared` constants/message-codes, `@aya/db`. No SDK for WhatsApp — native `fetch` to Graph API.
+**Tech Stack:** Express 5, Prisma (MySQL), Next.js App Router (`web/`), MUI 7, react-hook-form, `@ayah/shared` constants/message-codes, `@ayah/db`. No SDK for WhatsApp — native `fetch` to Graph API.
 
 ## Global Constraints
 
 - **No TypeScript in app source** — `.js`/`.jsx` only.
 - **Prisma only in repos** — no `prisma.*` in routes/controllers/usecases.
-- **Language-neutral error CODES only** — throw `AppError` with a code from `@aya/shared` message-codes; never raw user strings. Every new code MUST have ar+en localization in `web` messagesCodes.
+- **Language-neutral error CODES only** — throw `AppError` with a code from `@ayah/shared` message-codes; never raw user strings. Every new code MUST have ar+en localization in `web` messagesCodes.
 - **Enum-constant sync** — any Prisma enum value added must be mirrored in `packages/shared/constants/enums.js`.
 - **Authorization = permission code + object scope + status** — every new endpoint requires a permission code AND a scope check (ADMIN all; PARENT only their child; STUDENT only self).
 - **Audit important actions** — follow the module's existing audit pattern for renew/activate/send/mark-paid.
@@ -173,7 +173,7 @@ git commit -m "feat(config): add WhatsApp (Meta Cloud API) env config, default d
 ```js
 import { ENV, isWhatsAppConfigured } from "../../../config/env.js";
 import { AppError } from "../../../shared/errors/AppError.js"; // confirm exact path
-import { invoiceMessagesCodes } from "@aya/shared";
+import { invoiceMessagesCodes } from "@ayah/shared";
 
 function baseUrl() {
   const { apiUrl, apiVersion, phoneId } = ENV.whatsapp;
@@ -252,7 +252,7 @@ git commit -m "feat(messaging): Meta WhatsApp Cloud API provider"
 - [ ] **Step 1: Implement facade.**
 ```js
 import { ENV, isWhatsAppConfigured } from "../../config/env.js";
-import { NOTIFICATION_TYPES } from "@aya/shared";
+import { NOTIFICATION_TYPES } from "@ayah/shared";
 import { notificationUsecase } from "../../modules/notifications/notification.usecase.js";
 import { whatsappProvider } from "./providers/whatsapp.js";
 
@@ -295,7 +295,7 @@ export const messagingService = {
   },
 };
 ```
-> Confirm `notificationUsecase` is exported as a singleton object with `createNotification` (per exploration it is). Confirm `@aya/shared` re-exports `NOTIFICATION_TYPES`.
+> Confirm `notificationUsecase` is exported as a singleton object with `createNotification` (per exploration it is). Confirm `@ayah/shared` re-exports `NOTIFICATION_TYPES`.
 
 - [ ] **Step 2: Boot check.** `npm run dev:server` clean.
 

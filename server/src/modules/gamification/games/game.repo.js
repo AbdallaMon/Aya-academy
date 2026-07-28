@@ -5,8 +5,8 @@
 // { items, total, page, pageSize }, select/include projections kept intact.)
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
-import { ASSIGNMENT_STATUSES, USER_ROLES } from "@aya/shared";
+import { prisma } from "@ayah/db/prisma.client.js";
+import { ASSIGNMENT_STATUSES, USER_ROLES } from "@ayah/shared";
 import { paginate } from "../../../shared/utility/pagination.js";
 import {
   buildSearchQuery,

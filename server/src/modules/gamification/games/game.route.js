@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { gameController } from "./game.controller.js";
 import { GameValidation } from "./game.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

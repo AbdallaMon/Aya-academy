@@ -1,4 +1,4 @@
-import { getPermissionsForRole } from "@aya/shared";
+import { getPermissionsForRole } from "@ayah/shared";
 import { AUTH_COOKIE, JwtService } from "../../infra/security/jwt.js";
 import { getAuthUserById } from "../../infra/auth/authUser.repo.js";
 import { forbidden, unauthorized } from "../errors/AppError.js";

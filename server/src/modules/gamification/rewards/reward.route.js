@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { rewardController } from "./reward.controller.js";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { authMiddleware } from "../../../shared/middlewares/auth.middleware.js";

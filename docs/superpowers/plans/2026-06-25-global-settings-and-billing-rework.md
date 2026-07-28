@@ -6,7 +6,7 @@
 
 **Architecture:** Mirror the existing singleton `PaymentTemplate` module for a new `AppSetting` singleton. Pricing becomes a pure function of `plan.hours × settings.hourlyRate`. Currency is read once from settings and threaded through formatters. Invoice/plan/subscription UIs read settings via a small client hook/provider.
 
-**Tech Stack:** Express + Prisma (MySQL) backend (layered route→controller→usecase→repo→validation→dto); Next.js App Router + MUI + react-hook-form frontend; `@aya/shared` for permission/message codes.
+**Tech Stack:** Express + Prisma (MySQL) backend (layered route→controller→usecase→repo→validation→dto); Next.js App Router + MUI + react-hook-form frontend; `@ayah/shared` for permission/message codes.
 
 ## Global Constraints
 - Hourly rate default = **8**, currency default = **USD**.

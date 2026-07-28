@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Box, Button, Chip, CircularProgress, Grid, Stack, Typography } from "@mui/material";
 import { MdArrowBack } from "react-icons/md";
 import Link from "next/link";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";

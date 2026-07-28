@@ -1,4 +1,4 @@
-// Aya Academy blog — the single, backend-free source of truth for all articles.
+// Ayah Academy blog — the single, backend-free source of truth for all articles.
 // Same data-driven philosophy as the rest of the marketing site: every article is
 // a structured, fully-bilingual ({ ar, en }) object. The list/detail pages read
 // from here; no database, no CMS. To publish a new post, append an object below.
@@ -373,7 +373,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'وهذا ما نراعيه في أكاديمية آية: برامجنا مفتوحة للكبار كما للصغار — حفظ القرآن والتجويد واللغة العربية — بحصصٍ مرنة تناسب انشغالك، وخطةٍ تبدأ من مستواك أنت لا من عمرك. الباب مفتوح، والخطوة الأولى تكفي.',
-          en: 'This is what we honor at Aya Academy: our programs are open to adults as much as to children — Quran memorization, tajweed, and Arabic — with flexible sessions that fit a busy life, and a plan that starts from your level, not your age. The door is open, and the first step is enough.',
+          en: 'This is what we honor at Ayah Academy: our programs are open to adults as much as to children — Quran memorization, tajweed, and Arabic — with flexible sessions that fit a busy life, and a plan that starts from your level, not your age. The door is open, and the first step is enough.',
         },
       },
     ],
@@ -516,7 +516,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'هذا هو الأساس الذي نبني عليه في أكاديمية آية: نبدأ من «لماذا» قبل «كيف»، فنزرع في الطفل محبّة القرآن وفهم فضله، ثم نبني الحفظ على حصصٍ قصيرة وألعابٍ تعليمية ومتابعةٍ لطيفة للأهل.',
-          en: 'This is the foundation we build on at Aya Academy: we begin with the “why” before the “how,” planting love of the Quran and an understanding of its virtue, then building memorization on short sessions, learning games, and gentle parent tracking.',
+          en: 'This is the foundation we build on at Ayah Academy: we begin with the “why” before the “how,” planting love of the Quran and an understanding of its virtue, then building memorization on short sessions, learning games, and gentle parent tracking.',
         },
       },
     ],
@@ -649,7 +649,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'في أكاديمية آية نبني هذه العلاقة أولًا: حصصٌ قصيرة، وألعابٌ تعليمية، ومتابعةٌ لطيفة للأهل بلا ضغط. الحفظ يأتي بعد الحبّ، لا قبله.',
-          en: 'At Aya Academy we build this bond first: short sessions, learning games, and gentle parent tracking with no pressure. Memorization follows love — never the other way around.',
+          en: 'At Ayah Academy we build this bond first: short sessions, learning games, and gentle parent tracking with no pressure. Memorization follows love — never the other way around.',
         },
       },
     ],
@@ -771,7 +771,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'وأخيرًا: اصنع بيئةً محفّزة بالحبّ لا بالضغط. امدح المجهود، واحتفِ بكل سورةٍ تُختَم، واجعل الطفل يؤمّ أهله بما حفظ في نافلة. هذا بالضبط ما تبنيه حصص آية: خطّة حفظٍ ومراجعةٍ واضحة لكل طفل، مع متابعة الأهل أوّلًا بأوّل.',
-          en: 'Finally: build a loving environment, not a pressured one. Praise the effort, celebrate every completed surah, and let the child lead the family in a voluntary prayer using what they memorized. This is exactly what Aya’s sessions are built on: a clear memorize-and-review plan for each child, with parents tracking progress as it happens.',
+          en: 'Finally: build a loving environment, not a pressured one. Praise the effort, celebrate every completed surah, and let the child lead the family in a voluntary prayer using what they memorized. This is exactly what Ayah’s sessions are built on: a clear memorize-and-review plan for each child, with parents tracking progress as it happens.',
         },
       },
     ],
@@ -891,7 +891,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'ولا تتعجّل في الحفظ الجديد على حساب التثبيت؛ فصفحةٌ واحدةٌ راسخة خيرٌ من جزءٍ مهتزّ. واجعل الدعاء بالتثبيت جزءًا من العادة، ليشعر الطفل أنّ الحفظ نعمةٌ من الله تُحفظ بالتعاهد. وفي أكاديمية آية تُبنى خطّة كل طفل على هذا التوازن: قليلٌ جديد، وكثيرٌ مُراجَع ومُثبَّت.',
-          en: 'Don’t rush new memorization at the expense of consolidation; one firmly-rooted page beats a shaky whole juz’. Make du‘a for retention part of the routine, so the child feels memorization is a gift from Allah kept through faithful review. At Aya Academy each child’s plan is built on this balance: a little new, and a lot reviewed and made firm.',
+          en: 'Don’t rush new memorization at the expense of consolidation; one firmly-rooted page beats a shaky whole juz’. Make du‘a for retention part of the routine, so the child feels memorization is a gift from Allah kept through faithful review. At Ayah Academy each child’s plan is built on this balance: a little new, and a lot reviewed and made firm.',
         },
       },
     ],
@@ -1006,7 +1006,7 @@ const articles = [
         tone: 'tip',
         text: {
           ar: 'في لوحة وليّ الأمر بأكاديمية آية ترى تقدّم طفلك وأوسمته بنظرةٍ واحدة — متابعةٌ هادئة تعينك على دورك دون أن تثقل على الطفل.',
-          en: 'In the Aya Academy parent dashboard you see your child’s progress and badges at a glance — calm tracking that supports your role without burdening the child.',
+          en: 'In the Ayah Academy parent dashboard you see your child’s progress and badges at a glance — calm tracking that supports your role without burdening the child.',
         },
       },
     ],
@@ -1136,7 +1136,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'في أكاديمية آية نربط كل حصة قرآن بقيمةٍ خُلُقية وألعاب آداب، حتى ينمو الطفل علمًا وخُلُقًا في آنٍ واحد — فالقرآن نورٌ في السلوك لا حفظٌ في الذاكرة فقط.',
-          en: 'At Aya Academy we tie every Quran session to a value and manners games, so a child grows in knowledge and character at once — the Quran as light in behavior, not just memory in the mind.',
+          en: 'At Ayah Academy we tie every Quran session to a value and manners games, so a child grows in knowledge and character at once — the Quran as light in behavior, not just memory in the mind.',
         },
       },
     ],
@@ -1256,7 +1256,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'في أكاديمية آية نجعل الأذكار جزءًا من رحلة الطفل، نربطها بالقرآن وبمواقف يومه، حتى ينشأ قلبُه معلّقًا بالله، داعيًا ذاكرًا في فرحه وحاجته.',
-          en: 'At Aya Academy we make adhkar part of the child’s journey, tying them to the Quran and to the moments of their day, so their heart grows attached to Allah — supplicating and remembering Him in joy and in need.',
+          en: 'At Ayah Academy we make adhkar part of the child’s journey, tying them to the Quran and to the moments of their day, so their heart grows attached to Allah — supplicating and remembering Him in joy and in need.',
         },
       },
     ],
@@ -1374,7 +1374,7 @@ const articles = [
         type: 'p',
         text: {
           ar: 'وأخيرًا: ثبّت المحفوظ بالمراجعة قبل الزيادة، واربط القرآن بالعاطفة والمكافأة لا بالضغط، وكن أنت القدوة التي يراها الطفل تقرأ. في أكاديمية آية نبني لكل طفلٍ خطّةً تناسب عمره وقدرته، تبدأ من حيث هو، وتتدرّج به بثبات.',
-          en: 'Finally: anchor what’s learned by reviewing before adding more, tie the Quran to warmth and reward rather than pressure, and be the model your child sees reading. At Aya Academy we build each child a plan that fits their age and ability, starting where they are and progressing steadily.',
+          en: 'Finally: anchor what’s learned by reviewing before adding more, tie the Quran to warmth and reward rather than pressure, and be the model your child sees reading. At Ayah Academy we build each child a plan that fits their age and ability, starting where they are and progressing steadily.',
         },
       },
     ],
@@ -1487,7 +1487,7 @@ const articles = [
         title: { ar: 'جرّبها الآن', en: 'Try it now' },
         text: {
           ar: 'لدى أكاديمية آية لعبة آدابٍ تفاعلية مجانية يمكن لطفلك أن يلعبها الآن — تعلّمٌ ممتع بلا تسجيلٍ معقّد، يحوّل دقائق الشاشة إلى دقائق نافعة.',
-          en: 'Aya Academy has a free interactive manners game your child can play right now — fun learning with no complicated sign-up, turning screen minutes into beneficial ones.',
+          en: 'Ayah Academy has a free interactive manners game your child can play right now — fun learning with no complicated sign-up, turning screen minutes into beneficial ones.',
         },
       },
       {

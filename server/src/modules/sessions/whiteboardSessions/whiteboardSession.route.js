@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { messagesNames, PERMISSIONS } from "@aya/shared";
+import { messagesNames, PERMISSIONS } from "@ayah/shared";
 import { whiteboardSessionController } from "./whiteboardSession.controller.js";
 import { WhiteboardSessionValidation } from "./whiteboardSession.validation.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";

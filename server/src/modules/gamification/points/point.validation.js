@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pointMessagesCodes } from "@aya/shared";
+import { pointMessagesCodes } from "@ayah/shared";
 
 export class PointValidation {
   // Admin manually awards/adjusts a student's points.

@@ -6,7 +6,7 @@
 
 **Architecture:** `SessionLog` rows are the single source of truth. During month **M** an open `USAGE` subscription dated to month **M+1** shows a live-derived hours counter (`SUM(durationHours)`). The already-wired end-of-month cron freezes that sum (fallback: student's plan hours → lowest active plan hours), stamps the billed sessions, generates + sends the invoice, and rolls status. The number is never mutated per session — only frozen once at close.
 
-**Tech Stack:** Node.js (ESM), Express (layered route→controller→usecase→repo), Prisma + MySQL (`@aya/db`), shared constants (`@aya/shared`), `node-cron`; frontend Next.js App Router + MUI + `useRequest`. Tests via Node's built-in `node --test` (no third-party runner in this repo).
+**Tech Stack:** Node.js (ESM), Express (layered route→controller→usecase→repo), Prisma + MySQL (`@ayah/db`), shared constants (`@ayah/shared`), `node-cron`; frontend Next.js App Router + MUI + `useRequest`. Tests via Node's built-in `node --test` (no third-party runner in this repo).
 
 ## Global Constraints
 
@@ -56,7 +56,7 @@
 - Modify: `packages/shared/constants/enums.js` (after `SUBSCRIPTION_STATUSES`, ~line 107)
 
 **Interfaces:**
-- Produces: `SUBSCRIPTION_ORIGINS = { MANUAL: "MANUAL", USAGE: "USAGE" }` importable from `@aya/shared`.
+- Produces: `SUBSCRIPTION_ORIGINS = { MANUAL: "MANUAL", USAGE: "USAGE" }` importable from `@ayah/shared`.
 
 - [ ] **Step 1: Add the constant**
 
@@ -74,10 +74,10 @@ export const SUBSCRIPTION_ORIGINS = {
 
 - [ ] **Step 2: Verify it is re-exported**
 
-Run: `node -e "import('@aya/shared').then(m => console.log(m.SUBSCRIPTION_ORIGINS))"`
+Run: `node -e "import('@ayah/shared').then(m => console.log(m.SUBSCRIPTION_ORIGINS))"`
 Expected: `{ MANUAL: 'MANUAL', USAGE: 'USAGE' }`
 
-If it prints `undefined`, add `export * from "./constants/enums.js";` (or the matching barrel line already used for `SUBSCRIPTION_STATUSES`) to the `@aya/shared` entry point.
+If it prints `undefined`, add `export * from "./constants/enums.js";` (or the matching barrel line already used for `SUBSCRIPTION_STATUSES`) to the `@ayah/shared` entry point.
 
 - [ ] **Step 3: Commit**
 
@@ -316,7 +316,7 @@ git commit -m "feat(subscriptions): add usage-hours fallback resolver"
 - Modify: `server/src/modules/finance/subscriptions/subscription.dto.js`
 
 **Interfaces:**
-- Consumes: `SUBSCRIPTION_ORIGINS`, `activeSubscriptionWhere` (@aya/shared); `prisma`.
+- Consumes: `SUBSCRIPTION_ORIGINS`, `activeSubscriptionWhere` (@ayah/shared); `prisma`.
 - Produces on `subscriptionRepo`:
   - `sumUsageHoursByStudent({ gte, lt }) → Promise<Map<number, number>>`
   - `findOpenUsageSubscription({ studentId, paymentStart, client }) → Promise<Subscription|null>`
@@ -332,7 +332,7 @@ In `subscription.dto.js`, add `origin: true` to `subscriptionSelect`, and includ
 
 - [ ] **Step 2: Import the origin constant in the repo**
 
-Top of `subscription.repo.js`, extend the `@aya/shared` import to include `SUBSCRIPTION_ORIGINS`.
+Top of `subscription.repo.js`, extend the `@ayah/shared` import to include `SUBSCRIPTION_ORIGINS`.
 
 - [ ] **Step 3: Add the query methods**
 
@@ -435,7 +435,7 @@ In `subscription.usecase.js`, import the date helpers and (if not already) `SUBS
 
 ```js
 import { firstOfNextMonth, endOfMonth, monthRange, previousMonth } from "../../../shared/utility/dates.js";
-import { SUBSCRIPTION_ORIGINS } from "@aya/shared";
+import { SUBSCRIPTION_ORIGINS } from "@ayah/shared";
 ```
 
 - [ ] **Step 2: Add `ensureOpenUsageSubscription`**
@@ -937,14 +937,14 @@ In `dashboard.repo.js`:
 Add near the top of the file:
 
 ```js
-import { USER_ROLES, activeSubscriptionWhere, SUBSCRIPTION_ORIGINS, SUBSCRIPTION_STATUSES } from "@aya/shared";
+import { USER_ROLES, activeSubscriptionWhere, SUBSCRIPTION_ORIGINS, SUBSCRIPTION_STATUSES } from "@ayah/shared";
 
 const SUB_CARD_SELECT = {
   id: true, origin: true, status: true, planId: true, endDate: true, remainingHours: true,
 };
 ```
 
-(Merge the import with the existing `@aya/shared` import line rather than duplicating it.)
+(Merge the import with the existing `@ayah/shared` import line rather than duplicating it.)
 
 - [ ] **Step 2: Use it in `getParentDashboard`**
 
@@ -992,7 +992,7 @@ git commit -m "feat(dashboard): expose subscriptions[] per child for multi-sub U
 `web/src/features/subscriptions/config/subscriptionView.js`:
 
 ```js
-import { SUBSCRIPTION_ORIGINS } from "@aya/shared";
+import { SUBSCRIPTION_ORIGINS } from "@ayah/shared";
 
 // (origin, status) → a unified visual phase used by every surface.
 // phase: accumulating | awaitingPayment | active | ended

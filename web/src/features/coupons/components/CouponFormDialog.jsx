@@ -23,10 +23,10 @@ import { useCouponsText } from "../config/couponsText.js";
 
 const FORM_ID = "coupon-form";
 
-/** Random AYA-XXXXXX coupon-code suggestion (6 hex chars). */
+/** Random AYAH-XXXXXX coupon-code suggestion (6 hex chars). */
 function generateCode() {
   const hex = Math.random().toString(16).slice(2, 8).toUpperCase().padEnd(6, "0");
-  return `AYA-${hex}`;
+  return `AYAH-${hex}`;
 }
 
 function makeDefaults(coupon) {

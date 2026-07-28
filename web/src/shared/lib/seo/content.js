@@ -32,7 +32,7 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Online Quran Classes for Kids & Adults | Aya Academy",
+      title: "Online Quran Classes for Kids & Adults | Ayah Academy",
       titleAbsolute: true,
       description:
         "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
@@ -48,7 +48,7 @@ export const seoContent = {
         "Quran teacher online",
         "Hifz online",
         "memorize Quran online",
-        "Aya Academy",
+        "Ayah Academy",
       ],
     },
   },
@@ -71,7 +71,7 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Online Quran Classes for Kids & Adults | Aya Academy",
+      title: "Online Quran Classes for Kids & Adults | Ayah Academy",
       titleAbsolute: true,
       description:
         "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
@@ -83,7 +83,7 @@ export const seoContent = {
         "free Quran trial class",
         "online Quran academy",
         "Quran teacher online",
-        "Aya Academy",
+        "Ayah Academy",
       ],
     },
   },
@@ -100,9 +100,9 @@ export const seoContent = {
     },
     en: {
       title: "Login",
-      description: "Sign in to your Aya Academy account to follow your — or your child's — progress and sessions.",
+      description: "Sign in to your Ayah Academy account to follow your — or your child's — progress and sessions.",
       keywords: [
-        "Aya Academy login",
+        "Ayah Academy login",
         "student and parent account",
         "track Quran progress",
       ],
@@ -116,7 +116,7 @@ export const seoContent = {
     },
     en: {
       title: "Forgot password",
-      description: "Recover access to your Aya Academy account with a password reset link sent to your email.",
+      description: "Recover access to your Ayah Academy account with a password reset link sent to your email.",
     },
   },
 
@@ -127,7 +127,7 @@ export const seoContent = {
     },
     en: {
       title: "Reset password",
-      description: "Choose a new password for your Aya Academy account.",
+      description: "Choose a new password for your Ayah Academy account.",
     },
   },
 
@@ -143,7 +143,7 @@ export const seoContent = {
     },
     en: {
       title: "Create an account",
-      description: "Create an Aya Academy account and start your — or your child's — Quran and Islamic studies journey with a free trial.",
+      description: "Create an Ayah Academy account and start your — or your child's — Quran and Islamic studies journey with a free trial.",
       keywords: [
         "sign up online Quran academy",
         "free Quran trial session",
@@ -169,14 +169,14 @@ export const seoContent = {
     en: {
       title: "Blog",
       description:
-        "Aya Academy articles: practical tips on Quran memorization, Tajweed, Arabic and Islamic studies — for adult learners and parents, in plain, useful words.",
+        "Ayah Academy articles: practical tips on Quran memorization, Tajweed, Arabic and Islamic studies — for adult learners and parents, in plain, useful words.",
       keywords: [
         "Quran memorization tips",
         "learn Tajweed",
         "Islamic studies",
         "learn Arabic",
         "Islamic parenting",
-        "Aya Academy",
+        "Ayah Academy",
       ],
     },
   },
@@ -197,7 +197,7 @@ export const seoContent = {
     en: {
       title: "Free Islamic Educational Game for Kids",
       description:
-        "Play a free interactive manners game from Aya Academy, and sign up for a free trial session for your child.",
+        "Play a free interactive manners game from Ayah Academy, and sign up for a free trial session for your child.",
       keywords: [
         "Islamic educational games for kids",
         "kids manners game",

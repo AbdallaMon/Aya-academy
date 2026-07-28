@@ -16,7 +16,7 @@
 // driveDeletedAt. A simple in-memory mutex prevents two destructive operations
 // from running at once (OPERATION_IN_PROGRESS).
 //
-// NOTE (Aya): no AuditLog module is wired in this codebase, so no audit logging
+// NOTE (Ayah): no AuditLog module is wired in this codebase, so no audit logging
 // is performed here (other modules also do not audit). Retention limits + the
 // scheduled time come from the env, not a Settings table.
 // ===========================================================================
@@ -34,7 +34,7 @@ import {
   DRIVE_ACCOUNT_TYPES,
   backupMessagesCodes,
   messagesNames,
-} from "@aya/shared";
+} from "@ayah/shared";
 import { createDump } from "./dump.js";
 import { importSql } from "./restore.js";
 import { encryptToFileBuffer, decryptFromFileBuffer } from "./fileFormat.js";
@@ -146,7 +146,7 @@ class BackupService {
    * @returns {Promise<{ ok:boolean, backupId?:number, fileName?:string, errorCode?:string, code?:string }>}
    */
   async createBackup({ trigger = BACKUP_TRIGGERS.MANUAL, userId, encryptionKeyId }) {
-    void userId; // accepted for parity with the scheduler; no audit module in Aya.
+    void userId; // accepted for parity with the scheduler; no audit module in Ayah.
     if (this._opInProgress) {
       return { ok: false, code: backupMessagesCodes.OPERATION_IN_PROGRESS };
     }
@@ -297,7 +297,7 @@ class BackupService {
 
   /** Restores a specific backup (destructive) with smart routing. Requires confirm=true. */
   async restoreBackup({ backupId, userId, confirm }) {
-    void userId; // accepted for parity; no audit module in Aya.
+    void userId; // accepted for parity; no audit module in Ayah.
     if (confirm !== true) {
       throw new AppError({ statusCode: 422, code: backupMessagesCodes.RESTORE_CONFIRM_REQUIRED, translationKey: TK });
     }
@@ -339,7 +339,7 @@ class BackupService {
 
       let tmpDir = null;
       try {
-        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "aya-academy-restore-"));
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ayah-academy-restore-"));
         const tmpSql = path.join(tmpDir, "restore.sql");
         fs.writeFileSync(tmpSql, plain);
         await importSql(tmpSql);
@@ -518,7 +518,7 @@ class BackupService {
 
   /** Imports an external .enc file after the check (via token). Destructive → mutex + confirm. */
   async commitExternalRestore({ token, confirm, userId }) {
-    void userId; // accepted for parity; no audit module in Aya.
+    void userId; // accepted for parity; no audit module in Ayah.
     if (confirm !== true) {
       throw new AppError({ statusCode: 422, code: backupMessagesCodes.RESTORE_CONFIRM_REQUIRED, translationKey: TK });
     }

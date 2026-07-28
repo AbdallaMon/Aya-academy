@@ -11,7 +11,7 @@ import path from "path";
 import crypto from "crypto";
 import multer from "multer";
 import { AppError } from "../../shared/errors/AppError.js";
-import { attachmentMessagesCodes, messagesNames } from "@aya/shared";
+import { attachmentMessagesCodes, messagesNames } from "@ayah/shared";
 import { UPLOAD_DIR } from "./storage.js";
 
 const TK = messagesNames.attachmentMessages;

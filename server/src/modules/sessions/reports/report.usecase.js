@@ -1,4 +1,4 @@
-import { NOTIFICATION_TYPES, USER_ROLES, reportMessagesCodes } from "@aya/shared";
+import { NOTIFICATION_TYPES, USER_ROLES, reportMessagesCodes } from "@ayah/shared";
 import { forbidden, notFound } from "../../../shared/errors/AppError.js";
 import { userRepo } from "../../users/user.repo.js";
 import { notificationUsecase } from "../../notifications/notification.usecase.js";
