@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Box, Container, Divider, Stack, Typography } from '@mui/material';
 import { MdEmail, MdFavorite } from 'react-icons/md';
 import { navSections, navHref } from '@/shared/data/navigation/navbar';
@@ -84,13 +83,16 @@ export default function SiteFooter() {
           {/* Brand */}
           <Box>
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-              <Image
-                src="/logos/logo.png"
+              <Box
+                component="img"
+                src="/logos/logo-120.png"
+                srcSet="/logos/logo-120.png 1x, /logos/logo-240.png 2x"
                 alt={t.brand}
                 width={86}
                 height={52}
-                sizes="86px"
-                style={{ width: 'auto', height: 52 }}
+                loading="lazy"
+                decoding="async"
+                sx={{ display: 'block', width: 'auto', height: 52 }}
               />
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, lineHeight: 1.8 }}>

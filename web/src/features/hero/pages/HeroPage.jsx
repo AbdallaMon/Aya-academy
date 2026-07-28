@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { Box, Chip, Container, Stack, Typography } from '@mui/material';
 import { localePath } from '@/i18n/routing.js';
 import HeroActions from '../components/HeroActions.jsx';
@@ -31,11 +30,7 @@ const HERO = {
 export default function Hero({ lng = 'en' }) {
   const t = HERO[lng === 'en' ? 'en' : 'ar'];
 
-  // Ayah uses one stable light/green theme, so the hero no longer hydrates just
-  // to choose between light and dark assets.
-  const heroImg = '/hero-light.webp';
   const heroDims = { width: 1040, height: 815 };
-  const bgImg = '/hero-bg-light.webp';
 
   return (
     <Box
@@ -52,19 +47,37 @@ export default function Hero({ lng = 'en' }) {
         pb: { xs: 7, md: 10 },
       }}
     >
-      {/* Full-bleed themed background illustration (day / night) */}
+      {/* A real image element makes the LCP background discoverable in the
+          initial HTML instead of waiting for the CSS background declaration. */}
       <Box
+        component="picture"
         aria-hidden
         sx={{
           position: 'absolute',
           inset: 0,
           zIndex: -2,
-          backgroundImage: `url(${bgImg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
+          display: 'block',
         }}
-      />
+      >
+        <source srcSet="/hero-bg-light.avif" type="image/avif" />
+        <Box
+          component="img"
+          src="/hero-bg-light.webp"
+          alt=""
+          width={1920}
+          height={815}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          sx={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+      </Box>
       {/* Soft scrim so the copy stays readable over the artwork in both themes */}
       <Box
         aria-hidden
@@ -196,15 +209,27 @@ export default function Hero({ lng = 'en' }) {
           </Box>
 
           {/* Illustration */}
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Image
-              src={heroImg}
+          <Box
+            component="picture"
+            sx={{ display: 'flex', justifyContent: 'center', lineHeight: 0 }}
+          >
+            <source
+              type="image/avif"
+              srcSet="/hero-light-480.avif 480w, /hero-light-750.avif 750w, /hero-light-1040.avif 1040w"
+              sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) calc(100vw - 48px), 520px"
+            />
+            <Box
+              component="img"
+              src="/hero-light-750.webp"
+              srcSet="/hero-light-480.webp 480w, /hero-light-750.webp 750w, /hero-light.webp 1040w"
               alt={t.imgAlt}
               width={heroDims.width}
               height={heroDims.height}
-              preload
+              loading="eager"
+              decoding="async"
               sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) calc(100vw - 48px), 520px"
-              style={{
+              sx={{
+                display: 'block',
                 width: '100%',
                 maxWidth: 520,
                 height: 'auto',

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Box } from '@mui/material';
 import { pickNav } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
@@ -22,13 +21,16 @@ export default function NavbarBrand({ height = { xs: 48, md: 60 }, onClick }) {
       sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
     >
       <Box sx={{ height, lineHeight: 0 }}>
-        <Image
-          src="/logos/logo.png"
+        <Box
+          component="img"
+          src="/logos/logo-120.png"
+          srcSet="/logos/logo-120.png 1x, /logos/logo-240.png 2x"
           alt={txt.brand}
           width={100}
           height={60}
-          sizes="100px"
-          style={{ width: 'auto', height: '100%' }}
+          loading="eager"
+          decoding="async"
+          sx={{ display: 'block', width: 'auto', height: '100%' }}
         />
       </Box>
     </Box>

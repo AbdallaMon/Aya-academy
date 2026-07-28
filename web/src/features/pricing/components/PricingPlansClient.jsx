@@ -141,13 +141,14 @@ export default function PricingPlansClient({ lng = 'en' }) {
             >
               {plan.isFeatured && (
                 <Chip
-                  color="primary"
                   label={text.featured}
                   sx={{
                     position: 'absolute',
                     top: 16,
                     insetInlineEnd: 16,
                     fontWeight: 700,
+                    bgcolor: 'primary.main',
+                    color: 'secondary.contrastText',
                   }}
                 />
               )}
@@ -172,7 +173,7 @@ export default function PricingPlansClient({ lng = 'en' }) {
 
                 {hasDiscount && (
                   <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 1 }}>
-                    <Typography variant="body2" sx={{ textDecoration: 'line-through' }} color="text.disabled">
+                    <Typography variant="body2" sx={{ textDecoration: 'line-through' }} color="text.secondary">
                       {formatPrice(base, plan.currency, priceLocale)}
                     </Typography>
                     <Chip
