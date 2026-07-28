@@ -25,7 +25,7 @@ export function SectionHeading({ eyebrow, title, subtitle, align = 'center', sx 
         </Typography>
       )}
       {subtitle && (
-        <Typography variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', lineHeight: 1.7 }}>
+        <Typography component="p" variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', lineHeight: 1.7 }}>
           {subtitle}
         </Typography>
       )}

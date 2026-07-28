@@ -76,6 +76,7 @@ export default function FreeSessionPromo({ lng = 'en' }) {
         </Typography>
 
         <Typography
+          component="p"
           variant="h6"
           sx={{ fontWeight: 400, color: 'text.secondary', maxWidth: 640, mx: 'auto', mb: 3.5 }}
         >

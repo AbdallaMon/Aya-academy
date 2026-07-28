@@ -13,6 +13,11 @@ import { localePath } from '@/i18n/routing.js';
 import { getArticle, blogCategories } from '../data/articles';
 import { pickBlogUi } from '../data/ui';
 import { pick, formatDate, readingLabel } from '../lib/helpers';
+import {
+  getProgramRecommendationsCopy,
+  getRecommendedProgramSlugs,
+} from '../lib/programRecommendations.js';
+import { getService, serviceText } from '@/features/services/data.js';
 import ArticleBody from '../components/ArticleBody';
 import ArticleCard from '../components/ArticleCard';
 
@@ -31,6 +36,10 @@ export default function BlogArticle({ slug }) {
   const BackIcon = lng === 'ar' ? MdArrowForward : MdArrowBack;
   const accent = accentColor(theme, article.accent);
   const related = (article.related || []).map(getArticle).filter(Boolean);
+  const recommendedPrograms = getRecommendedProgramSlugs(article.categories)
+    .map(getService)
+    .filter(Boolean);
+  const programCopy = getProgramRecommendationsCopy(lng);
   const catKey = (article.categories || [])[0];
   const catLabel = catKey && blogCategories[catKey] ? pick(blogCategories[catKey], lng) : null;
 
@@ -112,6 +121,77 @@ export default function BlogArticle({ slug }) {
       {/* Body */}
       <Container maxWidth="md" sx={{ py: { xs: 5, md: 7 } }}>
         <ArticleBody body={article.body} lng={lng} />
+
+        {recommendedPrograms.length > 0 && (
+          <Box
+            component="aside"
+            aria-labelledby="related-programs-title"
+            sx={{
+              mt: 5,
+              p: { xs: 2.5, md: 3.5 },
+              borderRadius: 4,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography
+              component="p"
+              sx={{ color: 'primary.main', fontWeight: 800, fontSize: 13, mb: 0.75 }}
+            >
+              {programCopy.eyebrow}
+            </Typography>
+            <Typography id="related-programs-title" component="h2" variant="h5" sx={{ fontWeight: 900 }}>
+              {programCopy.title}
+            </Typography>
+            <Typography color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.8 }}>
+              {programCopy.description}
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                gap: 1.5,
+                mt: 2.5,
+              }}
+            >
+              {recommendedPrograms.map((program) => {
+                const copy = serviceText(program, lng);
+                return (
+                  <Box
+                    key={program.slug}
+                    component={Link}
+                    href={localePath(lng, `/services/${program.slug}`)}
+                    sx={{
+                      display: 'block',
+                      p: 2,
+                      borderRadius: 3,
+                      color: 'text.primary',
+                      textDecoration: 'none',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+                      '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+                    }}
+                  >
+                    <Typography component="h3" sx={{ fontWeight: 850, mb: 0.75 }}>
+                      {copy.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                      {copy.description}
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{ display: 'inline-block', mt: 1.25, color: 'primary.main', fontWeight: 800, fontSize: 14 }}
+                    >
+                      {programCopy.linkLabel}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        )}
 
         {(article.tags || []).length > 0 && (
           <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 4 }}>

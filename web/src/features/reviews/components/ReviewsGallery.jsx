@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import {
   Backdrop,
   Box,
@@ -24,7 +25,13 @@ import {
 function ReviewTile({ shot, label, badge, onOpen }) {
   return (
     <Box
+      component="button"
+      type="button"
       sx={{
+        display: 'block',
+        width: '100%',
+        minHeight: 48,
+        p: 0,
         breakInside: 'avoid',
         mb: { xs: 1.5, md: 2 },
         borderRadius: 3,
@@ -33,6 +40,10 @@ function ReviewTile({ shot, label, badge, onOpen }) {
         border: '1px solid',
         borderColor: 'divider',
         cursor: 'zoom-in',
+        color: 'inherit',
+        font: 'inherit',
+        textAlign: 'inherit',
+        appearance: 'none',
         transition: 'transform .2s ease, box-shadow .2s ease, border-color .2s ease',
         '&:hover': {
           transform: 'translateY(-3px)',
@@ -42,23 +53,18 @@ function ReviewTile({ shot, label, badge, onOpen }) {
         '&:hover [data-review-badge]': { opacity: 1 },
       }}
       onClick={onOpen}
-      role="button"
-      tabIndex={0}
       aria-label={label}
-      onKeyDown={(event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        onOpen();
-      }}
     >
       <Box sx={{ position: 'relative', lineHeight: 0 }}>
-        <Box
-          component="img"
+        <Image
           src={shot.src}
           alt={label}
+          width={shot.width}
+          height={shot.height}
+          sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) 45vw, 30vw"
           loading="lazy"
           decoding="async"
-          sx={{ display: 'block', width: '100%', height: 'auto' }}
+          style={{ display: 'block', width: '100%', height: 'auto' }}
         />
         <Stack
           data-review-badge
@@ -136,19 +142,26 @@ function Lightbox({ shots, index, labels, onClose, onPrev, onNext }) {
         <FaChevronRight />
       </IconButton>
       <Box
-        component="img"
-        src={shot.src}
-        alt={shot.alt[labels.language]}
         onClick={(event) => event.stopPropagation()}
         sx={{
-          maxWidth: { xs: '90vw', md: '80vw' },
-          maxHeight: '88vh',
-          width: 'auto',
-          height: 'auto',
-          borderRadius: 2,
-          boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+          lineHeight: 0,
+          '& img': {
+            maxWidth: { xs: '90vw', md: '80vw' },
+            maxHeight: '88vh',
+            borderRadius: 2,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+          },
         }}
-      />
+      >
+        <Image
+          src={shot.src}
+          alt={shot.alt[labels.language]}
+          width={shot.width}
+          height={shot.height}
+          sizes="90vw"
+          style={{ width: 'auto', height: 'auto' }}
+        />
+      </Box>
       <IconButton
         aria-label={labels.next}
         onClick={(event) => {

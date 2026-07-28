@@ -33,26 +33,28 @@ export default function LazyReviewVideo({ src, poster, label }) {
   return (
     <Box ref={frameRef} sx={{ width: '100%', aspectRatio: '9 / 16', borderRadius: 5, overflow: 'hidden', bgcolor: '#000' }}>
       {isNearViewport ? (
-        <Box
-          component="video"
+        <video
           controls
           playsInline
           preload="metadata"
           poster={poster}
+          width={576}
+          height={1024}
           aria-label={label}
-          sx={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
         >
           <source src={src} type="video/mp4" />
-        </Box>
+        </video>
       ) : (
-        <Box
-          component="img"
+        <img
           src={poster}
           alt=""
+          width={576}
+          height={1024}
           loading="lazy"
           decoding="async"
           aria-hidden
-          sx={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
         />
       )}
     </Box>

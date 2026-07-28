@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Box, Container, Divider, Stack, Typography } from '@mui/material';
 import { MdEmail, MdFavorite } from 'react-icons/md';
 import { navSections, navHref } from '@/shared/data/navigation/navbar';
@@ -83,7 +84,14 @@ export default function SiteFooter() {
           {/* Brand */}
           <Box>
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-              <Box component="img" src="/logos/logo.png" alt={t.brand} sx={{ height: 52 }} />
+              <Image
+                src="/logos/logo.png"
+                alt={t.brand}
+                width={86}
+                height={52}
+                sizes="86px"
+                style={{ width: 'auto', height: 52 }}
+              />
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, lineHeight: 1.8 }}>
               {t.tagline}
@@ -164,12 +172,12 @@ export default function SiteFooter() {
             target="_blank"
             rel="noopener noreferrer"
             sx={{
-              color: 'primary.main',
+              color: 'brandText',
               fontWeight: 800,
               textDecoration: 'underline',
               textUnderlineOffset: 3,
               transition: 'color .2s',
-              '&:hover': { color: 'primary.dark' },
+              '&:hover': { color: 'success.main' },
             }}
           >
             {t.developerName}

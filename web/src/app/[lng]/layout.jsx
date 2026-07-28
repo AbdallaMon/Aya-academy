@@ -1,10 +1,6 @@
-import {
-  Cairo,
-  Geist_Mono,
-} from 'next/font/google';
+import { Cairo } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import '../globals.css';
-import 'react-toastify/dist/ReactToastify.css';
 import AppProviders from '@/providers/AppProviders.jsx';
 import WhatsAppButton from '@/shared/components/feedback/WhatsAppButton.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
@@ -24,11 +20,6 @@ const cairo = Cairo({
   variable: '--font-sans',
   subsets: ['arabic', 'latin'],
   display: 'swap',
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
 });
 
 export function generateStaticParams() {
@@ -80,12 +71,10 @@ export default async function LocaleLayout({ children, params }) {
 
   return (
     <html lang={lng} dir={dir} suppressHydrationWarning>
-      <body
-        className={`${cairo.variable} ${geistMono.variable}`}
-      >
+      <body className={cairo.variable}>
         {/* Site-wide structured data: who we are + the site/languages. */}
         <JsonLd data={[organizationSchema(lng), websiteSchema(lng)]} />
-        {/* AppProviders: i18n -> fixed theme(RTL cache) -> dates -> auth -> toast */}
+        {/* AppProviders: i18n -> fixed theme (RTL cache) -> auth -> feedback */}
         <AppProviders lng={lng}>
           {children}
           <WhatsAppButton />

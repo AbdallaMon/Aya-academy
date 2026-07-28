@@ -15,7 +15,8 @@ export const colors = {
 
   // Text
   text: '#25313F',
-  mutedText: '#6B7A8C',
+  // Passes WCAG AA for normal text on both #FFFFFF and #F9FBFF surfaces.
+  mutedText: '#566476',
   lightText: '#F0F3F7',
 
   // Utility

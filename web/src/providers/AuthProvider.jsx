@@ -14,6 +14,28 @@ import { getLocaleFromPathname, localePath } from "../i18n/routing.js";
 
 export const AuthContext = createContext(null);
 
+// Non-sensitive UI hint only. Authentication still depends exclusively on the
+// server's httpOnly JWT cookies. The hint prevents anonymous public visitors
+// from making two guaranteed-to-fail /auth requests on every page view.
+const SESSION_HINT_COOKIE = "ayah_session_hint";
+
+function hasSessionHint() {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((entry) => entry.trim().startsWith(`${SESSION_HINT_COOKIE}=`));
+}
+
+function setSessionHint(active) {
+  if (typeof document === "undefined") return;
+  if (!active) {
+    document.cookie = `${SESSION_HINT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+    return;
+  }
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${SESSION_HINT_COOKIE}=1; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+}
+
 /**
  * AuthProvider — hydrates the current user from `/auth/me` on mount and exposes
  * auth state + actions. The JWT lives in httpOnly cookies, so there is no token
@@ -29,6 +51,7 @@ export function AuthProvider({ children }) {
     (withRedirect = true) => {
       setUser(null);
       setIsLoggedIn(false);
+      setSessionHint(false);
       if (withRedirect) {
         const lng = getLocaleFromPathname(window.location.pathname);
         router.replace(localePath(lng, "/login"));
@@ -41,6 +64,7 @@ export function AuthProvider({ children }) {
   const setAuthUser = useCallback((userData) => {
     setUser(userData);
     setIsLoggedIn(true);
+    setSessionHint(true);
   }, []);
 
   /** Best-effort server logout, then clear + redirect. */
@@ -65,24 +89,34 @@ export function AuthProvider({ children }) {
     };
   }, [router, clearUser]);
 
-  // Validate the session once on mount. We do this on EVERY route (including the
-  // public marketing pages) so the navbar can show the right entry point
-  // (Dashboard for a signed-in user vs Login / Sign-up for a guest). A 401 on a
-  // public page just resolves to "logged out" — the redirect in onAuthFailure
-  // only fires on protected routes.
+  // Validate protected routes, plus public routes where a prior successful
+  // login left a session hint. A brand-new anonymous homepage visit can render
+  // the guest navbar immediately without predictable 401 + refresh failures.
   useEffect(() => {
     let cancelled = false;
     async function validateSession() {
+      const protectedRoute = isProtectedPath(window.location.pathname);
+      if (!protectedRoute && !hasSessionHint()) {
+        setValidatingAuth(false);
+        return;
+      }
+
       setValidatingAuth(true);
       try {
-        const result = await apiFetch.get("auth/me");
+        const result = await apiFetch.get(
+          "auth/me",
+          protectedRoute ? undefined : { _skipRefresh: true, _public: true },
+        );
         if (cancelled) return;
-        setUser(result?.data?.user ?? null);
-        setIsLoggedIn(Boolean(result?.data?.user));
+        const currentUser = result?.data?.user ?? null;
+        setUser(currentUser);
+        setIsLoggedIn(Boolean(currentUser));
+        setSessionHint(Boolean(currentUser));
       } catch {
         if (cancelled) return;
         setIsLoggedIn(false);
         setUser(null);
+        setSessionHint(false);
       } finally {
         if (!cancelled) setValidatingAuth(false);
       }

@@ -8,8 +8,21 @@
 // The on-screen order is the array order; the first ones show before "show all".
 // ──────────────────────────────────────────────────────────────────────────
 
+const REVIEW_DIMENSIONS = {
+  1: { width: 1080, height: 834 },
+  2: { width: 1068, height: 860 },
+  3: { width: 1080, height: 394 },
+  4: { width: 1080, height: 1050 },
+  5: { width: 1080, height: 699 },
+  6: { width: 1080, height: 927 },
+  7: { width: 1080, height: 1077 },
+  8: { width: 1079, height: 934 },
+  9: { width: 1072, height: 580 },
+};
+
 const review = (n) => ({
   src: `/reviews/review-${n}.jpeg`,
+  ...REVIEW_DIMENSIONS[n],
   alt: {
     ar: 'رسالة شكر حقيقية من ولي أمر لأكاديمية آية',
     en: 'A real thank-you message from a parent to Ayah Academy',

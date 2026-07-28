@@ -106,7 +106,7 @@ export function ChildDashboardHome({ lng = 'en' }) {
             <Chip
               label={c.badgeOnCard}
               size="small"
-              sx={{ ml: 'auto', height: 22, fontSize: 11, fontWeight: 800, bgcolor: 'rgba(26, 188, 156, 0.1)', color: 'primary.main' }}
+              sx={{ ml: 'auto', height: 22, fontSize: 11, fontWeight: 800, bgcolor: 'rgba(26, 188, 156, 0.1)', color: 'brandText' }}
             />
           </Stack>
 
@@ -119,7 +119,7 @@ export function ChildDashboardHome({ lng = 'en' }) {
                 color: '#fff',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'linear-gradient(120deg, #1ABC9C 0%, #1E6F5C 100%)',
+                background: 'linear-gradient(120deg, #0A6F60 0%, #1E6F5C 100%)',
                 boxShadow: '0 12px 28px rgba(26, 188, 156, 0.32)',
                 '&::after': {
                   content: '""',
@@ -236,7 +236,7 @@ export function ChildDashboardHome({ lng = 'en' }) {
           <Typography variant="h2" sx={{ mb: 2 }}>
             {c.title}
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', mb: 4, lineHeight: 1.7 }}>
+          <Typography component="p" variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', mb: 4, lineHeight: 1.7 }}>
             {c.intro}
           </Typography>
           <Button

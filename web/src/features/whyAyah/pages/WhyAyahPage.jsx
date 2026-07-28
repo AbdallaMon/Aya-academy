@@ -19,10 +19,10 @@ import Eyebrow from '@/shared/ui/Eyebrow.jsx';
 const DIFF_ICONS = [TbWorld, FiHeart, FiBookOpen];
 const STEP_ICONS = [MdOutlinePersonAddAlt, IoVideocamOutline, PiHeadphonesLight, SlBadge];
 const ACCENTS = [
-  { main: '#F6C453', soft: 'rgba(246, 196, 83, 0.14)', shadow: 'rgba(246, 196, 83, 0.16)' },
-  { main: '#1ABC9C', soft: 'rgba(26, 188, 156, 0.14)', shadow: 'rgba(26, 188, 156, 0.16)' },
-  { main: '#1E6F5C', soft: 'rgba(30, 111, 92, 0.14)', shadow: 'rgba(30, 111, 92, 0.16)' },
-  { main: '#E74C3C', soft: 'rgba(231, 76, 60, 0.14)', shadow: 'rgba(231, 76, 60, 0.16)' },
+  { main: '#F6C453', text: '#7A5700', badge: '#7A5700', soft: 'rgba(246, 196, 83, 0.14)', shadow: 'rgba(246, 196, 83, 0.16)' },
+  { main: '#1ABC9C', text: '#0A6F60', badge: '#0A6F60', soft: 'rgba(26, 188, 156, 0.14)', shadow: 'rgba(26, 188, 156, 0.16)' },
+  { main: '#1E6F5C', text: '#1E6F5C', badge: '#1E6F5C', soft: 'rgba(30, 111, 92, 0.14)', shadow: 'rgba(30, 111, 92, 0.16)' },
+  { main: '#E74C3C', text: '#B42318', badge: '#B42318', soft: 'rgba(231, 76, 60, 0.14)', shadow: 'rgba(231, 76, 60, 0.16)' },
 ];
 
 const CONTENT = {
@@ -97,7 +97,7 @@ export function WhyAyah({ lng = 'en' }) {
           <Typography variant="h2" sx={{ mb: 2 }}>
             {c.title}
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 500, color: 'text.secondary', lineHeight: 1.7 }}>
+          <Typography component="p" variant="h6" sx={{ fontWeight: 500, color: 'text.secondary', lineHeight: 1.7 }}>
             {c.slogan}
           </Typography>
         </Box>
@@ -120,7 +120,7 @@ export function WhyAyah({ lng = 'en' }) {
                   borderColor: 'divider',
                 }}
               >
-                <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent.main, bgcolor: accent.soft }}>
+                <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent.text, bgcolor: accent.soft }}>
                   <Icon size={24} />
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
@@ -154,6 +154,7 @@ export function WhyAyah({ lng = 'en' }) {
           {c.howTitle}
         </Typography>
         <Typography
+          component="p"
           variant="h6"
           sx={{ fontWeight: 400, color: 'text.secondary', textAlign: 'center', mb: { xs: 4, md: 5 } }}
         >
@@ -195,7 +196,7 @@ export function WhyAyah({ lng = 'en' }) {
                     height: 32,
                     px: 1,
                     borderRadius: 999,
-                    bgcolor: accent.main,
+                    bgcolor: accent.badge,
                     color: '#fff',
                     fontSize: 15,
                     fontWeight: 900,
@@ -219,13 +220,13 @@ export function WhyAyah({ lng = 'en' }) {
                     borderRadius: '50%',
                     display: 'grid',
                     placeItems: 'center',
-                    color: accent.main,
+                    color: accent.text,
                     bgcolor: accent.soft,
                   }}
                 >
                   <Icon size={32} />
                 </Box>
-                <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 0.5 }}>
+                <Typography component="h4" variant="subtitle1" fontWeight={800} sx={{ mb: 0.5 }}>
                   {s.t}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
@@ -262,18 +263,18 @@ export function WhyAyah({ lng = 'en' }) {
                 }}
               >
                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                  <Box sx={{ width: 44, height: 44, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent.main, bgcolor: accent.soft }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: accent.text, bgcolor: accent.soft }}>
                     <SlBadge size={22} />
                   </Box>
-                  <Chip size="small" label={level.age} sx={{ fontWeight: 700, bgcolor: accent.soft, color: accent.main }} />
+                  <Chip size="small" label={level.age} sx={{ fontWeight: 700, bgcolor: accent.soft, color: accent.text }} />
                 </Stack>
-                <Typography variant="h6" fontWeight={800}>
+                <Typography component="h4" variant="h6" fontWeight={800}>
                   {level.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5, lineHeight: 1.6, flex: 1 }}>
                   {level.desc}
                 </Typography>
-                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: accent.main }}>
+                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: accent.text }}>
                   <MdStar />
                   <Typography variant="caption" fontWeight={800}>
                     {level.reward}

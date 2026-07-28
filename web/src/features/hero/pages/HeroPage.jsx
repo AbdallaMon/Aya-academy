@@ -1,19 +1,14 @@
-'use client';
-
-import Link from 'next/link';
-import { Box, Button, Chip, Container, Stack, Typography } from '@mui/material';
-import { motion } from 'framer-motion';
-import { GiStarShuriken } from 'react-icons/gi';
-import { MdSportsEsports } from 'react-icons/md';
-import { useTranslation } from '@/i18n/client.js';
+import Image from 'next/image';
+import { Box, Chip, Container, Stack, Typography } from '@mui/material';
 import { localePath } from '@/i18n/routing.js';
+import HeroActions from '../components/HeroActions.jsx';
 
 const HERO = {
   ar: {
     eyebrow: 'قرآن · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
     title: 'رحلة مُحبّبة لتعلّم القرآن والأخلاق الجميلة',
     subtitle:
-      'دروس ممتعة وآمنة للطلاب من ٥ سنوات فأكثر — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
+      'في أكاديمية آية، نقدّم دروسًا ممتعة وآمنة للطلاب من ٥ سنوات فأكثر — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
     primary: 'احجز حصة مجانية',
     secondary: 'جرّب ألعابنا التفاعلية 🎮',
     freeTrial: 'بدون بطاقة دفع · بدون التزام · إلغاء في أي وقت',
@@ -24,7 +19,7 @@ const HERO = {
     eyebrow: 'Quran · Arabic · Islamic studies · Manners · Games',
     title: 'Learn Quran online with qualified teachers',
     subtitle:
-      'Fun, safe lessons for students aged 5 and up — clear recitation, simple meanings, and interactive games that grow good character while collecting stars and badges.',
+      'At Ayah Academy, students aged 5 and up learn through fun, safe lessons — clear recitation, simple meanings, and interactive games that grow good character.',
     primary: 'Book a free session',
     secondary: 'Try our interactive games 🎮',
     freeTrial: 'No card · No commitment · Cancel anytime',
@@ -33,16 +28,13 @@ const HERO = {
   },
 };
 
-const MotionBox = motion.create(Box);
-
-export default function Hero() {
-  const { lng } = useTranslation();
+export default function Hero({ lng = 'en' }) {
   const t = HERO[lng === 'en' ? 'en' : 'ar'];
 
   // Ayah uses one stable light/green theme, so the hero no longer hydrates just
   // to choose between light and dark assets.
   const heroImg = '/hero-light.webp';
-  const heroDims = { width: 1082, height: 848 };
+  const heroDims = { width: 1040, height: 815 };
   const bgImg = '/hero-bg-light.webp';
 
   return (
@@ -87,27 +79,21 @@ export default function Hero() {
 
       {/* playful floating icons (vertical only → RTL-safe) */}
       <Box aria-hidden sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <MotionBox
-          animate={{ y: [0, -16, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        <Box
           sx={{ position: 'absolute', top: '14%', insetInlineStart: '5%', fontSize: 34, opacity: 0.85 }}
         >
           ⭐
-        </MotionBox>
-        <MotionBox
-          animate={{ y: [0, 18, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        </Box>
+        <Box
           sx={{ position: 'absolute', top: '20%', insetInlineEnd: '7%', fontSize: 30, opacity: 0.85 }}
         >
           🌙
-        </MotionBox>
-        <MotionBox
-          animate={{ y: [0, -12, 0] }}
-          transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+        </Box>
+        <Box
           sx={{ position: 'absolute', bottom: '12%', insetInlineStart: '11%', fontSize: 26, opacity: 0.75 }}
         >
           📖
-        </MotionBox>
+        </Box>
       </Box>
 
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
@@ -165,26 +151,12 @@ export default function Hero() {
               {t.subtitle}
             </Typography>
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button
-                component={Link}
-                href={localePath(lng, '/register')}
-                variant="contained"
-                size="large"
-                startIcon={<GiStarShuriken />}
-              >
-                {t.primary}
-              </Button>
-              <Button
-                component={Link}
-                href={localePath(lng, '/free-game')}
-                variant="outlinedYellow"
-                size="large"
-                startIcon={<MdSportsEsports />}
-              >
-                {t.secondary}
-              </Button>
-            </Stack>
+            <HeroActions
+              primaryHref={localePath(lng, '/register')}
+              primaryLabel={t.primary}
+              secondaryHref={localePath(lng, '/free-game')}
+              secondaryLabel={t.secondary}
+            />
 
             {/* Free-trial hook → drives registration before any subscription */}
             <Stack
@@ -224,25 +196,15 @@ export default function Hero() {
           </Box>
 
           {/* Illustration */}
-          <MotionBox
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            sx={{ display: 'flex', justifyContent: 'center' }}
-          >
-            <Box
-              component="img"
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Image
               src={heroImg}
               alt={t.imgAlt}
-              // LCP image: load it eagerly with high priority, and reserve its
-              // box (intrinsic width/height + aspect-ratio) so it never shifts
-              // the layout as it decodes.
               width={heroDims.width}
               height={heroDims.height}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              sx={{
+              preload
+              sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) calc(100vw - 48px), 520px"
+              style={{
                 width: '100%',
                 maxWidth: 520,
                 height: 'auto',
@@ -250,7 +212,7 @@ export default function Hero() {
                 filter: 'drop-shadow(0 24px 48px rgba(20,30,60,0.28))',
               }}
             />
-          </MotionBox>
+          </Box>
         </Box>
       </Container>
     </Box>

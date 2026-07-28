@@ -3,6 +3,18 @@ const nextConfig = {
   // @ayah/shared is a workspace package shipped as plain ESM source; let Next
   // transpile it like first-party code.
   transpilePackages: ["@ayah/shared"],
+  // Once DNS points www at the deployment, consolidate every request onto the
+  // canonical apex domain with a permanent redirect.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.ayah.academy" }],
+        destination: "https://ayah.academy/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

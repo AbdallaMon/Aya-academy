@@ -7,6 +7,7 @@
 // `backHref` is a locale-agnostic app path (prefixed with /{lng} at render).
 
 import Link from "next/link";
+import { MotionConfig } from "framer-motion";
 import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
@@ -14,30 +15,7 @@ import { useGame } from "../hooks/useGame.js";
 import GamePlayer from "../engine/GamePlayer.jsx";
 import { DEFAULT_THEME } from "../engine/helpers.js";
 import { SubscriptionLockedState } from "../../../shared/components/index.js";
-
-// Marketing-only intro + funnel copy. Makes the public free-game landing clear
-// and inviting (what is this? what do I get?) instead of dropping straight into
-// the game with no context.
-const MARKETING_COPY = {
-  ar: {
-    title: "ألعاب تفاعلية يمكنك تجربتها الآن 🎮",
-    subtitle:
-      "جرّب لعبة من أكاديمية آية مجانًا — وبعد التجربة سجّل واحصل على حصة تجريبية مجانية.",
-    cta: "سجّل واحصل على حصة مجانية",
-    rateTitle: "لقد لعبت كثيرًا اليوم! 🎉",
-    rateBody: "عُد بعد حوالي {min} دقيقة لتجربة اللعبة من جديد 😊",
-    rateCta: "سجّل الآن والعب بلا حدود",
-  },
-  en: {
-    title: "Interactive games you can try right now 🎮",
-    subtitle:
-      "Try a game from Ayah Academy for free — then sign up and get a free trial session.",
-    cta: "Sign up and get a free session",
-    rateTitle: "You've played a lot today! 🎉",
-    rateBody: "Come back in about {min} minutes to play again 😊",
-    rateCta: "Sign up now and play without limits",
-  },
-};
+import { getFreeGameContent } from "../data/freeGameContent.js";
 
 export default function GamePlayPage({ slug, free = false, backHref = "/", variant = "marketing" }) {
   const { t, lng } = useTranslation();
@@ -53,7 +31,7 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
 
   const theme = { ...DEFAULT_THEME, ...(game?.configJson?.theme || {}) };
   const isMarketing = !isDashboard;
-  const mk = MARKETING_COPY[lng === "en" ? "en" : "ar"];
+  const mk = getFreeGameContent(lng);
   const backLabel = isDashboard ? gd.backToGames : gd.backHome;
   const waitMinutes =
     rateLimited?.retryAfterMinutes ||
@@ -62,8 +40,9 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
       : 15);
 
   return (
-    <Box
-      sx={{
+    <MotionConfig reducedMotion="user">
+      <Box
+        sx={{
         minHeight: isDashboard ? "auto" : "calc(100vh - 76px)",
         // In the dashboard, cancel the shell's content padding so the game
         // container itself has no outer padding around the card. (The card is
@@ -80,8 +59,8 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
           "radial-gradient(1200px 600px at 0% 0%, #ffe3f1 0%, transparent 55%)," +
           "radial-gradient(1200px 600px at 100% 100%, #dbe8ff 0%, transparent 55%)," +
           `linear-gradient(160deg, ${theme.bg || "#fde9f3"}, #eaf2ff)`,
-      }}
-    >
+        }}
+      >
       <Box
         sx={{
           width: 460,
@@ -97,20 +76,6 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
           </Typography>
         </Link>
       </Box>
-
-      {isMarketing && !rateLimited && (
-        <Stack spacing={1} sx={{ textAlign: "center", maxWidth: 720, px: 2, mb: 1 }}>
-          <Typography
-            component="h1"
-            sx={{ color: "#3a1d6e", fontWeight: 900, fontSize: { xs: 22, md: 28 }, lineHeight: 1.3 }}
-          >
-            {mk.title}
-          </Typography>
-          <Typography sx={{ color: "#473f6b", fontWeight: 700, fontSize: { xs: 14, md: 16 } }}>
-            {mk.subtitle}
-          </Typography>
-        </Stack>
-      )}
 
       {locked ? (
         <SubscriptionLockedState variant="student" />
@@ -188,6 +153,7 @@ export default function GamePlayPage({ slug, free = false, backHref = "/", varia
           {mk.cta}
         </Button>
       )}
-    </Box>
+      </Box>
+    </MotionConfig>
   );
 }

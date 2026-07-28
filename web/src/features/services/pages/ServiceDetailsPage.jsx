@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import MarketingSection from '@/shared/ui/sections/MarketingSection.jsx';
 import { getServicePageText, serviceText } from '../data.js';
@@ -9,11 +8,20 @@ export default function ServiceDetailsPage({ lng, service }) {
   const text = getServicePageText(language);
   const serviceCopy = serviceText(service, language);
   const facts = [
-    { title: text.audienceTitle, body: serviceCopy.audience || text.audience },
-    { title: text.focusTitle, body: serviceCopy.focus },
+    {
+      title: text.audienceTitle,
+      body: serviceCopy.audience || text.audience,
+      items: serviceCopy.audienceItems,
+    },
+    {
+      title: text.focusTitle,
+      body: serviceCopy.focus,
+      items: serviceCopy.focusItems,
+    },
     { title: text.formatTitle, body: serviceCopy.format || text.format },
     { title: text.durationTitle, body: serviceCopy.duration || text.duration },
   ];
+  const lessonSteps = serviceCopy.lessonSteps || [];
   const sections = serviceCopy.sections || [];
   const faqs = serviceCopy.faqs || [];
 
@@ -21,11 +29,15 @@ export default function ServiceDetailsPage({ lng, service }) {
     <>
       <Box component="section" sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 5, md: 7 }, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
         <Container maxWidth="md">
-          <Link href={localePath(language, '/services')} style={{ display: 'inline-block', marginBottom: 24, textDecoration: 'none' }}>
-            <Button size="small">{text.backToServices}</Button>
-          </Link>
+          <Button
+            href={localePath(language, '/services')}
+            size="small"
+            sx={{ mb: 3 }}
+          >
+            {text.backToServices}
+          </Button>
           <Typography component="h1" variant="h1" sx={{ mb: 2 }}>{serviceCopy.title}</Typography>
-          <Typography variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', lineHeight: 1.8, maxWidth: 760 }}>{serviceCopy.description}</Typography>
+          <Typography component="p" variant="h6" sx={{ fontWeight: 400, color: 'text.secondary', lineHeight: 1.8, maxWidth: 760 }}>{serviceCopy.description}</Typography>
         </Container>
       </Box>
 
@@ -35,10 +47,72 @@ export default function ServiceDetailsPage({ lng, service }) {
             <Box key={fact.title} sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
               <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 1 }}>{fact.title}</Typography>
               <Typography color="text.secondary" sx={{ lineHeight: 1.9 }}>{fact.body}</Typography>
+              {fact.items?.length > 0 && (
+                <Box
+                  component="ul"
+                  sx={{
+                    mt: 1.5,
+                    mb: 0,
+                    paddingInlineStart: '24px',
+                    display: 'grid',
+                    gap: 1,
+                    color: 'text.secondary',
+                  }}
+                >
+                  {fact.items.map((item) => (
+                    <Box component="li" key={item}>
+                      <Typography component="span" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+                        {item}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
           ))}
         </Stack>
       </MarketingSection>
+
+      {lessonSteps.length > 0 && (
+        <MarketingSection
+          alt
+          maxWidth="md"
+          eyebrow={text.detailsEyebrow}
+          title={text.lessonStepsTitle}
+        >
+          <Box
+            component="ol"
+            sx={{
+              m: 0,
+              paddingInlineStart: '24px',
+              display: 'grid',
+              gap: 2,
+              '& li::marker': {
+                color: 'brandText',
+                fontWeight: 900,
+              },
+            }}
+          >
+            {lessonSteps.map((step) => (
+              <Box
+                component="li"
+                key={step}
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <Typography color="text.secondary" sx={{ lineHeight: 1.9 }}>
+                  {step}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </MarketingSection>
+      )}
 
       {sections.length > 0 && (
         <MarketingSection
@@ -59,7 +133,7 @@ export default function ServiceDetailsPage({ lng, service }) {
                   bgcolor: 'background.paper',
                 }}
               >
-                <Typography component="h2" variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                <Typography component="h3" variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
                   {section.title}
                 </Typography>
                 <Typography color="text.secondary" sx={{ lineHeight: 1.9 }}>
@@ -112,9 +186,13 @@ export default function ServiceDetailsPage({ lng, service }) {
         <Box sx={{ textAlign: 'center', p: { xs: 3, md: 5 }, borderRadius: 5, border: '1px solid', borderColor: 'primary.main', bgcolor: 'background.default' }}>
           <Typography component="h2" variant="h4" sx={{ fontWeight: 900, mb: 1.5 }}>{text.trialTitle}</Typography>
           <Typography color="text.secondary" sx={{ lineHeight: 1.8, maxWidth: 600, mx: 'auto', mb: 3 }}>{text.trial}</Typography>
-          <Link href={localePath(language, '/register')} style={{ textDecoration: 'none' }}>
-            <Button variant="contained" size="large">{text.trialCta}</Button>
-          </Link>
+          <Button
+            href={localePath(language, '/register')}
+            variant="contained"
+            size="large"
+          >
+            {text.trialCta}
+          </Button>
         </Box>
       </MarketingSection>
     </>

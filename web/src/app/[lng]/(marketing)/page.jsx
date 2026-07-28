@@ -34,7 +34,7 @@ export default async function Home({ params }) {
     <>
       {/* FAQPage mirrors the visible accordion; Course describes the program. */}
       <JsonLd data={[faqSchema(faq.items), courseSchema(lng)]} />
-      <Hero />
+      <Hero lng={lng} />
       <HeroReviews lng={lng} />
       <WhyAyah lng={lng} />
       <Programs lng={lng} />

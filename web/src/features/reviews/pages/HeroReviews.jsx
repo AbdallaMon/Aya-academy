@@ -60,6 +60,7 @@ export default function HeroReviews({ lng = 'en' }) {
               sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                minHeight: 48,
                 gap: 1,
                 bgcolor: 'background.default',
                 px: 2,

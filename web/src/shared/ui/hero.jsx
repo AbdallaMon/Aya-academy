@@ -8,7 +8,7 @@ import { Box, Typography } from '@mui/material';
 
 // The teal → green hero gradient. Centralized so a change updates every hero.
 export function heroGradient(theme) {
-  return `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.main} 100%)`;
+  return `linear-gradient(120deg, ${theme.palette.brandText} 0%, ${theme.palette.success.main} 100%)`;
 }
 
 // A single stat (points / level / rank) shown on a hero. `filled` adds the
@@ -28,7 +28,7 @@ export function HeroStatPill({ value, label, filled = true, minWidth = 72 }) {
         }),
       }}
     >
-      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1 }}>
+      <Typography component="span" variant="h5" fontWeight={900} sx={{ display: 'block', lineHeight: 1.1 }}>
         {value}
       </Typography>
       <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.92 }}>

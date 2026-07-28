@@ -7,6 +7,7 @@ import {
   Noto_Naskh_Arabic,
 } from 'next/font/google';
 import DashboardShell from '@/features/dashboard/components/DashboardShell.jsx';
+import DashboardProviders from '@/providers/DashboardProviders.jsx';
 
 // The dashboard is private (auth-gated): keep a sensible title but tell search
 // engines NOT to index any of it.
@@ -31,9 +32,11 @@ export async function generateMetadata({ params }) {
 export default function DashboardLayout({ children }) {
   return (
     <div className={`${amiri.variable} ${scheherazade.variable} ${reemKufi.variable} ${arefRuqaa.variable} ${notoNaskh.variable}`}>
-      <Suspense>
-        <DashboardShell>{children}</DashboardShell>
-      </Suspense>
+      <DashboardProviders>
+        <Suspense>
+          <DashboardShell>{children}</DashboardShell>
+        </Suspense>
+      </DashboardProviders>
     </div>
   );
 }

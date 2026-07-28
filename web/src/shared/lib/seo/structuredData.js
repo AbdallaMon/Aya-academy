@@ -12,7 +12,12 @@
 
 import { localePath } from "@/i18n/routing.js";
 import { languages } from "@/i18n/settings.js";
-import { SITE_URL, brand } from "./config.js";
+import {
+  SITE_URL,
+  SOCIAL_PROFILE_URLS,
+  brand,
+  brandAlternate,
+} from "./config.js";
 
 const DESCRIPTION = {
   ar: "أكاديمية آية — تعلّم القرآن الكريم وتحفيظه، والتجويد، واللغة العربية، والعلوم الشرعية أونلاين، للكبار والأطفال من ٥ سنوات فأكثر، عبر حصص مباشرة تفاعلية مع معلّمين مؤهّلين ومتابعة مستمرة.",
@@ -66,8 +71,8 @@ export function organizationSchema(lng) {
     "@type": "EducationalOrganization",
     "@id": ORG_ID,
     name: brand(lng),
-    alternateName: isEn ? "أكاديمية آية" : "Ayah Academy",
-    url: `${SITE_URL}${localePath(lng, "/")}`,
+    alternateName: brandAlternate(lng),
+    url: SITE_URL,
     logo: `${SITE_URL}/logos/logo.png`,
     image: `${SITE_URL}/og.png`,
     description: DESCRIPTION[isEn ? "en" : "ar"],
@@ -77,6 +82,7 @@ export function organizationSchema(lng) {
     // Online academy — serves Arabic/English-speaking families anywhere.
     areaServed: "Worldwide",
     knowsAbout: KNOWS_ABOUT[isEn ? "en" : "ar"],
+    ...(SOCIAL_PROFILE_URLS.length ? { sameAs: SOCIAL_PROFILE_URLS } : {}),
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
@@ -93,7 +99,8 @@ export function websiteSchema(lng) {
     "@type": "WebSite",
     "@id": WEBSITE_ID,
     name: brand(lng),
-    url: `${SITE_URL}${localePath(lng, "/")}`,
+    alternateName: brandAlternate(lng),
+    url: SITE_URL,
     inLanguage: languages,
     publisher: { "@id": ORG_ID },
   };

@@ -16,7 +16,12 @@
 // The returned promise resolves to `true` (confirmed) or `false` (cancelled).
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
-import ConfirmDialog from "../shared/components/dialogs/ConfirmDialog.jsx";
+import dynamic from "next/dynamic";
+
+const ConfirmDialog = dynamic(
+  () => import("../shared/components/dialogs/ConfirmDialog.jsx"),
+  { ssr: false },
+);
 
 const ConfirmContext = createContext(null);
 
@@ -40,18 +45,20 @@ export default function ConfirmProvider({ children }) {
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      <ConfirmDialog
-        open={state.open}
-        intent={state.options.intent}
-        title={state.options.title}
-        description={state.options.description}
-        confirmText={state.options.confirmText}
-        cancelText={state.options.cancelText}
-        maxWidth={state.options.maxWidth}
-        icon={state.options.icon}
-        onCancel={() => settle(false)}
-        onConfirm={() => settle(true)}
-      />
+      {state.open && (
+        <ConfirmDialog
+          open
+          intent={state.options.intent}
+          title={state.options.title}
+          description={state.options.description}
+          confirmText={state.options.confirmText}
+          cancelText={state.options.cancelText}
+          maxWidth={state.options.maxWidth}
+          icon={state.options.icon}
+          onCancel={() => settle(false)}
+          onConfirm={() => settle(true)}
+        />
+      )}
     </ConfirmContext.Provider>
   );
 }
