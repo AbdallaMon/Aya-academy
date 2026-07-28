@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 28 Subscription Renewal Invoice Flow</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 28 Subscription Renewal Invoice Flow</h1>
+        <p class="lead">Global Constraints</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Plans</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges.ar.html">Admin Dashboard: Family Detail, Levels, Badges &amp; Points — Implementation Plan</a></li><li><a href="./2026-06-24-quran-progress-tracking.ar.html">Quran Progress Tracking + Lesson Next-Plan — Implementation Plan</a></li><li><a href="./2026-06-25-global-settings-and-billing-rework.ar.html">Global Settings &amp; Billing Rework — Implementation Plan</a></li><li><a href="./2026-06-27-register-family-wizard.ar.html">Family Registration Wizard — Implementation Plan</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow.ar.html" class="active">Subscription Renewal &amp; Invoice Flow — Implementation Plan</a></li><li><a href="./2026-06-29-subscription-gating.ar.html">Subscription Gating Implementation Plan</a></li><li><a href="./2026-07-05-interactive-whiteboard.ar.html">Interactive Whiteboard Implementation Plan</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Plans</a><span class="crumb-sep">›</span><span class="crumb current">Subscription Renewal &amp; Invoice Flow — Implementation Plan</span></nav>
+          <section class="doc-hero">
+            <h2>Subscription Renewal &amp; Invoice Flow — Implementation Plan</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p></div><div class="content-block"><p><strong>Goal:</strong> Make subscriptions renew-in-place (one visible subscription per student), show price+discount, add a dedicated subscription detail page, a &quot;send invoice to parent&quot; flow (in-app notification + Meta WhatsApp Cloud API, env-gated), and two-way invoice↔subscription paid/active linkage.</p></div><div class="content-block"><p><strong>Architecture:</strong> New subscription actions (<code>renew</code>, <code>change-plan</code>, <code>activate</code>) and an invoice <code>send</code> action layer on the existing layered Express+Prisma backend (route → controller → usecase → repo). A new <code>infra/messaging/</code> module (facade + Meta WhatsApp provider, mirroring <code>infra/backup/providers/</code>) handles outbound. The frontend list collapses to latest-per-student and a new <code>subscriptionDetail</code> feature + App Router page hosts all actions.</p></div><div class="content-block"><p><strong>Tech Stack:</strong> Express 5, Prisma (MySQL), Next.js App Router (<code>web/</code>), MUI 7, react-hook-form, <code>@ayah/shared</code> constants/message-codes, <code>@ayah/db</code>. No SDK for WhatsApp — native <code>fetch</code> to Graph API.</p></div><div class="content-block"><ul><li><strong>No TypeScript in app source</strong> — <code>.js</code>/<code>.jsx</code> only.</li><li><strong>Prisma only in repos</strong> — no <code>prisma.*</code> in routes/controllers/usecases.</li><li><strong>Language-neutral error CODES only</strong> — throw <code>AppError</code> with a code from <code>@ayah/shared</code> message-codes; never raw user strings. Every new code MUST have ar+en localization in <code>web</code> messagesCodes.</li><li><strong>Enum-constant sync</strong> — any Prisma enum value added must be mirrored in <code>packages/shared/constants/enums.js</code>.</li><li><strong>Authorization = permission code + object scope + status</strong> — every new endpoint requires a permission code AND a scope check (ADMIN all; PARENT only their child; STUDENT only self).</li><li><strong>Audit important actions</strong> — follow the module&#39;s existing audit pattern for renew/activate/send/mark-paid.</li><li><strong>Best-effort side-channels</strong> — notifications and WhatsApp sends are wrapped in try/catch and never fail the main request.</li><li><strong>Verification</strong> (no unit-test runner exists): each backend task ends with <code>npm run db:generate</code> (if schema touched) + <code>npm run dev:server</code> boot clean; each frontend task ends with <code>npm run build:web</code> (or <code>npm run -w web lint</code>) clean; final task does manual E2E + scope checks.</li><li><strong>WhatsApp default OFF</strong>: <code>WHATSAPP_ENABLED</code> defaults to <code>false</code>; code runs as no-op until enabled + configured.</li></ul></div><div class="content-block"><hr /></div></div>
+
+          
+    <section class="doc-section" id="file-structure" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>File Structure</h2>
+        </div>
+        <div class="content-block"><p><strong>Backend (<code>server/src/</code>)</strong></p></div><div class="content-block"><ul><li><code>config/env.js</code> — add <code>whatsapp</code> block + <code>isWhatsAppConfigured()</code> (modify)</li><li><code>infra/messaging/providers/whatsapp.js</code> — Meta Cloud API provider (create)</li><li><code>infra/messaging/messagingService.js</code> — facade <code>notifyInvoiceSent</code> (create)</li><li><code>modules/subscriptions/subscription.{route,controller,usecase,repo,validation}.js</code> — add renew/change-plan/activate + latest-per-student (modify)</li><li><code>modules/invoices/invoice.{route,controller,usecase,validation}.js</code> — add <code>send</code> + <code>sentAt</code> (modify)</li></ul></div><div class="content-block"><p><strong>Shared (<code>packages/</code>)</strong></p></div><div class="content-block"><ul><li><code>db/prisma/schema.prisma</code> — <code>Invoice.sentAt</code>, <code>NotificationType.INVOICE_SENT</code> (modify) + migration</li><li><code>shared/constants/enums.js</code> — <code>NOTIFICATION<em>TYPES.INVOICE</em>SENT</code> (modify)</li><li><code>shared/constants/permissions.js</code> — <code>SUBSCRIPTION.RENEW/ACTIVATE</code>, <code>INVOICE.SEND</code> + role profiles (modify)</li><li><code>shared/messages-codes/{invoice,subscription}.js</code> — new codes (modify)</li></ul></div><div class="content-block"><p><strong>Frontend (<code>web/src/</code>)</strong></p></div><div class="content-block"><ul><li><code>app/[lng]/dashboard/subscriptions/[id]/page.jsx</code> — detail route (create)</li><li><code>features/subscriptionDetail/</code> — <code>pages/</code>, <code>components/</code>, <code>config/</code> (create)</li><li><code>features/subscriptions/pages/SubscriptionsPage.jsx</code> — latest-per-student + price/discount (modify)</li><li><code>features/subscriptions/config/*</code> and messagesCodes — text + codes (modify)</li></ul></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-1-schema-—-invoicesentat-notificationtypeinvoice_sent" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Task 1: Schema — <code>Invoice.sentAt</code> + <code>NotificationType.INVOICE_SENT</code></h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/db/prisma/schema.prisma</code></li><li>Modify: <code>packages/shared/constants/enums.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>Invoice.sentAt: DateTime?</code>; enum value <code>NotificationType.INVOICE<em>SENT</code>; constant <code>NOTIFICATION</em>TYPES.INVOICE<em>SENT = &quot;INVOICE</em>SENT&quot;</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add field + enum value.</strong> In <code>schema.prisma</code>, in <code>model Invoice</code> add <code>sentAt DateTime?</code> (near <code>issueDate</code>). In <code>enum NotificationType</code> add <code>INVOICE_SENT</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Sync constant.</strong> In <code>enums.js</code> <code>NOTIFICATION<em>TYPES</code>, add <code>INVOICE</em>SENT: &quot;INVOICE_SENT&quot;,</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Generate + migrate.</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run db:generate</code> then <code>npm run db:migrate -- --name invoice<em>sentat</em>and<em>invoice</em>sent_notification</code> Expected: migration created, client regenerated, no errors.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/db/prisma packages/shared/constants/enums.js
+git commit -m &quot;feat(db): add Invoice.sentAt and INVOICE_SENT notification type&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-2-permissions-—-renew-activate-invoicesend-role-profiles" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Task 2: Permissions — RENEW / ACTIVATE / INVOICE.SEND + role profiles</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/shared/constants/permissions.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>SUBSCRIPTION<em>PERMISSIONS.RENEW=&quot;subscription.renew&quot;</code>, <code>SUBSCRIPTION</em>PERMISSIONS.ACTIVATE=&quot;subscription.activate&quot;</code>, <code>INVOICE_PERMISSIONS.SEND=&quot;invoice.send&quot;</code>. ADMIN gets all (via <code>getAllPermissions()</code>); PARENT keeps <code>SUBSCRIPTION.REQUEST</code> (used by parent renew). PARENT/STUDENT do NOT get ACTIVATE / INVOICE.SEND.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add codes.</strong> Add <code>RENEW</code> and <code>ACTIVATE</code> to <code>SUBSCRIPTION<em>PERMISSIONS</code>; add <code>SEND: &quot;invoice.send&quot;</code> to <code>INVOICE</em>PERMISSIONS</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Verify role profiles.</strong> Confirm ADMIN aggregates all permissions automatically. Confirm PARENT profile still lists <code>SUBSCRIPTION.REQUEST</code> and does NOT include <code>ACTIVATE</code>/<code>INVOICE.SEND</code>. Adjust the parent/student profile arrays only if they enumerate codes explicitly.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Boot check.</strong></li></ul></div><div class="content-block"><p>Run: <code>npm run dev:server</code> Expected: server boots; no &quot;unknown permission&quot; errors.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/shared/constants/permissions.js
+git commit -m &quot;feat(perms): add subscription.renew/activate and invoice.send&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-3-message-codes-aren-—-invoice-subscription" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Task 3: Message codes (ar+en) — invoice + subscription</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/shared/messages-codes/invoice.js</code></li><li>Modify: <code>packages/shared/messages-codes/subscription.js</code></li><li>Modify: <code>web</code> messagesCodes (the file that maps codes → ar/en text; locate via <code>grep -r &quot;INVOICE_GENERATED&quot; web/src</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces codes: invoice → <code>INVOICE<em>SENT</code>, <code>INVOICE</em>SEND<em>FAILED</code>, <code>CANNOT</em>SEND<em>INVOICE</code>, <code>WHATSAPP</em>NOT<em>CONFIGURED</code>. subscription → <code>SUBSCRIPTION</em>STILL<em>ACTIVE</code>, <code>SUBSCRIPTION</em>RENEWED</code>, <code>PLAN<em>CHANGED</code>, <code>SUBSCRIPTION</em>ACTIVATED</code>, <code>CANNOT<em>CHANGE</em>PLAN_PAID</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add shared codes.</strong> Add the keys above to the two <code>messages-codes</code> files (value === key, following existing entries like <code>INVOICE<em>GENERATED: &quot;INVOICE</em>GENERATED&quot;</code>).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add ar+en text.</strong> In the web messagesCodes file, add ar AND en strings for every new code (mirror existing entries). Example: <code>SUBSCRIPTION<em>STILL</em>ACTIVE</code> → ar &quot;يوجد اشتراك فعّال لم ينتهِ بعد&quot; / en &quot;There is still an active subscription&quot;.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Verify mapping.</strong></li></ul></div><div class="content-block"><p>Run: <code>grep -rE &quot;INVOICE<em>SENT|SUBSCRIPTION</em>STILL_ACTIVE&quot; web/src packages/shared</code> Expected: each code present in shared codes AND in web ar + en.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/shared/messages-codes web/src
+git commit -m &quot;feat(i18n): add subscription renewal + invoice send message codes (ar/en)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-4-env-—-whatsapp-config-block" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Task 4: env — WhatsApp config block</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/config/env.js</code></li><li>Modify: <code>server/.env.example</code> (if present; else document in README)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>ENV.whatsapp = { enabled, token, phoneId, templateName, apiVersion, apiUrl }</code>; exported <code>isWhatsAppConfigured()</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add block</strong> (mirror the <code>backup</code>/<code>aws</code> style):</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>whatsapp: {
+  enabled: process.env.WHATSAPP_ENABLED === &quot;true&quot;,
+  token: process.env.WHATSAPP_TOKEN,
+  phoneId: process.env.WHATSAPP_PHONE_ID,
+  templateName: process.env.WHATSAPP_TEMPLATE_INVOICE || &quot;invoice_sent&quot;,
+  apiVersion: process.env.WHATSAPP_API_VERSION || &quot;v21.0&quot;,
+  apiUrl: process.env.WHATSAPP_API_URL,
+},</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add helper</strong> (next to <code>isAwsConfigured</code>):</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>export function isWhatsAppConfigured() {
+  return Boolean(ENV.whatsapp.token &amp;&amp; ENV.whatsapp.phoneId);
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Document env vars</strong> in <code>.env.example</code>: <code>WHATSAPP<em>ENABLED=false</code>, <code>WHATSAPP</em>TOKEN=</code>, <code>WHATSAPP<em>PHONE</em>ID=</code>, <code>WHATSAPP<em>TEMPLATE</em>INVOICE=invoice_sent</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Boot check.</strong> Run <code>npm run dev:server</code>; expected clean boot with <code>WHATSAPP_ENABLED</code> unset (no throw — all optional).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/config/env.js server/.env.example
+git commit -m &quot;feat(config): add WhatsApp (Meta Cloud API) env config, default disabled&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-5-whatsapp-provider-meta-cloud-api" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Task 5: WhatsApp provider (Meta Cloud API)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>server/src/infra/messaging/providers/whatsapp.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>ENV.whatsapp</code>, <code>isWhatsAppConfigured</code>, <code>AppError</code>, <code>invoiceMessagesCodes.WHATSAPP<em>NOT</em>CONFIGURED</code>.</li><li>Produces: singleton <code>whatsappProvider</code> with <code>async sendTemplate(toPhone, { templateName, languageCode, components })</code> and <code>async sendText(toPhone, text)</code>. <code>normalizePhone(raw)</code> → E.164 digits (strip <code>+</code>, spaces, leading <code>00</code>).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Implement provider.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { ENV, isWhatsAppConfigured } from &quot;../../../config/env.js&quot;;
+import { AppError } from &quot;../../../shared/errors/AppError.js&quot;; // confirm exact path
+import { invoiceMessagesCodes } from &quot;@ayah/shared&quot;;
+
+function baseUrl() {
+  const { apiUrl, apiVersion, phoneId } = ENV.whatsapp;
+  return apiUrl || `https://graph.facebook.com/${apiVersion}/${phoneId}/messages`;
+}
+
+class WhatsAppProvider {
+  normalizePhone(raw) {
+    if (!raw) return null;
+    let p = String(raw).trim().replace(/[\s-()]/g, &quot;&quot;);
+    if (p.startsWith(&quot;+&quot;)) p = p.slice(1);
+    if (p.startsWith(&quot;00&quot;)) p = p.slice(2);
+    return /^\d{8,15}$/.test(p) ? p : null;
+  }
+
+  async _post(body) {
+    if (!isWhatsAppConfigured()) {
+      throw new AppError(401, invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED);
+    }
+    const res = await fetch(baseUrl(), {
+      method: &quot;POST&quot;,
+      headers: {
+        Authorization: `Bearer ${ENV.whatsapp.token}`,
+        &quot;Content-Type&quot;: &quot;application/json&quot;,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() =&gt; &quot;&quot;);
+      throw new AppError(502, invoiceMessagesCodes.INVOICE_SEND_FAILED, { detail });
+    }
+    return res.json();
+  }
+
+  async sendTemplate(toPhone, { templateName, languageCode = &quot;ar&quot;, components = [] }) {
+    const to = this.normalizePhone(toPhone);
+    if (!to) return null;
+    return this._post({
+      messaging_product: &quot;whatsapp&quot;,
+      to,
+      type: &quot;template&quot;,
+      template: { name: templateName, language: { code: languageCode }, components },
+    });
+  }
+
+  async sendText(toPhone, text) {
+    const to = this.normalizePhone(toPhone);
+    if (!to) return null;
+    return this._post({ messaging_product: &quot;whatsapp&quot;, to, type: &quot;text&quot;, text: { body: text } });
+  }
+}
+
+export const whatsappProvider = new WhatsAppProvider();</code></pre></div></div><div class="content-block"><p>Confirm the exact <code>AppError</code> import path and constructor signature by checking an existing provider (e.g. <code>infra/backup/providers/s3.js</code>) before finalizing.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Boot check.</strong> Run <code>npm run dev:server</code>; expected clean (module imported lazily later, but syntax must be valid). Optionally <code>node --check server/src/infra/messaging/providers/whatsapp.js</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/infra/messaging/providers/whatsapp.js
+git commit -m &quot;feat(messaging): Meta WhatsApp Cloud API provider&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-6-messagingservice-facade-—-notifyinvoicesent" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Task 6: messagingService facade — <code>notifyInvoiceSent</code></h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>server/src/infra/messaging/messagingService.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>notificationUsecase.createNotification</code> (signature: <code>({ userId, type, titleAr, titleEn, bodyAr, bodyEn, dataJson, link }, tx?)</code>), <code>whatsappProvider</code>, <code>ENV.whatsapp.enabled</code>, <code>isWhatsAppConfigured</code>, <code>NOTIFICATION<em>TYPES.INVOICE</em>SENT</code>.</li><li>Produces: <code>async notifyInvoiceSent({ parents, student, invoice, subscriptionId, link })</code> → always creates one in-app notification per parent; if <code>ENV.whatsapp.enabled &amp;&amp; isWhatsAppConfigured()</code> also sends WhatsApp template per parent phone (best-effort). <code>parents</code>: array of <code>{ id, name, phone }</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Implement facade.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { ENV, isWhatsAppConfigured } from &quot;../../config/env.js&quot;;
+import { NOTIFICATION_TYPES } from &quot;@ayah/shared&quot;;
+import { notificationUsecase } from &quot;../../modules/notifications/notification.usecase.js&quot;;
+import { whatsappProvider } from &quot;./providers/whatsapp.js&quot;;
+
+export const messagingService = {
+  async notifyInvoiceSent({ parents = [], student, invoice, subscriptionId, link }) {
+    const title = { ar: &quot;تم إرسال فاتورة اشتراك&quot;, en: &quot;A subscription invoice was sent&quot; };
+    const body = {
+      ar: `فاتورة اشتراك ${student?.name ?? &quot;&quot;} بإجمالي ${invoice.total} ${invoice.currency}`,
+      en: `Invoice for ${student?.name ?? &quot;&quot;}, total ${invoice.total} ${invoice.currency}`,
+    };
+    for (const parent of parents) {
+      try {
+        await notificationUsecase.createNotification({
+          userId: parent.id,
+          type: NOTIFICATION_TYPES.INVOICE_SENT,
+          titleAr: title.ar, titleEn: title.en,
+          bodyAr: body.ar, bodyEn: body.en,
+          dataJson: { invoiceId: invoice.id, subscriptionId },
+          link,
+        });
+      } catch { /* best-effort */ }
+    }
+    if (ENV.whatsapp.enabled &amp;&amp; isWhatsAppConfigured()) {
+      for (const parent of parents) {
+        try {
+          await whatsappProvider.sendTemplate(parent.phone, {
+            templateName: ENV.whatsapp.templateName,
+            languageCode: &quot;ar&quot;,
+            components: [{
+              type: &quot;body&quot;,
+              parameters: [
+                { type: &quot;text&quot;, text: student?.name ?? &quot;&quot; },
+                { type: &quot;text&quot;, text: `${invoice.total} ${invoice.currency}` },
+              ],
+            }],
+          });
+        } catch { /* best-effort: logged, never fails request */ }
+      }
+    }
+  },
+};</code></pre></div></div><div class="content-block"><p>Confirm <code>notificationUsecase</code> is exported as a singleton object with <code>createNotification</code> (per exploration it is). Confirm <code>@ayah/shared</code> re-exports <code>NOTIFICATION_TYPES</code>.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Boot check.</strong> <code>npm run dev:server</code> clean.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/infra/messaging/messagingService.js
+git commit -m &quot;feat(messaging): notifyInvoiceSent facade (in-app always, WhatsApp when enabled)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-7-repo-—-latest-subscription-per-student-usecase-list" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Task 7: Repo — latest-subscription-per-student + usecase list</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>server/src/modules/subscriptions/subscription.repo.js</code></li><li>Modify: <code>server/src/modules/subscriptions/subscription.usecase.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>subscriptionRepo.listLatestPerStudent({ where, skip, take })</code> → <code>{ rows, total }</code>, where each row is the max-<code>id</code> subscription per student matching <code>where</code> (status filter applied to that latest row), using existing <code>subscriptionSelect</code>. <code>subscriptionUsecase.list</code> calls it instead of <code>listSubscriptions</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Implement repo query.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>async listLatestPerStudent({ where = {}, skip = 0, take = 20 }) {
+  // newest subscription id per student (autoincrement =&gt; latest renewal)
+  const groups = await prisma.subscription.groupBy({
+    by: [&quot;studentId&quot;],
+    where, // scope filter (e.g. studentId in parent&#39;s children)
+    _max: { id: true },
+  });
+  let ids = groups.map((g) =&gt; g._max.id).filter(Boolean);
+  // apply status filter on the latest row only
+  let latestWhere = { id: { in: ids } };
+  if (where.status) latestWhere.status = where.status;
+  const total = await prisma.subscription.count({ where: latestWhere });
+  const rows = await prisma.subscription.findMany({
+    where: latestWhere,
+    select: subscriptionSelect,
+    orderBy: { createdAt: &quot;desc&quot; },
+    skip, take,
+  });
+  return { rows, total };
+}</code></pre></div></div><div class="content-block"><div class="note-box"><p>pass scope filters (studentId-in-children, single studentId) inside <code>where</code>; pass <code>status</code> inside <code>where.status</code>. The query splits them: scope narrows the groupBy, status narrows the latest set.</p></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Wire usecase.</strong> In <code>subscriptionUsecase.list</code>, build the scope <code>where</code> exactly as today (ADMIN none, PARENT children ids, STUDENT self), then call <code>listLatestPerStudent</code> and return the existing paginated shape via <code>toSubscription</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Manual check.</strong></li></ul></div><div class="content-block"><p>Run server; <code>GET /subscriptions</code> as admin after creating 2 subscriptions for the same student. Expected: only the newest appears (one row for that student).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/subscriptions/subscription.repo.js server/src/modules/subscriptions/subscription.usecase.js
+git commit -m &quot;feat(subscriptions): list shows latest subscription per student only&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-8-backend-—-renew-action" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">9</span>
+          <h2>Task 8: Backend — Renew action</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>subscription.validation.js</code>, <code>subscription.usecase.js</code>, <code>subscription.controller.js</code>, <code>subscription.route.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>computePricing</code>, <code>computeEndDate</code>, <code>resolveStatus</code>, <code>ensureInvoice</code>, coupon increment, scope helpers, <code>subscriptionMessagesCodes.SUBSCRIPTION<em>STILL</em>ACTIVE</code>, <code>NOTIFICATION<em>TYPES.SUBSCRIPTION</em>RENEWED</code>.</li><li>Produces: <code>POST /subscriptions/:id/renew</code> body <code>{ planId?, billingPeriod?, couponCode?, startDate?, allowWhileActive? }</code>; <code>subscriptionUsecase.renew(authUser, id, input)</code> returns the NEW subscription (via <code>toSubscription</code>). Status of new row = <code>PENDING</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Validation schema</strong> <code>renewSubscriptionSchema</code>: all optional — <code>planId</code> int, <code>billingPeriod</code> enum, <code>couponCode</code> string, <code>startDate</code> coerce date, <code>allowWhileActive</code> boolean.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Usecase <code>renew</code>.</strong><ol><li>Load source subscription by <code>id</code>; scope-check (ADMIN, or PARENT owns the student, else <code>forbidden</code>).</li><li>Resolve <code>studentId</code>, default <code>planId</code>/<code>billingPeriod</code> from source, override from input.</li><li>Check active: query student&#39;s current subscription; if an <code>ACTIVE</code> row is within <code>[startDate,endDate]</code> now and <code>!input.allowWhileActive</code> → <code>throw new AppError(409, SUBSCRIPTION<em>STILL</em>ACTIVE)</code>.</li><li>Inside a transaction: <code>computePricing</code> (validate coupon, get <code>priceCharged</code>/<code>couponId</code>), <code>computeEndDate</code>, compute hours; create subscription with <code>status: &quot;PENDING&quot;</code>, <code>createdById: authUser.id</code>; if coupon used, increment redemption atomically.</li><li>After tx: <code>ensureInvoice(newSubscription, { plan })</code> (best-effort).</li><li>Notify: if <code>authUser.role === PARENT</code> → notify admins (<code>createManyForUsers</code>); else notify student. Type <code>SUBSCRIPTION_RENEWED</code>.</li><li>Return <code>toSubscription(newSubscription)</code>.</li></ol></li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Controller + route.</strong> Add <code>renew</code> controller calling <code>subscriptionUsecase.renew(req.authUser, Number(req.params.id), req.body)</code>; respond with code <code>SUBSCRIPTION_RENEWED</code> and the new subscription. Route: <code>router.post(&quot;/:id/renew&quot;, requirePermissions([... see below]), controller.renew)</code>. Permission: allow if user has <code>SUBSCRIPTION.RENEW</code> OR <code>SUBSCRIPTION.REQUEST</code> (parent) — follow existing multi-permission guard style (e.g. <code>requireAnyPermission</code>), or gate inside usecase by role.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Manual check.</strong> As admin, <code>POST /subscriptions/:id/renew {}</code> on an EXPIRED sub → 200, new PENDING sub + UNPAID invoice. On an ACTIVE sub without <code>allowWhileActive</code> → 409 <code>SUBSCRIPTION<em>STILL</em>ACTIVE</code>; with <code>allowWhileActive:true</code> → 200.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/subscriptions
+git commit -m &quot;feat(subscriptions): renew action (new PENDING sub + invoice, active-guard)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-9-backend-—-change-plan-action" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">10</span>
+          <h2>Task 9: Backend — Change plan action</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>subscription.validation.js</code>, <code>subscription.usecase.js</code>, <code>subscription.controller.js</code>, <code>subscription.route.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: invoice repo (<code>getBySubscriptionId</code>), <code>invoiceUsecase.generate</code> (regenerate), <code>computePricing</code>, <code>computeEndDate</code>, <code>subscriptionMessagesCodes.{PLAN<em>CHANGED,CANNOT</em>CHANGE<em>PLAN</em>PAID}</code>.</li><li>Produces: <code>POST /subscriptions/:id/change-plan</code> body <code>{ planId, billingPeriod?, couponCode? }</code>; <code>subscriptionUsecase.changePlan(authUser, id, input)</code> returns updated subscription. Allowed only while linked invoice is <code>UNPAID</code> (or no invoice yet).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Validation</strong> <code>changePlanSchema</code>: <code>planId</code> int required; <code>billingPeriod</code> enum optional; <code>couponCode</code> string optional.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Usecase <code>changePlan</code>.</strong> Load sub + scope-check. Load invoice; if invoice exists and <code>status !== &quot;UNPAID&quot;</code> → <code>throw AppError(409, CANNOT<em>CHANGE</em>PLAN<em>PAID)</code>. Recompute <code>priceCharged/totalHours/remainingHours/endDate/couponId</code> via <code>computePricing</code>/<code>computeEndDate</code>. <code>updateSubscription(id, {...})</code>. Then regenerate invoice (<code>invoiceUsecase.generate(authUser, id)</code> — admin path) so amounts match. Return updated sub. Notify student (<code>PLAN</em>CHANGED</code>) best-effort.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Controller + route.</strong> <code>router.post(&quot;/:id/change-plan&quot;, requirePermissions([SUBSCRIPTION.EDIT]), controller.changePlan)</code>. Respond with <code>PLAN_CHANGED</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Manual check.</strong> On a PENDING sub with UNPAID invoice: change plan → 200, sub price/hours updated, invoice regenerated. On a sub whose invoice is PAID → 409 <code>CANNOT<em>CHANGE</em>PLAN_PAID</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/subscriptions
+git commit -m &quot;feat(subscriptions): change-plan action (UNPAID-only, regenerates invoice)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-10-backend-—-activate-action-two-way-→-mark-invoice-paid" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">11</span>
+          <h2>Task 10: Backend — Activate action (two-way → mark invoice paid)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>subscription.validation.js</code>, <code>subscription.usecase.js</code>, <code>subscription.controller.js</code>, <code>subscription.route.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>resolveStatus</code>, invoice repo/usecase to set <code>PAID</code>, <code>NOTIFICATION<em>TYPES.SUBSCRIPTION</em>RENEWED</code>, <code>subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED</code>.</li><li>Produces: <code>POST /subscriptions/:id/activate</code> body <code>{ markInvoicePaid? }</code>; <code>subscriptionUsecase.activate(authUser, id, input)</code> → PENDING/UPCOMING → ACTIVE (resolved by dates); if <code>markInvoicePaid</code> → set linked invoice <code>PAID</code>. Returns updated subscription. Mirrors existing <code>invoiceUsecase.update(..., { activateSubscription })</code> for the reverse direction (no change needed there).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Validation</strong> <code>activateSubscriptionSchema</code>: <code>markInvoicePaid</code> boolean optional.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Usecase <code>activate</code>.</strong> Load sub + scope-check (ADMIN only via permission). If status not in <code>PENDING/UPCOMING</code> → error (reuse a suitable existing code or <code>SUBSCRIPTION_ACTIVATED</code> guard). Set status via <code>resolveStatus(startDate,endDate,now)</code> (→ ACTIVE/UPCOMING). If <code>markInvoicePaid</code>: load invoice, if <code>UNPAID</code> set <code>PAID</code> (use the same status-transition guard as <code>invoiceUsecase.update</code>). Notify student. Return updated sub.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Controller + route.</strong> <code>router.post(&quot;/:id/activate&quot;, requirePermissions([SUBSCRIPTION.ACTIVATE]), controller.activate)</code>. Respond <code>SUBSCRIPTION_ACTIVATED</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Manual check.</strong> PENDING sub → activate <code>{markInvoicePaid:true}</code> → sub ACTIVE + invoice PAID. Reverse: <code>PATCH /invoices/:id {status:&quot;PAID&quot;, activateSubscription:true}</code> still activates (existing).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/subscriptions
+git commit -m &quot;feat(subscriptions): activate action with optional mark-invoice-paid&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-11-backend-—-invoice-send-to-parent" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">12</span>
+          <h2>Task 11: Backend — Invoice <code>send</code> to parent</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>invoice.usecase.js</code>, <code>invoice.controller.js</code>, <code>invoice.route.js</code>, <code>invoice.repo.js</code> (if <code>update</code> doesn&#39;t already allow <code>sentAt</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>messagingService.notifyInvoiceSent</code>, invoice DTO (<code>subscription.student</code> + flattened <code>parents</code> with phone), <code>invoiceMessagesCodes.{INVOICE<em>SENT,CANNOT</em>SEND_INVOICE}</code>.</li><li>Produces: <code>POST /invoices/:id/send</code>; <code>invoiceUsecase.send(authUser, id)</code> → ADMIN-only; builds <code>parents</code> from invoice&#39;s student links; calls <code>messagingService.notifyInvoiceSent</code>; sets <code>invoice.sentAt = now</code>; returns invoice. Link = <code>/dashboard/subscriptions/${subscriptionId}</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Usecase <code>send</code>.</strong><ol><li>ADMIN check else <code>throw AppError(403, CANNOT<em>SEND</em>INVOICE)</code>.</li><li><code>getById</code> (with subscription→student→parents projection); throw <code>INVOICE<em>NOT</em>FOUND</code> if missing.</li><li>Build <code>parents = student.parents.map(p =&gt; ({ id: p.id, name: p.name, phone: p.phone }))</code>.</li><li><code>await messagingService.notifyInvoiceSent({ parents, student, invoice, subscriptionId: invoice.subscriptionId, link })</code>.</li><li><code>invoiceRepo.update(id, { sentAt: new Date() })</code>; return <code>toInvoice</code>.</li></ol></li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Ensure DTO exposes parent <code>phone</code>.</strong> Confirm <code>invoiceSelect</code> student projection includes <code>phone</code> on parents (exploration shows parents include phone) — if not, add it.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Controller + route.</strong> <code>router.post(&quot;/:id/send&quot;, requirePermissions([INVOICE.SEND]), controller.send)</code>. Respond <code>INVOICE_SENT</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Manual check.</strong> <code>POST /invoices/:id/send</code> as admin → 200; the student&#39;s parent gets an in-app notification (<code>GET /notifications</code>); <code>invoice.sentAt</code> set. With <code>WHATSAPP_ENABLED=false</code> no WhatsApp attempted.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/invoices
+git commit -m &quot;feat(invoices): send-to-parent action (in-app + WhatsApp when enabled, sets sentAt)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-12-frontend-—-subscriptions-list-latest-per-student-pricediscount" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">13</span>
+          <h2>Task 12: Frontend — Subscriptions list = latest-per-student + price/discount</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/features/subscriptions/pages/SubscriptionsPage.jsx</code></li><li>Modify: <code>web/src/features/subscriptions/config/subscriptionsText.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: existing <code>useRequest</code> list (now returns latest-per-student from backend), <code>INVOICE<em>STATUS</em>COLOR</code>, subscription row with <code>priceCharged</code>, <code>coupon</code>, <code>plan</code>.</li><li>Produces: a price/discount cell (base struck-through + net when a coupon exists), a row click / &quot;عرض&quot; action navigating to <code>/dashboard/subscriptions/${row.id}</code>, and a quick &quot;تجديد&quot; action.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Price/discount cell.</strong> Render: if <code>row.coupon</code> → show base (from plan pricing or <code>priceCharged</code>+discount) struck-through + net <code>priceCharged</code>; else just <code>priceCharged</code>. Add text keys <code>priceLabel</code>, <code>discountLabel</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Navigation + renew.</strong> Add a column/action button &quot;عرض&quot; → <code>router.push(</code>/dashboard/subscriptions/${row.id}<code>)</code> (use the <code>[lng]</code> locale prefix consistent with existing nav). Add quick &quot;تجديد&quot; calling <code>POST /subscriptions/:id/renew</code> then navigating to the returned new sub&#39;s detail page.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Build check.</strong> <code>npm run build:web</code> (or <code>npm run -w web lint</code>) clean.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/subscriptions
+git commit -m &quot;feat(web): subscriptions list shows price+discount, links to detail, quick renew&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-13-frontend-—-subscription-detail-route-feature-scaffold" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">14</span>
+          <h2>Task 13: Frontend — Subscription detail route + feature scaffold</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/app/[lng]/dashboard/subscriptions/[id]/page.jsx</code></li><li>Create: <code>web/src/features/subscriptionDetail/pages/SubscriptionDetailPage.jsx</code></li><li>Create: <code>web/src/features/subscriptionDetail/config/constant.js</code></li><li>Create: <code>web/src/features/subscriptionDetail/config/subscriptionDetailText.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>useRequest</code> (<code>GET /subscriptions/:id</code>), <code>usePermission</code>, <code>PERMISSIONS</code>, <code>useTranslation</code>.</li><li>Produces: page component <code>SubscriptionDetailPage({ subscriptionId })</code> that fetches the subscription and renders header + status + (placeholder for) cards/actions. Route file mirrors <code>users/[id]/page.jsx</code> (async <code>params</code>).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Route file</strong> (mirror <code>users/[id]/page.jsx</code>):</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { Suspense } from &quot;react&quot;;
+import SubscriptionDetailPage from &quot;@/features/subscriptionDetail/pages/SubscriptionDetailPage.jsx&quot;;
+export default async function Page({ params }) {
+  const { id } = await params;
+  return (&lt;Suspense&gt;&lt;SubscriptionDetailPage subscriptionId={id} /&gt;&lt;/Suspense&gt;);
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Page shell.</strong> <code>&quot;use client&quot;</code>; <code>if (!hasPermission(PERMISSIONS.SUBSCRIPTION.VIEW)) return null;</code>. Fetch subscription via <code>useRequest</code>. Render header (student name + status chip). Add <code>config/constant.js</code> (URLs, status colors mirroring subscriptions constant) and text file (ar/en).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Build check.</strong> Navigate to <code>/dashboard/subscriptions/&lt;id&gt;</code> → header + status render. <code>npm run build:web</code> clean.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/app web/src/features/subscriptionDetail
+git commit -m &quot;feat(web): subscription detail page route + scaffold&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-14-frontend-—-detail-cards-subscription-invoice-pricediscount" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">15</span>
+          <h2>Task 14: Frontend — Detail cards (subscription + invoice + price/discount)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>SubscriptionDetailPage.jsx</code></li><li>Create: <code>web/src/features/subscriptionDetail/components/SubscriptionCard.jsx</code></li><li>Create: <code>web/src/features/subscriptionDetail/components/InvoiceCard.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: subscription (plan, billingPeriod, dates, hours, priceCharged, coupon, invoice), reuse <code>InvoiceDialog</code>/<code>InvoiceDocument</code> from <code>features/invoices</code>.</li><li>Produces: <code>SubscriptionCard</code> (plan, period, dates, hours, price+discount breakdown) and <code>InvoiceCard</code> (invoice status chip, total, &quot;تم الإرسال&quot; when <code>sentAt</code>, open/download invoice via reused <code>InvoiceDialog</code>).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: SubscriptionCard</strong> with full price/discount breakdown (base, discount amount, net) using the existing coupon/discount snapshot.</li><li>[ ] <strong>Step 2: InvoiceCard</strong> reusing <code>InvoiceDialog</code> (pass <code>subscriptionId</code>, <code>canGenerate</code>, <code>canEdit</code>). Show <code>sentAt</code> state.</li><li>[ ] <strong>Step 3: Build check</strong> clean.</li><li>[ ] <strong>Step 4: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/subscriptionDetail
+git commit -m &quot;feat(web): subscription detail cards (subscription + invoice + discount)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-15-frontend-—-renew-change-plan-coupon-dialogs-on-detail-page" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">16</span>
+          <h2>Task 15: Frontend — Renew / Change-plan / Coupon dialogs on detail page</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/subscriptionDetail/components/RenewDialog.jsx</code></li><li>Create: <code>web/src/features/subscriptionDetail/components/ChangePlanDialog.jsx</code></li><li>Modify: <code>SubscriptionDetailPage.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>CouponControl</code>, <code>couponPricing</code> (<code>initialCoupon</code>/<code>resolveCoupon</code>), public plans (<code>/plans/public</code>), <code>POST /subscriptions/:id/renew</code>, <code>POST /subscriptions/:id/change-plan</code>.</li><li>Produces: RenewDialog (defaults to source plan, editable plan + billingPeriod + coupon; on <code>SUBSCRIPTION<em>STILL</em>ACTIVE</code> shows confirm → retries with <code>allowWhileActive:true</code>; on success navigates to new sub detail). ChangePlanDialog (plan + coupon; hidden/disabled when invoice is PAID). Coupon entry available to BOTH admin and parent (gate destructive actions by permission, not coupon).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: RenewDialog</strong> — reuse <code>SubscriptionCreateDialog</code> field patterns; prefill from current sub; handle 409 active-warning confirm.</li><li>[ ] <strong>Step 2: ChangePlanDialog</strong> — plan + coupon; submit to change-plan; disabled when <code>invoice.status===&quot;PAID&quot;</code>.</li><li>[ ] <strong>Step 3: Wire buttons</strong> on detail page, permission-gated (<code>SUBSCRIPTION.RENEW</code>/<code>REQUEST</code> for renew; <code>SUBSCRIPTION.EDIT</code> for change-plan).</li><li>[ ] <strong>Step 4: Build check</strong> clean.</li><li>[ ] <strong>Step 5: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/subscriptionDetail
+git commit -m &quot;feat(web): renew + change-plan + coupon dialogs on subscription detail&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-16-frontend-—-send-to-parent-two-way-activatemark-paid" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">17</span>
+          <h2>Task 16: Frontend — Send-to-parent + two-way activate/mark-paid</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>SubscriptionDetailPage.jsx</code>, <code>InvoiceCard.jsx</code></li><li>Reuse/extend: <code>features/invoices/components/InvoiceDialog.jsx</code> (mark-paid already supports <code>activateSubscription</code>)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>POST /invoices/:id/send</code>, <code>POST /subscriptions/:id/activate</code> (<code>{markInvoicePaid}</code>), <code>PATCH /invoices/:id</code> (<code>{status:&quot;PAID&quot;, activateSubscription}</code>).</li><li>Produces: &quot;إرسال لولي الأمر&quot; button (→ becomes &quot;تم الإرسال ✓&quot; after, allows re-send); &quot;تفعيل الاشتراك&quot; button (if not active) with checkbox &quot;اعتمد الفاتورة كمدفوعة كمان؟&quot; → <code>activate {markInvoicePaid}</code>; &quot;اعتماد الفاتورة كمدفوعة&quot; button (if UNPAID) with checkbox &quot;فعّل الاشتراك كمان؟&quot; → invoice PATCH <code>{status:PAID, activateSubscription}</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Send button</strong> → <code>POST /invoices/:id/send</code>; toast <code>INVOICE_SENT</code>; refetch shows <code>sentAt</code>.</li><li>[ ] <strong>Step 2: Activate button</strong> (sub not active) with complementary checkbox.</li><li>[ ] <strong>Step 3: Mark-paid button</strong> (invoice UNPAID) with complementary checkbox.</li><li>[ ] <strong>Step 4: Permission-gate</strong> all three to ADMIN (<code>INVOICE.SEND</code>, <code>SUBSCRIPTION.ACTIVATE</code>, <code>INVOICE.EDIT</code>); hide for parent.</li><li>[ ] <strong>Step 5: Build check</strong> clean.</li><li>[ ] <strong>Step 6: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features
+git commit -m &quot;feat(web): send-to-parent + two-way activate/mark-paid on subscription detail&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-17-frontend-—-parent-scoping-latest-per-child-renew-coupon-only" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">18</span>
+          <h2>Task 17: Frontend — Parent scoping (latest per child, renew + coupon only)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>SubscriptionsPage.jsx</code>, <code>SubscriptionDetailPage.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>usePermission</code>, role.</li><li>Produces: parent sees latest subscription per child (backend already scopes); on detail page parent sees Renew + Coupon only — Activate / Mark-paid / Send hidden (no permission).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Verify gating.</strong> Confirm all admin-only buttons are wrapped in <code>hasPermission(...)</code> so they vanish for parent; confirm Renew is available to parent (maps to <code>SUBSCRIPTION.REQUEST</code>).</li><li>[ ] <strong>Step 2: Manual check</strong> as a parent account: one row per child, detail shows only renew + coupon, renew creates PENDING and notifies admins.</li><li>[ ] <strong>Step 3: Commit.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features
+git commit -m &quot;feat(web): parent-scoped subscription detail (renew + coupon only)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-18-end-to-end-verification-scopeidor-pass" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">19</span>
+          <h2>Task 18: End-to-end verification + scope/IDOR pass</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong> none (verification only)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Migrate + build.</strong> <code>npm run db:migrate:deploy</code> (or dev), <code>npm run build:web</code>, <code>npm run dev:server</code> — all clean.</li><li>[ ] <strong>Step 2: Full E2E (admin).</strong> Renew expired sub → new PENDING + UNPAID invoice → detail page → edit invoice → send to parent (in-app notification appears) → mark invoice paid + activate (or activate + mark paid) → student notified. Change-plan on UNPAID works; blocked when PAID.</li><li>[ ] <strong>Step 3: E2E (parent).</strong> Login as parent of a student: one row per child, renew creates PENDING + notifies admins, coupon applies, admin-only buttons absent.</li><li>[ ] <strong>Step 4: IDOR checks.</strong> Parent A cannot renew/activate/send for Parent B&#39;s child (expect 403). Student cannot hit activate/send (403). Verify <code>GET /subscriptions/:id</code> scope.</li><li>[ ] <strong>Step 5: WhatsApp gate.</strong> With <code>WHATSAPP<em>ENABLED=false</code>, send-to-parent does in-app only. Set <code>WHATSAPP</em>ENABLED=true</code> with dummy creds → send attempts Graph API and fails gracefully (request still 200, error logged).</li><li>[ ] <strong>Step 6: Commit any fixes.</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add -A &amp;&amp; git commit -m &quot;test: e2e + scope verification for subscription renewal &amp; invoice flow&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="self-review-notes" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">20</span>
+          <h2>Self-Review Notes</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>Spec coverage:</strong> §3 schema → T1; permissions → T2; codes → T3; env+whatsapp → T4–T6; latest-per-student → T7; renew → T8; change-plan → T9; two-way → T10; send → T11; list price/discount → T12; detail page → T13–T16; parent scope → T17; verify → T18. All spec sections mapped.</li><li><strong>WhatsApp now-not-later:</strong> fully implemented in T5/T6, env-gated (T4); confirmed against user&#39;s correction.</li><li><strong>Type consistency:</strong> <code>notifyInvoiceSent({ parents, student, invoice, subscriptionId, link })</code>, <code>whatsappProvider.sendTemplate(phone, {templateName, languageCode, components})</code>, <code>listLatestPerStudent({where,skip,take})→{rows,total}</code>, <code>renew(authUser,id,input)→sub</code>, <code>activate(authUser,id,{markInvoicePaid})</code>, <code>send(authUser,id)</code> used consistently across tasks.</li><li><strong>No unit-test runner:</strong> intentional — repo has none; verification is build/boot/manual+IDOR (Global Constraints). Not a placeholder.</li><li><strong>Confirm-before-final:</strong> exact <code>AppError</code> import path/signature and <code>notificationUsecase</code> export shape must be confirmed from real files in T5/T6 (noted inline).</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"file-structure","title":"File Structure"},{"id":"task-1-schema-—-invoicesentat-notificationtypeinvoice_sent","title":"Task 1: Schema — `Invoice.sentAt` + `NotificationType.INVOICE_SENT`"},{"id":"task-2-permissions-—-renew-activate-invoicesend-role-profiles","title":"Task 2: Permissions — RENEW / ACTIVATE / INVOICE.SEND + role profiles"},{"id":"task-3-message-codes-aren-—-invoice-subscription","title":"Task 3: Message codes (ar+en) — invoice + subscription"},{"id":"task-4-env-—-whatsapp-config-block","title":"Task 4: env — WhatsApp config block"},{"id":"task-5-whatsapp-provider-meta-cloud-api","title":"Task 5: WhatsApp provider (Meta Cloud API)"},{"id":"task-6-messagingservice-facade-—-notifyinvoicesent","title":"Task 6: messagingService facade — `notifyInvoiceSent`"},{"id":"task-7-repo-—-latest-subscription-per-student-usecase-list","title":"Task 7: Repo — latest-subscription-per-student + usecase list"},{"id":"task-8-backend-—-renew-action","title":"Task 8: Backend — Renew action"},{"id":"task-9-backend-—-change-plan-action","title":"Task 9: Backend — Change plan action"},{"id":"task-10-backend-—-activate-action-two-way-→-mark-invoice-paid","title":"Task 10: Backend — Activate action (two-way → mark invoice paid)"},{"id":"task-11-backend-—-invoice-send-to-parent","title":"Task 11: Backend — Invoice `send` to parent"},{"id":"task-12-frontend-—-subscriptions-list-latest-per-student-pricediscount","title":"Task 12: Frontend — Subscriptions list = latest-per-student + price/discount"},{"id":"task-13-frontend-—-subscription-detail-route-feature-scaffold","title":"Task 13: Frontend — Subscription detail route + feature scaffold"},{"id":"task-14-frontend-—-detail-cards-subscription-invoice-pricediscount","title":"Task 14: Frontend — Detail cards (subscription + invoice + price/discount)"},{"id":"task-15-frontend-—-renew-change-plan-coupon-dialogs-on-detail-page","title":"Task 15: Frontend — Renew / Change-plan / Coupon dialogs on detail page"},{"id":"task-16-frontend-—-send-to-parent-two-way-activatemark-paid","title":"Task 16: Frontend — Send-to-parent + two-way activate/mark-paid"},{"id":"task-17-frontend-—-parent-scoping-latest-per-child-renew-coupon-only","title":"Task 17: Frontend — Parent scoping (latest per child, renew + coupon only)"},{"id":"task-18-end-to-end-verification-scopeidor-pass","title":"Task 18: End-to-end verification + scope/IDOR pass"},{"id":"self-review-notes","title":"Self-Review Notes"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

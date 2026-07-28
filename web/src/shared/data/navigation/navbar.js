@@ -7,14 +7,19 @@
 // wrapper (it appears first), with #how-it-works and #levels as bands inside it.
 export const navSections = [
   { id: 'home', ar: 'الرئيسية', en: 'Home' },
-  { id: 'why-ayah', ar: 'لماذا آية', en: 'Why Aya' },
+  { id: 'about', href: '/about', ar: 'من نحن', en: 'About' },
+  { id: 'why-ayah', ar: 'لماذا آية', en: 'Why Ayah' },
   { id: 'how-it-works', ar: 'كيف نتعلّم', en: 'How it works' },
   { id: 'levels', ar: 'المستويات', en: 'Levels' },
-  { id: 'programs', ar: 'البرامج', en: 'Programs' },
+  { id: 'services', href: '/services', ar: 'البرامج', en: 'Programs' },
   { id: 'pricing', ar: 'الباقات', en: 'Pricing' },
   { id: 'faq', ar: 'الأسئلة الشائعة', en: 'FAQ' },
   { id: 'blog', href: '/blog', ar: 'المدوّنة', en: 'Blog' },
 ];
+
+// The logo is the home link in both desktop and mobile navigation, so the
+// explicit Home item is only needed in the footer.
+export const navbarSections = navSections.filter((section) => section.id !== 'home');
 
 // Resolve a nav item to its locale-prefixed href: a real page when `href` is
 // set, otherwise a homepage anchor.
@@ -37,7 +42,7 @@ export const navText = {
     menu: 'القائمة',
   },
   en: {
-    brand: 'Aya Academy',
+    brand: 'Ayah Academy',
     dashboard: 'Dashboard',
     login: 'Login',
     signup: 'Sign up',

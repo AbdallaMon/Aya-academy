@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -10,7 +10,6 @@ import {
   Checkbox,
   Chip,
   Divider,
-  FormControlLabel,
   Grid,
   List,
   ListItemButton,
@@ -22,15 +21,17 @@ import {
   Typography,
 } from "@mui/material";
 import { MdBuild } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
-import { LoadingOverlay } from "../../../shared/components/index.js";
+import {
+  AsyncUserAutocomplete,
+  LoadingOverlay,
+} from "../../../shared/components/index.js";
 import {
   INVITES_URL,
-  MY_STUDENTS_URL,
 } from "../config/constant.js";
 import { useQuizBuildText } from "../config/quizBuildText.js";
 import CustomQuestionsSection from "../components/CustomQuestionsSection.jsx";
@@ -81,14 +82,6 @@ export default function QuizBuildPage({ token }) {
     syncToUrl: false,
   });
 
-  // Parent's students.
-  const studentsReq = useRequest({
-    url: MY_STUDENTS_URL,
-    method: "get",
-    autoFetch: canBuild,
-    syncToUrl: false,
-  });
-
   const submitReq = useRequest({
     url: `${INVITES_URL}/${token}/build`,
     method: "post",
@@ -99,25 +92,20 @@ export default function QuizBuildPage({ token }) {
   });
 
   const invite = inviteReq.data;
-  const bankQuestions = invite?.questions || [];
-  const students = studentsReq.data || [];
+  const bankQuestions = useMemo(() => invite?.questions || [], [invite?.questions]);
+  const [preselectedInviteId, setPreselectedInviteId] = useState(null);
 
-  // Pre-select all exposed bank questions once they load (sensible default).
-  useEffect(() => {
-    if (bankQuestions.length) setSelectedBank(bankQuestions.map((q) => q.id));
-  }, [bankQuestions]);
+  // Pre-select all exposed bank questions exactly once per invite.
+  if (bankQuestions.length && preselectedInviteId !== invite?.id) {
+    setPreselectedInviteId(invite?.id ?? null);
+    setSelectedBank(bankQuestions.map((q) => q.id));
+  }
 
   function toggleBank(id) {
     setSelectedBank((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
-  function toggleStudent(id) {
-    setSelectedStudents((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  }
-
   function submit(values) {
     setFormError("");
     if (!values.title?.trim()) {
@@ -162,14 +150,14 @@ export default function QuizBuildPage({ token }) {
       passThreshold: Number(values.passThreshold) || 0,
       giftName: values.giftName?.trim() || undefined,
       items,
-      participantStudentIds: selectedStudents.map(Number),
+      participantStudentIds: selectedStudents.map((student) => Number(student.id)),
     };
     submitReq.fetchData(null, payload);
   }
 
   if (!canBuild) return null;
 
-  const loading = inviteReq.isLoading || studentsReq.isLoading;
+  const loading = inviteReq.isLoading;
 
   // Friendly terminal states once the invite is loaded.
   if (!loading && !invite) {
@@ -367,26 +355,13 @@ export default function QuizBuildPage({ token }) {
               />
             </Stack>
 
-            {students.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                {txt.noStudents}
-              </Typography>
-            ) : (
-              <Stack>
-                {students.map((s) => (
-                  <FormControlLabel
-                    key={s.id}
-                    control={
-                      <Checkbox
-                        checked={selectedStudents.includes(s.id)}
-                        onChange={() => toggleStudent(s.id)}
-                      />
-                    }
-                    label={s.name || s.nickname || `#${s.id}`}
-                  />
-                ))}
-              </Stack>
-            )}
+            <AsyncUserAutocomplete
+              multiple
+              role="STUDENT"
+              label={txt.studentsTitle}
+              value={selectedStudents}
+              onChange={setSelectedStudents}
+            />
           </Paper>
 
           <Divider />

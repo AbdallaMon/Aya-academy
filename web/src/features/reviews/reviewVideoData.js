@@ -23,22 +23,22 @@ export const reviewVideoText = {
   },
   en: {
     eyebrow: 'A word from our students',
-    title: 'Hear from a student at Aya Academy',
+    title: 'Hear from a student at Ayah Academy',
     subtitle: 'A student who loves her teacher and is learning Quran, du’aa and Arabic — reciting Surat Al-Masad herself.',
     showTranscript: 'Read transcript',
     hideTranscript: 'Hide transcript',
     spokenLabel: 'What she said',
     reciteLabel: 'Reciting Surat Al-Masad',
     captionsNote: 'Includes captions (CC)',
-    attribution: 'Student at Aya Academy',
+    attribution: 'Student at Ayah Academy',
   },
 };
 
 // Spoken intro — exactly as said (bilingual by nature).
 export const reviewSpoken = [
   'السلام عليكم',
-  'I am a student from Sister Aya Academy.',
-  'And I really love my teacher, Sister Aya.',
+  'I am a student from Sister Ayah Academy.',
+  'And I really love my teacher, Sister Ayah.',
   'She teaches me Quran, du’aa, and Arabic.',
   'In shaa Allah, I’ll read you Surat Al-Masad.',
 ];

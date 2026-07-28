@@ -146,15 +146,14 @@ export async function downloadNodeAsPdf(
   });
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
-  const marginX = 10;
-  const marginY = 10;
 
   if (mode === "fit") {
-    // Scale to fit within the page (aspect preserved) and center.
-    const ratio = Math.min(
-      (pageW - marginX * 2) / img.width,
-      (pageH - marginY * 2) / img.height,
-    );
+    // FILL the whole A4 page (no margins). The document is already A4-proportioned
+    // (a certificate), so contain-fitting to the full page lands edge-to-edge with
+    // no cropping — any leftover is a sub-pixel sliver from rounding, not a margin.
+    // We keep Math.min (contain, never crop) so a slight aspect mismatch letterboxes
+    // by a hair instead of chopping content.
+    const ratio = Math.min(pageW / img.width, pageH / img.height);
     const w = img.width * ratio;
     const h = img.height * ratio;
     pdf.addImage(dataUrl, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
@@ -163,6 +162,8 @@ export async function downloadNodeAsPdf(
   }
 
   // Paginate: lock to the page width; split across pages when taller than one.
+  const marginX = 10;
+  const marginY = 10;
   const imgW = pageW - marginX * 2;
   const imgH = (img.height * imgW) / img.width;
   const innerH = pageH - marginY * 2;
@@ -203,21 +204,27 @@ export async function printNodeAsPdf(
 ) {
   const { dataUrl } = await captureNodeFixed(node, { orientation });
   const size = orientation === "landscape" ? "landscape" : "portrait";
+  // Fill the whole A4 sheet. margin:0 on @page + a page-sized wrapper (in mm,
+  // NOT vh — vh is unreliable in print and used to make the image overflow onto a
+  // second page / get clipped). object-fit:contain keeps the aspect so nothing is
+  // cropped; since the certificate is already A4-proportioned it lands edge-to-edge.
+  const pageW = size === "landscape" ? 297 : 210;
+  const pageH = size === "landscape" ? 210 : 297;
   const docHtml = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
 <title>${escapeHtml(title)}</title>
 <style>
-  @page { size: A4 ${size}; margin: 8mm; }
+  @page { size: A4 ${size}; margin: 0; }
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html, body { margin: 0; padding: 0; }
-  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #fff; }
-  img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  .sheet { width: ${pageW}mm; height: ${pageH}mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  img { width: 100%; height: 100%; object-fit: contain; display: block; }
 </style>
 </head>
 <body>
-  <img src="${dataUrl}" alt="" />
+  <div class="sheet"><img src="${dataUrl}" alt="" /></div>
   <script>
     window.addEventListener('load', function () {
       setTimeout(function () { window.focus(); window.print(); }, 250);

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 29 Subscription Authorization Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 29 Subscription Authorization Design</h1>
+        <p class="lead"></p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align ayah-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html" class="active">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Subscription-Based Authorization — Design Spec</span></nav>
+          <section class="doc-hero">
+            <h2>Subscription-Based Authorization — Design Spec</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>Date:</strong> 2026-06-29 <strong>Status:</strong> Approved (design); pending implementation plan <strong>Branch:</strong> <code>feat/subscription-renewal-invoice</code> (or a dedicated <code>feat/subscription-gating</code>)</p></div></div>
+
+          
+    <section class="doc-section" id="problem" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Problem</h2>
+        </div>
+        <div class="content-block"><p>Students and parents currently reach gamified / progress features regardless of subscription state. We need access to follow the subscription:</p></div><div class="content-block"><ul><li>A <strong>student</strong> whose subscription is <strong>not active</strong> (expired / pending / upcoming /</li></ul></div><div class="content-block"><p>cancelled) must <strong>not</strong>:</p></div><div class="content-block"><ul><li>see the <strong>leaderboard</strong>,</li><li>see <strong>badges / awards (الأوسمة)</strong>,</li><li><strong>play any game</strong>.</li><li>They <strong>may still see the games list</strong> (cards), but the cards are <strong>locked</strong>.</li></ul></div><div class="content-block"><ul><li>A <strong>parent</strong> must <strong>not see most of an inactive child&#39;s information</strong> — specifically</li></ul></div><div class="content-block"><p>the child&#39;s <strong>stats and achievements</strong> are hidden, while the child&#39;s <strong>identity, subscription status, certificates, and old reports remain visible</strong> so renewal stays possible.</p></div><div class="content-block"><ul><li><strong>No redirect.</strong> The reason is shown in place. For the <strong>student</strong> the lock is gentle</li></ul></div><div class="content-block"><p>and kid-appropriate (no billing/renew nag); the <strong>clear, actionable &quot;subscription expired — renew&quot; message goes to the parent.</strong></p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="principles" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Principles</h2>
+        </div>
+        <div class="content-block"><ol><li><strong>Subscription is a STATUS gate, orthogonal to role permissions.</strong> This project</li></ol></div><div class="content-block"><p>derives permissions purely from role (<code>getPermissionsForRole</code>). Subscription gating is the 4th part of the authorization rule (auth + permission + scope + <strong>status</strong>), not a new permission code.</p></div><div class="content-block"><ol><li><strong>Single source of truth for &quot;active&quot;:</strong> <code>activeSubscriptionWhere()</code> in</li></ol></div><div class="content-block"><p><code>packages/shared/constants/enums.js</code> — <code>status === ACTIVE</code> <strong>and</strong> <code>startDate &lt;= now &lt;= endDate</code>. Everything else (PENDING / UPCOMING / EXPIRED / CANCELLED) is <strong>not active</strong>.</p></div><div class="content-block"><ol><li><strong>ADMIN always bypasses</strong> subscription gating (the teacher sees everything).</li><li><strong>Per-child scope:</strong> a parent with an active child and an inactive child sees the</li></ol></div><div class="content-block"><p>active child normally and the inactive child locked.</p></div><div class="content-block"><ol><li><strong>The free trial game stays playable for everyone</strong>, including users with no active</li></ol></div><div class="content-block"><p>subscription (it is the marketing hook and already has a public, no-auth route).</p></div><div class="content-block"><ol><li><strong>Defense in depth:</strong> the backend enforces; the frontend surfaces capabilities so the</li></ol></div><div class="content-block"><p>UI locks without trial-and-error 403s, but never relies on UI hiding alone.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="backend-design" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Backend Design</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>3.1 Reusable access guard</h3><div class="content-block"><p>New module: <code>server/src/shared/access/subscriptionAccess.js</code>, built on the existing <code>subscriptionRepo.getCurrentlySubscribedStudentIds(studentIds)</code> (single source, no new query logic):</p></div><div class="content-block"><ul><li><code>hasActiveSubscription(studentId): Promise&lt;boolean&gt;</code></li><li><code>assertActiveForStudent(studentId): Promise&lt;void&gt;</code> — throws</li></ul></div><div class="content-block"><p><code>AppError({ statusCode: 403, code: SUBSCRIPTION_INACTIVE, translationKey: messagesNames.subscriptionMessages, dontRedirect: true })</code> when not active.</p></div><div class="content-block"><ul><li><code>filterActiveStudentIds(studentIds): Promise&lt;number[]&gt;</code> — for parent multi-child</li></ul></div><div class="content-block"><p>views.</p></div><div class="content-block"><p><code>dontRedirect</code> is already the <code>AppError</code> default; it is set explicitly here for clarity.</p></div></section><section class="subsection-card"><h3>3.2 Message code</h3><div class="content-block"><p>Add to <code>packages/shared/messages-codes/subscription.js</code>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>SUBSCRIPTION_INACTIVE: &quot;SUBSCRIPTION_INACTIVE&quot;,</code></pre></div></div><div class="content-block"><p>Add Arabic + English strings under <code>messagesNames.subscriptionMessages</code> in <code>web/src/i18n/locales/messagesCodes.js</code>. The localized string is the <strong>parent-facing</strong> wording (clear + actionable). The student never renders this raw message — the student locked state is a dedicated kid component (see 4.1).</p></div></section><section class="subsection-card"><h3>3.3 Enforcement points</h3><div class="content-block"><div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Endpoint</th><th>Rule</th></tr></thead><tbody><tr><td><strong>Leaderboard</strong></td><td><code>GET /points/leaderboard</code></td><td>If <code>req.auth.role === STUDENT</code> and not active → 403 <code>SUBSCRIPTION_INACTIVE</code>. ADMIN/PARENT viewing the board unaffected.</td></tr><tr><td><strong>Student badges/rewards</strong></td><td><code>GET /rewards</code>, <code>GET /badges/student/:studentId</code> (self)</td><td>Student not active → blocked. Parent viewing a child → governed by 3.4 (achievements hidden for inactive child).</td></tr><tr><td><strong>Games list</strong></td><td><code>GET /games/my/assignments</code></td><td><strong>Not blocked.</strong> Each item gains <code>locked: boolean</code> (true when the requesting student is inactive and the game is not the free game).</td></tr><tr><td><strong>Free game</strong></td><td><code>GET /games/my/free</code>, <code>GET /games/public/:slug</code></td><td>Always accessible.</td></tr><tr><td><strong>Play (fetch)</strong></td><td><code>GET /games/by-slug/:slug</code></td><td>Student not active <strong>and</strong> game is not the free game → 403 <code>SUBSCRIPTION_INACTIVE</code>.</td></tr><tr><td><strong>Play (submit)</strong></td><td><code>POST /games/:id/attempt</code></td><td>Same rule as play-fetch.</td></tr><tr><td><strong>Parent dashboard</strong></td><td><code>GET /dashboard/parent</code></td><td>See 3.4.</td></tr><tr><td><strong>Child detail tabs</strong></td><td><code>GET /users/:userId/overview</code> (+ badges/games tabs)</td><td>See 3.4.</td></tr></tbody></table></div></div></section><section class="subsection-card"><h3>3.4 Parent / child-detail gating (&quot;hide stats &amp; achievements only&quot;)</h3><div class="content-block"><p>For an <strong>inactive child</strong>, the parent-facing responses:</p></div><div class="content-block"><ul><li><strong>Hidden (nulled / 403):</strong> points, level, rank, badgeCount, the <strong>badges</strong> list, the</li></ul></div><div class="content-block"><p><strong>games</strong> tab/progress, the <strong>overview stats</strong> block.</p></div><div class="content-block"><ul><li><strong>Kept visible:</strong> child identity (id, name, nickname), <code>activeSubscription</code> (null) +</li></ul></div><div class="content-block"><p>an explicit <code>isActive: false</code>, <strong>certificates</strong>, and <strong>old reports/evaluations</strong>.</p></div><div class="content-block"><p>Implementation:</p></div><div class="content-block"><ul><li><code>dashboard.usecase.parent()</code>: for each child compute <code>isActive</code>; when false, null out</li></ul></div><div class="content-block"><p>the stat/achievement fields but keep identity + subscription state. Recent certificates / reports aggregates remain.</p></div><div class="content-block"><ul><li>The child-detail scope checkers (<code>badge.usecase.assertCanAccess</code>, the games tab</li></ul></div><div class="content-block"><p>usecase, the overview-stats usecase) gain a status check: a parent (or the student) may not read the <strong>achievement/stats</strong> category for an inactive child → throw <code>SUBSCRIPTION_INACTIVE</code>. The <strong>certificates</strong> and <strong>reports</strong> read paths are NOT status-gated.</p></div></section><section class="subsection-card"><h3>3.5 Capabilities surfaced to the client</h3><div class="content-block"><ul><li><code>GET /auth/me</code> (<code>req.auth</code>): add <code>hasActiveSubscription: boolean</code> <strong>for STUDENT</strong></li></ul></div><div class="content-block"><p>accounts.</p></div><div class="content-block"><ul><li>Game list items: <code>locked: boolean</code>.</li><li>Parent dashboard children: explicit <code>isActive: boolean</code> per child (stats nulled when</li></ul></div><div class="content-block"><p>false).</p></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="frontend-design" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Frontend Design</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>4.1 Reusable component</h3><div class="content-block"><p><code>&lt;SubscriptionLockedState variant=&quot;student&quot; | &quot;parent&quot; feature=... onRenew? /&gt;</code>:</p></div><div class="content-block"><ul><li><strong>student</strong> variant: gentle, kid-appropriate lock (🔒 + e.g. «القسم ده مقفول دلوقتي —</li></ul></div><div class="content-block"><p>كلّم بابا أو ماما»). <strong>No billing details, no renew CTA.</strong></p></div><div class="content-block"><ul><li><strong>parent</strong> variant: clear, actionable — «اشتراك {اسم الطفل} منتهي — جدّد للوصول» + a</li></ul></div><div class="content-block"><p><strong>renew CTA</strong> linking into the existing renew/change-plan flow.</p></div></section><section class="subsection-card"><h3>4.2 Application</h3><div class="content-block"><ul><li><strong>Student, inactive:</strong><ul><li>Hide leaderboard + badges links from the dashboard nav (<code>NavbarDrawer</code> / dashboard</li></ul></li></ul></div><div class="content-block"><p>nav). If navigated directly, the page renders the <strong>student locked state</strong> (no redirect).</p></div><div class="content-block"><ul><li><code>LeaderboardPage</code>, <code>BadgesPage</code>: gate on <code>hasActiveSubscription</code>; render student</li></ul></div><div class="content-block"><p>locked state instead of fetching.</p></div><div class="content-block"><ul><li><code>MyGamesPage</code>: still render the list; show a <strong>lock overlay</strong> on locked <code>GameCard</code>s;</li></ul></div><div class="content-block"><p>tapping a locked card → student locked state (no navigation). The <strong>free game card is not locked</strong>.</p></div><div class="content-block"><ul><li><code>GamePlayPage</code>: if the game is locked (and not free) → student locked state instead</li></ul></div><div class="content-block"><p>of <code>GamePlayer</code>.</p></div><div class="content-block"><ul><li><strong>Parent, per inactive child:</strong><ul><li><code>ParentOverview</code> child card: identity + subscription status + <strong>renew CTA</strong> + clear</li></ul></li></ul></div><div class="content-block"><p>parent message; the child&#39;s points/level/rank/badges are hidden.</p></div><div class="content-block"><ul><li><code>UserDetailPage</code> (parent viewing child): <code>overview</code> / <code>badges</code> / <code>games</code> tabs render</li></ul></div><div class="content-block"><p>the <strong>parent locked state</strong>; <code>certificates</code> and <code>reports/evaluations</code> tabs stay accessible.</p></div><div class="content-block"><ul><li><code>ChildrenPage</code>: renew / change-plan actions stay available.</li></ul></div></section><section class="subsection-card"><h3>4.3 i18n</h3><div class="content-block"><p>Add ar/en for <code>SUBSCRIPTION_INACTIVE</code> and the locked-state copy (student gentle + parent clear) in <code>web/src/i18n/locales/</code>.</p></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="out-of-scope" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Out of Scope</h2>
+        </div>
+        <div class="content-block"><ul><li>Changing how subscriptions are created/renewed/approved (already implemented).</li><li>New permission codes or role-profile changes (gating is status-based, not</li></ul></div><div class="content-block"><p>permission-based).</p></div><div class="content-block"><ul><li>Admin experience (admin bypasses all gating).</li><li>Session lessons (حصص) gating — not requested here.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="affected-areas-reference" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Affected Areas (reference)</h2>
+        </div>
+        <div class="content-block"><p><strong>Backend:</strong> <code>packages/shared/messages-codes/subscription.js</code>, <code>server/src/shared/access/subscriptionAccess.js</code> (new), <code>server/src/modules/points/<em></code>, <code>server/src/modules/badges/</em></code>, <code>server/src/modules/rewards/<em></code>, <code>server/src/modules/games/</em></code>, <code>server/src/modules/dashboard/*</code>, <code>server/src/modules/auth/auth.controller.js</code> (<code>/auth/me</code>).</p></div><div class="content-block"><p><strong>Frontend:</strong> <code>web/src/i18n/locales/messagesCodes.js</code>, a new <code>SubscriptionLockedState</code> component, <code>web/src/features/leaderboard/<em></code>, <code>web/src/features/badges/</em></code>, <code>web/src/features/games/<em></code> (<code>MyGamesPage</code>, <code>GameCard</code>, <code>GamePlayPage</code>), <code>web/src/features/dashboard/components/ParentOverview.jsx</code>, <code>web/src/features/children/</em></code>, <code>web/src/features/userDetail/*</code>, dashboard nav (<code>NavbarDrawer</code> / dashboard nav).</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="testing" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Testing</h2>
+        </div>
+        <div class="content-block"><ul><li>Usecase tests for <code>subscriptionAccess</code> (active vs each inactive status, boundary</li></ul></div><div class="content-block"><p>dates).</p></div><div class="content-block"><ul><li>Authorization tests: inactive student blocked on leaderboard / badges / play / submit;</li></ul></div><div class="content-block"><p>free game still playable; ADMIN bypass; parent sees active child but not inactive child&#39;s stats/achievements while certificates/reports remain.</p></div><div class="content-block"><ul><li>Frontend: locked states render for the right role/variant without redirect; free game</li></ul></div><div class="content-block"><p>card remains unlocked.</p></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"problem","title":"1. Problem"},{"id":"principles","title":"2. Principles"},{"id":"backend-design","title":"3. Backend Design"},{"id":"frontend-design","title":"4. Frontend Design"},{"id":"out-of-scope","title":"5. Out of Scope"},{"id":"affected-areas-reference","title":"6. Affected Areas (reference)"},{"id":"testing","title":"7. Testing"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

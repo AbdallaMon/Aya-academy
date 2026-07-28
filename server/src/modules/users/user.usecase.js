@@ -1,4 +1,4 @@
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import {
   PARENT_RELATIONS,
   STUDENT_LEVELS,
@@ -7,16 +7,61 @@ import {
   attachmentMessagesCodes,
   messagesNames,
   userMessagesCodes,
-} from "@aya/shared";
-import { AppError, badRequest, conflict, forbidden, notFound } from "../../shared/errors/AppError.js";
+} from "@ayah/shared";
+import { AppError, badRequest, forbidden, notFound } from "../../shared/errors/AppError.js";
 import { attachmentRepo } from "../attachments/attachment.repo.js";
 import { attachmentUsecase } from "../attachments/attachment.usecase.js";
 import { hashPassword } from "../../infra/security/hash.js";
-import { buildSearchQuery, parseBooleanFilter } from "../../shared/utility/helper.js";
 import { paginate, paginatedResult } from "../../shared/utility/pagination.js";
-import { subscriptionRepo } from "../subscriptions/subscription.repo.js";
+import { subscriptionRepo } from "../finance/subscriptions/subscription.repo.js";
+import { authRepo } from "../auth/auth.repo.js";
 import { toChildItem, toOverviewParents, toUserListItem } from "./user.dto.js";
 import { userRepo } from "./user.repo.js";
+
+function identityConflict(code, field) {
+  return new AppError({
+    statusCode: 409,
+    code,
+    message: code,
+    translationKey: messagesNames.userMessages,
+    details: [{ field, path: field, message: code }],
+  });
+}
+
+async function assertIdentityAvailable({ email, username, excludeId = null }) {
+  if (email) {
+    const existing = await userRepo.findByEmail(email);
+    if (existing && existing.id !== excludeId) {
+      throw identityConflict(userMessagesCodes.EMAIL_ALREADY_EXISTS, "email");
+    }
+  }
+  if (username) {
+    const existing = await userRepo.findByUsername(username);
+    if (existing && existing.id !== excludeId) {
+      throw identityConflict(
+        userMessagesCodes.USERNAME_ALREADY_EXISTS,
+        "username",
+      );
+    }
+  }
+}
+
+function rethrowIdentityConstraint(error) {
+  if (error?.code !== "P2002") throw error;
+  const target = Array.isArray(error?.meta?.target)
+    ? error.meta.target.join(" ")
+    : String(error?.meta?.target ?? "");
+  if (target.toLowerCase().includes("username")) {
+    throw identityConflict(
+      userMessagesCodes.USERNAME_ALREADY_EXISTS,
+      "username",
+    );
+  }
+  if (target.toLowerCase().includes("email")) {
+    throw identityConflict(userMessagesCodes.EMAIL_ALREADY_EXISTS, "email");
+  }
+  throw error;
+}
 
 class UserUsecase {
   /** Throws unless `authUser` may access the target user. */
@@ -31,37 +76,18 @@ class UserUsecase {
     throw forbidden(userMessagesCodes.CANNOT_ACCESS_USER);
   }
 
-  async buildListWhere(authUser, { search, role, isActive }) {
-    const where = {};
-    const or = buildSearchQuery({
-      search: typeof search === "string" ? search : undefined,
-      keys: ["name", "email", "nickname"],
-    });
-    if (or) where.OR = or;
-
-    const active = parseBooleanFilter(isActive);
-    if (active !== undefined) where.isActive = active;
-
-    if (authUser.role === USER_ROLES.ADMIN) {
-      if (role && role !== "ALL") where.role = role;
-    } else if (authUser.role === USER_ROLES.PARENT) {
-      // FROZEN positional call — cross-module userRepo signature.
-      const studentIds = await userRepo.getStudentIdsForParent(authUser.id);
-      where.id = { in: studentIds };
-      where.role = USER_ROLES.STUDENT;
-    } else {
-      where.id = authUser.id;
-    }
-    return where;
-  }
-
   async list({ page, limit, filters = {}, authUser }) {
     const { skip, take, page: currentPage, limit: pageLimit } = paginate({
       page,
       limit,
     });
-    const where = await this.buildListWhere(authUser, filters);
-    const { items, total } = await userRepo.listUsers({ where, skip, take });
+    // Where-building now lives in the repo (reference convention).
+    const { items, total } = await userRepo.listScoped({
+      authUser,
+      filters,
+      skip,
+      take,
+    });
 
     // Batch the "subscribed this month" lookup for the student rows on this
     // page only — one query, no N+1.
@@ -142,21 +168,25 @@ class UserUsecase {
     }
 
     // FROZEN positional call — cross-module userRepo signature.
-    const existing = await userRepo.findByEmail(input.email);
-    if (existing) throw conflict(userMessagesCodes.EMAIL_ALREADY_EXISTS);
+    await assertIdentityAvailable({
+      email: input.email,
+      username: input.username,
+    });
 
     const passwordHash = await hashPassword(input.password);
 
-    return prisma.$transaction(async (tx) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
       // FROZEN positional call — cross-module userRepo signature.
       const user = await userRepo.createUser(
         {
           name: input.name,
           email: input.email,
+          username: input.username,
           passwordHash,
           role,
           phone: input.phone,
-          locale: input.locale ?? "ar",
+          locale: input.locale ?? "en",
           nickname: input.nickname,
           birthDate: input.birthDate,
           avatarId: input.avatarId,
@@ -175,23 +205,30 @@ class UserUsecase {
           );
         }
       }
-      return user;
-    });
+        return user;
+      });
+    } catch (error) {
+      rethrowIdentityConstraint(error);
+    }
   }
 
   async createStudent({ authUser, ...input }) {
     // FROZEN positional call — cross-module userRepo signature.
-    const existing = await userRepo.findByEmail(input.email);
-    if (existing) throw conflict(userMessagesCodes.EMAIL_ALREADY_EXISTS);
+    await assertIdentityAvailable({
+      email: input.email,
+      username: input.username,
+    });
     const passwordHash = await hashPassword(input.password);
     const relation = input.relation ?? PARENT_RELATIONS.GUARDIAN;
 
-    return prisma.$transaction(async (tx) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
       // FROZEN positional call — cross-module userRepo signature.
       const user = await userRepo.createUser(
         {
           name: input.name,
           email: input.email,
+          username: input.username,
           passwordHash,
           role: USER_ROLES.STUDENT,
           nickname: input.nickname,
@@ -203,16 +240,51 @@ class UserUsecase {
       );
       // FROZEN positional call — cross-module userRepo signature.
       await userRepo.linkParentStudent(authUser.id, user.id, relation, tx);
-      return user;
-    });
+        return user;
+      });
+    } catch (error) {
+      rethrowIdentityConstraint(error);
+    }
   }
 
   async update({ id, authUser, ...input }) {
     await this.assertCanAccess(authUser, id);
+    const target = await userRepo.getIdentityById({ id });
+    if (!target) throw notFound(userMessagesCodes.USER_NOT_FOUND);
+
+    const nextEmail =
+      input.email !== undefined ? input.email : target.email;
+    const nextUsername =
+      input.username !== undefined ? input.username : target.username;
+    if (!nextEmail && !nextUsername) {
+      throw new AppError({
+        statusCode: 422,
+        code: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
+        message: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
+        translationKey: messagesNames.userMessages,
+        details: ["email", "username"].map((field) => ({
+          field,
+          path: field,
+          message: userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED,
+        })),
+      });
+    }
+
+    const emailChanged =
+      input.email !== undefined && input.email !== target.email;
+    const usernameChanged =
+      input.username !== undefined && input.username !== target.username;
+    await assertIdentityAvailable({
+      email: emailChanged ? input.email : null,
+      username: usernameChanged ? input.username : null,
+      excludeId: id,
+    });
+
     const data = {
       name: input.name,
+      email: input.email,
+      username: input.username,
       phone: input.phone,
-      locale: input.locale,
       nickname: input.nickname,
       birthDate: input.birthDate,
     };
@@ -223,9 +295,24 @@ class UserUsecase {
     }
     if (input.password) {
       data.passwordHash = await hashPassword(input.password);
+    }
+    if (input.password || emailChanged || usernameChanged) {
       data.sessionVersion = { increment: 1 };
     }
-    return userRepo.updateUser({ id, data });
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const updated = await userRepo.updateUser({ id, data, client: tx });
+        if (input.password || emailChanged) {
+          await authRepo.deleteUserPasswordResets({
+            userId: id,
+            client: tx,
+          });
+        }
+        return updated;
+      });
+    } catch (error) {
+      rethrowIdentityConstraint(error);
+    }
   }
 
   async remove({ id, authUser }) {
@@ -498,8 +585,20 @@ class UserUsecase {
     if (!attachment) {
       throw notFound(attachmentMessagesCodes.ATTACHMENT_NOT_FOUND);
     }
+    if (
+      authUser.role !== USER_ROLES.ADMIN &&
+      attachment.uploadedById !== authUser.id
+    ) {
+      throw forbidden(attachmentMessagesCodes.CANNOT_SET_AVATAR);
+    }
 
-    return userRepo.setAvatar({ id, attachmentId });
+    const { avatarId: previousAvatarId } =
+      (await userRepo.getAvatarId({ id })) || {};
+    const updated = await userRepo.setAvatar({ id, attachmentId });
+    if (previousAvatarId && previousAvatarId !== attachmentId) {
+      await attachmentUsecase.deleteIfOrphaned(previousAvatarId);
+    }
+    return updated;
   }
 
   /** Clear a user's avatar (scoped) and remove the now-orphaned upload. */

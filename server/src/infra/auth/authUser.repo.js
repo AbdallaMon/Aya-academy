@@ -1,4 +1,4 @@
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 
 /** Minimal user load for request authentication. */
 export function getAuthUserById(id) {
@@ -8,10 +8,15 @@ export function getAuthUserById(id) {
       id: true,
       name: true,
       email: true,
+      username: true,
+      phone: true,
+      nickname: true,
       role: true,
       locale: true,
       isActive: true,
       sessionVersion: true,
+      avatarId: true,
+      avatar: { select: { id: true, url: true } },
     },
   });
 }

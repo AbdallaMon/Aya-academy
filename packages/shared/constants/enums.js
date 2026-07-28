@@ -106,6 +106,14 @@ export const SUBSCRIPTION_STATUSES = {
   CANCELLED: "CANCELLED",
 };
 
+// How a subscription came to exist. MANUAL = admin/parent prepaid plan pick or
+// renew. USAGE = auto-generated from logged session hours (arrears billing).
+// Keep in sync with packages/db/prisma/schema.prisma (enum SubscriptionOrigin).
+export const SUBSCRIPTION_ORIGINS = {
+  MANUAL: "MANUAL",
+  USAGE: "USAGE",
+};
+
 /**
  * Single source of truth for "currently active" subscription filtering.
  * A subscription counts as active only when its status is ACTIVE **and** now
@@ -120,6 +128,21 @@ export function activeSubscriptionWhere(now = new Date()) {
     status: SUBSCRIPTION_STATUSES.ACTIVE,
     startDate: { lte: now },
     endDate: { gte: now },
+  };
+}
+
+/**
+ * "Current-period" subscription filter: the sub whose [startDate, endDate] window
+ * contains `now`, REGARDLESS of activation OR cancellation — so a not-yet-activated
+ * (PENDING) or a CANCELLED current-month sub still surfaces as the current one
+ * (shown with its status + an Activate action), instead of vanishing from the UI.
+ * Only a genuinely EXPIRED (past) sub is excluded. Spread into a larger `where`.
+ */
+export function currentSubscriptionWhere(now = new Date()) {
+  return {
+    startDate: { lte: now },
+    endDate: { gte: now },
+    status: { not: SUBSCRIPTION_STATUSES.EXPIRED },
   };
 }
 

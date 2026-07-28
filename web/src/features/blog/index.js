@@ -1,6 +1,6 @@
 // Blog feature barrel.
-export { default as BlogList } from './BlogList';
-export { default as BlogArticle } from './BlogArticle';
+export { default as BlogList } from './pages/BlogList';
+export { default as BlogArticle } from './pages/BlogArticle';
 export {
   default as articles,
   articleSlugs,

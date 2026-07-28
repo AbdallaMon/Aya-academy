@@ -19,6 +19,15 @@ export const authText = {
     // fields
     name: "الاسم الكامل",
     email: "البريد الإلكتروني",
+    username: "اسم المستخدم",
+    emailOrUsername: "البريد الإلكتروني أو اسم المستخدم",
+    emailOptional: "البريد الإلكتروني (اختياري)",
+    usernameOptional: "اسم المستخدم (اختياري)",
+    usernameFormatHint: "من 3 إلى 30 حرفًا، بدون مسافات",
+    identityChoiceTitle: "اختر طريقة تسجيل الدخول",
+    identityChoiceHint:
+      "أدخل البريد الإلكتروني أو اسم المستخدم — واحد منهما فقط يكفي، ويمكنك إدخال الاثنين.",
+    usernameHint: "3–30 حرفًا؛ البريد أو اسم المستخدم، واحد منهما مطلوب",
     password: "كلمة المرور",
     phone: "رقم الهاتف",
     // links
@@ -29,7 +38,10 @@ export const authText = {
     backHome: "العودة للرئيسية",
     // validation
     required: "هذا الحقل مطلوب",
+    identityRequired: "أدخل البريد الإلكتروني أو اسم المستخدم",
     invalidEmail: "بريد إلكتروني غير صالح",
+    invalidUsername:
+      "اسم المستخدم من 3 إلى 30 حرفًا، ويقبل الحروف والأرقام والنقطة والشرطة فقط",
     passwordShort: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
     invalidPhone: "رقم هاتف غير صالح",
     registerSuccess: "تم إنشاء الحساب بنجاح، يمكنك تسجيل الدخول الآن",
@@ -54,10 +66,24 @@ export const authText = {
     requestNewLink: "طلب رابط جديد",
     backToLogin: "العودة لتسجيل الدخول",
     // wizard
-    wizardTitle: "التسجيل في أكاديمية آية",
-    wizardSubtitle: "أضف أبناءك واختر الخطة المناسبة",
+    appName: "أكاديمية آية",
+    registrationEyebrow: "إنشاء حساب جديد",
+    wizardTitle: "إنشاء حساب وليّ أمر",
+    wizardSubtitle:
+      "ابدأ ببيانات حسابك، ثم أضف أبناءك واختر الخطة المناسبة لكل طالب.",
+    stepCounter: "الخطوة {current} من {total}",
+    stepParent: "بيانات وليّ الأمر",
     stepChildren: "الأبناء والخطط",
-    stepReview: "المراجعة وبيانات ولي الأمر",
+    stepReview: "المراجعة والتسجيل",
+    parentStepTitle: "أنشئ حساب وليّ الأمر",
+    parentStepSubtitle:
+      "أدخل بياناتك الأساسية وحدد البريد أو اسم المستخدم الذي ستسجل به الدخول.",
+    childrenStepTitle: "أضف الأبناء واختر الخطط",
+    childrenStepSubtitle:
+      "أدخل بيانات كل طالب واختر الخطة المناسبة له. يمكنك إضافة أكثر من طالب.",
+    reviewStepTitle: "راجع البيانات وأكمل التسجيل",
+    reviewStepSubtitle:
+      "تأكد من بيانات وليّ الأمر والأبناء والخطط قبل إنشاء الحساب.",
     childTitle: "بيانات الطالب",
     childNumber: "الطالب",
     childName: "الاسم",
@@ -91,6 +117,7 @@ export const authText = {
     removeChild: "حذف هذا الابن",
     next: "التالي",
     back: "السابق",
+    edit: "تعديل",
     summaryTitle: "ملخص الطلب",
     colChild: "الابن",
     colPlan: "الخطة",
@@ -108,13 +135,22 @@ export const authText = {
   },
   en: {
     loginTitle: "Sign in",
-    loginSubtitle: "Welcome back to Aya Academy",
+    loginSubtitle: "Welcome back to Ayah Academy",
     loginButton: "Log in",
     registerTitle: "Create a parent account",
     registerSubtitle: "Start your child's Quran journey",
     registerButton: "Create account",
     name: "Full name",
     email: "Email",
+    username: "Username",
+    emailOrUsername: "Email or username",
+    emailOptional: "Email (optional)",
+    usernameOptional: "Username (optional)",
+    usernameFormatHint: "3–30 characters, without spaces",
+    identityChoiceTitle: "Choose how you will sign in",
+    identityChoiceHint:
+      "Enter an email or a username — either one is enough, and you may provide both.",
+    usernameHint: "3–30 characters; email or username, at least one is required",
     password: "Password",
     phone: "Phone number",
     noAccount: "Don't have an account?",
@@ -123,7 +159,10 @@ export const authText = {
     goLogin: "Sign in",
     backHome: "Back to home",
     required: "This field is required",
+    identityRequired: "Enter an email address or username",
     invalidEmail: "Invalid email address",
+    invalidUsername:
+      "Username must be 3–30 characters using letters, numbers, dots, underscores or hyphens",
     passwordShort: "Password must be at least 6 characters",
     invalidPhone: "Invalid phone number",
     registerSuccess: "Account created. You can sign in now.",
@@ -148,10 +187,24 @@ export const authText = {
     requestNewLink: "Request a new link",
     backToLogin: "Back to sign in",
     // wizard
-    wizardTitle: "Join Aya Academy",
-    wizardSubtitle: "Add your children and choose a plan",
+    appName: "Ayah Academy",
+    registrationEyebrow: "Create a new account",
+    wizardTitle: "Create a parent account",
+    wizardSubtitle:
+      "Start with your account details, then add your children and choose a plan for each student.",
+    stepCounter: "Step {current} of {total}",
+    stepParent: "Parent details",
     stepChildren: "Children & plans",
-    stepReview: "Review & parent details",
+    stepReview: "Review & register",
+    parentStepTitle: "Create the parent account",
+    parentStepSubtitle:
+      "Enter your basic details and choose the email or username you will use to sign in.",
+    childrenStepTitle: "Add children and choose plans",
+    childrenStepSubtitle:
+      "Enter each student's details and choose a suitable plan. You can add more than one student.",
+    reviewStepTitle: "Review and complete registration",
+    reviewStepSubtitle:
+      "Check the parent, student, and plan details before creating the account.",
     childTitle: "Student details",
     childNumber: "Student",
     childName: "Name",
@@ -185,6 +238,7 @@ export const authText = {
     removeChild: "Remove this child",
     next: "Next",
     back: "Back",
+    edit: "Edit",
     summaryTitle: "Order summary",
     colChild: "Child",
     colPlan: "Plan",

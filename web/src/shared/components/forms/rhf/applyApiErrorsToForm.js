@@ -16,6 +16,7 @@ const GENERIC_FIELD_AR = "هذا الحقل غير صحيح.";
  * @param {Function} setError         react-hook-form setError.
  * @param {object}   [opts]
  * @param {Record<string,string>} [opts.labelMap]  field name → displayed (localized) label.
+ * @param {Record<string,string>} [opts.messageMap] backend message code → localized field message.
  * @param {Function} [opts.showToast]            toast fn (from useToast); optional.
  * @param {string}   [opts.fallbackMessage]      fallback when there are no field details.
  * @param {string}   [opts.fieldsToastTemplate]  fields-toast template; {fields} is replaced.
@@ -27,6 +28,7 @@ export function applyApiErrorsToForm(
   setError,
   {
     labelMap = {},
+    messageMap = {},
     showToast,
     fallbackMessage,
     fieldsToastTemplate,
@@ -51,12 +53,26 @@ export function applyApiErrorsToForm(
   const failedLabels = [];
 
   details.forEach((detail) => {
-    const path = typeof detail?.path === "string" ? detail.path : "";
+    const path =
+      typeof detail?.path === "string"
+        ? detail.path
+        : typeof detail?.field === "string"
+          ? detail.field
+          : "";
     if (!path) return;
     const label = labelMap[path];
+    const detailCode =
+      typeof detail?.message === "string"
+        ? detail.message
+        : typeof detail?.code === "string"
+          ? detail.code
+          : "";
+    const localizedMessage = messageMap[detailCode];
     setError(path, {
       type: "server",
-      message: label ? `${label}: ${GENERIC_FIELD_AR}` : GENERIC_FIELD_AR,
+      message:
+        localizedMessage ||
+        (label ? `${label}: ${GENERIC_FIELD_AR}` : GENERIC_FIELD_AR),
     });
     failedLabels.push(label || path);
   });

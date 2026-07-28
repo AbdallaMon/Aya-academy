@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { getPermissionsForRole } from "@aya/shared";
+import { getPermissionsForRole } from "@ayah/shared";
 import { useAuth } from "./useAuth.js";
 
 /**

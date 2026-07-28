@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 29 Align Conventions Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 29 Align Conventions Design</h1>
+        <p class="lead"></p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html" class="active">Align ayah-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Align ayah-academy code conventions to reference projects — Design / Conversion Playbook</span></nav>
+          <section class="doc-hero">
+            <h2>Align ayah-academy code conventions to reference projects — Design / Conversion Playbook</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p><strong>Date:</strong> 2026-06-29 <strong>Branch:</strong> <code>refactor/align-conventions</code> (cut from <code>master</code>) <strong>Status:</strong> Approved design → playbook for implementation</p></div></div>
+
+          
+    <section class="doc-section" id="goal" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Goal</h2>
+        </div>
+        <div class="content-block"><p>Make <strong>the way code is written</strong> in ayah-academy match the reference projects <code>C:\coding\school-system</code> and <code>C:\coding\Transaction-app</code>, for both backend and frontend. This is a <em>convention / idiom</em> migration, <strong>not</strong> a behavior change and <strong>not</strong> a re-architecture. The architecture already matches; we are aligning idioms and a few shared utilities.</p></div><div class="content-block"><p>When the two references differ, <strong>school-system is canonical</strong> (per decision).</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="non-goals-do-not-touch" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Non-goals (DO NOT TOUCH)</h2>
+        </div>
+        <div class="content-block"><ul><li>Authentication / <code>authenticate</code> / <code>auth.middleware</code> internals.</li><li>Authorization: <code>requirePermissions</code>, permission codes, object-scope checkers,</li></ul></div><div class="content-block"><p><code>subscriptionAccess</code> guard. <strong>Routes&#39; guard chains stay byte-for-byte.</strong></p></div><div class="content-block"><ul><li>The Prisma <strong>schema</strong> (<code>packages/db/prisma/schema.prisma</code>) — no field renames,</li></ul></div><div class="content-block"><p>no model changes. Field names stay (<code>isActive</code>, <code><em>Ar</code>/<code></em>En</code>, etc.).</p></div><div class="content-block"><ul><li>The <strong>i18n system</strong> and <code>[lng]</code> locale routing — kept as-is. Text continues to</li></ul></div><div class="content-block"><p>come from ayah&#39;s per-feature <code>useXText()</code> / <code>txt</code> objects, <strong>not</strong> <code>t()</code> / i18next namespaces.</p></div><div class="content-block"><ul><li><strong>Audit log</strong> — was removed from ayah; it is NOT reintroduced (schema/behavior).</li><li>Encryption-at-rest wiring, crypto, attachments/S3 behavior.</li><li>The HTTP <strong>response envelope</strong> shape <code>{ success, message, data, translationKey }</code></li></ul></div><div class="content-block"><p>and the <strong>message-code contract</strong> — already matches; do not change codes.</p></div><div class="content-block"><p><strong>Behavior must be preserved exactly.</strong> Every endpoint returns the same status, same envelope, same data shape the frontend already consumes. Every screen renders and behaves identically.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="decisions-locked" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Decisions (locked)</h2>
+        </div>
+        <div class="content-block"><div class="table-wrapper"><table><thead><tr><th>#</th><th>Decision</th><th>Choice</th></tr></thead><tbody><tr><td>1</td><td>i18n</td><td>Keep ayah&#39;s (<code>[lng]</code> routing + per-feature text). Not migrated.</td></tr><tr><td>2</td><td>Rollout</td><td>Big-bang across all modules/features on the branch, in safe waves.</td></tr><tr><td>3</td><td>Canonical reference when they differ</td><td><strong>school-system</strong></td></tr><tr><td>4</td><td>TypeScript</td><td>Convert the 3 <code>.tsx</code> files → <code>.jsx</code>, switch <code>tsconfig</code>→<code>jsconfig</code> (pure JS)</td></tr><tr><td>5</td><td><code>useMultiRequest</code> / <code>AppForm</code></td><td><strong>Keep <code>useMultiRequest</code></strong> (clean, already standard). Standardize forms to the school-system <strong>manual-RHF-in-FormDialog</strong> idiom; stop introducing new <code>AppForm</code>-config-driven dialogs. Existing <code>AppForm</code> stays available; migrate dialogs that already use it to the manual idiom where reasonable.</td></tr></tbody></table></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="canonical-backend-idiom-target-—-from-school-systemdepartments" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Canonical BACKEND idiom (target) — from <code>school-system/.../departments/*</code></h2>
+        </div>
+        <div class="content-block"><p>Reference files locked in this session: <code>school-system/server/src/modules/departments/{controller,usecase,repo,dto,route}.js</code>, <code>school-system/server/src/shared/{http/response.js, utility/helper.js}</code>.</p></div><div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>4.1 Controller</h3><div class="content-block"><ul><li>Class with <strong><code>async methodName(req, res) {}</code></strong> methods (NOT arrow-property fields).</li><li>Export <strong>both</strong> singleton and class: <code>export const xController = new XController(); export { XController };</code></li><li>Read auth as <strong><code>req.auth</code></strong> directly (no <code>authUser(req)</code> helper).</li><li>List: destructure <code>const { page, limit, ...filters } = req.query;</code> then call</li></ul></div><div class="content-block"><p><code>usecase.listX({ page: parseInt(page) || 1, limit: parseInt(limit) || 10, filters })</code>.</p></div><div class="content-block"><ul><li>Create: <code>usecase.createX({ ...req.body, authUser: req.auth })</code>.</li><li>Update: <code>usecase.updateX({ id: parseInt(req.params.id, 10), ...req.body, authUser: req.auth })</code>.</li><li>Respond only via helpers: <code>ok / created / updated / deleted</code> with <code>(res, data, CODE, TK)</code>.</li><li><code>const TK = messagesNames.xMessages;</code> at top; import codes directly from <code>@ayah/shared</code></li></ul></div><div class="content-block"><p>(drop the per-module <code>x.messages.js</code> re-export indirection).</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { ok, created, updated } from &quot;../../shared/http/response.js&quot;;
+import { xMessagesCodes, messagesNames } from &quot;@ayah/shared&quot;;
+import { xUsecase } from &quot;./x.usecase.js&quot;;
+const TK = messagesNames.xMessages;
+class XController {
+  async listX(req, res) {
+    const { page, limit, ...filters } = req.query;
+    const result = await xUsecase.listX({ page: parseInt(page) || 1, limit: parseInt(limit) || 10, filters });
+    return ok(res, result, xMessagesCodes.LIST_FETCHED, TK);
+  }
+  async createX(req, res) {
+    const row = await xUsecase.createX({ ...req.body, authUser: req.auth });
+    return created(res, row, xMessagesCodes.CREATED, TK);
+  }
+}
+export const xController = new XController();
+export { XController };</code></pre></div></div><div class="content-block"><p>Routes pass <code>asyncHandler(xController.listX)</code>. Safe because methods reference the usecase <strong>singleton</strong>, never <code>this</code>. Keep each route&#39;s existing guard chain (<code>requirePermissions</code>, special checkers, <code>validate</code>) <strong>unchanged</strong>.</p></div></section><section class="subsection-card"><h3>4.2 Usecase</h3><div class="content-block"><ul><li>Class, named methods, flattened params object in, business logic + <code>AppError</code>.</li><li>List: call repo, map rows through DTO, return <code>{ items, total, page, pageSize }</code>.</li><li>Build the <code>where</code>/pagination in the <strong>repo</strong>, not the usecase (move it down a layer).</li><li>Multi-write → <code>prisma.$transaction</code>. <strong>No <code>audit()</code> calls</strong> (audit is gone).</li></ul></div><div class="content-block"><p>Single-write usecases call the repo directly (no transaction needed).</p></div><div class="content-block"><ul><li>Return shaped output via <code>xDto.toDetail(...)</code> / <code>xDto.toListItem</code>.</li></ul></div></section><section class="subsection-card"><h3>4.3 Repo</h3><div class="content-block"><ul><li>Prisma I/O only. Methods take a <strong>single object</strong> with optional <code>client</code>:</li></ul></div><div class="content-block"><p><code>async createX({ data, client }) { return (client ?? prisma).x.create({ data }); }</code></p></div><div class="content-block"><ul><li>List method owns filtering + pagination and returns <code>{ items, total, page, pageSize }</code>:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  async listX({ page, limit, search, isActive, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+    const where = {};
+    const searchWhere = buildSearchQuery({ searchType: &quot;multiKeySearch&quot;,
+      keysValues: [{ key: &quot;nameAr&quot;, value: search }, { key: &quot;nameEn&quot;, value: search }] });
+    if (searchWhere.OR) where.OR = searchWhere.OR;
+    const activeFilter = buildIsActiveFilter({ isActive });        // see 5.1 note
+    if (activeFilter !== undefined) where.isActive = activeFilter; // ayah field = isActive
+    const [items, total] = await Promise.all([
+      db.x.findMany({ where, skip, take, orderBy: { createdAt: &quot;desc&quot; }, select: xSelect }),
+      db.x.count({ where }),
+    ]);
+    return { items, total, page: currentPage, pageSize: take };
+  }</code></pre></div></div><div class="content-block"><ul><li><strong>Keep existing <code>select</code> projections</strong> where they guard sensitive fields</li></ul></div><div class="content-block"><p>(e.g. <code>publicUserSelect</code> excluding <code>passwordHash</code>) or trim payloads. The DTO transformer shapes the <em>output</em>; the <code>select</code> controls the <em>fetch</em>. Both coexist.</p></div></section><section class="subsection-card"><h3>4.4 DTO</h3><div class="content-block"><ul><li>Add transformer functions; export as an object:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  function toListItem(row) { if (!row) return null; return { id: row.id, /* ... */ }; }
+  export const xDto = { toListItem, toDetail: toListItem };</code></pre></div></div><div class="content-block"><ul><li>Keep existing <code>*Select</code> consts (used by repos). DTO file holds both the select</li></ul></div><div class="content-block"><p>consts and the transformer object.</p></div></section><section class="subsection-card"><h3>4.5 Shared backend foundations (Wave 0)</h3><div class="content-block"><p>Align ayah&#39;s shared utils to school-system&#39;s <strong>API shape</strong> (keep ayah field names/values):</p></div><div class="content-block"><ul><li><code>shared/http/response.js</code>: add <code>updated</code>, <code>deleted</code>, <code>noContent</code>, <code>paginated</code></li></ul></div><div class="content-block"><p>(copy school-system signatures; keep <code>@ayah/shared</code> import). Keep <code>ok</code>/<code>created</code>.</p></div><div class="content-block"><ul><li><code>shared/utility/helper.js</code>: replace ayah&#39;s <code>buildSearchQuery({search,keys})→array</code></li></ul></div><div class="content-block"><p>with school-system&#39;s full API: <code>buildSearchQuery({searchType,search,keysValues,keyOr})→{OR}|{}</code>, <code>buildFilterQuery</code>, <code>buildIsActiveFilter</code>, <code>buildDateRangeFilter</code>, <code>buildOrderBy</code>, <code>parseIdList</code>, <code>excludeIdsFromString</code>, <code>normalizeText</code>. <strong>Caveat:</strong> ayah&#39;s boolean field is <code>isActive</code> and the frontend currently sends <code>ALL|true|false</code>. To preserve the data contract, <code>buildIsActiveFilter</code> must accept ayah&#39;s values — keep a thin adapter (<code>&quot;ALL&quot;|&quot;&quot;|undefined → undefined</code>; <code>&quot;true&quot;/&quot;active&quot;→true</code>; <code>&quot;false&quot;/&quot;inactive&quot;→false</code>) rather than school-system&#39;s <code>active|inactive</code>-only parsing. Retain <code>parseBooleanFilter</code> as an alias if any call site still needs it.</p></div><div class="content-block"><ul><li><code>shared/utility/pagination.js</code>: already compatible (<code>paginate→{skip,take,page,limit}</code>). Keep.</li><li><code>shared/http/params.js</code>: <code>authUser(req)</code>/<code>idParam</code> become unused by controllers</li></ul></div><div class="content-block"><p>after conversion. <code>idParam</code> may still be used for non-<code>:id</code> params — keep the file, but remove <code>authUser</code> usage from controllers (use <code>req.auth</code>).</p></div><div class="content-block"><p><strong>Order matters:</strong> Wave 0 (response helpers + helper API) lands first; every call site that uses the OLD <code>buildSearchQuery({search,keys})</code> array form must be updated in the same wave or its module&#39;s wave, or the build breaks. Grep all callers first.</p></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="canonical-frontend-idiom-target-—-from-school-systemfeaturesdepartments" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Canonical FRONTEND idiom (target) — from <code>school-system/.../features/departments/*</code></h2>
+        </div>
+        <div class="content-block"><p>Reference files locked: <code>DepartmentsPage.jsx</code>, <code>config/{departmentsColumns,departmentsFilters,constant}.js</code>, <code>components/DepartmentFormDialog.jsx</code>, <code>shared/components/forms/rhf/applyApiErrorsToForm.js</code>.</p></div><div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>5.1 Feature folder shape &amp; naming</h3><div class="content-block"><ul><li><code>features/&lt;camelCaseName&gt;/{config,pages,components}</code>. Normalize feature folder</li></ul></div><div class="content-block"><p>names to consistent <strong>camelCase</strong> (e.g. keep <code>quizBank</code>, <code>userDetail</code>; the layout is already correct). Resolve any <code>.jsx</code>/<code>.tsx</code> shadowing by deleting stale <code>.tsx</code>.</p></div><div class="content-block"><ul><li><code>config/constant.js</code> (URLs + keys), <code>config/&lt;feature&gt;Columns.js</code>,</li></ul></div><div class="content-block"><p><code>config/&lt;feature&gt;Filters.js</code>, <code>config/&lt;feature&gt;Text.js</code> (ayah i18n text — kept).</p></div></section><section class="subsection-card"><h3>5.2 List page</h3><div class="content-block"><ul><li><code>&quot;use client&quot;</code>, permission gate via <code>usePermission()</code> + early return on no-list.</li><li>One <code>useRequest({ url, method:&quot;get&quot;, isPaginated:true, autoFetch: canList })</code> for data.</li><li><code>PageHeader</code> (already exists) for title/description/create — replace inline headers.</li><li>Columns from a <strong>factory</strong> <code>&lt;feature&gt;Columns({ ... })</code> returning the array;</li></ul></div><div class="content-block"><p>filters from <code>&lt;feature&gt;Filters()</code> returning a config array. (ayah is already close.)</p></div><div class="content-block"><ul><li><code>&lt;DataTable .../&gt;</code> config-driven (existing component, existing props).</li></ul></div></section><section class="subsection-card"><h3>5.3 Create/Edit form — manual RHF in FormDialog (school-system idiom)</h3><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>const { control, handleSubmit, reset, setError } = useForm({ defaultValues: EMPTY });
+useEffect(() =&gt; { if (open) reset(editItem ? {...} : EMPTY); }, [open, editItem, reset]);
+const { fetchData, isLoading } = useRequest({
+  url: X_URL, method: isEdit ? &quot;patch&quot; : &quot;post&quot;, shouldAutoToast: true,
+  onSuccess: (res) =&gt; { onSuccess?.(res); onClose?.(); },
+  onError: (err) =&gt; applyApiErrorsToForm(err, setError, { labelMap, showToast,
+    fallbackMessage: txt.formInvalid, fieldsToastTemplate: txt.checkFields, suppressFallbackToast: true }),
+});
+// &lt;FormDialog onSubmit={() =&gt; document.getElementById(FORM_ID)?.requestSubmit()}&gt;
+//   &lt;form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} noValidate&gt; ... RHFTextField/RHFSelect/RHFSwitch ...</code></pre></div></div><div class="content-block"><ul><li>Use <code>useRequest({method})</code> <strong>or</strong> <code>useMultiRequest</code> (both fine; <code>useMultiRequest</code></li></ul></div><div class="content-block"><p>kept). Field errors via <strong><code>applyApiErrorsToForm</code></strong> — port this helper from school-system into <code>web/src/shared/components/forms/rhf/applyApiErrorsToForm.js</code> and export it from the shared barrel (Wave 0-FE). Text args come from ayah <code>txt</code>.</p></div></section><section class="subsection-card"><h3>5.4 Frontend shared foundations (Wave 0-FE)</h3><div class="content-block"><ul><li>Port <code>applyApiErrorsToForm</code> from school-system → ayah shared barrel.</li><li>Ensure RHF wrappers exist (<code>RHFTextField/RHFSelect/RHFSwitch/...</code> — they do).</li><li>Remove the lone <code>className=&quot;review-badge&quot;</code> outlier → <code>sx</code>. Drop unused emotion <code>styled</code> if any.</li></ul></div></section><section class="subsection-card"><h3>5.5 Frontend out-of-scope features</h3><div class="content-block"><p>Pure marketing/static features have no tables/forms/CRUD and are <strong>not</strong> part of the table/form convention pass (only trivial styling/import rules apply): <code>blog</code>, <code>faq</code>, <code>hero</code>, <code>pricing</code>, <code>promo</code>, <code>trust</code>, <code>whyAyah</code>, <code>reviews</code>. CRUD/dashboard features ARE in scope (see §7).</p></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="typescript-→-js-decision-4" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>TypeScript → JS (Decision 4)</h2>
+        </div>
+        <div class="content-block"><ul><li>Convert <code>web/src/app/[lng]/layout.tsx</code>, <code>web/src/app/[lng]/page.tsx</code> (verify exact</li></ul></div><div class="content-block"><p>paths), and <code>web/src/providers/MUITheme.tsx</code> to <code>.jsx</code> (strip type annotations).</p></div><div class="content-block"><ul><li>Replace <code>web/tsconfig.json</code> with <code>jsconfig.json</code> (paths <code>@/<em> → ./src/</em></code>).</li><li>Verify Next build still resolves the root layout/page.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="scope-big-bang-in-waves" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Scope (Big-bang, in waves)</h2>
+        </div>
+        <div class="content-block"><p><strong>Backend modules (21):</strong> attachments, auth, backups, badges, certificateTemplates, certificates, coupons, dashboard, encryptionKeys, games, invoices, notifications, paymentTemplates, plans, points, quizzes, reports, rewards, settings, subscriptions, users.</p></div><div class="content-block"><p><strong>Frontend CRUD/dashboard features (in scope):</strong> auth, badges, badgesAdmin, certificateTemplates, certificates, children, childDashboard, coupons, dashboard, games, invoices, leaderboard, notifications, paymentTemplate, plans, quizBank, quizBuild, quizInvites, quizTake, quizzes, reports, settings, subscriptionDetail, subscriptions, userDetail, users.</p></div><div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>Sequencing</h3><div class="content-block"><ol><li><strong>Wave 0 (backend foundations):</strong> response helpers + helper API + grep/fix all</li></ol></div><div class="content-block"><p>old <code>buildSearchQuery</code> callers. Build server.</p></div><div class="content-block"><ol><li><strong>Wave 0-FE (frontend foundations):</strong> <code>applyApiErrorsToForm</code>, barrel export,</li></ol></div><div class="content-block"><p>TS→JS conversion, className outlier. Build web.</p></div><div class="content-block"><ol><li><strong>Exemplar module (backend):</strong> convert <strong>one</strong> representative module end-to-end</li></ol></div><div class="content-block"><p>(<code>badges</code>), run server build/lint, eyeball diff. This validates the playbook.</p></div><div class="content-block"><ol><li><strong>Backend modules:</strong> convert the rest in batches (parallel subagents OK), each</li></ol></div><div class="content-block"><p>following §4 + the <code>badges</code> exemplar; build after each batch.</p></div><div class="content-block"><ol><li><strong>Exemplar feature (frontend):</strong> convert one feature (<code>coupons</code> or <code>badges</code>)</li></ol></div><div class="content-block"><p>end-to-end, build web. Validate.</p></div><div class="content-block"><ol><li><strong>Frontend features:</strong> convert the rest in batches; build after each batch.</li></ol></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="verification" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Verification</h2>
+        </div>
+        <div class="content-block"><ul><li>After each wave/batch: <code>npm run build</code> (or the project&#39;s build) for the affected</li></ul></div><div class="content-block"><p>app, plus lint. No new errors vs baseline.</p></div><div class="content-block"><ul><li>Spot-check that response shapes/route guards are unchanged (git diff review on</li></ul></div><div class="content-block"><p><code>*.route.js</code> — guard chains must be identical).</p></div><div class="content-block"><ul><li>Honest reporting: if a conversion changes a response shape, STOP and reconcile.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="risks-mitigations" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">9</span>
+          <h2>Risks &amp; mitigations</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>Helper-API swap breaks callers</strong> → grep every caller of the old <code>buildSearchQuery</code></li></ul></div><div class="content-block"><p>and convert in the same wave; build immediately.</p></div><div class="content-block"><ul><li><strong>DTO select→transformer leaks sensitive fields</strong> → keep security <code>select</code>s; never</li></ul></div><div class="content-block"><p>expose new fields. Diff each DTO&#39;s output keys vs the old <code>select</code> keys.</p></div><div class="content-block"><ul><li><strong><code>isActive</code> contract drift</strong> → keep ayah values (<code>ALL|true|false</code>), adapter in</li></ul></div><div class="content-block"><p><code>buildIsActiveFilter</code>; do not adopt school-system&#39;s <code>active|inactive</code> strings.</p></div><div class="content-block"><ul><li><strong>Route guard regressions</strong> → never edit guard chains; only swap controller method</li></ul></div><div class="content-block"><p>references (same names) and response idiom.</p></div><div class="content-block"><ul><li><strong>Big-bang scope</strong> → waves + per-batch builds + exemplar-first validation contain blast radius.</li></ul></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"goal","title":"1. Goal"},{"id":"non-goals-do-not-touch","title":"2. Non-goals (DO NOT TOUCH)"},{"id":"decisions-locked","title":"3. Decisions (locked)"},{"id":"canonical-backend-idiom-target-—-from-school-systemdepartments","title":"4. Canonical BACKEND idiom (target) — from `school-system/.../departments/*`"},{"id":"canonical-frontend-idiom-target-—-from-school-systemfeaturesdepartments","title":"5. Canonical FRONTEND idiom (target) — from `school-system/.../features/departments/*`"},{"id":"typescript-→-js-decision-4","title":"6. TypeScript → JS (Decision 4)"},{"id":"scope-big-bang-in-waves","title":"7. Scope (Big-bang, in waves)"},{"id":"verification","title":"8. Verification"},{"id":"risks-mitigations","title":"9. Risks & mitigations"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

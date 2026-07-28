@@ -5,7 +5,7 @@
 // — it is called cross-module (users) and that call shape is frozen.
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { attachmentSelect } from "./attachment.dto.js";
 
 class AttachmentRepo {
@@ -17,7 +17,7 @@ class AttachmentRepo {
   getById(id) {
     return prisma.attachment.findUnique({
       where: { id },
-      select: { ...attachmentSelect, storageKey: true },
+      select: { ...attachmentSelect, storageKey: true, uploadedById: true },
     });
   }
 

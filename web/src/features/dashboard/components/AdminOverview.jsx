@@ -157,7 +157,7 @@ export default function AdminOverview() {
             <Stack spacing={1.25}>
               {byStatus.map((s) => (
                 <Stack key={s.status} direction="row" alignItems="center" justifyContent="space-between">
-                  <Chip size="small" label={s.status} />
+                  <Chip size="small" label={txt.subscriptionStatuses[s.status] || s.status} />
                   <Typography variant="body2" fontWeight={700}>
                     {s.count}
                   </Typography>

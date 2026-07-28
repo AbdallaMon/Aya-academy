@@ -2,55 +2,36 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { MenuItem, Stack, TextField } from "@mui/material";
-import { FormDialog, CouponControl } from "../../../shared/components/index.js";
+import { MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  AsyncUserAutocomplete,
+  FormDialog,
+  CouponControl,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
+import { formatMoney } from "../../../shared/lib/money.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
-import { USERS_URL, PLANS_URL } from "../config/constant.js";
+import {
+  SUBSCRIPTION_PLAN_QUOTE_URL,
+  subscriptionPlanOptionsPath,
+} from "../config/constant.js";
 
 const FORM_ID = "subscription-create-form";
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
-// MONTHLY-only in the UI for now — always advances the end date by one month.
-function addPeriod(dateStr) {
-  const d = dateStr ? new Date(dateStr) : new Date();
-  d.setMonth(d.getMonth() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
-/** Effective monthly price = plan hours × the global hourly rate. */
-function monthlyPriceOf(plan, hourlyRate) {
-  if (!plan || plan.hours == null) return null;
-  return Number(plan.hours) * Number(hourlyRate || 0);
-}
-
-/** Effective (monthly) price + hours for the plan. */
-function deriveFromPlan(plan, hourlyRate) {
-  if (!plan) return { price: "", hours: "" };
-  const monthly = monthlyPriceOf(plan, hourlyRate);
-  return {
-    price: monthly != null ? String(monthly) : "",
-    hours: plan.hours != null ? String(plan.hours) : "",
-  };
-}
-
-function makeDefaults(today, studentId = "") {
-  return {
-    studentId,
-    planId: "",
-    billingPeriod: "MONTHLY",
-    startDate: today,
-    endDate: addPeriod(today),
-    priceCharged: "",
-    subsHours: "",
-    remainingHours: "",
-  };
+/** Current month as `YYYY-MM` (what a native month input expects/emits). */
+function currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 /**
- * Admin-only: create an ACTIVE subscription for a student directly.
+ * Admin-only: create a subscription for a student for ONE month from a PLAN.
+ * The form asks for a plan + month (+ optional coupon); the backend derives
+ * startDate (1st), endDate (last day), and takes hours/price FROM the plan at
+ * creation. Submits `{ studentId, planId, month, couponCode? }`.
+ *
  * When `lockedStudent` ({ id, name }) is provided (embedded in a user's detail
  * tab) the student is preset + shown read-only instead of the picker.
  */
@@ -63,41 +44,26 @@ export default function SubscriptionCreateDialog({
   lockedStudent = null,
 }) {
   const { lng } = useTranslation();
-  const { hourlyRate } = useAppSettings({ enabled: open });
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const lockedStudentId = lockedStudent?.id ?? "";
+  const defaultMonth = useMemo(() => currentMonth(), []);
 
-  const { control, handleSubmit, reset, getValues, setValue } = useForm({
-    defaultValues: makeDefaults(today, lockedStudentId),
-  });
-
-  // The coupon is a complex async sub-state object ({ status, code, quote, reason })
-  // owned by CouponControl, not a posted form field — only the derived `codeToSend`
-  // ever reaches the payload. Kept as local state (mirrors CouponFormDialog keeping
-  // non-field concerns out of RHF).
+  // MONTHLY-only in the UI for now — the yearly toggle is hidden.
+  const billingPeriod = "MONTHLY";
+  const [planId, setPlanId] = useState("");
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
+  const [selectedStudent, setSelectedStudent] = useState(lockedStudent || null);
 
-  const studentsReq = useRequest({
-    url: USERS_URL,
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "STUDENT" },
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: { studentId: lockedStudentId, month: defaultMonth },
   });
+  const selectedStudentId = useWatch({ control, name: "studentId" });
+
   const plansReq = useRequest({
-    url: PLANS_URL,
+    url: selectedStudentId
+      ? subscriptionPlanOptionsPath(selectedStudentId)
+      : "plans/public",
     method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100 },
-  });
-  // Public pricing (base/effective + the plan's own coupon) for active plans.
-  const publicPlansReq = useRequest({
-    url: "plans/public",
-    method: "get",
-    isPublic: true,
+    isPublic: !selectedStudentId,
     autoFetch: false,
     syncToUrl: false,
   });
@@ -106,90 +72,50 @@ export default function SubscriptionCreateDialog({
   useEffect(() => {
     if (open) {
       // No need to load the student picker when the student is locked.
-      if (!lockedStudent) studentsReq.fetchData();
-      plansReq.fetchData();
-      publicPlansReq.fetchData();
-      reset(makeDefaults(today, lockedStudentId));
+      if (lockedStudentId) plansReq.fetchData();
+      reset({ studentId: lockedStudentId, month: defaultMonth });
+      setSelectedStudent(lockedStudent || null);
+      setPlanId("");
       setCoupon(EMPTY_COUPON);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !selectedStudentId) return;
+    setPlanId("");
+    setCoupon(EMPTY_COUPON);
+    plansReq.fetchData();
+  }, [open, selectedStudentId]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
-  const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
   const plans = plansReq.data || [];
-  const publicPlans = publicPlansReq.data || [];
-
-  // useWatch on planId/billingPeriod drives the cascading "selected public plan"
-  // lookup that gates the CouponControl and the coupon→price resolution below.
-  const planId = useWatch({ control, name: "planId" });
-  const billingPeriod = useWatch({ control, name: "billingPeriod" });
-  const selectedPublicPlan =
-    publicPlans.find((p) => String(p.id) === String(planId)) || null;
-
-  // Derive price + hours. Active plans use the public pricing (so the plan's
-  // removable default discount is reflected); plans missing from the public list
-  // (e.g. inactive) fall back to hours × global hourly rate.
-  function applyPlanSuggestions({ id, period, start, couponState }) {
-    setValue("endDate", addPeriod(start));
-    const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
-    if (publicPlan) {
-      const { net } = resolveCoupon(publicPlan, period, couponState);
-      const hrs = Number(publicPlan.hours);
-      setValue("priceCharged", String(net));
-      setValue("subsHours", String(hrs));
-      setValue("remainingHours", String(hrs));
-      return;
-    }
-    const adminPlan = plans.find((p) => String(p.id) === String(id)) || null;
-    const { price, hours } = deriveFromPlan(adminPlan, hourlyRate);
-    setValue("priceCharged", price);
-    setValue("subsHours", hours);
-    setValue("remainingHours", hours);
-  }
+  const selectedPlan = plans.find((p) => String(p.id) === String(planId)) || null;
 
   function onPlanChange(id) {
-    setValue("planId", id);
-    const publicPlan = publicPlans.find((p) => String(p.id) === String(id)) || null;
-    const c = initialCoupon(publicPlan, billingPeriod);
-    setCoupon(c);
-    applyPlanSuggestions({
-      id,
-      period: billingPeriod,
-      start: getValues("startDate"),
-      couponState: c,
-    });
+    setPlanId(id);
+    const plan = plans.find((p) => String(p.id) === String(id)) || null;
+    setCoupon(plan ? initialCoupon(plan, billingPeriod) : EMPTY_COUPON);
   }
 
-  function onStartChange(v) {
-    setValue("startDate", v);
-    setValue("endDate", addPeriod(v));
-  }
+  const resolvedCoupon = resolveCoupon(selectedPlan, billingPeriod, coupon);
+  const { net } = resolvedCoupon;
 
-  function onCouponChange(c) {
-    setCoupon(c);
-    if (selectedPublicPlan) {
-      const { net } = resolveCoupon(selectedPublicPlan, billingPeriod, c);
-      setValue("priceCharged", String(net));
-    }
-  }
-
-  const { codeToSend } = resolveCoupon(selectedPublicPlan, billingPeriod, coupon);
+  const planHint =
+    selectedPlan &&
+    (txt.planHint || "{hours} · {price}")
+      .replace("{hours}", String(selectedPlan.hours ?? "—"))
+      .replace("{price}", formatMoney(net, selectedPlan.currency));
 
   function submit(values) {
-    if (!values.studentId || !values.startDate || !values.endDate) return;
+    if (!values.studentId || !values.month || !planId) return;
     onCreate({
       studentId: Number(values.studentId),
-      planId: values.planId ? Number(values.planId) : undefined,
-      billingPeriod: values.billingPeriod,
-      startDate: values.startDate,
-      endDate: values.endDate,
-      status: "ACTIVE",
-      ...(codeToSend ? { couponCode: codeToSend } : {}),
-      ...(values.priceCharged !== "" ? { priceCharged: Number(values.priceCharged) } : {}),
-      ...(values.subsHours !== "" ? { subsHours: Number(values.subsHours) } : {}),
-      ...(values.remainingHours !== ""
-        ? { remainingHours: Number(values.remainingHours) }
+      planId: Number(planId),
+      month: values.month, // "YYYY-MM"
+      ...(resolvedCoupon.applied === "custom" && resolvedCoupon.codeToSend
+        ? { couponCode: resolvedCoupon.codeToSend }
         : {}),
+      applyPlanCoupon: resolvedCoupon.applyPlanCoupon,
     });
   }
 
@@ -218,118 +144,74 @@ export default function SubscriptionCreateDialog({
             <Controller
               name="studentId"
               control={control}
+              rules={{ required: true }}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
+                <AsyncUserAutocomplete
+                  role="STUDENT"
                   label={txt.selectStudent}
-                  fullWidth
+                  value={selectedStudent}
+                  onChange={(student) => {
+                    field.onChange(student ? String(student.id) : "");
+                    setSelectedStudent(student);
+                  }}
                   required
-                >
-                  {students.map((s) => (
-                    <MenuItem key={s.id} value={s.id}>
-                      {s.name} {s.nickname ? `(${s.nickname})` : ""}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                />
               )}
             />
           )}
 
-          <Controller
-            name="planId"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                select
-                label={txt.selectPlan}
-                onChange={(e) => onPlanChange(e.target.value)}
-                fullWidth
-              >
-                {plans.map((p) => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {lng === "en" ? p.titleEn : p.titleAr}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
+          <TextField
+            select
+            label={txt.selectPlan}
+            value={planId}
+            onChange={(e) => onPlanChange(e.target.value)}
+            fullWidth
+            required
+            helperText={plans.length === 0 ? txt.noPlans : undefined}
+          >
+            {plans.map((p) => (
+              <MenuItem key={p.id} value={String(p.id)}>
+                {lng === "en" ? p.titleEn : p.titleAr}
+              </MenuItem>
+            ))}
+          </TextField>
 
-          <Stack direction="row" spacing={2}>
-            <Controller
-              name="startDate"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="date"
-                  label={txt.startDate}
-                  onChange={(e) => onStartChange(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              )}
-            />
-            <Controller
-              name="endDate"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="date"
-                  label={txt.endDate}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              )}
-            />
-          </Stack>
-
-          {selectedPublicPlan && (
-            <CouponControl
-              plan={selectedPublicPlan}
-              billingPeriod={billingPeriod}
-              coupon={coupon}
-              onCoupon={onCouponChange}
-            />
+          {planHint && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>
+              {planHint}
+            </Typography>
           )}
 
           <Controller
-            name="priceCharged"
+            name="month"
             control={control}
+            rules={{ required: true }}
             render={({ field }) => (
               <TextField
                 {...field}
-                type="number"
-                label={txt.priceCharged}
+                type="month"
+                label={txt.month}
+                InputLabelProps={{ shrink: true }}
                 fullWidth
-                helperText={codeToSend ? txt.priceCouponNote : undefined}
+                required
               />
             )}
           />
 
-          <Stack direction="row" spacing={2}>
-            <Controller
-              name="subsHours"
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} type="number" label={txt.subsHours} fullWidth />
-              )}
+          {selectedPlan && (
+            <CouponControl
+              plan={selectedPlan}
+              billingPeriod={billingPeriod}
+              coupon={coupon}
+              onCoupon={setCoupon}
+              quoteUrl={SUBSCRIPTION_PLAN_QUOTE_URL}
+              quoteBody={{ studentId: Number(selectedStudentId) }}
             />
-            <Controller
-              name="remainingHours"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label={txt.remainingHours}
-                  fullWidth
-                />
-              )}
-            />
-          </Stack>
+          )}
+
+          <Typography variant="caption" color="text.secondary">
+            {txt.monthHint}
+          </Typography>
         </Stack>
       </form>
     </FormDialog>

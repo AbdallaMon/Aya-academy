@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 28 Subscription Renewal Invoice Flow Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 28 Subscription Renewal Invoice Flow Design</h1>
+        <p class="lead"></p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html" class="active">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align ayah-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</span></nav>
+          <section class="doc-hero">
+            <h2>تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p>التاريخ: 2026-06-28</p></div></div>
+
+          
+    <section class="doc-section" id="الهدف-goal" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>الهدف (Goal)</h2>
+        </div>
+        <div class="content-block"><p>تبسيط تجربة الاشتراك لكل من الأدمن وولي الأمر:</p></div><div class="content-block"><ol><li><strong>عرض السعر + الخصم</strong> بشكل واضح (السعر الأساسي، الخصم/الكوبون، الصافي).</li><li><strong>اشتراك واحد ظاهر لكل طالب</strong> — المفعّل حالياً، وإلا أحدث اشتراك (منتهي/ملغي). الاشتراكات القديمة <strong>تُخفى تماماً</strong> من الواجهة (تبقى في الداتابيز فقط).</li><li><strong>تجديد</strong> بدل إنشاء اشتراك جديد ظاهر — التجديد ينشئ صفاً جديداً فعلياً لكنه يظهر كـ&quot;الاشتراك الحالي&quot;.</li><li><strong>تغيير الخطة</strong> عبر زر مستقل.</li><li><strong>الخصم</strong> يضيفه الأدمن أو ولي الأمر بكود كوبون.</li><li><strong>فلو فاتورة</strong> متكامل: تجديد → اشتراك غير مفعّل + فاتورة → صفحة اشتراك مستقلة → إرسال لولي الأمر → ربط ثنائي الاتجاه بين دفع الفاتورة وتفعيل الاشتراك.</li><li><strong>WhatsApp</strong> منفّذ بالكامل (Meta WhatsApp Cloud API عبر HTTP) ومتحكَّم فيه من الـ<code>.env</code>: لو <code>WHATSAPP_ENABLED=true</code> والإعداد مكتمل → يرسل فعلياً؛ غير ذلك no-op صامت. بالإضافة لإشعار داخل اللوحة (دائماً).</li></ol></div><div class="content-block"><p>كل طالب له اشتراكه وفاتورته منفصلين (موجود بالبنية الحالية، نحافظ عليه).</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="الوضع-الحالي-baseline" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>الوضع الحالي (Baseline)</h2>
+        </div>
+        <div class="content-block"><ul><li><code>Subscription</code> (1:1) <code>Invoice</code>. حالات الاشتراك: <code>PENDING | UPCOMING | ACTIVE | EXPIRED | CANCELLED</code>. حالات الفاتورة: <code>UNPAID | PAID | VOID</code>.</li><li>صفحة <code>/dashboard/subscriptions</code> تعرض <strong>كل</strong> الاشتراكات (صف لكل اشتراك).</li><li>الفاتورة تُفتح في <code>InvoiceDialog</code> (لا توجد صفحة مستقلة).</li><li>يوجد بالفعل:<ul><li><code>subscriptionUsecase.create / request / approve / reject / cancel</code>.</li><li><code>invoiceUsecase.update(..., { activateSubscription: true })</code> يفعّل الاشتراك عند الدفع (اتجاه واحد فقط).</li><li>نظام إشعارات <code>notificationUsecase.createNotification / createManyForUsers</code> (ثنائي اللغة، يدعم <code>link</code> و<code>dataJson</code>).</li><li>نمط providers ناضج في <code>server/src/infra/backup/providers/</code> + توجيه عبر <code>ENV</code> (مثل <code>BACKUP<em>PROVIDER</code>, <code>*</em>ENABLED === &quot;true&quot;</code>).</li><li>نظام الكوبون/الخصم كامل (<code>couponPricing.js</code>, <code>CouponControl</code>, <code>/plans/quote</code>).</li></ul></li></ul></div><div class="content-block"><p>لا يوجد حالياً: مفهوم &quot;تجديد&quot;، &quot;اشتراك واحد لكل طالب&quot;، صفحة اشتراك مستقلة، &quot;إرسال الفاتورة لولي الأمر&quot;، الربط العكسي (تفعيل الاشتراك → عرض اعتماد الفاتورة)، أي provider للرسائل الخارجية.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="تغييرات-قاعدة-البيانات-schema-—-additive" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>تغييرات قاعدة البيانات (Schema — additive)</h2>
+        </div>
+        <div class="content-block"><p>ملف: <code>packages/db/prisma/schema.prisma</code></p></div><div class="content-block"><ol><li><strong><code>Invoice.sentAt DateTime?</code></strong> — وقت آخر إرسال للفاتورة لولي الأمر (null = لم تُرسل). تستخدمه الواجهة لإظهار &quot;تم الإرسال&quot;. (اختياري إضافي: <code>sentChannelsJson Json?</code> لتسجيل القنوات — نتركه الآن، YAGNI).</li><li><strong>إضافة قيمة لـ enum <code>NotificationType</code></strong>: <code>INVOICE<em>SENT</code> (additive). مع مزامنة الثابت في <code>packages/shared/constants/enums.js</code> (<code>NOTIFICATION</em>TYPES.INVOICE_SENT</code>).</li></ol></div><div class="content-block"><p>لا حاجة لربط <code>renewedFromId</code>؛ &quot;الاشتراك المعروض&quot; يُحسب كأحدث صف لكل طالب (انظر §4.1). الاشتراكات القديمة مخفية تماماً فلا نحتاج تتبّع السلسلة.</p></div><div class="content-block"><p>ميغريشن: additive فقط (عمود nullable + قيمة enum) — لا backfill.</p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="الباك-إند-backend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>الباك إند (Backend)</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>4.1 &quot;أحدث اشتراك لكل طالب&quot; (Latest-per-student)</h3><div class="content-block"><ul><li><strong>القاعدة</strong>: الاشتراك المعروض لطالب = الصف صاحب أكبر <code>id</code> (autoincrement ⇒ الأحدث، وهو دائماً آخر تجديد حتى لو لم يُفعّل بعد).</li><li><code>subscription.repo.js</code>: دالة <code>listLatestPerStudent({ where, skip, take })</code>:<ul><li><code>prisma.subscription.groupBy({ by: [&#39;studentId&#39;], _max: { id: true }, ... })</code> للحصول على أحدث id لكل طالب (مع فلترة scope الدور)، ثم <code>findMany({ where: { id: { in: maxIds } } })</code> بالـ projection الحالي.</li><li>الباجينيشن تتم على مستوى الطلاب (group) لا الصفوف.</li></ul></li><li>فلتر الحالة (status) يُطبَّق على الاشتراك المعروض (الأحدث).</li><li><code>subscription.usecase.list</code> يستدعي هذه الدالة. الـ scope: ADMIN يرى كل الطلاب، PARENT أبناءه، STUDENT نفسه (كما هو).</li></ul></div><div class="content-block"><p>النتيجة: صفحة الاشتراكات تصبح &quot;دليل طلاب&quot;: صف واحد لكل طالب = أحدث اشتراك له.</p></div></section><section class="subsection-card"><h3>4.2 التجديد (Renew)</h3><div class="content-block"><ul><li><strong>Endpoint</strong>: <code>POST /subscriptions/:id/renew</code></li><li><strong>المدخلات</strong>: <code>{ planId?, billingPeriod?, couponCode?, startDate?, allowWhileActive? }</code><ul><li>الافتراضات من الاشتراك المصدر <code>:id</code>: نفس <code>planId</code> و<code>billingPeriod</code>. يمكن تغييرها.</li></ul></li><li><strong>اللوجيك</strong> (<code>subscriptionUsecase.renew</code>):<ol><li>جلب الاشتراك المصدر + التحقق من scope (ADMIN، أو PARENT لابنه).</li><li><strong>التحقق من اشتراك فعّال</strong>: لو للطالب اشتراك <code>ACTIVE</code> ضمن <code>[startDate,endDate]</code> و<code>allowWhileActive !== true</code> ⇒ رمي <code>SUBSCRIPTION<em>STILL</em>ACTIVE</code> (تحذير، لا حظر نهائي).</li><li>حساب التسعير (نفس <code>computePricing</code> الحالي) + <code>endDate</code> (<code>computeEndDate</code>) + الساعات.</li><li>إنشاء <strong>اشتراك جديد بحالة <code>PENDING</code></strong> (غير مفعّل) + استهلاك الكوبون ذرّياً داخل ترانزاكشن.</li><li>توليد فاتورة <code>UNPAID</code> (إعادة استخدام <code>ensureInvoice</code> / <code>generateForSubscription</code>).</li><li>إشعارات: للأدمن لو المُجدِّد ولي أمر (نمط <code>request</code> الحالي)؛ نوع <code>SUBSCRIPTION_RENEWED</code>.</li><li><strong>Return</strong>: الاشتراك الجديد (الواجهة تنتقل لصفحته).</li></ol></li><li><strong>الصلاحيات</strong>: ADMIN ⇒ <code>SUBSCRIPTION.RENEW</code>؛ PARENT ⇒ <code>SUBSCRIPTION.REQUEST</code> (التجديد بالنسبة له = طلب ⇒ <code>PENDING</code> بانتظار الدفع/الموافقة).</li></ul></div></section><section class="subsection-card"><h3>4.3 تغيير الخطة (Change Plan)</h3><div class="content-block"><ul><li><strong>Endpoint</strong>: <code>POST /subscriptions/:id/change-plan</code></li><li><strong>المدخلات</strong>: <code>{ planId, billingPeriod?, couponCode? }</code></li><li><strong>اللوجيك</strong>: مسموح فقط طالما الفاتورة <code>UNPAID</code> (الاشتراك لم يُدفع/يُفعّل بعد) — وإلا رمي <code>CANNOT<em>CHANGE</em>PLAN_PAID</code> (التغيير بعد الدفع = استخدم تجديد).<ul><li>إعادة حساب <code>priceCharged / totalHours / remainingHours / endDate / couponId</code>.</li><li>تحديث الاشتراك + <strong>إعادة توليد الفاتورة</strong> (regenerate) لتعكس التسعير الجديد.</li></ul></li><li><strong>الصلاحيات</strong>: <code>SUBSCRIPTION.EDIT</code> (ADMIN)؛ PARENT scoped على ابنه طالما <code>PENDING</code>.</li></ul></div></section><section class="subsection-card"><h3>4.4 تفعيل الاشتراك + الربط الثنائي (Two-way linkage)</h3><div class="content-block"><ul><li><strong>Endpoint جديد</strong>: <code>POST /subscriptions/:id/activate</code> — <code>{ markInvoicePaid? }</code><ul><li><code>PENDING/UPCOMING → ACTIVE</code> (resolve بالتواريخ). لو <code>markInvoicePaid === true</code> ⇒ ضبط الفاتورة <code>PAID</code> ضمن نفس العملية.</li><li>إشعار <code>SUBSCRIPTION_CREATED/RENEWED</code> للطالب (&quot;تم تفعيل اشتراكك 🎉&quot;).</li><li><strong>الصلاحيات</strong>: <code>SUBSCRIPTION.ACTIVATE</code> (ADMIN).</li></ul></li><li><strong>الاتجاه الآخر (موجود، نبقيه)</strong>: <code>PATCH /invoices/:id { status: PAID, activateSubscription? }</code> — اعتماد الفاتورة مدفوعة يعرض خيار تفعيل الاشتراك.</li><li>النتيجة على الواجهة: زرّان متكاملان، كل منهما يعرض الإجراء المكمّل (تفاصيل §5.2).</li></ul></div></section><section class="subsection-card"><h3>4.5 إرسال الفاتورة لولي الأمر (Send to Parent)</h3><div class="content-block"><ul><li><strong>Endpoint</strong>: <code>POST /invoices/:id/send</code></li><li><strong>اللوجيك</strong> (<code>invoiceUsecase.send</code> → <code>messagingService.notifyInvoiceSent</code>):<ol><li>التحقق: ADMIN فقط، الفاتورة موجودة ومسعّرة.</li><li>جلب أولياء أمور الطالب (عبر <code>studentLinks</code>).</li><li><strong>إشعار داخل اللوحة</strong> لكل ولي أمر: نوع <code>INVOICE_SENT</code>، عنوان/نص ثنائي اللغة، <code>link</code> لصفحة الاشتراك/الفاتورة، <code>dataJson: { invoiceId, subscriptionId }</code>.</li><li><strong>WhatsApp</strong> (best-effort): لو <code>ENV.whatsapp.enabled</code> والإعداد مكتمل ⇒ استدعاء <code>whatsappProvider.send(...)</code>؛ غير ذلك no-op صامت.</li><li>ضبط <code>Invoice.sentAt = now</code>.</li></ol></li><li><strong>Return</strong>: الفاتورة المحدّثة + رمز <code>INVOICE_SENT</code>.</li><li><strong>الصلاحيات</strong>: <code>INVOICE.SEND</code> (ADMIN).</li></ul></div></section><section class="subsection-card"><h3>4.6 طبقة الرسائل الخارجية + WhatsApp provider (scaffold)</h3><div class="content-block"><p>مجلد جديد على نمط <code>infra/backup/providers/</code>. <strong>المزوّد: Meta WhatsApp Cloud API</strong> عبر HTTP POST مباشر (بدون SDK، باستخدام <code>fetch</code>/<code>undici</code> المتاح في Node).</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block"><code>server/src/infra/messaging/
+  messagingService.js        // facade: notifyInvoiceSent({ parents, invoice, student })
+  providers/
+    whatsapp.js              // class WhatsAppProvider { async send(phone, payload) } — Meta Cloud API</code></pre></div></div><div class="content-block"><ul><li><code>whatsapp.js</code> — <strong>منفّذ بالكامل الآن</strong>:<ul><li><code>send(phone, { templateName, params } | { text })</code> ⇒ <code>POST https://graph.facebook.com/v21.0/{PHONE_ID}/messages</code> بترويسة <code>Authorization: Bearer {TOKEN}</code> وجسم رسالة (template للإشعارات خارج نافذة 24 ساعة، أو text داخلها).</li><li>يقرأ الإعداد من <code>ENV.whatsapp</code>؛ يرمي <code>WHATSAPP<em>NOT</em>CONFIGURED</code> لو الإعداد ناقص.</li></ul></li><li><code>messagingService.notifyInvoiceSent</code>:<ul><li><strong>دائماً</strong> ينشئ الإشعار الداخلي (عبر <code>notificationUsecase</code>).</li><li><strong>شرطياً</strong>: لو <code>ENV.whatsapp.enabled &amp;&amp; isWhatsAppConfigured()</code> ⇒ يستدعي <code>whatsappProvider.send(...)</code> لكل ولي أمر له رقم؛ محاط بـ try/catch (فشل الإرسال يُسجَّل ولا يُفشِل الطلب). لو <code>enabled=false</code> ⇒ يتخطّى واتساب صامتاً (no-op).</li></ul></li></ul></div><div class="content-block"><p><strong><code>env.js</code> — إضافات (على نمط <code>backup</code>/<code>aws</code>)</strong>:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>whatsapp: {
+  enabled: process.env.WHATSAPP_ENABLED === &quot;true&quot;,   // افتراضي false
+  token: process.env.WHATSAPP_TOKEN,                  // Meta permanent access token
+  phoneId: process.env.WHATSAPP_PHONE_ID,             // Meta phone number id
+  templateName: process.env.WHATSAPP_TEMPLATE_INVOICE || &quot;invoice_sent&quot;, // اسم القالب المعتمد
+  apiVersion: process.env.WHATSAPP_API_VERSION || &quot;v21.0&quot;,
+  apiUrl: process.env.WHATSAPP_API_URL,               // override اختياري
+},</code></pre></div></div><div class="content-block"><p><code>isWhatsAppConfigured()</code> helper (مثل <code>isAwsConfigured</code>): يتحقق من <code>token</code> و<code>phoneId</code>.</p></div><div class="content-block"><p><strong>مطلوب منك لتشغيل واتساب فعلياً</strong> (الكود جاهز ويعمل بمجرد توفّرها — لحد ما تجهّزهم خلِّ <code>WHATSAPP<em>ENABLED=false</code>): <code>WHATSAPP</em>TOKEN</code> (permanent token من Meta)، <code>WHATSAPP<em>PHONE</em>ID</code>، واسم قالب رسالة معتمد من Meta (<code>WHATSAPP<em>TEMPLATE</em>INVOICE</code>) بمتغيّراته (اسم الطالب/الإجمالي/الرابط).</p></div></section><section class="subsection-card"><h3>4.7 الصلاحيات (Permissions) — `packages/shared/constants/permissions.js`</h3><div class="content-block"><ul><li><code>SUBSCRIPTION.RENEW = &quot;subscription.renew&quot;</code></li><li><code>SUBSCRIPTION.ACTIVATE = &quot;subscription.activate&quot;</code></li><li><code>INVOICE.SEND = &quot;invoice.send&quot;</code></li><li>(تغيير الخطة يعيد استخدام <code>SUBSCRIPTION.EDIT</code>.)</li><li>مزامنة بروفايلات الأدوار: ADMIN يحصل على الكل؛ PARENT يحصل على <code>SUBSCRIPTION.REQUEST</code> (للتجديد) فقط — لا <code>ACTIVATE</code>/<code>INVOICE.SEND</code>.</li></ul></div></section><section class="subsection-card"><h3>4.8 رموز الرسائل ثنائية اللغة (Message Codes — ar+en)</h3><div class="content-block"><p><code>packages/shared/messages-codes/</code> + مزامنة <code>web</code> messagesCodes:</p></div><div class="content-block"><ul><li><code>invoice.js</code>: <code>INVOICE<em>SENT</code>, <code>INVOICE</em>SEND<em>FAILED</code>, <code>CANNOT</em>SEND<em>INVOICE</code>, <code>WHATSAPP</em>NOT_CONFIGURED</code>.</li><li><code>subscription.js</code>: <code>SUBSCRIPTION<em>STILL</em>ACTIVE</code>, <code>SUBSCRIPTION<em>RENEWED</code>, <code>PLAN</em>CHANGED</code>, <code>SUBSCRIPTION<em>ACTIVATED</code>, <code>CANNOT</em>CHANGE<em>PLAN</em>PAID</code>.</li></ul></div><div class="content-block"><p>كل رمز له ترجمة ar+en (التزاماً بقاعدة المشروع).</p></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="الفرونت-إند-frontend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>الفرونت إند (Frontend)</h2>
+        </div>
+        <div class="content-block"><div class="subsection-list"><section class="subsection-card"><h3>5.1 صفحة الاشتراكات (List) — تتحول لـ&quot;دليل طلاب&quot;</h3><div class="content-block"><p><code>web/src/features/subscriptions/pages/SubscriptionsPage.jsx</code>:</p></div><div class="content-block"><ul><li>صف واحد لكل طالب (أحدث اشتراك). أعمدة: الطالب، الخطة، الحالة (chip)، حالة الفاتورة (chip)، <strong>السعر + الخصم</strong> (الأساسي مشطوب + الصافي)، تاريخ الانتهاء.</li><li>النقر/زر <strong>&quot;عرض&quot;</strong> ⇒ صفحة الاشتراك المستقلة. زر سريع <strong>&quot;تجديد&quot;</strong>.</li><li>معظم الإجراءات تنتقل لصفحة التفاصيل.</li></ul></div></section><section class="subsection-card"><h3>5.2 صفحة الاشتراك المستقلة (جديدة)</h3><div class="content-block"><ul><li>Route: <code>web/src/app/[lng]/dashboard/subscriptions/[id]/page.jsx</code> (نمط <code>users/[id]</code>، <code>params</code> async).</li><li>Feature: <code>web/src/features/subscriptionDetail/</code> (<code>pages/</code>, <code>components/</code>, <code>config/</code>).</li><li><strong>المحتوى</strong>:<ul><li>رأس: اسم الطالب + حالة الاشتراك (chip واضح: مفعّل / قيد الانتظار / منتهي / ملغي).</li><li>بطاقة الاشتراك: الخطة، الفترة، التواريخ، الساعات (كلي/متبقي)، <strong>تفصيل السعر + الخصم</strong>.</li><li>بطاقة الفاتورة: حالة الفاتورة (مدفوعة/غير مدفوعة)، الإجمالي، &quot;تم الإرسال&quot; لو <code>sentAt</code>، عرض/تنزيل عبر <code>InvoiceDocument</code>/<code>InvoiceDialog</code> (إعادة استخدام).</li></ul></li><li><strong>الأزرار (permission-gated)</strong>:<ul><li><strong>تجديد</strong> → ديالوج (نفس الخطة افتراضياً، قابلة للتغيير، + كوبون) → عند النجاح ينتقل لصفحة الاشتراك الجديد.</li><li><strong>تعديل الخطة</strong> (طالما <code>UNPAID</code>).</li><li><strong>كوبون/خصم</strong> (Admin + Parent) — إعادة استخدام <code>CouponControl</code>.</li><li><strong>إرسال لولي الأمر</strong> (Admin) — يصبح &quot;تم الإرسال ✓&quot; بعد الإرسال (مع إمكانية إعادة الإرسال).</li><li><strong>تفعيل الاشتراك</strong> (Admin، لو غير مفعّل): عند الضغط ولو الفاتورة <code>UNPAID</code> ⇒ checkbox &quot;اعتمد الفاتورة كمدفوعة كمان؟&quot;.</li><li><strong>اعتماد الفاتورة كمدفوعة</strong> (Admin، لو <code>UNPAID</code>): عند الضغط ولو الاشتراك غير مفعّل ⇒ checkbox &quot;فعّل الاشتراك كمان؟&quot;.</li><li><strong>تعديل الساعات</strong> (<code>EditHoursDialog</code> الحالي).</li></ul></li></ul></div></section><section class="subsection-card"><h3>5.3 واجهة ولي الأمر</h3><div class="content-block"><ul><li>يرى أحدث اشتراك لكل طالب من أبنائه (صف لكل طالب). النقر ⇒ نفس صفحة التفاصيل (scoped).</li><li>إجراءات ولي الأمر: <strong>تجديد</strong> (⇒ <code>PENDING</code>) + <strong>إضافة كوبون</strong> فقط. لا تفعيل/اعتماد دفع/إرسال (تظهر مخفية بالصلاحيات).</li></ul></div></section><section class="subsection-card"><h3>5.4 الكوبون/الخصم</h3><div class="content-block"><p>إعادة استخدام <code>couponPricing.js</code> + <code>CouponControl</code> في ديالوجات التجديد/تغيير الخطة لكلٍ من الأدمن وولي الأمر. الفاتورة وصفحة الاشتراك تعرضان تفصيل الخصم من الـ snapshot الموجود.</p></div><div class="content-block"><hr /></div></section></div></div>
+      </div>
+    </section>
+    <section class="doc-section" id="فلو-شامل-end-to-end" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>فلو شامل (End-to-end)</h2>
+        </div>
+        <div class="content-block"><ol><li>الأدمن (أو ولي الأمر) يفتح اشتراك الطالب الحالي → <strong>تجديد</strong>.</li><li>ديالوج: نفس الخطة افتراضياً (قابلة للتغيير) + كوبون اختياري. لو فيه اشتراك فعّال ⇒ تحذير &quot;اشتراك لم ينتهِ بعد&quot; (تأكيد للمتابعة).</li><li>ينشأ اشتراك جديد <code>PENDING</code> (غير مفعّل) + فاتورة <code>UNPAID</code>.</li><li>ينتقل تلقائياً لصفحة الاشتراك الجديد (تُظهر: غير مفعّل / فاتورة غير مدفوعة).</li><li>الأدمن يراجع/يعدّل الفاتورة → <strong>إرسال لولي الأمر</strong> (إشعار داخلي الآن، + واتساب لاحقاً).</li><li>عند الدفع: الأدمن إمّا <strong>يعتمد الفاتورة مدفوعة</strong> (مع خيار تفعيل الاشتراك)، أو <strong>يفعّل الاشتراك</strong> (مع خيار اعتماد الفاتورة) — الربط ثنائي الاتجاه.</li><li>الطالب/ولي الأمر يصله إشعار التفعيل.</li></ol></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="خارج-النطاق-out-of-scope-yagni" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>خارج النطاق (Out of Scope / YAGNI)</h2>
+        </div>
+        <div class="content-block"><ul><li>بوابة دفع حقيقية (الدفع يدوي كما هو).</li><li>ربط سلسلة التجديدات (<code>renewedFromId</code>) — غير مطلوب لأن القديم مخفي.</li><li>إرسال الفاتورة بالإيميل.</li></ul></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="خطة-التنفيذ-ترتيب-مقترح" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>خطة التنفيذ (ترتيب مقترح)</h2>
+        </div>
+        <div class="content-block"><ol><li>Schema + enum + permissions + message codes (ar+en) — الأساس المشترك.</li><li>Backend: <code>listLatestPerStudent</code>, <code>renew</code>, <code>change-plan</code>, <code>activate</code>, <code>invoice.send</code>, <code>messaging/</code> + <code>whatsapp</code> scaffold + <code>env</code>.</li><li>Frontend: تحويل القائمة لدليل طلاب + صفحة الاشتراك المستقلة + الأزرار/الديالوجات + الربط الثنائي + عرض السعر/الخصم.</li><li>واجهة ولي الأمر (scoped).</li><li>اختبار يدوي E2E + فحص الصلاحيات/الـ scope (IDOR).</li></ol></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"الهدف-goal","title":"1. الهدف (Goal)"},{"id":"الوضع-الحالي-baseline","title":"2. الوضع الحالي (Baseline)"},{"id":"تغييرات-قاعدة-البيانات-schema-—-additive","title":"3. تغييرات قاعدة البيانات (Schema — additive)"},{"id":"الباك-إند-backend","title":"4. الباك إند (Backend)"},{"id":"الفرونت-إند-frontend","title":"5. الفرونت إند (Frontend)"},{"id":"فلو-شامل-end-to-end","title":"6. فلو شامل (End-to-end)"},{"id":"خارج-النطاق-out-of-scope-yagni","title":"7. خارج النطاق (Out of Scope / YAGNI)"},{"id":"خطة-التنفيذ-ترتيب-مقترح","title":"8. خطة التنفيذ (ترتيب مقترح)"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

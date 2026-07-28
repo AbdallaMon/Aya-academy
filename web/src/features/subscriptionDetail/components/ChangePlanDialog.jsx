@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MenuItem, Stack, TextField } from "@mui/material";
+import { Alert, MenuItem, Stack, TextField } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
-import { SUBSCRIPTIONS_URL, PLANS_PUBLIC_URL } from "../config/constant.js";
+import {
+  SUBSCRIPTIONS_URL,
+  SUBSCRIPTION_PLAN_QUOTE_URL,
+  subscriptionPlanOptionsPath,
+} from "../../subscriptions/config/constant.js";
 
 const EMPTY_COUPON = { status: "idle", code: "", quote: null, reason: null };
 
 /**
  * Change the plan of an existing subscription (in place — no new subscription).
- * planId is required; billing period + coupon (CouponControl, reused) are
- * editable. POSTs /subscriptions/:id/change-plan. A 409 CANNOT_CHANGE_PLAN_PAID
- * (invoice already paid) is left to the auto-toast. On success → refetch.
+ * RE-LINKS THE PLAN: the backend swaps the linked plan and only recomputes
+ * hours/price from the new plan when the subscription has no logged sessions yet;
+ * once sessions exist, they drive the hours and the plan link is all that changes.
+ * planId is required; the optional coupon (CouponControl, reused) stays its own
+ * concern. POSTs /subscriptions/:id/change-plan with only `{ planId, couponCode? }`.
+ * A 409 CANNOT_CHANGE_PLAN_PAID (invoice already paid) is left to the auto-toast.
+ * On success → refetch.
  *
  * Props: open, onClose, subscription, txt, onChanged.
  */
@@ -25,11 +33,11 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
   // MONTHLY-only in the UI for now — the yearly toggle is hidden.
   const billingPeriod = "MONTHLY";
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
+  const studentId = subscription?.studentId ?? subscription?.student?.id;
 
   const publicPlansReq = useRequest({
-    url: PLANS_PUBLIC_URL,
+    url: subscriptionPlanOptionsPath(studentId),
     method: "get",
-    isPublic: true,
     autoFetch: false,
     syncToUrl: false,
   });
@@ -69,15 +77,21 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
     setCoupon(initialCoupon(plan, billingPeriod));
   }
 
-  const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
+  const resolvedCoupon = resolveCoupon(
+    selectedPlan,
+    billingPeriod,
+    coupon,
+  );
 
   async function submit() {
     if (!planId) return;
     try {
       await changeReq.fetchData(`${subscription.id}/change-plan`, {
         planId: Number(planId),
-        billingPeriod,
-        ...(codeToSend ? { couponCode: codeToSend } : {}),
+        ...(resolvedCoupon.codeToSend
+          ? { couponCode: resolvedCoupon.codeToSend }
+          : {}),
+        applyPlanCoupon: resolvedCoupon.applyPlanCoupon,
       });
       onClose();
       onChanged?.();
@@ -98,6 +112,10 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
       onSubmit={submit}
     >
       <Stack spacing={2.5} sx={{ pt: 1 }}>
+        <Alert severity="info" sx={{ py: 0 }}>
+          {txt.changePlanHint}
+        </Alert>
+
         <TextField
           select
           label={txt.selectPlan}
@@ -119,6 +137,11 @@ export default function ChangePlanDialog({ open, onClose, subscription, txt, onC
             billingPeriod={billingPeriod}
             coupon={coupon}
             onCoupon={setCoupon}
+            quoteUrl={SUBSCRIPTION_PLAN_QUOTE_URL}
+            quoteBody={{
+              studentId,
+              currentSubscriptionId: subscription.id,
+            }}
           />
         )}
       </Stack>

@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { MdEmojiEvents } from "react-icons/md";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+import { PERMISSIONS, USER_ROLES } from "@ayah/shared";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

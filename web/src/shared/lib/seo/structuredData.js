@@ -3,7 +3,7 @@
 // <script type="application/ld+json"> tag via the <JsonLd> component.
 //
 // We emit ONLY data that is true and visible on the page:
-//   - EducationalOrganization : who Aya Academy is (site-wide)
+//   - EducationalOrganization : who Ayah Academy is (site-wide)
 //   - WebSite                 : the site itself + its languages (site-wide)
 //   - FAQPage                 : mirrors the visible FAQ accordion on the homepage
 // We deliberately do NOT emit Review/AggregateRating — the on-page reviews are
@@ -15,8 +15,8 @@ import { languages } from "@/i18n/settings.js";
 import { SITE_URL, brand } from "./config.js";
 
 const DESCRIPTION = {
-  ar: "أكاديمية آية — رحلة مرحة وآمنة لتعليم الأطفال (من ٥ سنوات فأكثر) القرآن الكريم والأخلاق الجميلة عبر حصص تفاعلية وألعاب تعليمية ومتابعة لولي الأمر.",
-  en: "Aya Academy — a joyful, safe journey for kids (ages 5 and up) to learn the Quran and beautiful manners through interactive sessions, educational games and parent tracking.",
+  ar: "أكاديمية آية — تعلّم القرآن الكريم وتحفيظه، والتجويد، واللغة العربية، والعلوم الشرعية أونلاين، للكبار والأطفال من ٥ سنوات فأكثر، عبر حصص مباشرة تفاعلية مع معلّمين مؤهّلين ومتابعة مستمرة.",
+  en: "Ayah Academy — learn and memorize the Quran, Tajweed, Arabic and Islamic studies online, for adults and children ages 5 and up, through live interactive sessions with qualified teachers and ongoing progress tracking.",
 };
 
 // A stable @id for the organization so other nodes can reference it.
@@ -34,24 +34,28 @@ const CONTACT_PHONE = "+966582509655";
 // graph reads naturally.
 const KNOWS_ABOUT = {
   ar: [
-    "تعليم القرآن الكريم للأطفال",
-    "تحفيظ القرآن",
-    "التجويد",
-    "اللغة العربية للأطفال",
-    "الدراسات الإسلامية للأطفال",
-    "الأخلاق الإسلامية",
+    "تحفيظ القرآن الكريم",
+    "تعليم القرآن",
+    "التجويد وأحكام التلاوة",
+    "العلوم الشرعية",
+    "الدراسات الإسلامية",
+    "اللغة العربية",
+    "العقيدة والفقه",
+    "السيرة النبوية",
+    "الأخلاق والآداب الإسلامية",
     "الأدعية والأذكار",
-    "التربية الإسلامية للأطفال",
   ],
   en: [
-    "Quran education for children",
     "Quran memorization",
-    "Tajweed",
-    "Arabic language for children",
-    "Islamic studies for children",
+    "Quran education",
+    "Tajweed and recitation rules",
+    "Islamic sciences",
+    "Islamic studies",
+    "Arabic language",
+    "Aqeedah and Fiqh",
+    "Prophetic biography (Seerah)",
     "Islamic manners",
     "Duas and dhikr",
-    "Islamic parenting",
   ],
 };
 
@@ -62,7 +66,7 @@ export function organizationSchema(lng) {
     "@type": "EducationalOrganization",
     "@id": ORG_ID,
     name: brand(lng),
-    alternateName: isEn ? "أكاديمية آية" : "Aya Academy",
+    alternateName: isEn ? "أكاديمية آية" : "Ayah Academy",
     url: `${SITE_URL}${localePath(lng, "/")}`,
     logo: `${SITE_URL}/logos/logo.png`,
     image: `${SITE_URL}/og.png`,
@@ -110,28 +114,28 @@ export function faqSchema(items = []) {
 
 const COURSE = {
   ar: {
-    name: "برنامج تعليم القرآن والأخلاق للأطفال أونلاين",
+    name: "برنامج تعليم وتحفيظ القرآن والعلوم الشرعية أونلاين",
     teaches: [
       "حفظ القرآن الكريم",
       "التلاوة والتجويد",
       "اللغة العربية",
-      "الدراسات الإسلامية",
+      "العلوم الشرعية والدراسات الإسلامية",
       "الأخلاق والآداب الإسلامية",
       "الأدعية والأذكار",
     ],
-    audience: "الأطفال من ٥ سنوات فأكثر",
+    audience: "المتعلّمون من ٥ سنوات فأكثر — كبارًا وصغارًا",
   },
   en: {
-    name: "Online Quran & Manners Program for Kids",
+    name: "Online Quran & Islamic Studies Program",
     teaches: [
       "Quran memorization",
       "Recitation & Tajweed",
       "Arabic language",
-      "Islamic studies",
+      "Islamic sciences & studies",
       "Islamic manners & etiquette",
       "Duas & dhikr",
     ],
-    audience: "Children aged 5 and up",
+    audience: "Learners aged 5 and up — adults and children",
   },
 };
 
@@ -151,7 +155,7 @@ export function courseSchema(lng) {
     inLanguage: languages,
     provider: { "@id": ORG_ID },
     teaches: c.teaches,
-    educationalLevel: "beginner",
+    educationalLevel: "Beginner to advanced",
     audience: {
       "@type": "EducationalAudience",
       educationalRole: "student",

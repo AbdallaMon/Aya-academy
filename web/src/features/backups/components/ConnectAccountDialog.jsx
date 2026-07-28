@@ -2,7 +2,7 @@
 
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { FiKey, FiDatabase } from "react-icons/fi";
-import { DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 import { FormDialog } from "../../../shared/components/index.js";
 import { useBackupsText } from "../hooks/useBackupsText.js";
 

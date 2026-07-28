@@ -11,7 +11,7 @@ export const config = {
   web: {
     baseUrl: process.env.NEXT_PUBLIC_WEB_BASE_URL,
   },
-  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "Aya Academy",
+  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "Ayah Academy",
   appEnv: process.env.NEXT_PUBLIC_APP_ENV ?? "development",
   isDev: (process.env.NEXT_PUBLIC_APP_ENV ?? "development") === "development",
 };

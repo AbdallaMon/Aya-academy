@@ -2,7 +2,7 @@
 // resolver (see useRequest). The resolver tries, in order:
 //   table[translationKey][code] -> table[code] -> table.generalMessages[code] -> raw code
 //
-// Keys are grouped by the @aya/shared `messagesNames` namespace values
+// Keys are grouped by the @ayah/shared `messagesNames` namespace values
 // (e.g. "auth-messages", "general-messages", "user-messages").
 //
 // EVERY message code thrown by the backend must have an entry in BOTH `ar`
@@ -32,7 +32,7 @@ import {
   settingsMessagesCodes,
   whiteboardMessagesCodes,
   messagesNames,
-} from '@aya/shared';
+} from '@ayah/shared';
 
 const ar = {
   // ── general-messages ──────────────────────────────────────────────────────
@@ -63,9 +63,18 @@ const ar = {
     [authMessagesCodes.LOGOUT_SUCCESS]: 'تم تسجيل الخروج',
     [authMessagesCodes.TOKEN_REFRESHED]: 'تم تحديث الجلسة',
     [authMessagesCodes.INVALID_CREDENTIALS]:
-      'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+      'البريد الإلكتروني أو اسم المستخدم أو كلمة المرور غير صحيحة',
     [authMessagesCodes.EMAIL_ALREADY_EXISTS]: 'البريد الإلكتروني مستخدم بالفعل',
-    [authMessagesCodes.USERNAME_ALREADY_EXISTS]: 'اسم المستخدم مستخدم بالفعل',
+    [authMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'اسم المستخدم مستخدم بالفعل، اختر اسم مستخدم آخر',
+    [authMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'أدخل البريد الإلكتروني أو اسم المستخدم',
+    [authMessagesCodes.INVALID_USERNAME]:
+      'اسم المستخدم يجب أن يكون من 3 إلى 30 حرفًا، ويمكن أن يحتوي على حروف وأرقام ونقطة وشرطة فقط',
+    [authMessagesCodes.LOGIN_RATE_LIMITED]:
+      'محاولات تسجيل دخول كثيرة، حاول مرة أخرى بعد قليل',
+    [authMessagesCodes.REGISTRATION_RATE_LIMITED]:
+      'تم إجراء محاولات تسجيل كثيرة، حاول مرة أخرى لاحقًا',
     [authMessagesCodes.ACCOUNT_INACTIVE]: 'الحساب غير مفعّل',
     [authMessagesCodes.UNAUTHORIZED]: 'انتهت الجلسة، يرجى تسجيل الدخول',
     [authMessagesCodes.FORBIDDEN]: 'ليس لديك صلاحية',
@@ -94,6 +103,10 @@ const ar = {
       'هناك بريد إلكتروني مكرر بين الأبناء في نفس الطلب',
     [authMessagesCodes.CHILD_EMAIL_EXISTS]:
       'البريد الإلكتروني لأحد الأبناء مستخدم بالفعل',
+    [authMessagesCodes.CHILD_USERNAME_DUPLICATE]:
+      'هناك اسم مستخدم مكرر بين الأبناء في نفس الطلب',
+    [authMessagesCodes.CHILD_USERNAME_EXISTS]:
+      'اسم المستخدم لأحد الأبناء مستخدم بالفعل، اختر اسمًا آخر',
     [authMessagesCodes.NO_CHILDREN]: 'يجب إضافة ابن واحد على الأقل',
     [authMessagesCodes.PLAN_REQUIRED]: 'يجب اختيار خطة لكل ابن',
     [authMessagesCodes.COUPON_INVALID_FOR_PLAN]:
@@ -104,10 +117,16 @@ const ar = {
     [userMessagesCodes.USER_NOT_FOUND]: 'المستخدم غير موجود',
     [userMessagesCodes.USER_NAME_REQUIRED]: 'اسم المستخدم مطلوب',
     [userMessagesCodes.USER_EMAIL_REQUIRED]: 'البريد الإلكتروني مطلوب',
+    [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'أدخل البريد الإلكتروني أو اسم المستخدم',
     [userMessagesCodes.INVALID_EMAIL]: 'بريد إلكتروني غير صالح',
+    [userMessagesCodes.INVALID_USERNAME]:
+      'اسم المستخدم يجب أن يكون من 3 إلى 30 حرفًا، ويمكن أن يحتوي على حروف وأرقام ونقطة وشرطة فقط',
     [userMessagesCodes.USER_ROLE_REQUIRED]: 'الدور مطلوب',
     [userMessagesCodes.USER_PASSWORD_REQUIRED]: 'كلمة المرور مطلوبة',
     [userMessagesCodes.EMAIL_ALREADY_EXISTS]: 'البريد الإلكتروني مستخدم بالفعل',
+    [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'اسم المستخدم مستخدم بالفعل، اختر اسم مستخدم آخر',
     [userMessagesCodes.CANNOT_ACCESS_USER]: 'لا يمكنك الوصول لهذا المستخدم',
     [userMessagesCodes.CANNOT_MODIFY_USER]: 'لا يمكنك تعديل هذا المستخدم',
     [userMessagesCodes.CANNOT_LINK_STUDENT]: 'لا يمكن ربط الطالب',
@@ -144,6 +163,11 @@ const ar = {
     [couponMessagesCodes.COUPON_CODE_REQUIRED]: 'كود الكوبون مطلوب',
     [couponMessagesCodes.COUPON_INVALID]: 'كوبون غير صالح',
     [couponMessagesCodes.COUPON_EXPIRED]: 'انتهت صلاحية الكوبون',
+    [couponMessagesCodes.COUPON_NOT_ACTIVE_YET]: 'الكوبون لم يبدأ بعد',
+    [couponMessagesCodes.COUPON_USAGE_LIMIT_REACHED]:
+      'انتهى عدد الاستخدامات المتاح لهذا الكوبون',
+    [couponMessagesCodes.COUPON_ALREADY_USED_BY_STUDENT]:
+      'تم استخدام هذا الكوبون لهذا الطالب من قبل، ولا يمكن استخدامه مرة أخرى',
     [couponMessagesCodes.COUPON_NOT_APPLICABLE]: 'لا يمكن تطبيق هذا الكوبون',
     [couponMessagesCodes.COUPON_CODE_TAKEN]: 'كود الكوبون مستخدم بالفعل',
     [couponMessagesCodes.COUPON_MAX_BELOW_USAGE]:
@@ -162,7 +186,8 @@ const ar = {
     [subscriptionMessagesCodes.NOT_PENDING]: 'الاشتراك ليس قيد الانتظار',
     [subscriptionMessagesCodes.COUPON_INVALID]: 'كوبون غير صالح',
     [subscriptionMessagesCodes.CANNOT_CANCEL]: 'لا يمكن إلغاء هذا الاشتراك',
-    [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]: 'تم إلغاء الاشتراك',
+    [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]:
+      'تم إلغاء الاشتراك وفاتورته غير المدفوعة. إضافة حصة للشهر السابق ستنشئ اشتراكاً جديداً للشهر التالي.',
     [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]:
       'يوجد اشتراك مفعّل حالياً — يجب إلغاء تفعيله أولاً قبل إنشاء اشتراك جديد',
     [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: 'تم تجديد الاشتراك',
@@ -170,8 +195,26 @@ const ar = {
     [subscriptionMessagesCodes.SUBSCRIPTION_ACTIVATED]: 'تم تفعيل الاشتراك',
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]:
       'لا يمكن تغيير الخطة بعد دفع الفاتورة',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS]:
+      'يوجد اشتراك بالاستخدام لهذا الطالب في هذا الشهر بالفعل',
+    [subscriptionMessagesCodes.ACTIVATION_TOO_EARLY]:
+      'لا يمكن تفعيل الاشتراك قبل بداية شهره (يفتح التفعيل من آخر الشهر السابق)',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'انتهى الاشتراك أو غير مفعّل',
+    [subscriptionMessagesCodes.NO_EDITABLE_FIELDS]:
+      'هذا الحقل لا يمكن تعديله من التعديل العام. استخدم الإجراء المخصص له.',
+    [subscriptionMessagesCodes.REMAINING_EXCEEDS_TOTAL]:
+      'الدقائق المتبقية لا يمكن أن تتجاوز إجمالي دقائق الاشتراك',
+    [subscriptionMessagesCodes.SUBSCRIPTION_UPDATED]:
+      'تم تحديث بيانات الاشتراك',
+    [subscriptionMessagesCodes.SUBSCRIPTION_CREATED]:
+      'تم إنشاء الاشتراك والفاتورة بنجاح',
+    [subscriptionMessagesCodes.SUBSCRIPTION_REJECTED]:
+      'تم رفض الاشتراك وإلغاء فاتورته غير المدفوعة',
+    [subscriptionMessagesCodes.COUPON_UPDATED]:
+      'تم تحديث الكوبون والسعر والفاتورة',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_SYNCED]:
+      'تم تحديث اشتراك الشهر القادم من الحصص',
   },
   // ── game-messages ─────────────────────────────────────────────────────────
   [messagesNames.gameMessages]: {
@@ -335,11 +378,15 @@ const ar = {
       'الاشتراك لا يحتوي على مبلغ محدد',
     [invoiceMessagesCodes.INVOICE_GENERATED]: 'تم إنشاء الفاتورة',
     [invoiceMessagesCodes.INVOICE_REGENERATED]: 'تم إعادة توليد الفاتورة',
+    [invoiceMessagesCodes.INVOICE_REBILLED_AND_SUBSCRIPTION_PAUSED]:
+      'تمت إعادة حساب الحصص والفاتورة، وأصبح الاشتراك بانتظار الدفع والتفعيل',
     [invoiceMessagesCodes.INVOICE_UPDATED]: 'تم تحديث الفاتورة',
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]:
       'لا يمكن تغيير حالة الفاتورة بهذا الشكل',
     [invoiceMessagesCodes.INVOICE_SENT]: 'تم إرسال الفاتورة',
     [invoiceMessagesCodes.INVOICE_SEND_FAILED]: 'فشل إرسال الفاتورة',
+    [invoiceMessagesCodes.NO_PARENT_LINKED]:
+      'فشل إرسال الفاتورة: لا يوجد ولي أمر مرتبط بالطالب',
     [invoiceMessagesCodes.CANNOT_SEND_INVOICE]: 'لا تملك صلاحية إرسال الفاتورة',
     [invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED]: 'إعدادات واتساب غير مكتملة',
   },
@@ -483,6 +530,10 @@ const ar = {
     [whiteboardMessagesCodes.IMAGE_REQUIRED]: 'الصورة مطلوبة',
     [whiteboardMessagesCodes.IMAGE_FORBIDDEN]: 'لا يمكنك الوصول لهذه الصورة',
     [whiteboardMessagesCodes.BOARD_DATA_SAVED]: 'تم حفظ بيانات السبورة',
+    [whiteboardMessagesCodes.LIBRARY_LOADED]: 'تم تحميل مكتبة السبورة',
+    [whiteboardMessagesCodes.LIBRARY_SAVED]: 'تم حفظ مكتبة السبورة',
+    [whiteboardMessagesCodes.LIBRARY_ITEMS_INVALID]:
+      'محتوى مكتبة السبورة غير صالح',
   },
 };
 
@@ -513,9 +564,19 @@ const en = {
     [authMessagesCodes.LOGIN_SUCCESS]: 'Logged in successfully',
     [authMessagesCodes.LOGOUT_SUCCESS]: 'Logged out',
     [authMessagesCodes.TOKEN_REFRESHED]: 'Session refreshed',
-    [authMessagesCodes.INVALID_CREDENTIALS]: 'Email or password is incorrect',
+    [authMessagesCodes.INVALID_CREDENTIALS]:
+      'Email, username, or password is incorrect',
     [authMessagesCodes.EMAIL_ALREADY_EXISTS]: 'Email already in use',
-    [authMessagesCodes.USERNAME_ALREADY_EXISTS]: 'Username already in use',
+    [authMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'Username is already in use. Choose another username',
+    [authMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'Enter an email address or username',
+    [authMessagesCodes.INVALID_USERNAME]:
+      'Username must be 3–30 characters and may contain letters, numbers, dots, underscores, and hyphens',
+    [authMessagesCodes.LOGIN_RATE_LIMITED]:
+      'Too many sign-in attempts. Please try again shortly',
+    [authMessagesCodes.REGISTRATION_RATE_LIMITED]:
+      'Too many registration attempts. Please try again later',
     [authMessagesCodes.ACCOUNT_INACTIVE]: 'Account is inactive',
     [authMessagesCodes.UNAUTHORIZED]: 'Session expired, please log in',
     [authMessagesCodes.FORBIDDEN]: "You don't have permission",
@@ -544,6 +605,10 @@ const en = {
       'A child email is duplicated within the same request',
     [authMessagesCodes.CHILD_EMAIL_EXISTS]:
       'A child email is already registered',
+    [authMessagesCodes.CHILD_USERNAME_DUPLICATE]:
+      'A child username is duplicated within the same request',
+    [authMessagesCodes.CHILD_USERNAME_EXISTS]:
+      'A child username is already registered. Choose another username',
     [authMessagesCodes.NO_CHILDREN]: 'Add at least one child',
     [authMessagesCodes.PLAN_REQUIRED]: 'Select a plan for each child',
     [authMessagesCodes.COUPON_INVALID_FOR_PLAN]:
@@ -553,10 +618,16 @@ const en = {
     [userMessagesCodes.USER_NOT_FOUND]: 'User not found',
     [userMessagesCodes.USER_NAME_REQUIRED]: 'User name is required',
     [userMessagesCodes.USER_EMAIL_REQUIRED]: 'Email is required',
+    [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+      'Enter an email address or username',
     [userMessagesCodes.INVALID_EMAIL]: 'Invalid email',
+    [userMessagesCodes.INVALID_USERNAME]:
+      'Username must be 3–30 characters and may contain letters, numbers, dots, underscores, and hyphens',
     [userMessagesCodes.USER_ROLE_REQUIRED]: 'Role is required',
     [userMessagesCodes.USER_PASSWORD_REQUIRED]: 'Password is required',
     [userMessagesCodes.EMAIL_ALREADY_EXISTS]: 'Email already in use',
+    [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+      'Username is already in use. Choose another username',
     [userMessagesCodes.CANNOT_ACCESS_USER]: 'You cannot access this user',
     [userMessagesCodes.CANNOT_MODIFY_USER]: 'You cannot modify this user',
     [userMessagesCodes.CANNOT_LINK_STUDENT]: 'Student cannot be linked',
@@ -593,6 +664,12 @@ const en = {
     [couponMessagesCodes.COUPON_CODE_REQUIRED]: 'Coupon code is required',
     [couponMessagesCodes.COUPON_INVALID]: 'Invalid coupon',
     [couponMessagesCodes.COUPON_EXPIRED]: 'Coupon has expired',
+    [couponMessagesCodes.COUPON_NOT_ACTIVE_YET]:
+      'This coupon is not active yet',
+    [couponMessagesCodes.COUPON_USAGE_LIMIT_REACHED]:
+      'This coupon has reached its total usage limit',
+    [couponMessagesCodes.COUPON_ALREADY_USED_BY_STUDENT]:
+      'This coupon has already been used for this student',
     [couponMessagesCodes.COUPON_NOT_APPLICABLE]: 'Coupon is not applicable',
     [couponMessagesCodes.COUPON_CODE_TAKEN]: 'Coupon code already in use',
     [couponMessagesCodes.COUPON_MAX_BELOW_USAGE]:
@@ -614,7 +691,7 @@ const en = {
     [subscriptionMessagesCodes.CANNOT_CANCEL]:
       'This subscription cannot be cancelled',
     [subscriptionMessagesCodes.SUBSCRIPTION_CANCELLED]:
-      'Subscription cancelled',
+      "Subscription and its unpaid invoice were cancelled. Logging a session in the prior month creates a new subscription for the following month.",
     [subscriptionMessagesCodes.SUBSCRIPTION_STILL_ACTIVE]:
       'There is an active subscription — cancel it first before creating a new one',
     [subscriptionMessagesCodes.SUBSCRIPTION_RENEWED]: 'Subscription renewed',
@@ -623,8 +700,26 @@ const en = {
       'Subscription activated',
     [subscriptionMessagesCodes.CANNOT_CHANGE_PLAN_PAID]:
       'Cannot change the plan after the invoice is paid',
+    [subscriptionMessagesCodes.ACTIVATION_TOO_EARLY]:
+      "Can't activate the subscription before its month begins (activation opens from the last day of the previous month)",
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_EXISTS]:
+      'A usage subscription already exists for this student in this month',
     [subscriptionMessagesCodes.SUBSCRIPTION_INACTIVE]:
       'Subscription expired or inactive',
+    [subscriptionMessagesCodes.NO_EDITABLE_FIELDS]:
+      'This workflow field cannot be changed by the generic edit action.',
+    [subscriptionMessagesCodes.REMAINING_EXCEEDS_TOTAL]:
+      'Remaining minutes cannot exceed the subscription total.',
+    [subscriptionMessagesCodes.SUBSCRIPTION_UPDATED]:
+      'Subscription details updated',
+    [subscriptionMessagesCodes.SUBSCRIPTION_CREATED]:
+      'Subscription and invoice created successfully',
+    [subscriptionMessagesCodes.SUBSCRIPTION_REJECTED]:
+      'Subscription rejected and its unpaid invoice voided',
+    [subscriptionMessagesCodes.COUPON_UPDATED]:
+      'Coupon, price, and invoice updated',
+    [subscriptionMessagesCodes.USAGE_SUBSCRIPTION_SYNCED]:
+      "Next month's subscription was updated from sessions",
   },
   [messagesNames.gameMessages]: {
     [gameMessagesCodes.GAME_NOT_FOUND]: 'Game not found',
@@ -782,11 +877,15 @@ const en = {
       'The subscription has no price set',
     [invoiceMessagesCodes.INVOICE_GENERATED]: 'Invoice generated',
     [invoiceMessagesCodes.INVOICE_REGENERATED]: 'Invoice regenerated',
+    [invoiceMessagesCodes.INVOICE_REBILLED_AND_SUBSCRIPTION_PAUSED]:
+      'Sessions and invoice recalculated; the subscription is awaiting payment and activation',
     [invoiceMessagesCodes.INVOICE_UPDATED]: 'Invoice updated',
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]:
       "This invoice status change isn't allowed",
     [invoiceMessagesCodes.INVOICE_SENT]: 'Invoice sent',
     [invoiceMessagesCodes.INVOICE_SEND_FAILED]: 'Failed to send the invoice',
+    [invoiceMessagesCodes.NO_PARENT_LINKED]:
+      'Failed to send the invoice: the student has no linked parent',
     [invoiceMessagesCodes.CANNOT_SEND_INVOICE]:
       'You are not allowed to send this invoice',
     [invoiceMessagesCodes.WHATSAPP_NOT_CONFIGURED]:
@@ -944,6 +1043,10 @@ const en = {
     [whiteboardMessagesCodes.IMAGE_REQUIRED]: 'Image is required',
     [whiteboardMessagesCodes.IMAGE_FORBIDDEN]: 'You cannot access this image',
     [whiteboardMessagesCodes.BOARD_DATA_SAVED]: 'Board data saved',
+    [whiteboardMessagesCodes.LIBRARY_LOADED]: 'Whiteboard library loaded',
+    [whiteboardMessagesCodes.LIBRARY_SAVED]: 'Whiteboard library saved',
+    [whiteboardMessagesCodes.LIBRARY_ITEMS_INVALID]:
+      'The whiteboard library data is invalid',
   },
 };
 

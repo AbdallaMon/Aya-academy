@@ -33,7 +33,7 @@ export const DECORATION_KEYS = [
 // safe default). EXAM forces the unified exam look regardless of other choices.
 export const TEMPLATE_KEYS = [...DECORATION_KEYS, "EXAM"];
 
-// The unified exam/quiz template key (mirrors @aya/shared CERTIFICATE_TEMPLATE_KEYS.EXAM).
+// The unified exam/quiz template key (mirrors @ayah/shared CERTIFICATE_TEMPLATE_KEYS.EXAM).
 export const EXAM_TEMPLATE_KEY = "EXAM";
 
 // Heading / name font styles the card supports (stored as themeJson.fontStyle).

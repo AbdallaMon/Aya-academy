@@ -4,15 +4,16 @@
 // startScheduler():  called on server boot IF ENV.backup.enabled (guarded — does
 //                    not break boot). node-cron only (no Redis/BullMQ).
 //
-// There is no Settings model in Aya — the time comes from the env, so there is
+// There is no Settings model in Ayah — the time comes from the env, so there is
 // no runtime reschedule path. Runs backupService.createBackup({ trigger: AUTO })
 // which never throws over the edge, so the cron never crashes even if a backup fails.
 // ===========================================================================
 
 import cron from "node-cron";
-import { BACKUP_TRIGGERS } from "@aya/shared";
+import { BACKUP_TRIGGERS } from "@ayah/shared";
 import { ENV } from "../../config/env.js";
-import { backupService, sweepStaleExternalTempDirs } from "./backupService.js";
+import { backupService } from "./backupService.js";
+import { sweepStaleExternalTempDirs } from "./fsUtils.js";
 
 // System user id for automatic operations (the seeded admin id=1). null is fine.
 const SYSTEM_USER_ID = 1;

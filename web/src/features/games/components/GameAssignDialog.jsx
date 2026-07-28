@@ -4,22 +4,23 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
-  Checkbox,
   Chip,
   CircularProgress,
   Divider,
   IconButton,
   List,
   ListItem,
-  ListItemButton,
-  ListItemIcon,
   ListItemText,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { MdDelete } from "react-icons/md";
-import { FormDialog, useConfirm } from "../../../shared/components/index.js";
+import {
+  AsyncUserAutocomplete,
+  FormDialog,
+  useConfirm,
+} from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -35,19 +36,10 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
   const confirm = useConfirm();
   const gameId = game?.id;
 
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
   const [dueAt, setDueAt] = useState("");
 
   // Students (role STUDENT) — fetched on open.
-  const studentsReq = useRequest({
-    url: "users",
-    method: "get",
-    isPaginated: true,
-    autoFetch: false,
-    syncToUrl: false,
-    initialParams: { limit: 100, role: "STUDENT" },
-  });
-
   // Current assignments for this game — fetched on open + after mutations.
   const assignmentsReq = useRequest({
     url: `games/${gameId}/assignments`,
@@ -70,7 +62,7 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
-      setSelectedIds([]);
+      setSelectedStudents([]);
       setDueAt("");
     }
   }
@@ -78,39 +70,27 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
   // Fetch students + current assignments whenever the dialog opens.
   useEffect(() => {
     if (open && gameId) {
-      studentsReq.fetchData();
       assignmentsReq.fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, gameId]);
 
-  const students = (studentsReq.data || []).filter((u) => u.role === "STUDENT");
-  const assignments = Array.isArray(assignmentsReq.data)
-    ? assignmentsReq.data
-    : [];
+  const assignments = useMemo(
+    () => (Array.isArray(assignmentsReq.data) ? assignmentsReq.data : []),
+    [assignmentsReq.data],
+  );
 
   const assignedIds = useMemo(
     () => new Set(assignments.map((a) => a.studentId)),
     [assignments],
   );
-  const unassigned = useMemo(
-    () => students.filter((s) => !assignedIds.has(s.id)),
-    [students, assignedIds],
-  );
-
-  function toggle(id) {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  }
-
   async function assign() {
-    if (selectedIds.length === 0) return;
+    if (selectedStudents.length === 0) return;
     await mut.postRequest("assign", {
-      studentIds: selectedIds.map((id) => Number(id)),
+      studentIds: selectedStudents.map((student) => Number(student.id)),
       dueAt: dueAt || undefined,
     });
-    setSelectedIds([]);
+    setSelectedStudents([]);
     setDueAt("");
   }
 
@@ -121,7 +101,6 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
   }
 
   const loading =
-    studentsReq.isLoading ||
     assignmentsReq.isLoading ||
     mut.isPostRequestLoading ||
     mut.isDeleteRequestLoading;
@@ -193,40 +172,14 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
             {txt.addStudents}
           </Typography>
-          {studentsReq.isLoading ? (
-            <Stack alignItems="center" sx={{ py: 2 }}>
-              <CircularProgress size={22} />
-            </Stack>
-          ) : unassigned.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              {txt.noStudentsLeft}
-            </Typography>
-          ) : (
-            <List
-              dense
-              disablePadding
-              sx={{ maxHeight: 220, overflowY: "auto" }}
-            >
-              {unassigned.map((s) => (
-                <ListItem key={s.id} disableGutters disablePadding>
-                  <ListItemButton onClick={() => toggle(s.id)} dense>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <Checkbox
-                        edge="start"
-                        checked={selectedIds.includes(s.id)}
-                        tabIndex={-1}
-                        disableRipple
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={s.name}
-                      secondary={s.nickname || undefined}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          )}
+          <AsyncUserAutocomplete
+            multiple
+            role="STUDENT"
+            label={txt.addStudents}
+            value={selectedStudents}
+            onChange={setSelectedStudents}
+            excludeIds={[...assignedIds]}
+          />
         </Box>
 
         <TextField
@@ -241,7 +194,7 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
         <Button
           variant="contained"
           onClick={assign}
-          disabled={loading || selectedIds.length === 0}
+          disabled={loading || selectedStudents.length === 0}
           startIcon={
             mut.isPostRequestLoading ? (
               <CircularProgress size={16} color="inherit" />
@@ -249,7 +202,7 @@ export default function GameAssignDialog({ open, onClose, game, txt }) {
           }
         >
           {txt.assignButton}
-          {selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
+          {selectedStudents.length > 0 ? ` (${selectedStudents.length})` : ""}
         </Button>
       </Stack>
     </FormDialog>

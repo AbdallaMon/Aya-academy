@@ -30,9 +30,13 @@ const TXT = {
     restore: "استرجاع خصم الباقة",
     invalid: "كود الخصم غير صالح",
     expired: "انتهت صلاحية كود الخصم",
+    notActiveYet: "الكوبون لم يبدأ بعد",
+    usageLimitReached: "انتهى الحد العام لاستخدام الكوبون",
+    alreadyUsed: "تم استخدام هذا الكوبون لهذا الطالب من قبل",
     notApplicable: "الكوبون لا ينطبق على هذه الباقة أو الدورة",
     notFound: "كود الخصم غير موجود",
     removed: "تمت إزالة الخصم — السعر بدون خصم",
+    noPlanCoupon: "لا يوجد كوبون متاح لهذه الخطة لهذا الطالب حالياً.",
   },
   en: {
     label: "Coupon code",
@@ -45,9 +49,13 @@ const TXT = {
     restore: "Restore plan discount",
     invalid: "Invalid coupon code",
     expired: "Coupon code expired",
+    notActiveYet: "Coupon is not active yet",
+    usageLimitReached: "Coupon usage limit has been reached",
+    alreadyUsed: "This coupon was already used for this student",
     notApplicable: "Coupon does not apply to this plan or cycle",
     notFound: "Coupon code not found",
     removed: "Discount removed — price without discount",
+    noPlanCoupon: "No plan coupon is currently available for this student.",
   },
 };
 
@@ -55,6 +63,12 @@ function reasonText(reason, t) {
   switch (reason) {
     case "COUPON_EXPIRED":
       return t.expired;
+    case "COUPON_NOT_ACTIVE_YET":
+      return t.notActiveYet;
+    case "COUPON_USAGE_LIMIT_REACHED":
+      return t.usageLimitReached;
+    case "COUPON_ALREADY_USED_BY_STUDENT":
+      return t.alreadyUsed;
     case "COUPON_NOT_APPLICABLE":
       return t.notApplicable;
     case "COUPON_NOT_FOUND":
@@ -76,16 +90,24 @@ function reasonText(reason, t) {
  *  - onCoupon(next): replace the coupon state
  *  - currency?: overrides plan.currency for formatting
  */
-export default function CouponControl({ plan, billingPeriod, coupon, onCoupon, currency }) {
+export default function CouponControl({
+  plan,
+  billingPeriod,
+  coupon,
+  onCoupon,
+  currency,
+  quoteUrl = "plans/quote",
+  quoteBody = {},
+}) {
   const { lng } = useTranslation();
   const t = TXT[lng === "en" ? "en" : "ar"];
   const cur = currency || plan?.currency;
   const planCoupon = planCouponOf(plan, billingPeriod);
 
   const quoteReq = useRequest({
-    url: "plans/quote",
+    url: quoteUrl,
     method: "post",
-    isPublic: true,
+    isPublic: quoteUrl === "plans/quote",
     syncToUrl: false,
   });
 
@@ -107,6 +129,7 @@ export default function CouponControl({ plan, billingPeriod, coupon, onCoupon, c
         planId: plan.id,
         billingPeriod,
         couponCode: code.trim(),
+        ...quoteBody,
       });
       const data = res?.data;
       if (data?.couponValid) {
@@ -168,6 +191,11 @@ export default function CouponControl({ plan, billingPeriod, coupon, onCoupon, c
   // ── Input (idle / none / invalid): text field + verify, optional restore ──
   return (
     <Stack spacing={1}>
+      {!planCoupon && status === "idle" && (
+        <Alert severity="info" sx={{ py: 0 }}>
+          {t.noPlanCoupon}
+        </Alert>
+      )}
       {status === "none" && (
         <Alert severity="info" sx={{ py: 0 }}>
           {t.removed}

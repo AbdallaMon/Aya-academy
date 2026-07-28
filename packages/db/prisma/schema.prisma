@@ -1,6 +1,6 @@
-// Aya Academy — Prisma schema (PostgreSQL)
+// Ayah Academy — Prisma schema (PostgreSQL)
 // Conventions: Int autoincrement ids, createdAt/updatedAt on operational models,
-// @db.Text for long text, real enums for closed sets (mirrored in @aya/shared),
+// @db.Text for long text, real enums for closed sets (mirrored in @ayah/shared),
 // @@index on FKs/hot filters. Dynamic user-facing text stored as *Ar / *En pairs.
 
 generator client {
@@ -97,6 +97,13 @@ enum SubscriptionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
+}
+
+// How a subscription came to exist. Keep in sync with
+// packages/shared/constants/enums.js (SUBSCRIPTION_ORIGINS).
+enum SubscriptionOrigin {
+  MANUAL
+  USAGE
 }
 
 // Invoice lifecycle. Payment is not real yet — status is set manually; a
@@ -234,12 +241,12 @@ enum AttachmentOwnerType {
 model User {
   id             Int         @id @default(autoincrement())
   name           String
-  email          String      @unique
+  email          String?     @unique
   username       String?     @unique
   passwordHash   String
   role           UserRole    @default(STUDENT)
   phone          String?
-  locale         String      @default("ar")
+  locale         String      @default("en")
   isActive       Boolean     @default(true)
   sessionVersion Int         @default(0)
   avatarId       Int?
@@ -292,6 +299,7 @@ model User {
   createdCertificates Certificate[]     @relation("CertificateCreatedBy")
   rewards             Reward[]
   notifications       Notification[]
+  couponRedemptions   CouponRedemption[] @relation("StudentCouponRedemptions")
   studentBadges       StudentBadge[]
   pointsLedger        Point[]           @relation("StudentPoints")
   awardedPoints       Point[]           @relation("PointAwardedBy")
@@ -304,6 +312,7 @@ model User {
 
   whiteboardSessionsCreated WhiteboardSession[]        @relation("WhiteboardCreatedBy")
   whiteboardAttendances     WhiteboardSessionStudent[] @relation("WhiteboardStudent")
+  whiteboardLibrary         WhiteboardLibrary?         @relation("WhiteboardLibraryOwner")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -381,6 +390,20 @@ model WhiteboardSessionStudent {
   @@index([studentId])
 }
 
+// An admin's Excalidraw library. It is intentionally independent from any
+// WhiteboardSession so imported shapes are available in every board the admin
+// opens. Excalidraw owns the JSON structure; the API validates the collection
+// boundary and persists it without reshaping its elements.
+model WhiteboardLibrary {
+  id           Int   @id @default(autoincrement())
+  ownerId      Int   @unique
+  owner        User  @relation("WhiteboardLibraryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  libraryItems Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model ParentStudent {
   id        Int            @id @default(autoincrement())
   parentId  Int
@@ -437,6 +460,7 @@ model Coupon {
 
   plans         CouponPlan[]
   subscriptions Subscription[]
+  redemptions   CouponRedemption[]
   rewards       Reward[]
   quizAttempts  QuizAttempt[]
 
@@ -457,6 +481,26 @@ model CouponPlan {
   @@index([planId])
 }
 
+// Append-only proof that a student consumed a coupon. The unique business key
+// permanently enforces one use of the same coupon per student, even if the
+// subscription is later cancelled, replaced or deleted.
+model CouponRedemption {
+  id             Int           @id @default(autoincrement())
+  couponId       Int
+  coupon         Coupon        @relation(fields: [couponId], references: [id])
+  studentId      Int
+  student        User          @relation("StudentCouponRedemptions", fields: [studentId], references: [id], onDelete: Cascade)
+  subscriptionId Int?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([couponId, studentId])
+  @@index([studentId])
+  @@index([subscriptionId])
+}
+
 // ============================================================
 // SUBSCRIPTIONS
 // ============================================================
@@ -469,12 +513,22 @@ model Subscription {
   plan           Plan?              @relation(fields: [planId], references: [id])
   billingPeriod  BillingPeriod      @default(MONTHLY)
   status         SubscriptionStatus @default(ACTIVE)
+  origin         SubscriptionOrigin @default(MANUAL)
   startDate      DateTime
   endDate        DateTime
-  // Paid subscription hours — the billing basis (price = subsHours × hourlyRate).
-  // Column stays `totalHours` (via @map) so no data migration is needed.
-  subsHours      Int?               @map("totalHours")
-  remainingHours Int?
+  // Application-owned key for one non-final USAGE subscription per student and
+  // calendar month. CANCELLED/EXPIRED rows keep this null, so a replacement can
+  // be created without deleting billing history. Existing rows are intentionally
+  // not backfilled by the schema migration.
+  usageMonthKey  String?             @unique @db.VarChar(32)
+  // Legacy hour-based fields. Kept temporarily so the explicit minutes backfill
+  // script can migrate production data without doing data work in the schema
+  // migration. New application writes use subsMinutes/remainingMinutes only.
+  subsHours       Int?               @map("totalHours")
+  remainingHours  Int?
+  // Canonical billing duration. Integer minutes avoid fractional-hour drift.
+  subsMinutes      Int?
+  remainingMinutes Int?
   currency       String             @default("GBP")
   priceCharged   Decimal?           @db.Decimal(10, 2)
   couponId       Int?
@@ -483,7 +537,9 @@ model Subscription {
   createdById    Int?
   createdBy      User?              @relation("SubscriptionCreatedBy", fields: [createdById], references: [id])
 
-  invoice Invoice?
+  invoice        Invoice?
+  billedSessions SessionLog[] @relation("UsageBilledSessions")
+  couponRedemptions CouponRedemption[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -491,6 +547,7 @@ model Subscription {
   @@index([studentId])
   @@index([status])
   @@index([endDate])
+  @@index([studentId, status, origin])
 }
 
 // ============================================================
@@ -540,6 +597,9 @@ model Invoice {
 
   // Snapshot amounts (derived — not directly editable).
   currency    String   @default("USD")
+  // Canonical duration snapshot for new invoices. `hours` is legacy compatibility
+  // until the standalone backfill has migrated every historical invoice.
+  minutes     Int?
   hours       Decimal? @db.Decimal(8, 2)
   hourlyRate  Decimal? @db.Decimal(10, 2)
   subtotal    Decimal  @default(0) @db.Decimal(10, 2)
@@ -742,8 +802,11 @@ model SessionLog {
 
   // Multi-select of SessionSubject values (MySQL has no enum arrays).
   subjectsJson Json
-  // Session length in hours (e.g. 1.5).
-  durationHours Decimal @db.Decimal(4, 2)
+  // Legacy hour duration. Nullable for new rows; the explicit backfill script
+  // copies it into durationMinutes after deployment.
+  durationHours   Decimal? @db.Decimal(4, 2)
+  // Canonical session duration for all new writes.
+  durationMinutes Int?
   // Teacher's evaluation of the student for this session.
   rating      SessionRating?
   // Free-text report about the session.
@@ -754,12 +817,18 @@ model SessionLog {
   createdById Int?
   createdBy   User? @relation("SessionLogCreatedBy", fields: [createdById], references: [id])
 
+  // Set once at month-close when this session's hours are frozen into a USAGE
+  // subscription's bill. NULL means the session is still unbilled.
+  billedSubscriptionId Int?
+  billedSubscription   Subscription? @relation("UsageBilledSessions", fields: [billedSubscriptionId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([studentId])
   @@index([teacherId])
   @@index([sessionDate])
+  @@index([studentId, sessionDate, billedSubscriptionId])
 }
 
 // ============================================================
@@ -964,7 +1033,7 @@ model CertificateTemplate {
   congratsEn       String? @db.Text
   thanksAr         String? @db.Text
   thanksEn         String? @db.Text
-  signatureName    String? // e.g. "Aya"
+  signatureName    String? // e.g. "Ayah"
   signatureTitleAr String? // e.g. "المعلمة"
   signatureTitleEn String? // e.g. "Teacher"
 

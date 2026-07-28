@@ -18,7 +18,7 @@ color themes, customer notices, print).
 
 ## Data model (packages/db/prisma/schema.prisma)
 
-`enum InvoiceStatus { UNPAID, PAID, VOID }` (mirrored in `@aya/shared` enums).
+`enum InvoiceStatus { UNPAID, PAID, VOID }` (mirrored in `@ayah/shared` enums).
 
 **PaymentTemplate** — singleton global template (the "main template").
 - `id Int @id @default(autoincrement())`

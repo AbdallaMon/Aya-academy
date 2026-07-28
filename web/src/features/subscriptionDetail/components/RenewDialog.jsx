@@ -40,6 +40,7 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
       planId: plan.id,
       billingPeriod: options.billingPeriod || "MONTHLY",
       ...(options.couponCode ? { couponCode: options.couponCode } : {}),
+      applyPlanCoupon: Boolean(options.applyPlanCoupon),
     };
     try {
       const res = await renewReq.fetchData(`${subscription.id}/renew`, body);
@@ -57,7 +58,10 @@ export default function RenewDialog({ open, onClose, subscription, txt }) {
     <PlanPickerDialog
       open={open}
       onClose={onClose}
-      child={{ name: subscription?.student?.name || "" }}
+      child={{
+        id: subscription?.studentId ?? subscription?.student?.id,
+        name: subscription?.student?.name || "",
+      }}
       onRequest={submit}
       requesting={renewReq.isLoading}
       txt={childrenTxt}

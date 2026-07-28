@@ -8,15 +8,15 @@
 //
 // Save guard order: validate → account exists + type KEY + connected → decode the
 // key material + assert 32 bytes → write the .pem to Drive → persist the row +
-// set primary if it is the first key (atomically). No audit (no audit infra in Aya).
+// set primary if it is the first key (atomically). No audit (no audit infra in Ayah).
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { AppError } from "../../shared/errors/AppError.js";
-import { DRIVE_ACCOUNT_TYPES, backupMessagesCodes, messagesNames } from "@aya/shared";
+import { DRIVE_ACCOUNT_TYPES, backupMessagesCodes, messagesNames } from "@ayah/shared";
 import { encryptionKeysRepo } from "./encryptionKeys.repo.js";
 import { encryptionKeysDto } from "./encryptionKeys.dto.js";
-import { driveAccountsRepo } from "../backups/driveAccounts.repo.js";
+import { driveAccountsRepo } from "../backups/driveAccount.repo.js";
 import { driveProvider } from "../../infra/backup/providers/drive.js";
 import {
   generateKeyBytes,
@@ -61,7 +61,7 @@ class EncryptionKeysUsecase {
    * sets it primary if it is the first key. Never stores the material.
    */
   async save({ input, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const keyAccountId = Number(input.keyAccountId);
 
     const account = await driveAccountsRepo.findById({ id: keyAccountId });
@@ -92,7 +92,7 @@ class EncryptionKeysUsecase {
     try {
       fingerprint = fingerprintOf(keyBytes);
       pem = toPemString(keyBytes.toString("base64"));
-      fileName = `aya-academy-backup-key-${fingerprint.slice(0, 12)}.pem`;
+      fileName = `ayah-academy-backup-key-${fingerprint.slice(0, 12)}.pem`;
     } finally {
       // Zero-fill the material after deriving the .pem (best-effort).
       try { keyBytes.fill(0); } catch { /* ignore */ }
@@ -132,7 +132,7 @@ class EncryptionKeysUsecase {
 
   /** Sets a key primary (clears the rest) inside a tx. */
   async setPrimary({ id, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const keyId = Number(id);
     const key = await encryptionKeysRepo.findById({ id: keyId });
     if (!key) {
@@ -150,7 +150,7 @@ class EncryptionKeysUsecase {
    * Backups linked by FK remain but may become unrestorable (the material is lost).
    */
   async remove({ id, authUser }) {
-    void authUser; // accepted for parity; no audit module in Aya.
+    void authUser; // accepted for parity; no audit module in Ayah.
     const keyId = Number(id);
     const key = await encryptionKeysRepo.findById({ id: keyId });
     if (!key) {

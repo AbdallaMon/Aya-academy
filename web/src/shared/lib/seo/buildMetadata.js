@@ -11,7 +11,7 @@
 //   }
 
 import { localePath } from "@/i18n/routing.js";
-import { languages, fallbackLng } from "@/i18n/settings.js";
+import { defaultLng, languages } from "@/i18n/settings.js";
 import {
   SITE_URL,
   ogImages,
@@ -20,38 +20,40 @@ import {
 } from "./config.js";
 import { getSeo } from "./content.js";
 
+function absoluteUrl(path = "/") {
+  return new URL(path, `${SITE_URL}/`).toString();
+}
+
 // Build the { ar, en, x-default } hreflang map for a locale-agnostic path.
 function buildLanguageAlternates(path) {
   const map = {};
   for (const lng of languages) {
-    map[lng] = localePath(lng, path);
+    map[lng] = absoluteUrl(localePath(lng, path));
   }
-  // x-default points search engines at the default (Arabic) variant.
-  map["x-default"] = localePath(fallbackLng, path);
+  // English is the configured fallback and the primary acquisition locale.
+  map["x-default"] = absoluteUrl(localePath(defaultLng, path));
   return map;
 }
 
 export function buildMetadata({
-  lng = fallbackLng,
+  lng = defaultLng,
   page = "site",
   path = "/",
   index = true,
   image,
   // Per-item overrides — used by dynamic pages (e.g. a blog article) where the
-  // title/description/keywords come from the content itself, not seoContent.
+  // title and description come from the content itself, not seoContent.
   title: titleOverride,
   description: descriptionOverride,
-  keywords: keywordsOverride,
 } = {}) {
   const base = getSeo(page, lng);
   const seo = {
     ...base,
     ...(titleOverride != null ? { title: titleOverride } : {}),
     ...(descriptionOverride != null ? { description: descriptionOverride } : {}),
-    ...(keywordsOverride != null ? { keywords: keywordsOverride } : {}),
   };
   const brandName = brand(lng);
-  const canonical = localePath(lng, path);
+  const canonical = absoluteUrl(localePath(lng, path));
 
   // Per-item override (e.g. a blog article cover) → that one image; otherwise the
   // brand card for THIS locale (Arabic vs English), in both PNG (crisp) and JPEG
@@ -60,7 +62,7 @@ export function buildMetadata({
     ? [{ url: image, type: undefined }]
     : ogImages(lng)
   ).map(({ url, type }) => ({
-    url,
+    url: absoluteUrl(url),
     ...(type ? { type } : {}),
     width: 1200,
     height: 630,
@@ -69,15 +71,17 @@ export function buildMetadata({
   }));
 
   // The homepage title already carries the brand; everything else gets the
-  // "<page> | <brand>" suffix via the template defined in the root layout. When
-  // titleAbsolute is set we bypass the template with { absolute }.
-  const title = seo.titleAbsolute ? { absolute: seo.title } : seo.title;
+  // "<page> | <brand>" suffix via the template defined in the root layout.
+  // An explicit dynamic title must not inherit `titleAbsolute` from a fallback
+  // page record (for example, a service using the site defaults).
+  const title = titleOverride == null && seo.titleAbsolute
+    ? { absolute: seo.title }
+    : seo.title;
 
   return {
     metadataBase: new URL(SITE_URL),
     title,
     description: seo.description,
-    ...(seo.keywords ? { keywords: seo.keywords } : {}),
     alternates: {
       canonical,
       languages: buildLanguageAlternates(path),

@@ -10,7 +10,10 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "../../../i18n/client.js";
-import { formatMoney, formatHours } from "../../../shared/lib/money.js";
+import {
+  formatDurationMinutes,
+  formatMoney,
+} from "../../../shared/lib/money.js";
 import { resolveDiscount } from "../config/constant.js";
 
 function Row({ label, children }) {
@@ -78,10 +81,14 @@ export default function SubscriptionCard({ subscription, invoice, txt }) {
             <Typography variant="body2">{fmtDate(subscription.endDate)}</Typography>
           </Row>
           <Row label={txt.subsHours}>
-            <Typography variant="body2">{formatHours(subscription.subsHours)}</Typography>
+            <Typography variant="body2">
+              {formatDurationMinutes(subscription.subsMinutes, lng)}
+            </Typography>
           </Row>
           <Row label={txt.remainingHours}>
-            <Typography variant="body2">{formatHours(subscription.remainingHours)}</Typography>
+            <Typography variant="body2">
+              {formatDurationMinutes(subscription.remainingMinutes, lng)}
+            </Typography>
           </Row>
         </Stack>
 

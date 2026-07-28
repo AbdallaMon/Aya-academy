@@ -5,41 +5,28 @@
 // - Gates rendering on auth (validatingAuth / isLoggedIn). The AuthProvider
 //   already redirects to /login on a hard 401 for protected routes; here we add
 //   a friendly loading state and a guard for the not-logged-in case.
-// - Sidebar links are role + permission gated (DashboardNav).
+// - Sidebar links are role + permission gated (DashboardNav, inside
+//   DashboardSidebar).
 // - The sidebar (desktop) and drawer (mobile) both span the full viewport height.
-// - Topbar carries the theme toggle, notification bell + user menu.
+// - Topbar (DashboardTopbar) carries language, notifications + the user menu.
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  AppBar,
-  Avatar,
   Box,
-  Button,
   CircularProgress,
-  Divider,
   Drawer,
-  IconButton,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  Stack,
-  Toolbar,
-  Tooltip,
   Typography,
   useMediaQuery,
 } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
-import { MdMenu, MdLogout, MdLightMode, MdDarkMode, MdClose } from "react-icons/md";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath, stripLocale } from "../../../i18n/routing.js";
-import { useThemeToggler } from "../../../providers/ThemeToggler.jsx";
-import { LanguageSwitch } from "../../../shared/ui/buttons/LanguageSwitch.jsx";
-import NotificationBell from "../../notifications/components/NotificationBell.jsx";
-import DashboardNav from "./DashboardNav.jsx";
+import DashboardSidebar from "./DashboardSidebar.jsx";
+import DashboardTopbar from "./DashboardTopbar.jsx";
 import { useDashboardText } from "../config/dashboardText.js";
-import { roleLabelKey, findNavItemByPath } from "../config/navModel.js";
+import { findNavItemByPath } from "../config/navModel.js";
 
 const SIDEBAR_WIDTH = 280;
 const CONTENT_MAX_WIDTH = 1440;
@@ -50,10 +37,8 @@ export default function DashboardShell({ children }) {
   const pathname = usePathname();
   const txt = useDashboardText();
   const { lng } = useTranslation();
-  const { theme: mode, toggleTheme } = useThemeToggler();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenu, setUserMenu] = useState(null);
   const { user, isLoggedIn, validatingAuth, logout } = useAuth();
 
   // If validation finished and there is no session, send to login. (Belt &
@@ -83,7 +68,8 @@ export default function DashboardShell({ children }) {
   }
 
   const role = user.role;
-  const displayName = user.nickname || user.name || user.email;
+  const displayName =
+    user.nickname || user.name || user.username || user.email;
   const initial = String(displayName).charAt(0).toUpperCase();
 
   // Derive the current section title from the nav model (route-driven).
@@ -98,130 +84,17 @@ export default function DashboardShell({ children }) {
       : txt.overview;
 
   const sidebarContent = (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* Brand header */}
-      <Box
-        sx={{
-          px: 2.5,
-          minHeight: 76,
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          flexShrink: 0,
-          background: `linear-gradient(135deg, ${alpha(
-            theme.palette.primary.main,
-            0.18
-          )}, ${alpha(theme.palette.secondary.main, 0.12)})`,
-          borderBottom: `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 46,
-            height: 46,
-            borderRadius: 3,
-            bgcolor: "background.paper",
-            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.25)}`,
-            flexShrink: 0,
-          }}
-        >
-          <Box
-            component="img"
-            src="/logos/logo.png"
-            alt={txt.appName}
-            sx={{ height: 34, width: "auto" }}
-          />
-        </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={900}
-            noWrap
-            sx={{ letterSpacing: "-0.02em", lineHeight: 1.15 }}
-          >
-            {txt.appName}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {txt[roleLabelKey(role)]}
-          </Typography>
-        </Box>
-        {!isDesktop && (
-          <IconButton
-            onClick={() => setMobileOpen(false)}
-            sx={{ marginInlineStart: "auto" }}
-            aria-label={txt.close ?? "close"}
-          >
-            <MdClose />
-          </IconButton>
-        )}
-      </Box>
-
-      {/* Nav (independent scroll) */}
-      <Box
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          py: 2,
-          // Slim, on-brand scrollbar.
-          "&::-webkit-scrollbar": { width: 6 },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.25),
-            borderRadius: 8,
-          },
-        }}
-      >
-        <DashboardNav role={role} onNavigate={() => setMobileOpen(false)} />
-      </Box>
-
-      {/* User footer — pinned to bottom */}
-      <Box sx={{ p: 2, flexShrink: 0, borderTop: `1px solid ${theme.palette.divider}` }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          gap={1.5}
-          sx={{
-            mb: 1.5,
-            p: 1.25,
-            borderRadius: 3,
-            bgcolor: alpha(theme.palette.primary.main, 0.07),
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-          }}
-        >
-          <Avatar
-            sx={{
-              bgcolor: "primary.main",
-              width: 42,
-              height: 42,
-              fontWeight: 800,
-            }}
-          >
-            {initial}
-          </Avatar>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="body2" fontWeight={800} noWrap>
-              {displayName}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {txt[roleLabelKey(role)]}
-            </Typography>
-          </Box>
-        </Stack>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<MdLogout />}
-          onClick={logout}
-          sx={{ borderRadius: 2.5, py: 0.9 }}
-        >
-          {txt.logout}
-        </Button>
-      </Box>
-    </Box>
+    <DashboardSidebar
+      role={role}
+      isDesktop={isDesktop}
+      displayName={displayName}
+      initial={initial}
+      avatar={user.avatar}
+      txt={txt}
+      onClose={() => setMobileOpen(false)}
+      onNavigate={() => setMobileOpen(false)}
+      logout={logout}
+    />
   );
 
   return (
@@ -279,101 +152,18 @@ export default function DashboardShell({ children }) {
           flexDirection: "column",
         }}
       >
-        <AppBar
-          position="sticky"
-          color="default"
-          elevation={0}
-          sx={{
-            bgcolor: alpha(theme.palette.background.paper, 0.8),
-            backdropFilter: "blur(12px)",
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            zIndex: (t) => t.zIndex.appBar,
-          }}
-        >
-          <Toolbar sx={{ gap: 1, minHeight: { xs: 64, md: 72 } }}>
-            {!isDesktop && (
-              <IconButton
-                edge="start"
-                onClick={() => setMobileOpen(true)}
-                aria-label={txt.menu}
-                sx={{ marginInlineEnd: 0.5 }}
-              >
-                <MdMenu />
-              </IconButton>
-            )}
-
-            {/* Current section title (route-driven) */}
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                variant="h6"
-                fontWeight={800}
-                noWrap
-                sx={{ color: "text.primary", lineHeight: 1.2, letterSpacing: "-0.01em" }}
-              >
-                {pageTitle}
-              </Typography>
-            </Box>
-
-            <Box sx={{ flex: 1 }} />
-
-            <Stack direction="row" alignItems="center" gap={0.5}>
-              <LanguageSwitch />
-
-              <Tooltip title={mode === "dark" ? "Light" : "Dark"}>
-                <IconButton onClick={toggleTheme} color="inherit">
-                  {mode === "dark" ? <MdLightMode /> : <MdDarkMode />}
-                </IconButton>
-              </Tooltip>
-
-              <NotificationBell />
-
-              <Tooltip title={displayName}>
-                <IconButton onClick={(e) => setUserMenu(e.currentTarget)} sx={{ p: 0.5 }}>
-                  <Avatar
-                    sx={{ bgcolor: "primary.main", width: 38, height: 38, fontWeight: 800 }}
-                  >
-                    {initial}
-                  </Avatar>
-                </IconButton>
-              </Tooltip>
-            </Stack>
-
-            <Menu
-              anchorEl={userMenu}
-              open={Boolean(userMenu)}
-              onClose={() => setUserMenu(null)}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: lng === "ar" ? "left" : "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: lng === "ar" ? "left" : "right",
-              }}
-            >
-              <Box sx={{ px: 2, py: 1 }}>
-                <Typography variant="body2" fontWeight={800} noWrap>
-                  {displayName}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {txt[roleLabelKey(role)]}
-                </Typography>
-              </Box>
-              <Divider />
-              <MenuItem
-                onClick={() => {
-                  setUserMenu(null);
-                  logout();
-                }}
-              >
-                <ListItemIcon>
-                  <MdLogout />
-                </ListItemIcon>
-                {txt.logout}
-              </MenuItem>
-            </Menu>
-          </Toolbar>
-        </AppBar>
+        <DashboardTopbar
+          isDesktop={isDesktop}
+          txt={txt}
+          role={role}
+          pageTitle={pageTitle}
+          displayName={displayName}
+          initial={initial}
+          avatar={user.avatar}
+          lng={lng}
+          logout={logout}
+          onOpenMobile={() => setMobileOpen(true)}
+        />
 
         <Box
           component="main"

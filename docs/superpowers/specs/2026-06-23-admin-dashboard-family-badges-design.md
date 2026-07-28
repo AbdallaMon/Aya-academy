@@ -18,7 +18,7 @@ and fix the drawer active-item text contrast.
    separate family page. Parent view shows the family; student view shows the
    student profile. All per-user actions live on this page.
 2. **Student levels are a fixed enum of 4** (`BEGINNER`, `EXPLORER`, `BUILDER`,
-   `CONFIDENT_READER`), bilingual labels in `@aya/shared`. Extendable later by
+   `CONFIDENT_READER`), bilingual labels in `@ayah/shared`. Extendable later by
    adding enum values.
 3. **Unified score via a new `Point` ledger model.** Awarding a badge writes a
    `Point` row and bumps the cached `User.points` total in the same transaction.
@@ -80,7 +80,7 @@ model Point {
 
 Migration strategy: additive only (new enums/fields/model). No backfill needed
 (`studentLevel` nullable, badge fields nullable/defaulted). Keep enum constants
-synced with `@aya/shared`.
+synced with `@ayah/shared`.
 
 ## Backend
 
@@ -143,7 +143,7 @@ actions write audit logs.
 ## Phasing (implementation order)
 
 - **Phase 0** — Drawer active-text contrast fix (isolated, quick).
-- **Phase 1** — Schema + `@aya/shared` enums/constants + permissions + message
+- **Phase 1** — Schema + `@ayah/shared` enums/constants + permissions + message
   codes + migration + db generate.
 - **Phase 2** — Backend: `badges`, `points`, `users` overview/level/ban,
   subscription cancel + DTO contact enrichment.

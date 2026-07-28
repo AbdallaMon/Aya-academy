@@ -13,33 +13,27 @@
 //              page={page} setPage={setPage} rowsPerPage={pageSize}
 //              setRowsPerPage={setPageSize} loading={isLoading}
 //              filterConfig={cols} filters={filters} setFilters={setFilters} />
+//
+// This file is a thin composer: the header, body (skeleton/error/empty/rows),
+// cell rendering, and pagination live in ./dataTable/*.
 
 import {
   Container,
   IconButton,
   Paper,
-  Skeleton,
   Table,
-  TableBody,
-  TableCell,
   TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
 } from "@mui/material";
 import NextLink from "next/link";
 import { MdVisibility } from "react-icons/md";
 import { useMemo } from "react";
 import { useTranslation } from "../../../i18n/client.js";
-import { PAGE_SIZE_OPTIONS } from "../../../utils/constant.js";
 import LoadingOverlay from "../feedback/LoadingOverlay.jsx";
-import EmptyState from "../display/EmptyState.jsx";
 import FilterBar from "./FilterBar.jsx";
 import IdCell from "./IdCell.jsx";
-
-function resolveHeader(col, translator) {
-  return translator[col.headerName] || col.headerName || col.field;
-}
+import DataTableHead from "./dataTable/DataTableHead.jsx";
+import DataTableBody from "./dataTable/DataTableBody.jsx";
+import DataTablePagination from "./dataTable/DataTablePagination.jsx";
 
 export function DataTable({
   columns = [],
@@ -133,14 +127,6 @@ export function DataTable({
     if (setFilters) setFilters(defaultFilters ? { ...defaultFilters } : {});
   }
 
-  function renderCellContent(col, row) {
-    const value = row?.[col.field];
-    if (typeof col.renderCell === "function") return col.renderCell({ row, value });
-    if (value === null || value === undefined) return "—";
-    if (typeof value === "boolean") return value ? "✓" : "—";
-    return String(value);
-  }
-
   const colSpan = effectiveColumns.length || 1;
 
   const body = (
@@ -158,91 +144,31 @@ export function DataTable({
 
       <TableContainer sx={{ maxHeight: "75vh" }}>
         <Table stickyHeader={stickyHeader} aria-label={translateKey || "data-table"}>
-          <TableHead>
-            <TableRow>
-              {effectiveColumns.map((col) => (
-                <TableCell
-                  key={col.field}
-                  align={col.align || (col.type === "actions" ? "center" : "inherit")}
-                  sx={{ width: col.width, fontWeight: 700, whiteSpace: "nowrap" }}
-                >
-                  {resolveHeader(col, translator)}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {isFirstLoad &&
-              Array.from({ length: 5 }).map((_, r) => (
-                <TableRow key={`sk-${r}`}>
-                  {effectiveColumns.map((col) => (
-                    <TableCell key={col.field}>
-                      <Skeleton variant="text" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-
-            {!isFirstLoad && error && (
-              <TableRow>
-                <TableCell colSpan={colSpan}>
-                  <EmptyState
-                    title={td.errorTitle}
-                    body={td.errorBody}
-                    actionLabel={td.retry}
-                    onAction={onRetry}
-                  />
-                </TableCell>
-              </TableRow>
-            )}
-
-            {!isFirstLoad && !error && !hasRows && (
-              <TableRow>
-                <TableCell colSpan={colSpan}>
-                  <EmptyState
-                    title={hasActiveFilters ? td.filteredZero : td.noData}
-                    actionLabel={
-                      hasActiveFilters ? td.clearFilters : onCreate ? createLabel || td.create : undefined
-                    }
-                    onAction={hasActiveFilters ? clearFilters : onCreate}
-                  />
-                </TableCell>
-              </TableRow>
-            )}
-
-            {!isFirstLoad &&
-              !error &&
-              hasRows &&
-              rows.map((row, idx) => (
-                <TableRow hover key={row.id ?? idx}>
-                  {effectiveColumns.map((col) => (
-                    <TableCell
-                      key={col.field}
-                      align={col.align || (col.type === "actions" ? "center" : "inherit")}
-                    >
-                      {renderCellContent(col, row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-          </TableBody>
+          <DataTableHead columns={effectiveColumns} translator={translator} />
+          <DataTableBody
+            columns={effectiveColumns}
+            rows={rows}
+            isFirstLoad={isFirstLoad}
+            error={error}
+            hasRows={hasRows}
+            hasActiveFilters={hasActiveFilters}
+            colSpan={colSpan}
+            td={td}
+            onRetry={onRetry}
+            onCreate={onCreate}
+            createLabel={createLabel}
+            clearFilters={clearFilters}
+          />
         </Table>
       </TableContainer>
 
-      <TablePagination
-        component="div"
-        count={total}
-        // MUI is 0-based; useRequest is 1-based.
-        page={Math.max(0, (page || 1) - 1)}
+      <DataTablePagination
+        total={total}
+        page={page}
         rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={PAGE_SIZE_OPTIONS}
-        onPageChange={(_, newPage) => setPage && setPage(newPage + 1)}
-        onRowsPerPageChange={(e) => {
-          if (setRowsPerPage) setRowsPerPage(parseInt(e.target.value, 10));
-          if (setPage) setPage(1);
-        }}
-        labelRowsPerPage={td.rowsPerPage || "Rows per page"}
+        setPage={setPage}
+        setRowsPerPage={setRowsPerPage}
+        td={td}
       />
     </Paper>
   );

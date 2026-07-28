@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
-import { PERMISSIONS, DEFAULT_PAYMENT_TEMPLATE } from "@aya/shared";
+import { PERMISSIONS, DEFAULT_PAYMENT_TEMPLATE } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";

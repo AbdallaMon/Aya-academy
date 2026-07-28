@@ -6,14 +6,14 @@
 
 **Architecture:** Additive Prisma changes (new `Point` model, `StudentLevel`/`PointSource` enums, fields on `User`/`Badge`/`StudentBadge`). New backend modules `badges` and `points` plus extensions to `users` and `subscriptions`, following the existing layered pattern. Frontend reuses `DataTable`/`useRequest`/`AppForm`; new `/dashboard/users/[id]` detail page, `/parents`, `/students` lists, badges admin page, leaderboard widget.
 
-**Tech Stack:** Prisma + MySQL, Express, `@aya/shared` (permissions, message codes, enums), Next.js App Router, MUI, react-hook-form.
+**Tech Stack:** Prisma + MySQL, Express, `@ayah/shared` (permissions, message codes, enums), Next.js App Router, MUI, react-hook-form.
 
 ## Global Constraints
 
 - No TypeScript in app source (JS/JSX only).
 - Prisma only inside repo layer; no business logic in routes/controllers.
-- Every backend message uses a language-neutral CODE localized ar+en (`@aya/shared` → web `messagesCodes.js`).
-- Enum constants mirrored in `@aya/shared` constants.
+- Every backend message uses a language-neutral CODE localized ar+en (`@ayah/shared` → web `messagesCodes.js`).
+- Enum constants mirrored in `@ayah/shared` constants.
 - Authorize on permission code + object scope, never role alone; admin actions audited.
 - Additive migration only; nullable/defaulted new fields.
 

@@ -1,29 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  MenuItem,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import dayjs from "dayjs";
-import {
-  FiKey,
-  FiPlus,
-  FiRefreshCw,
-  FiStar,
-  FiTrash2,
-} from "react-icons/fi";
-import { DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { Stack } from "@mui/material";
+import { FiStar, FiTrash2 } from "react-icons/fi";
+import { DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useBackupsText } from "../hooks/useBackupsText.js";
 import {
@@ -33,8 +13,9 @@ import {
   buildDriveConnectSlug,
 } from "../config/constant.js";
 import ConfirmDialog from "./ConfirmDialog.jsx";
-import RowActions from "./RowActions.jsx";
 import GenerateKeyDialog from "./GenerateKeyDialog.jsx";
+import KeySaveCard from "./KeySaveCard.jsx";
+import KeysListCard from "./KeysListCard.jsx";
 
 /**
  * KeysSection — «المفاتيح» tab: generate/save/manage encryption keys stored on Drive.
@@ -49,8 +30,10 @@ import GenerateKeyDialog from "./GenerateKeyDialog.jsx";
  * a (short) fingerprint. The generate-once key is handed to the save form via
  * GenerateKeyDialog's onUseKey; saving persists it to the chosen KEY account.
  *
- * ConfirmDialog/RowActions are feature-local in aya (not in the shared barrel),
- * so they are imported from this folder.
+ * ConfirmDialog/RowActions are feature-local in ayah (not in the shared barrel),
+ * so they are imported from this folder. The generate/save card and the keys
+ * list (+ row) are extracted into KeySaveCard/KeysListCard/KeyRow; this stays a
+ * thin composer holding state, requests and handlers.
  *
  * props: canManage
  */
@@ -225,275 +208,34 @@ export default function KeysSection({ canManage }) {
       />
 
       {/* Generate + save a key */}
-      <Card variant="outlined">
-        <CardContent>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-            justifyContent="space-between"
-            spacing={1}
-            sx={{ mb: 1 }}
-          >
-            <Box>
-              <Typography variant="h5" fontWeight={700}>
-                {tr.saveKeyTitle}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {tr.keysHint}
-              </Typography>
-            </Box>
-            {canManage && (
-              <Button
-                variant="outlined"
-                startIcon={<FiKey />}
-                onClick={() => setGenerateOpen(true)}
-              >
-                {tr.generateKey}
-              </Button>
-            )}
-          </Stack>
-
-          {canManage && keyAccounts.length > 0 && !hasConnectedKeyAccount && (
-            <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
-              {tr.saveKeyNoAccounts}
-            </Alert>
-          )}
-
-          {canManage && keyAccounts.length === 0 ? (
-            <Alert severity="info" variant="outlined">
-              {tr.saveKeyNoAccounts}
-            </Alert>
-          ) : (
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label={tr.saveKeyName}
-                size="small"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                fullWidth
-                sx={{ maxWidth: 480 }}
-              />
-
-              <TextField
-                select
-                label={tr.saveKeyAccount}
-                size="small"
-                value={resolvedAccountId}
-                onChange={(e) => setKeyAccountId(e.target.value)}
-                fullWidth
-                sx={{ maxWidth: 480 }}
-                helperText={tr.saveKeySelectAccount}
-              >
-                {keyAccounts.map((a) => (
-                  <MenuItem
-                    key={a.id}
-                    value={String(a.id)}
-                    disabled={!a.connected}
-                  >
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      sx={{ width: "100%" }}
-                    >
-                      <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                        {a.email || a.label || `#${a.id}`}
-                      </Typography>
-                      {!a.connected && (
-                        <Chip
-                          size="small"
-                          color="warning"
-                          variant="outlined"
-                          label={tr.disconnected}
-                        />
-                      )}
-                    </Stack>
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              {/* Reconnect disconnected KEY accounts so they become selectable. */}
-              {keyAccounts.some((a) => !a.connected) && (
-                <Stack spacing={1}>
-                  {keyAccounts
-                    .filter((a) => !a.connected)
-                    .map((a) => (
-                      <Stack
-                        key={a.id}
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{
-                          p: 1,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          borderRadius: 1,
-                          maxWidth: 480,
-                        }}
-                      >
-                        <Typography variant="body2" fontWeight={600} noWrap>
-                          {a.email || a.label || `#${a.id}`}
-                        </Typography>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          startIcon={<FiRefreshCw />}
-                          disabled={connect.isLoading}
-                          onClick={() => reconnectKeyAccount(a)}
-                        >
-                          {tr.reconnect}
-                        </Button>
-                      </Stack>
-                    ))}
-                </Stack>
-              )}
-
-              <TextField
-                label={tr.saveKeyKey}
-                size="small"
-                value={keyValue}
-                onChange={(e) => setKeyValue(e.target.value)}
-                fullWidth
-                multiline
-                minRows={2}
-                sx={{ maxWidth: 480 }}
-              />
-
-              <Box>
-                <Button
-                  variant="contained"
-                  startIcon={
-                    saveReq.isLoading ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : (
-                      <FiPlus />
-                    )
-                  }
-                  disabled={
-                    !canManage ||
-                    saveReq.isLoading ||
-                    !name.trim() ||
-                    resolvedAccountId === "" ||
-                    !keyValue.trim()
-                  }
-                  onClick={submitSave}
-                >
-                  {tr.saveKeySubmit}
-                </Button>
-              </Box>
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
+      <KeySaveCard
+        canManage={canManage}
+        tr={tr}
+        keyAccounts={keyAccounts}
+        hasConnectedKeyAccount={hasConnectedKeyAccount}
+        name={name}
+        setName={setName}
+        resolvedAccountId={resolvedAccountId}
+        setKeyAccountId={setKeyAccountId}
+        keyValue={keyValue}
+        setKeyValue={setKeyValue}
+        connect={connect}
+        reconnectKeyAccount={reconnectKeyAccount}
+        submitSave={submitSave}
+        saveLoading={saveReq.isLoading}
+        onGenerate={() => setGenerateOpen(true)}
+      />
 
       {/* Keys list */}
-      <Card variant="outlined">
-        <CardContent>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-            {tr.keysTitle}
-          </Typography>
-
-          {keysReq.isLoading && keys.length === 0 ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-              <CircularProgress size={28} />
-            </Box>
-          ) : keys.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-              {tr.noKeys}
-            </Typography>
-          ) : (
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              {keys.map((key) => {
-                const short = key.fingerprint
-                  ? key.fingerprint.slice(0, 8)
-                  : "";
-                const account =
-                  key.keyAccount?.email || key.keyAccount?.label || "—";
-                return (
-                  <Stack
-                    key={key.id}
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                      p: 1.5,
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        flexWrap="wrap"
-                        useFlexGap
-                      >
-                        <Typography variant="body1" fontWeight={600}>
-                          {key.name}
-                        </Typography>
-                        {key.isPrimary && (
-                          <Chip
-                            size="small"
-                            color="primary"
-                            icon={<FiStar size={14} />}
-                            label={tr.primaryBadge}
-                          />
-                        )}
-                        <Chip
-                          size="small"
-                          variant="outlined"
-                          color={key.connected ? "success" : "warning"}
-                          label={key.connected ? tr.connected : tr.disconnected}
-                        />
-                        {short && (
-                          <Tooltip title={key.fingerprint || ""} arrow>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {short}
-                            </Typography>
-                          </Tooltip>
-                        )}
-                      </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {account}
-                        {key.createdAt
-                          ? ` · ${dayjs(key.createdAt).format("DD/MM/YYYY")}`
-                          : ""}
-                      </Typography>
-                    </Box>
-
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {!key.connected && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          startIcon={<FiRefreshCw />}
-                          disabled={connect.isLoading || !key.keyAccount}
-                          onClick={() =>
-                            key.keyAccount &&
-                            reconnectKeyAccount(key.keyAccount)
-                          }
-                        >
-                          {tr.reconnect}
-                        </Button>
-                      )}
-                      {canManage && (
-                        <RowActions row={key} actions={buildActions(key)} />
-                      )}
-                    </Stack>
-                  </Stack>
-                );
-              })}
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
+      <KeysListCard
+        tr={tr}
+        isLoading={keysReq.isLoading}
+        keys={keys}
+        canManage={canManage}
+        connect={connect}
+        reconnectKeyAccount={reconnectKeyAccount}
+        buildActions={buildActions}
+      />
     </Stack>
   );
 }

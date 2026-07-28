@@ -1,7 +1,7 @@
 "use client";
 
 import { Grid, InputAdornment, TextField } from "@mui/material";
-import { MdPerson, MdEmail } from "react-icons/md";
+import { MdPerson, MdEmail, MdAlternateEmail } from "react-icons/md";
 import { MuiTelInput } from "mui-tel-input";
 import { PasswordField } from "../../../shared/components/index.js";
 import { useBrowserCountry } from "../../../shared/lib/browserCountry.js";
@@ -49,7 +49,7 @@ export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
-          label={txt.email}
+          label={txt.emailOptional}
           type="email"
           value={parent.email}
           onChange={setField("email")}
@@ -58,6 +58,18 @@ export default function ParentDetailsForm({ parent, onChange, errors = {}, txt }
           fullWidth
           size="small"
           slotProps={adorn(<MdEmail size={18} />)}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <TextField
+          label={txt.usernameOptional}
+          value={parent.username}
+          onChange={setField("username")}
+          error={Boolean(errors.username)}
+          helperText={errors.username || txt.usernameFormatHint}
+          fullWidth
+          size="small"
+          slotProps={adorn(<MdAlternateEmail size={18} />)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>

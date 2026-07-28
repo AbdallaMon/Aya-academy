@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { Box, Chip, IconButton, MenuItem, Select, Stack } from "@mui/material";
-import { MdEmojiEmotions, MdExpandMore } from "react-icons/md";
+import { MdExpandMore, MdCelebration } from "react-icons/md";
 import { REACTIONS } from "./config/reactions.js";
 
 // Collapsible bottom bar: optional student selector + a button per reaction.
-// Firing calls onFire(reactionKey, studentName|null). Student choice is optional.
-export default function ReactionBar({ students = [], onFire }) {
-  const [open, setOpen] = useState(true);
+// Starts collapsed as a clear pill so it never crowds the board; tap it to open,
+// tap the chevron to close again. Firing calls onFire(reactionKey, name|null).
+export default function ReactionBar({ students = [], onFire, ar = true }) {
+  const [open, setOpen] = useState(false);
   const [studentId, setStudentId] = useState("");
 
   const nameFor = (id) =>
@@ -20,17 +21,41 @@ export default function ReactionBar({ students = [], onFire }) {
         position: "absolute",
         insetInline: 0,
         bottom: 0,
-        zIndex: 6,
+        // Above the laser/spotlight capture overlays so the reaction chips stay
+        // clickable even while a pointer tool is active.
+        zIndex: 12,
         pointerEvents: "none",
       }}
     >
       <Stack alignItems="center">
-        <IconButton
-          onClick={() => setOpen((v) => !v)}
-          sx={{ pointerEvents: "auto", bgcolor: "background.paper", boxShadow: 2, mb: 1 }}
-        >
-          {open ? <MdExpandMore /> : <MdEmojiEmotions />}
-        </IconButton>
+        {open ? (
+          // Close handle when the tray is open.
+          <IconButton
+            aria-label={ar ? "إغلاق لوحة التشجيع" : "Close encouragement panel"}
+            onClick={() => setOpen(false)}
+            sx={{ pointerEvents: "auto", bgcolor: "background.paper", boxShadow: 2, mb: 1 }}
+          >
+            <MdExpandMore />
+          </IconButton>
+        ) : (
+          // Collapsed pill — obvious "open me" affordance.
+          <Chip
+            icon={<MdCelebration />}
+            clickable
+            onClick={() => setOpen(true)}
+            label={ar ? "تحفيز وتشجيع 🎉" : "Encouragement & rewards 🎉"}
+            sx={{
+              pointerEvents: "auto",
+              bgcolor: "background.paper",
+              boxShadow: 3,
+              fontWeight: 800,
+              fontSize: 15,
+              py: 2.4,
+              px: 1,
+              mb: 2,
+            }}
+          />
+        )}
         {open && (
           <Stack
             direction="row"
@@ -55,10 +80,13 @@ export default function ReactionBar({ students = [], onFire }) {
                 displayEmpty
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
+                MenuProps={{
+                  slotProps: { paper: { dir: ar ? "rtl" : "ltr" } },
+                }}
                 sx={{ minWidth: 140 }}
               >
                 <MenuItem value="">
-                  <em>بدون اسم</em>
+                  <em>{ar ? "بدون اسم" : "No name"}</em>
                 </MenuItem>
                 {students.map((s) => (
                   <MenuItem key={s.id} value={s.id}>
@@ -71,7 +99,7 @@ export default function ReactionBar({ students = [], onFire }) {
               <Chip
                 key={r.key}
                 clickable
-                label={`${r.emoji} ${r.labelAr}`}
+                label={`${r.emoji} ${ar ? r.labelAr : r.labelEn}`}
                 onClick={() => onFire?.(r.key, nameFor(studentId))}
                 sx={{ fontSize: 18, py: 2.2 }}
               />

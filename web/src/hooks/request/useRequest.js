@@ -10,12 +10,13 @@
 // NEVER call ApiFetch directly from a component — always go through this hook.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { generalMessagesCodes } from '@ayah/shared';
 import { useLoading } from '../useLoading.js';
 import apiFetch from '../../lib/api/ApiFetch.js';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constant.js';
 import { useToast } from '../../providers/ToastProvider.jsx';
 import { useTranslation } from '../../i18n/client.js';
+import { useUrlFilters } from './useUrlFilters.js';
 
 const MUTATION_METHODS = ['post', 'put', 'patch', 'delete'];
 
@@ -39,8 +40,6 @@ export function useRequest({
   skipInitialFetch = false,
   headers,
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const td = t('tableData', { returnObjects: true }) || {};
 
@@ -54,20 +53,7 @@ export function useRequest({
   const [hasMore, setHasMore] = useState(true);
   const isFirstRender = useRef(true);
 
-  const [filters, setFiltersState] = useState(() => {
-    if (!syncToUrl) return {};
-    const params = {};
-    searchParams.forEach((value, key) => {
-      if (value.startsWith('[') || value.startsWith('{')) {
-        try {
-          params[key] = JSON.parse(value);
-          return;
-        } catch {}
-      }
-      params[key] = value;
-    });
-    return params;
-  });
+  const [filters, setFiltersState] = useUrlFilters(syncToUrl);
 
   const [refetch, setRefetch] = useState(false);
   const { showToast } = useToast();
@@ -89,23 +75,13 @@ export function useRequest({
       setFiltersState((prev) =>
         typeof value === 'function' ? value(prev) : value
       );
-      if (syncToUrl) setPage(1);
+      // Filtering always starts a new result set. This matters for scroll-loaded
+      // pickers too: their filters are intentionally not synced to the URL.
+      setPage(1);
+      setHasMore(true);
     },
-    [syncToUrl]
+    [setFiltersState]
   );
-
-  // Mirror filters into the URL query string.
-  useEffect(() => {
-    if (!syncToUrl) return;
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v === undefined || v === null || v === '') return;
-      if (Array.isArray(v) || typeof v === 'object')
-        params.set(k, JSON.stringify(v));
-      else params.set(k, String(v));
-    });
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [filters, syncToUrl, router]);
 
   function triggerRefetch() {
     setRefetch((prev) => !prev);
@@ -294,7 +270,6 @@ export function useRequest({
       }
       fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     autoFetch,
     method,
@@ -327,8 +302,15 @@ export function useRequest({
         translationKey: err?.data?.translationKey || err?.translationKey,
       });
     };
-    apiFetch.onTooManyRequests = (code) => {
-      showToast({ message: code, severity: 'error' });
+    apiFetch.onTooManyRequests = (err) => {
+      showToast({
+        message:
+          err?.data?.message ||
+          err?.message ||
+          generalMessagesCodes.TOO_MANY_REQUESTS,
+        severity: 'error',
+        translationKey: err?.data?.translationKey || err?.translationKey,
+      });
     };
     return () => {
       apiFetch.onError = null;

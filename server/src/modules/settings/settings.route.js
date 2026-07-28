@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { SETTINGS_PERMISSIONS } from "@aya/shared";
+import { SETTINGS_PERMISSIONS } from "@ayah/shared";
 import { settingsController } from "./settings.controller.js";
 import { SettingsValidation } from "./settings.validation.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";

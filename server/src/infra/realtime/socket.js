@@ -3,7 +3,7 @@
 //
 // A single io server is attached to the HTTP server at boot. Each connection is
 // authenticated with the SAME access token the REST API uses (the httpOnly
-// `aya_access` cookie, or a Bearer token in the auth handshake), and joined to a
+// `ayah_access` cookie, or a Bearer token in the auth handshake), and joined to a
 // private room `user:<id>`. Other modules push to a user via `emitToUser`.
 //
 // Everything here is best-effort: if realtime is not initialised (e.g. in tests)

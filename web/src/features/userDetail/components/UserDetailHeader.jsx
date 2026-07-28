@@ -21,9 +21,10 @@ import {
   MdBlock,
   MdCheckCircle,
   MdEmail,
+  MdAlternateEmail,
   MdPhone,
 } from "react-icons/md";
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
@@ -55,7 +56,7 @@ export default function UserDetailHeader({
       : user.role === USER_ROLES.PARENT
         ? txt.roleParent
         : txt.roleStudent;
-  const displayName = user.name || user.email;
+  const displayName = user.name || user.username || user.email;
   const initial = String(user.nickname || displayName || "?").charAt(0).toUpperCase();
   const avatarUrl = buildFileUrl(user.avatar);
 
@@ -111,6 +112,12 @@ export default function UserDetailHeader({
               </Typography>
             )}
             <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+              {user.username && (
+                <Stack direction="row" spacing={0.5} alignItems="center" color="text.secondary">
+                  <MdAlternateEmail size={16} />
+                  <Typography variant="body2">@{user.username}</Typography>
+                </Stack>
+              )}
               <Stack direction="row" spacing={0.5} alignItems="center" color="text.secondary">
                 <MdEmail size={16} />
                 <Typography variant="body2">{user.email || txt.noEmail}</Typography>

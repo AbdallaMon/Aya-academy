@@ -13,7 +13,11 @@ import {
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { PLANS_PUBLIC_URL } from "../config/constant.js";
+import {
+  PLANS_PUBLIC_URL,
+  SUBSCRIPTION_PLAN_QUOTE_URL,
+  subscriptionPlanOptionsPath,
+} from "../config/constant.js";
 import { formatMoney } from "../../../shared/lib/money.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
 
@@ -43,11 +47,14 @@ export default function PlanPickerDialog({
   const billingPeriod = "MONTHLY";
   const [selectedPlanId, setSelectedPlanId] = useState(defaultPlanId);
   const [coupon, setCoupon] = useState(EMPTY_COUPON);
+  const studentId = child?.id ?? null;
 
   const plansReq = useRequest({
-    url: PLANS_PUBLIC_URL,
+    url: studentId
+      ? subscriptionPlanOptionsPath(studentId)
+      : PLANS_PUBLIC_URL,
     method: "get",
-    isPublic: true,
+    isPublic: !studentId,
     autoFetch: false,
     syncToUrl: false,
   });
@@ -79,8 +86,13 @@ export default function PlanPickerDialog({
 
   function confirm() {
     if (!selectedPlan) return;
-    const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
-    onRequest(selectedPlan, { billingPeriod, couponCode: codeToSend });
+    const resolved = resolveCoupon(selectedPlan, billingPeriod, coupon);
+    onRequest(selectedPlan, {
+      billingPeriod,
+      couponCode:
+        resolved.applied === "custom" ? resolved.codeToSend : undefined,
+      applyPlanCoupon: resolved.applyPlanCoupon,
+    });
   }
 
   return (
@@ -219,6 +231,10 @@ export default function PlanPickerDialog({
               billingPeriod={billingPeriod}
               coupon={coupon}
               onCoupon={setCoupon}
+              quoteUrl={
+                studentId ? SUBSCRIPTION_PLAN_QUOTE_URL : "plans/quote"
+              }
+              quoteBody={studentId ? { studentId } : {}}
             />
           </Box>
         )}

@@ -1,6 +1,6 @@
 # Game Spec — "مغامرة آداب الاتصال الذكي" (Aboud)
 
-Reference: a kids' (≤7 yrs) interactive Arabic/RTL adventure that teaches phone/communication manners (آداب الاتصال). Faithful, playable standalone prototype lives at **[web/public/aboud-game.html](../web/public/aboud-game.html)** — open it directly in a browser (double-click) to play. This is the model every Aya Academy game follows.
+Reference: a kids' (≤7 yrs) interactive Arabic/RTL adventure that teaches phone/communication manners (آداب الاتصال). Faithful, playable standalone prototype lives at **[web/public/aboud-game.html](../web/public/aboud-game.html)** — open it directly in a browser (double-click) to play. This is the model every Ayah Academy game follows.
 
 ## Golden rules (kids ≤ 7)
 - **No "wrong → move on" and no failure.** A wrong choice plays a gentle animation (shake + sad guide face 😢) + an encouraging message, and lets the child **retry**. No score penalty, no game-over.
@@ -27,7 +27,7 @@ Reference: a kids' (≤7 yrs) interactive Arabic/RTL adventure that teaches phon
 - **GameQuestion** (one per task): `order`, `kind` ∈ `{ DIALPAD, MULTIPLE_CHOICE, TONE_SLIDER, SCENARIO, ... }`, `promptAr/En`, `mediaJson` (per-kind props: dial sequence; slider zones; scenario text; center emoji/caption; good/bad messages).
 - **GameOption** (for choice tasks): `labelAr/En`, `emoji`, `isCorrect`, `feedbackAr/En`, plus a `tone` flag in option metadata (good/warn/bad) for card coloring.
 - **GameAttempt**: stars/score, `answersJson`, `passed`, links a **Certificate** on completion.
-- `GameQuestionKind` enum now includes `DIALPAD` + `TONE_SLIDER` (schema + `@aya/shared` in sync).
+- `GameQuestionKind` enum now includes `DIALPAD` + `TONE_SLIDER` (schema + `@ayah/shared` in sync).
 
 ## Build plan
 1. ✅ Standalone HTML prototype (done — the reference implementation).

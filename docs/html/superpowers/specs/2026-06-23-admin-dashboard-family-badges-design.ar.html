@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 06 23 Admin Dashboard Family Badges Design</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 06 23 Admin Dashboard Family Badges Design</h1>
+        <p class="lead">Goal</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Specs</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges-design.ar.html" class="active">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</a></li><li><a href="./2026-06-23-subscription-invoices-design.ar.html">Subscription Invoices + Payment Template Settings — Design</a></li><li><a href="./2026-06-24-quran-progress-tracking-design.ar.html">Quran Progress Tracking + Lesson Next-Plan — Design</a></li><li><a href="./2026-06-27-register-family-wizard-design.ar.html">Family Registration Wizard — Design Spec</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow-design.ar.html">تصميم: تجديد الاشتراك + فلو الفاتورة (Subscription Renewal &amp; Invoice Flow)</a></li><li><a href="./2026-06-29-align-conventions-design.ar.html">Align ayah-academy code conventions to reference projects — Design / Conversion Playbook</a></li><li><a href="./2026-06-29-subscription-authorization-design.ar.html">Subscription-Based Authorization — Design Spec</a></li><li><a href="./2026-07-05-interactive-whiteboard-design.ar.html">Interactive Whiteboard — Design Spec</a></li><li><a href="./2026-07-08-usage-based-subscription-billing-design.ar.html">Usage-Based Subscription Billing — Design / فوترة الاشتراك حسب الاستهلاك — التصميم</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Specs</a><span class="crumb-sep">›</span><span class="crumb current">Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</span></nav>
+          <section class="doc-hero">
+            <h2>Admin Dashboard: Family/User Detail, Student Levels, Badges &amp; Points — Design</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          <div class="doc-preface section-card" style="margin-bottom:24px"><div class="content-block"><p>Date: 2026-06-23 Status: Approved</p></div><div class="content-block"><p>Extend the admin dashboard so an admin can manage everything about a single student or parent from one place, introduce a pedagogical <strong>student level</strong> system, a fully admin-managed <strong>badge</strong> system that feeds a unified <strong>points</strong> ledger and leaderboard, split the user list into Users / Parents / Students, enrich the subscriptions page, add account banning and subscription cancelling, and fix the drawer active-item text contrast.</p></div></div>
+
+          
+    <section class="doc-section" id="decisions-locked" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>Decisions (locked)</h2>
+        </div>
+        <div class="content-block"><ol><li><strong>One unified, role-adaptive detail page</strong> at <code>/dashboard/users/[id]</code> — not a</li></ol></div><div class="content-block"><p>separate family page. Parent view shows the family; student view shows the student profile. All per-user actions live on this page.</p></div><div class="content-block"><ol><li><strong>Student levels are a fixed enum of 4</strong> (<code>BEGINNER</code>, <code>EXPLORER</code>, <code>BUILDER</code>,</li></ol></div><div class="content-block"><p><code>CONFIDENT_READER</code>), bilingual labels in <code>@ayah/shared</code>. Extendable later by adding enum values.</p></div><div class="content-block"><ol><li><strong>Unified score via a new <code>Point</code> ledger model.</strong> Awarding a badge writes a</li></ol></div><div class="content-block"><p><code>Point</code> row and bumps the cached <code>User.points</code> total in the same transaction. Leaderboard sorts by <code>User.points</code>; &quot;top this week&quot; sums <code>Point.amount</code> over the last 7 days. Games/quizzes can feed the same ledger later.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="what-already-exists-reuse-dont-rebuild" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>What already exists (reuse, don&#39;t rebuild)</h2>
+        </div>
+        <div class="content-block"><ul><li><code>Badge</code> + <code>StudentBadge</code> models, <code>User.level</code>/<code>User.points</code>, <code>Subscription</code></li></ul></div><div class="content-block"><p>with <code>CANCELLED</code>, <code>ParentStudent</code> links, <code>User.isActive</code>, <code>Certificate</code>, <code>GameAttempt</code>/<code>QuizAttempt</code>, <code>Notification</code>, <code>Report</code>, <code>QuizInvite</code>.</p></div><div class="content-block"><ul><li>Layered backend (route → controller → usecase → repo → dto → validation),</li></ul></div><div class="content-block"><p><code>requirePermissions</code> guards, <code>AppError</code> + language-neutral message codes, <code>notificationUsecase.createNotification/createManyForUsers</code>.</p></div><div class="content-block"><ul><li>Config-driven <code>DataTable</code> + <code>useRequest</code> lists; <code>AppForm</code> + RHF modals;</li></ul></div><div class="content-block"><p>role-gated <code>navModel</code>; <code>DashboardNav</code> active styling.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="schema-changes-additive-single-migration" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Schema changes (additive, single migration)</h2>
+        </div>
+        <div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="prisma"><code>enum StudentLevel { BEGINNER  EXPLORER  BUILDER  CONFIDENT_READER }
+enum PointSource  { BADGE  GAME  QUIZ  MANUAL  ADJUSTMENT }
+
+model User {
+  // + studentLevel StudentLevel?
+  // + banReason    String?
+  // + bannedAt     DateTime?
+  // + points relation already exists; add: pointsLedger Point[]
+}
+
+model Badge {
+  // + bgColor   String?   // hex
+  // + textColor String?   // hex
+  // + emoji     String?
+  // + score     Int     @default(0)
+  // + isActive  Boolean @default(true)
+}
+
+model StudentBadge {
+  // + awardedById Int?
+  // + score snapshot is captured via the Point row, not duplicated here
+}
+
+model Point {
+  id          Int        @id @default(autoincrement())
+  studentId   Int
+  student     User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount      Int
+  source      PointSource
+  sourceId    Int?
+  badgeId     Int?
+  reason      String?
+  awardedById Int?
+  createdAt   DateTime   @default(now())
+  @@index([studentId])
+  @@index([createdAt])
+}</code></pre></div></div><div class="content-block"><p>Migration strategy: additive only (new enums/fields/model). No backfill needed (<code>studentLevel</code> nullable, badge fields nullable/defaulted). Keep enum constants synced with <code>@ayah/shared</code>.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="backend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Backend</h2>
+        </div>
+        <div class="content-block"><p>New permission codes (wired into <code>ROLE_PERMISSIONS</code>, admin-only unless noted):</p></div><div class="content-block"><ul><li><code>BADGE.{CREATE,LIST,VIEW,EDIT,DELETE,AWARD,REVOKE}</code></li><li><code>POINT.{LIST,AWARD,VIEW_LEADERBOARD}</code> (LEADERBOARD also readable by student/parent for own scope)</li><li><code>USER.SET_LEVEL</code>, <code>USER.BAN</code></li><li><code>SUBSCRIPTION.CANCEL</code></li></ul></div><div class="content-block"><p>Modules (each follows the standard layering + bilingual message codes):</p></div><div class="content-block"><ul><li><strong><code>badges</code></strong> — CRUD on badge definitions; <code>POST /badges/:id/award</code> and</li></ul></div><div class="content-block"><p><code>/badges/:id/revoke</code> for a student. Award creates a <code>StudentBadge</code> + a <code>Point</code> row + bumps <code>User.points</code>, all in one transaction; sends a <code>GIFT_RECEIVED</code> notification (best-effort).</p></div><div class="content-block"><ul><li><strong><code>points</code></strong> — <code>GET /points?studentId=</code> (ledger, scoped), <code>GET /points/leaderboard</code></li></ul></div><div class="content-block"><p>(all-time + <code>?range=week</code>), <code>POST /points</code> (manual MANUAL/ADJUSTMENT grant).</p></div><div class="content-block"><ul><li><strong><code>users</code> (extend)</strong> — <code>GET /users/:id/overview</code> returns a role-adaptive</li></ul></div><div class="content-block"><p>aggregate: for STUDENT → profile, level, points total, badges, certificates, game/quiz attempts, subscriptions, linked parents (with contact); for PARENT → profile/contact, children each with summary (level, points, active sub, certificate count). <code>PATCH /users/:id/level</code> (set <code>studentLevel</code>). <code>POST /users/:id/ban</code> (<code>isActive=false</code> + <code>banReason</code>/<code>bannedAt</code>) and <code>POST /users/:id/unban</code>.</p></div><div class="content-block"><ul><li><strong><code>subscriptions</code> (extend)</strong> — <code>POST /subscriptions/:id/cancel</code> → <code>CANCELLED</code></li></ul></div><div class="content-block"><p>(allowed from PENDING/UPCOMING/ACTIVE). Enrich list/detail DTO with student email and each student&#39;s parents&#39; phone + email.</p></div><div class="content-block"><p>All getters keep existing <code>assertCanAccess</code> scope checks. Important state-change actions write audit logs.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="frontend" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Frontend</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>Subscriptions page</strong> — student name links to <code>/dashboard/users/[studentId]</code>;</li></ul></div><div class="content-block"><p>parent name links to the parent&#39;s detail page; new columns for student email, parent phone, parent email; <strong>Cancel</strong> action (confirm dialog) for PENDING/UPCOMING/ACTIVE.</p></div><div class="content-block"><ul><li><strong>List split</strong> — keep <code>/dashboard/users</code> (all roles) and add <code>/dashboard/parents</code></li></ul></div><div class="content-block"><p>(role=PARENT) and <code>/dashboard/students</code> (role=STUDENT) as filtered list views. Update <code>navModel</code> + section titles + i18n. Parent rows expose &quot;view children&quot; → table with a details button per child linking to the child&#39;s detail page.</p></div><div class="content-block"><ul><li><strong>Unified detail page</strong> <code>/dashboard/users/[id]</code> — URL-driven tabs, role-adaptive:<ul><li>Parent: Overview/contact · Children (table + per-child quick actions:</li></ul></li></ul></div><div class="content-block"><p>add/cancel subscription, send invite, send report) · Subscriptions · Reports · Actions (send report, send invite, ban/unban).</p></div><div class="content-block"><ul><li>Student: Overview (level selector, points total, parents/contact) · Badges</li></ul></div><div class="content-block"><p>(awarded list + award-badge action) · Certificates · Evaluations (attempts) · Subscriptions (add/cancel) · Actions (invite parent to a test, send report, ban/unban, award badge, set level). Reuses existing dialogs/forms where they exist (subscription create, report create, quiz invite).</p></div><div class="content-block"><ul><li><strong>Badges admin page</strong> <code>/dashboard/badges</code> (admin) — CRUD with bg/text color</li></ul></div><div class="content-block"><p>pickers, emoji, score. Student keeps a read-only view of own badges (role-adaptive route or existing badges view).</p></div><div class="content-block"><ul><li><strong>Leaderboard</strong> — &quot;top performers this week&quot; widget on the overview + a</li></ul></div><div class="content-block"><p>leaderboard list (rank, name, weekly points, total points, badge count).</p></div><div class="content-block"><ul><li><strong>Drawer fix</strong> — in <code>DashboardNav.jsx</code>, guarantee the active item&#39;s text/icon</li></ul></div><div class="content-block"><p>color has clear contrast against the gradient in both light and dark themes.</p></div>
+      </div>
+    </section>
+    <section class="doc-section" id="phasing-implementation-order" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Phasing (implementation order)</h2>
+        </div>
+        <div class="content-block"><ul><li><strong>Phase 0</strong> — Drawer active-text contrast fix (isolated, quick).</li><li><strong>Phase 1</strong> — Schema + <code>@ayah/shared</code> enums/constants + permissions + message</li></ul></div><div class="content-block"><p>codes + migration + db generate.</p></div><div class="content-block"><ul><li><strong>Phase 2</strong> — Backend: <code>badges</code>, <code>points</code>, <code>users</code> overview/level/ban,</li></ul></div><div class="content-block"><p>subscription cancel + DTO contact enrichment.</p></div><div class="content-block"><ul><li><strong>Phase 3</strong> — Frontend lists: split Users/Parents/Students, nav/i18n,</li></ul></div><div class="content-block"><p>subscriptions page enrichment.</p></div><div class="content-block"><ul><li><strong>Phase 4</strong> — Unified role-adaptive detail page with all actions.</li><li><strong>Phase 5</strong> — Badges admin page + leaderboard widget + overview reorg.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="out-of-scope-for-now" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Out of scope (for now)</h2>
+        </div>
+        <div class="content-block"><ul><li>Wiring games/quizzes into the <code>Point</code> ledger automatically (ledger supports it;</li></ul></div><div class="content-block"><p>not enabled this round).</p></div><div class="content-block"><ul><li>Admin-creatable level definitions (fixed enum chosen).</li><li>Real-time leaderboard; periodic fetch is sufficient.</li></ul></div>
+      </div>
+    </section>
+    <section class="doc-section" id="testing" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Testing</h2>
+        </div>
+        <div class="content-block"><ul><li>Usecase tests for: badge award (creates Point + bumps points, idempotent on</li></ul></div><div class="content-block"><p>unique constraint), revoke, leaderboard weekly window, set-level, ban/unban, subscription cancel state guards.</p></div><div class="content-block"><ul><li>Authorization/scope (IDOR) tests for <code>/users/:id/overview</code>, points ledger,</li></ul></div><div class="content-block"><p>badge award (admin-only), cancel.</p></div><div class="content-block"><ul><li>Frontend: role-adaptive detail page renders correct tabs per role; permission</li></ul></div><div class="content-block"><p>gating on actions.</p></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"decisions-locked","title":"Decisions (locked)"},{"id":"what-already-exists-reuse-dont-rebuild","title":"What already exists (reuse, don't rebuild)"},{"id":"schema-changes-additive-single-migration","title":"Schema changes (additive, single migration)"},{"id":"backend","title":"Backend"},{"id":"frontend","title":"Frontend"},{"id":"phasing-implementation-order","title":"Phasing (implementation order)"},{"id":"out-of-scope-for-now","title":"Out of scope (for now)"},{"id":"testing","title":"Testing"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

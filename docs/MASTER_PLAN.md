@@ -1,4 +1,4 @@
-# Aya Academy — Master Plan
+# Ayah Academy — Master Plan
 
 > منصة أكاديمية تعليم قرآن للأطفال + موقع تعريفي. عربي/إنجليزي، RTL/LTR.
 > هذا المستند هو مصدر الحقيقة (source of truth) لبناء المشروع. يُحدّث مع كل مرحلة.
@@ -10,7 +10,7 @@
 | القرار | الاختيار | السبب |
 |--------|----------|-------|
 | اللغة | **JavaScript فقط (ESM)** (front + back) — ممنوع TypeScript | قرار مُقفل. "نفس النظام" = ترتيب الملفات + الكومبوننت + اللغتين، وليس لغة البرمجة. |
-| البنية | **Monorepo** (npm workspaces): `packages/db` (@aya/db) + `packages/shared` (@aya/shared) + `server` + `web` | مطابقة `Transaction-app`. |
+| البنية | **Monorepo** (npm workspaces): `packages/db` (@ayah/db) + `packages/shared` (@ayah/shared) + `server` + `web` | مطابقة `Transaction-app`. |
 | قاعدة البيانات | **MySQL/MariaDB** + Prisma 7 (generator prisma-client-js + output مخصص + `@prisma/adapter-mariadb`؛ الـ url للـ migrations من `prisma.config.ts`) | قرار مُقفل. |
 | i18n | **i18next** قواميس `ar/en` + locale في cookie + RTL عبر `stylis-plugin-rtl` | نفس نظام `Transaction-app`. الافتراضي عربي. |
 | عقد الـ API | `{ success, message, data, translationKey }` + `AppError` بأكواد رسائل محايدة | نفس النظام. |
@@ -25,14 +25,14 @@
 ## 2. هيكل الـ Monorepo
 
 ```
-aya-academy/
+ayah-academy/
 ├── package.json                 # workspaces: packages/*, server, web
 ├── packages/
-│   ├── db/                      # Prisma schema + client (singleton) — @aya/db
+│   ├── db/                      # Prisma schema + client (singleton) — @ayah/db
 │   │   ├── prisma/schema.prisma
 │   │   ├── src/client.ts
 │   │   └── package.json
-│   └── shared/                  # ثوابت + أكواد رسائل + أدوار + صلاحيات + أنواع — @aya/shared
+│   └── shared/                  # ثوابت + أكواد رسائل + أدوار + صلاحيات + أنواع — @ayah/shared
 │       ├── src/
 │       │   ├── constants/       # roles, permissions, enums, currency, pagination
 │       │   ├── messages-codes/  # أكواد رسائل محايدة للّغة
@@ -119,7 +119,7 @@ aya-academy/
 - كل دالة usecase تأخذ `authUserId` لفحص النطاق.
 - Validation بـ **Zod** في `<module>.validation.ts`، تُربط عبر `validate()` middleware.
 - الأخطاء عبر `AppError` بأكواد محايدة + `translationKey`؛ تُلتقط في `error-handler`.
-- IDs: `Int autoincrement`. كل موديل عليه `createdAt/updatedAt`. نصوص طويلة `@db.Text`. مجموعات مغلقة `enum` (مع مزامنة ثوابت `@aya/shared`). فهارس على كل FK يُفلتر/يُرتّب به.
+- IDs: `Int autoincrement`. كل موديل عليه `createdAt/updatedAt`. نصوص طويلة `@db.Text`. مجموعات مغلقة `enum` (مع مزامنة ثوابت `@ayah/shared`). فهارس على كل FK يُفلتر/يُرتّب به.
 
 **Frontend:**
 - Feature module: `config/` (columns/filters) + `pages/` + `components/` + `hooks/`.
@@ -150,7 +150,7 @@ ADMIN = كل الصلاحيات. PARENT = نطاق أبنائه. STUDENT = نط�
 
 ## 6. خطة المراحل (Phases)
 
-- **P0 — الأساس:** Monorepo + Prisma schema كاملة (35+ موديل) + `@aya/shared` + بنية الباك الأساسية. ✅ **خلص**
+- **P0 — الأساس:** Monorepo + Prisma schema كاملة (35+ موديل) + `@ayah/shared` + بنية الباك الأساسية. ✅ **خلص**
 - **P1 — موديولات الباك الأساسية:** auth, users(+ربط ولي أمر/طلاب), plans(+خصومات+/public), coupons(+/validate), subscriptions(+/expiring), sessions. ✅ **خلص**
 - **P2 — موديولات الميزات:** certificates + rewards (خدمات مشتركة), games (list/view/assign/attempt + شهادة + هدية + إشعار), quizzes (تصنيفات + بنك + دعوات + بناء + مشاركون باشتراك فعّال + محاولات + هدية + شهادة), dashboard (admin/parent/student + leaderboard). + seed (أدمن + ٦ شارات + بنك أسئلة + ٦ ألعاب ببيانات). ✅ **خلص** — *يحتاج MySQL شغّال لتشغيل `db:migrate` ثم `db:seed`.*
 - **P3 — بنية الفرونت (JSX):** i18n, theme+RTL, providers, ApiFetch, useRequest, usePermission, DataTable, RHF. ✅ **خلص** (build أخضر)

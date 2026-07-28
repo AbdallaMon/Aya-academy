@@ -2,26 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Avatar, Box, Chip, Grid, Link as MuiLink, Stack, Typography } from "@mui/material";
-import Link from "next/link";
+import { Box, Grid, Typography } from "@mui/material";
 import {
-  MdEdit,
-  MdDelete,
-  MdLink,
-  MdPeople,
-  MdPerson,
-  MdVisibility,
-  MdWorkspacePremium,
-} from "react-icons/md";
-import { PERMISSIONS, USER_ROLES } from "@aya/shared";
+  PERMISSIONS,
+  USER_ROLES,
+  userMessagesCodes,
+} from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { useTranslation } from "../../../i18n/client.js";
-import { useToast } from "../../../providers/ToastProvider.jsx";
-import { localePath } from "../../../i18n/routing.js";
 import {
   DataTable,
   FormDialog,
@@ -31,15 +23,21 @@ import {
   RHFSelect,
   RHFSwitch,
   RHFTextField,
-  RowActionsMenu,
   applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
-import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
-import { USERS_URL, ROLE_COLOR } from "../config/constant.js";
+import { USERS_URL } from "../config/constant.js";
 import { useUsersText } from "../config/usersText.js";
+import { buildUsersColumns } from "../config/usersColumns.js";
+import { buildUsersFilters } from "../config/usersFilters.js";
 import LinkParentDialog from "../components/LinkParentDialog.jsx";
 import ChildrenDialog from "../components/ChildrenDialog.jsx";
+import {
+  buildEditableIdentityPayload,
+  buildIdentityPayload,
+  EMAIL_PATTERN,
+  USERNAME_PATTERN,
+} from "../../../shared/lib/userIdentity.js";
 
 /**
  * Shared user-list screen.
@@ -55,7 +53,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
   const txt = useUsersText();
   const { lng } = useTranslation();
   const confirm = useConfirm();
-  const { showToast } = useToast();
   const { user } = useAuth();
   const { hasPermission } = usePermission();
   const isAdmin = user?.role === USER_ROLES.ADMIN;
@@ -127,25 +124,28 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     if (selected) {
       return {
         name: selected.name ?? "",
+        email: selected.email ?? "",
+        username: selected.username ?? "",
         password: "",
         phone: selected.phone ?? "",
         nickname: selected.nickname ?? "",
-        locale: selected.locale ?? "",
         isActive: selected.isActive ?? true,
       };
     }
     return {
       name: "",
       email: "",
+      username: "",
       password: "",
       role: "STUDENT",
       phone: "",
       nickname: "",
-      locale: "",
     };
   }, [selected]);
 
-  const { control, handleSubmit, reset, setError } = useForm({ defaultValues });
+  const { control, handleSubmit, reset, setError, getValues } = useForm({
+    defaultValues,
+  });
 
   // Re-seed the form each time the dialog opens (or the edited row changes) so
   // create starts blank and edit is pre-filled.
@@ -182,12 +182,12 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
     const avatarId = avatarAttachment?.id ? Number(avatarAttachment.id) : null;
     try {
       if (isEditing) {
-        // updateUserSchema: name, phone, locale, nickname, isActive, password
+        // updateUserSchema: editable identity + account/profile fields.
         const payload = {
           name: values.name,
+          ...buildEditableIdentityPayload(values),
           phone: values.phone || undefined,
-          nickname: values.nickname || undefined,
-          locale: values.locale || undefined,
+          nickname: values.nickname?.trim() || null,
           isActive: Boolean(values.isActive),
         };
         if (values.password) payload.password = values.password;
@@ -197,15 +197,14 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
           await mut.patchRequest(`${selected.id}/avatar`, { attachmentId: avatarId });
         }
       } else {
-        // createUserSchema: name, email, password, role, phone, locale, nickname, avatarId
+        // createUserSchema: name, email, password, role, phone, nickname, avatarId
         const payload = {
           name: values.name,
-          email: values.email,
+          ...buildIdentityPayload(values),
           password: values.password,
           role: values.role,
           phone: values.phone || undefined,
           nickname: values.nickname || undefined,
-          locale: values.locale || undefined,
           avatarId: avatarId || undefined,
         };
         await mut.postRequest(null, payload);
@@ -226,276 +225,46 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
           labelMap: {
             name: txt.nameLabel,
             email: txt.emailLabel,
+            username: txt.usernameLabel,
             password: txt.passwordLabel,
             role: txt.roleLabel,
             phone: txt.phoneLabel,
             nickname: txt.nicknameLabel,
-            locale: txt.localeLabel,
             isActive: txt.isActive,
           },
-          showToast,
+          messageMap: {
+            [userMessagesCodes.EMAIL_OR_USERNAME_REQUIRED]:
+              txt.identityRequired,
+            [userMessagesCodes.INVALID_EMAIL]: txt.invalidEmail,
+            [userMessagesCodes.INVALID_USERNAME]: txt.invalidUsername,
+            [userMessagesCodes.USERNAME_ALREADY_EXISTS]:
+              txt.usernameAlreadyExists,
+          },
           suppressFallbackToast: true,
         },
       );
     }
   }
 
-  const columns = useMemo(() => {
-    const relationLabels = {
-      FATHER: txt.father,
-      MOTHER: txt.mother,
-      GUARDIAN: txt.guardian,
-      OTHER: txt.other,
-    };
-
-    const nameCol = {
-      field: "name",
-      headerName: txt.name,
-      width: 240,
-      renderCell: ({ row }) => (
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Avatar
-            src={buildFileUrl(row.avatar) || undefined}
-            sx={{ width: 36, height: 36, bgcolor: "action.hover" }}
-          >
-            {!row.avatar && <MdPerson size={20} />}
-          </Avatar>
-          <Stack>
-            {canView ? (
-              <MuiLink
-                component={Link}
-                href={localePath(lng, `/dashboard/users/${row.id}`)}
-                underline="hover"
-                fontWeight={700}
-              >
-                {row.name}
-              </MuiLink>
-            ) : (
-              <Typography fontWeight={700}>{row.name}</Typography>
-            )}
-            {row.nickname && (
-              <Typography variant="caption" color="text.secondary">
-                {row.nickname}
-              </Typography>
-            )}
-          </Stack>
-        </Stack>
-      ),
-    };
-
-    const emailCol = {
-      field: "email",
-      headerName: txt.email,
-      width: 230,
-      renderCell: ({ row }) => row.email || "—",
-    };
-
-    const phoneCol = {
-      field: "phone",
-      headerName: txt.phone,
-      width: 150,
-      renderCell: ({ row }) => row.phone || txt.noPhone,
-    };
-
-    const roleCol = {
-      field: "role",
-      headerName: txt.role,
-      width: 120,
-      renderCell: ({ row }) => (
-        <Chip
-          size="small"
-          color={ROLE_COLOR[row.role] || "default"}
-          label={
-            row.role === "ADMIN"
-              ? txt.admin
-              : row.role === "PARENT"
-                ? txt.parent
-                : txt.student
-          }
-        />
-      ),
-    };
-
-    // Students: their linked parents, each chip a direct link to the parent.
-    const parentsCol = {
-      field: "parents",
-      headerName: txt.parents,
-      width: 260,
-      sortable: false,
-      renderCell: ({ row }) => {
-        const parents = row.parents || [];
-        if (parents.length === 0) return txt.noParentsLinked;
-        return (
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-            {parents.map((p) => (
-              <Chip
-                key={p.id}
-                size="small"
-                clickable
-                component={Link}
-                href={localePath(lng, `/dashboard/users/${p.id}`)}
-                variant="outlined"
-                color="info"
-                label={`${p.name} — ${relationLabels[p.relation] || p.relation}`}
-              />
-            ))}
-          </Stack>
-        );
-      },
-    };
-
-    // Parents: how many children are linked.
-    const childrenCol = {
-      field: "childrenCount",
-      headerName: txt.children,
-      width: 130,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <Chip
-          size="small"
-          color={row.childrenCount ? "info" : "default"}
-          variant={row.childrenCount ? "filled" : "outlined"}
-          icon={<MdPeople />}
-          label={row.childrenCount ?? 0}
-        />
-      ),
-    };
-
-    const subscriptionCol = {
-      field: "isSubscribed",
-      headerName: txt.subscription,
-      width: 140,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <Chip
-          size="small"
-          color={row.isSubscribed ? "success" : "default"}
-          variant={row.isSubscribed ? "filled" : "outlined"}
-          label={row.isSubscribed ? txt.subscribed : txt.notSubscribed}
-        />
-      ),
-    };
-
-    const activeCol = {
-      field: "isActive",
-      headerName: txt.active,
-      width: 110,
-      renderCell: ({ row }) => (
-        <Chip
-          size="small"
-          color={row.isActive ? "success" : "default"}
-          label={row.isActive ? txt.activeYes : txt.activeNo}
-        />
-      ),
-    };
-
-    const createdCol = {
-      field: "createdAt",
-      headerName: txt.createdAt,
-      width: 130,
-      renderCell: ({ row }) =>
-        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—",
-    };
-
-    const actionsCol = {
-      field: "actions",
-      type: "actions",
-      headerName: txt.actions,
-      width: 80,
-      renderCell: ({ row }) => (
-        <RowActionsMenu
-          actions={[
-            {
-              label: txt.viewDetails,
-              icon: <MdVisibility />,
-              href: localePath(lng, `/dashboard/users/${row.id}`),
-              hidden: !canView,
-            },
-            {
-              label: txt.edit,
-              icon: <MdEdit />,
-              onClick: () => onEdit(row),
-              hidden: !canEdit,
-            },
-            {
-              label: txt.linkParent,
-              icon: <MdLink />,
-              onClick: () => onLinkParent(row),
-              hidden: !(canEdit && row.role === "STUDENT"),
-            },
-            {
-              label: txt.certificates,
-              icon: <MdWorkspacePremium />,
-              href: localePath(lng, `/dashboard/certificates?studentId=${row.id}`),
-              hidden: !(canViewChildren && row.role === "STUDENT"),
-            },
-            {
-              label:
-                row.childrenCount != null
-                  ? `${txt.viewChildren} (${row.childrenCount})`
-                  : txt.viewChildren,
-              icon: <MdPeople />,
-              onClick: () => onViewChildren(row),
-              hidden: !(canViewChildren && row.role === "PARENT"),
-            },
-            {
-              label: txt.delete,
-              icon: <MdDelete />,
-              color: "error",
-              onClick: () => onDelete(row),
-              hidden: !(canDelete && row.isActive),
-            },
-          ]}
-        />
-      ),
-    };
-
-    // Parents and students are genuinely different surfaces, so each gets its
-    // own column set rather than one shared table with half-empty cells.
-    if (lockedRole === "PARENT") {
-      return [nameCol, emailCol, phoneCol, childrenCol, activeCol, createdCol, actionsCol];
-    }
-    if (lockedRole === "STUDENT") {
-      return [nameCol, emailCol, parentsCol, subscriptionCol, activeCol, createdCol, actionsCol];
-    }
-    return [
-      nameCol,
-      emailCol,
-      roleCol,
-      parentsCol,
-      subscriptionCol,
-      activeCol,
-      createdCol,
-      actionsCol,
-    ];
-  }, [txt, lng, lockedRole, canView, canEdit, canDelete, canViewChildren]);
+  const columns = useMemo(
+    () =>
+      buildUsersColumns({
+        txt,
+        lng,
+        lockedRole,
+        can: {
+          view: canView,
+          edit: canEdit,
+          delete: canDelete,
+          viewChildren: canViewChildren,
+        },
+        actions: { onEdit, onLinkParent, onViewChildren, onDelete },
+      }),
+    [txt, lng, lockedRole, canView, canEdit, canDelete, canViewChildren],
+  );
 
   const filterConfig = useMemo(
-    () => [
-      { type: "search", key: "search", label: txt.searchLabel },
-      // When the list is locked to a role, the role filter is omitted entirely.
-      ...(lockedRole
-        ? []
-        : [
-            {
-              type: "enum",
-              key: "role",
-              label: txt.role,
-              options: {
-                ADMIN: txt.admin,
-                PARENT: txt.parent,
-                STUDENT: txt.student,
-              },
-            },
-          ]),
-      {
-        type: "enum",
-        key: "isActive",
-        label: txt.statusLabel,
-        // Active is the default (seeded above); "All" clears the filter.
-        options: { true: txt.activeYes, false: txt.activeNo, ALL: txt.all },
-      },
-    ],
+    () => buildUsersFilters({ txt, lockedRole }),
     [txt, lockedRole],
   );
 
@@ -567,7 +336,37 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
                     control={control}
                     label={txt.emailLabel}
                     type="email"
-                    rules={{ required: txt.required }}
+                    rules={{
+                      validate: (value) => {
+                        if (!value && !getValues("username")) {
+                          return txt.identityRequired;
+                        }
+                        return (
+                          !value ||
+                          EMAIL_PATTERN.test(value.trim()) ||
+                          txt.invalidEmail
+                        );
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="username"
+                    control={control}
+                    label={txt.usernameLabel}
+                    rules={{
+                      validate: (value) => {
+                        if (!value && !getValues("email")) {
+                          return txt.identityRequired;
+                        }
+                        return (
+                          !value ||
+                          USERNAME_PATTERN.test(value.trim()) ||
+                          txt.invalidUsername
+                        );
+                      },
+                    }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -590,15 +389,56 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
                 </Grid>
               </>
             ) : (
-              // email + role are immutable on the update endpoint → omit them.
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField
-                  name="password"
-                  control={control}
-                  label={txt.passwordEditLabel}
-                  type="password"
-                />
-              </Grid>
+              // Role is immutable; either login identity may be changed.
+              <>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="username"
+                    control={control}
+                    label={txt.usernameLabel}
+                    helperText={txt.usernameEditHint}
+                    rules={{
+                      validate: (value) =>
+                        !value && !getValues("email")
+                          ? txt.identityRequired
+                          : !value ||
+                              USERNAME_PATTERN.test(value.trim()) ||
+                              txt.invalidUsername,
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="email"
+                    control={control}
+                    label={txt.emailLabel}
+                    type="email"
+                    rules={{
+                      validate: (value) =>
+                        !value && !getValues("username")
+                          ? txt.identityRequired
+                          : !value ||
+                              EMAIL_PATTERN.test(value.trim()) ||
+                              txt.invalidEmail,
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <RHFTextField
+                    name="password"
+                    control={control}
+                    label={txt.passwordEditLabel}
+                    type="password"
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 0.75 }}
+                  >
+                    {txt.passwordLeaveBlank}
+                  </Typography>
+                </Grid>
+              </>
             )}
 
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -607,15 +447,6 @@ export default function UsersPage({ lockedRole, titleKey, descriptionKey } = {})
 
             <Grid size={{ xs: 12, sm: 6 }}>
               <RHFTextField name="nickname" control={control} label={txt.nicknameLabel} />
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <RHFSelect
-                name="locale"
-                control={control}
-                label={txt.localeLabel}
-                options={{ ar: txt.arabic, en: txt.english }}
-              />
             </Grid>
 
             {isEditing && (

@@ -5,7 +5,7 @@
 // Usage:
 //   node scripts/decrypt-backup.js <path_to_.enc> <path_to_key_file> [out_.sql]
 //
-// Unlike the old single-master-key format, an Aya backup is encrypted with a
+// Unlike the old single-master-key format, an Ayah backup is encrypted with a
 // per-backup EncryptionKey whose 32-byte material lives on Drive as a .pem. To
 // decrypt offline you must supply that key file (the .pem you saved, or a file
 // containing the raw base64 key). The key file is decoded the same way the server
@@ -36,7 +36,7 @@ function usage() {
     "Usage:\n" +
     "  node scripts/decrypt-backup.js <path_to_.enc> <path_to_key_file> [out_.sql]\n" +
     "Example:\n" +
-    `  node scripts/decrypt-backup.js .${path.sep}backups${path.sep}aya-academy-2026-06-21-0200.enc .${path.sep}key.pem`
+    `  node scripts/decrypt-backup.js .${path.sep}backups${path.sep}ayah-academy-2026-06-21-0200.enc .${path.sep}key.pem`
   );
 }
 

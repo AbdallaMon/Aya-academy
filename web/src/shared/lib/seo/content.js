@@ -2,7 +2,9 @@
 // i18n locale sections, but kept OUT of the runtime translation bundle because
 // this text is only ever read on the server inside generateMetadata().
 //
-// Each page provides: title, description, and optional keywords[].
+// Each page provides title and description. The optional keywords arrays are
+// editorial query maps only; buildMetadata deliberately does not emit the
+// ignored `<meta name="keywords">` tag.
 // `titleAbsolute: true` means "use this title verbatim" (no "… | Brand" suffix)
 // — used for the homepage, whose title already carries the brand.
 
@@ -10,76 +12,78 @@ export const seoContent = {
   // Site-wide defaults (homepage + fallback for anything unspecified).
   site: {
     ar: {
-      title: "أكاديمية آية — تعليم القرآن والأخلاق للأطفال بمتعة وأمان",
+      title: "أكاديمية آية — تحفيظ القرآن والعلوم الشرعية أونلاين للكبار والأطفال",
       titleAbsolute: true,
       description:
-        "رحلة مرحة وآمنة لتعليم الأطفال القرآن الكريم والأخلاق الجميلة عبر حصص تفاعلية وألعاب تعليمية ومتابعة لوليّ الأمر. ابدأ بحصة تجريبية مجانية.",
+        "تعلّم القرآن الكريم وتحفيظه، والتجويد، واللغة العربية، والعلوم الشرعية أونلاين مع معلّمين مؤهّلين — للكبار والأطفال من ٥ سنوات فأكثر. حصص مباشرة تفاعلية ومتابعة مستمرة، وحصة تجريبية مجانية.",
       keywords: [
-        "تعليم القرآن للأطفال",
+        "تحفيظ القرآن أونلاين",
+        "تعليم القرآن الكريم",
+        "تحفيظ القرآن للكبار",
         "تحفيظ القرآن للأطفال",
-        "تحفيظ قرآن أونلاين",
+        "دورات تجويد أونلاين",
+        "تعليم العلوم الشرعية",
+        "دراسة العلوم الشرعية أونلاين",
+        "تعلم اللغة العربية أونلاين",
         "أكاديمية قرآن أونلاين",
-        "معلم قرآن للأطفال",
-        "تعليم التجويد للأطفال",
+        "معلم قرآن خصوصي أونلاين",
         "حلقات تحفيظ القرآن اون لاين",
-        "تعليم الأخلاق للأطفال",
-        "حصص قرآن تفاعلية للأطفال",
-        "دورة تحفيظ قرآن للأطفال",
-        "تعليم الأطفال القرآن أونلاين",
         "أكاديمية آية",
       ],
     },
     en: {
-      title: "Aya Academy — Fun & Safe Quran and Manners Learning for Kids",
+      title: "Online Quran Classes for Kids & Adults | Ayah Academy",
       titleAbsolute: true,
       description:
-        "A joyful, safe journey for kids to learn the Quran and beautiful manners through interactive sessions, educational games and parent tracking. Start with a free trial session.",
+        "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
       keywords: [
-        "Quran for kids",
-        "Quran memorization for kids",
-        "online Quran classes for kids",
+        "online Quran memorization",
+        "learn Quran online",
+        "Quran classes for adults",
+        "Quran classes for kids",
+        "online Tajweed course",
+        "Islamic studies online",
+        "learn Arabic online",
         "online Quran academy",
-        "Quran teacher for kids",
-        "learn Quran online for children",
-        "kids Tajweed classes",
-        "Islamic manners for kids",
-        "interactive Quran classes",
-        "Quran course for children",
-        "kids Islamic education online",
-        "Aya Academy",
+        "Quran teacher online",
+        "Hifz online",
+        "memorize Quran online",
+        "Ayah Academy",
       ],
     },
   },
 
   home: {
     ar: {
-      title: "أكاديمية آية — تعليم القرآن والأخلاق للأطفال بمتعة وأمان",
+      title: "أكاديمية آية — تحفيظ القرآن والعلوم الشرعية أونلاين للكبار والأطفال",
       titleAbsolute: true,
       description:
-        "رحلة مرحة وآمنة لتعليم الأطفال القرآن الكريم والأخلاق الجميلة عبر حصص تفاعلية وألعاب تعليمية. احجز حصة تجريبية مجانية لطفلك الآن.",
+        "احجز حصة تجريبية مجانية في أكاديمية آية: تحفيظ القرآن والتجويد واللغة العربية والعلوم الشرعية أونلاين للكبار والأطفال، مع معلّمين مؤهّلين وحصص مباشرة تفاعلية.",
       keywords: [
-        "تعليم القرآن للأطفال",
-        "تحفيظ القرآن للأطفال أونلاين",
+        "تحفيظ القرآن أونلاين",
+        "تعليم القرآن للكبار والأطفال",
+        "دورات تجويد أونلاين",
+        "تعليم العلوم الشرعية أونلاين",
+        "حصة قرآن تجريبية مجانية",
         "أكاديمية قرآن أونلاين",
-        "حصة قرآن تجريبية مجانية للأطفال",
-        "معلم قرآن للأطفال",
-        "تعليم التجويد والأخلاق للأطفال",
+        "معلم قرآن خصوصي أونلاين",
         "أكاديمية آية",
       ],
     },
     en: {
-      title: "Aya Academy — Fun & Safe Quran and Manners Learning for Kids",
+      title: "Online Quran Classes for Kids & Adults | Ayah Academy",
       titleAbsolute: true,
       description:
-        "A joyful, safe journey for kids to learn the Quran and beautiful manners through interactive sessions and educational games. Book a free trial session today.",
+        "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
       keywords: [
-        "Quran for kids",
-        "online Quran memorization for kids",
+        "online Quran memorization",
+        "Quran classes for adults and kids",
+        "online Tajweed course",
+        "Islamic studies online",
+        "free Quran trial class",
         "online Quran academy",
-        "free Quran trial class for kids",
-        "Quran teacher for kids",
-        "Tajweed and manners for children",
-        "Aya Academy",
+        "Quran teacher online",
+        "Ayah Academy",
       ],
     },
   },
@@ -87,20 +91,20 @@ export const seoContent = {
   login: {
     ar: {
       title: "تسجيل الدخول",
-      description: "سجّل الدخول إلى حسابك في أكاديمية آية لمتابعة تقدّم طفلك وحصصه.",
+      description: "سجّل الدخول إلى حسابك في أكاديمية آية لمتابعة تقدّمك أو تقدّم طفلك وحصصك.",
       keywords: [
         "تسجيل الدخول أكاديمية آية",
-        "حساب ولي الأمر",
-        "متابعة تقدّم الطفل في القرآن",
+        "حساب الطالب وولي الأمر",
+        "متابعة التقدّم في تحفيظ القرآن",
       ],
     },
     en: {
       title: "Login",
-      description: "Sign in to your Aya Academy account to follow your child's progress and sessions.",
+      description: "Sign in to your Ayah Academy account to follow your — or your child's — progress and sessions.",
       keywords: [
-        "Aya Academy login",
-        "parent account",
-        "track child Quran progress",
+        "Ayah Academy login",
+        "student and parent account",
+        "track Quran progress",
       ],
     },
   },
@@ -112,7 +116,7 @@ export const seoContent = {
     },
     en: {
       title: "Forgot password",
-      description: "Recover access to your Aya Academy account with a password reset link sent to your email.",
+      description: "Recover access to your Ayah Academy account with a password reset link sent to your email.",
     },
   },
 
@@ -123,74 +127,77 @@ export const seoContent = {
     },
     en: {
       title: "Reset password",
-      description: "Choose a new password for your Aya Academy account.",
+      description: "Choose a new password for your Ayah Academy account.",
     },
   },
 
   register: {
     ar: {
       title: "إنشاء حساب",
-      description: "أنشئ حسابًا في أكاديمية آية وابدأ رحلة طفلك مع القرآن بحصة تجريبية مجانية.",
+      description: "أنشئ حسابًا في أكاديمية آية وابدأ رحلتك أو رحلة طفلك مع تحفيظ القرآن والعلوم الشرعية بحصة تجريبية مجانية.",
       keywords: [
         "التسجيل في أكاديمية قرآن أونلاين",
         "حصة قرآن تجريبية مجانية",
-        "تسجيل طفل لتحفيظ القرآن أونلاين",
+        "تعلم القرآن أونلاين للكبار والأطفال",
       ],
     },
     en: {
       title: "Create an account",
-      description: "Create an Aya Academy account and start your child's Quran journey with a free trial.",
+      description: "Create an Ayah Academy account and start your — or your child's — Quran and Islamic studies journey with a free trial.",
       keywords: [
         "sign up online Quran academy",
         "free Quran trial session",
-        "register child for online Quran classes",
+        "learn Quran online for adults and kids",
       ],
     },
   },
 
   blog: {
     ar: {
-      title: "المدوّنة",
+      title: "مدونة القرآن والتربية الإسلامية",
       description:
-        "مقالات أكاديمية آية للأهل: نصائح عملية عن تحفيظ القرآن للأطفال، تعليم الأخلاق، والتعلّم الممتع — بكلمات بسيطة وقلبٍ دافئ.",
+        "مدونة أكاديمية آية: مقالات موثوقة ونصائح عملية عن تحفيظ القرآن والتجويد واللغة العربية والتربية الإسلامية للكبار والأهل.",
       keywords: [
-        "مدونة تربية إسلامية",
-        "تحفيظ القرآن للأطفال",
-        "تعليم الأخلاق للأطفال",
-        "نصائح للأهل",
+        "مدونة تحفيظ القرآن",
+        "نصائح تعلم القرآن",
+        "تعلم التجويد",
+        "العلوم الشرعية",
+        "تربية إسلامية",
         "أكاديمية آية",
       ],
     },
     en: {
       title: "Blog",
       description:
-        "Aya Academy articles for parents: practical tips on helping kids memorize the Quran, teaching manners, and joyful learning — in plain words and a warm heart.",
+        "Ayah Academy articles: practical tips on Quran memorization, Tajweed, Arabic and Islamic studies — for adult learners and parents, in plain, useful words.",
       keywords: [
-        "Islamic parenting blog",
-        "Quran memorization for kids",
-        "teaching kids manners",
-        "parenting tips",
-        "Aya Academy",
+        "Quran memorization tips",
+        "learn Tajweed",
+        "Islamic studies",
+        "learn Arabic",
+        "Islamic parenting",
+        "Ayah Academy",
       ],
     },
   },
 
   freeGame: {
     ar: {
-      title: "جرّب لعبة مجانية",
+      title: "لعبة تعليمية إسلامية مجانية للأطفال",
       description:
-        "العب لعبة آداب تفاعلية مجانية من أكاديمية آية، وسجّل لتحصل على حصة تجريبية مجانية لطفلك.",
+        "جرّب لعبة آداب وأخلاق تفاعلية مجانية للأطفال من أكاديمية آية، ثم احجز حصة تجريبية مجانية لطفلك.",
       keywords: [
         "ألعاب تعليمية إسلامية للأطفال",
         "لعبة آداب وأخلاق للأطفال",
         "ألعاب قرآن مجانية للأطفال",
         "تعليم الأطفال بالألعاب",
+        "لعبة اكاديمية ايه المجانية",
       ],
     },
     en: {
-      title: "Try a free game",
+      title: "Free Islamic Educational Game for Kids",
       description:
-        "Play a free interactive manners game from Aya Academy, and sign up for a free trial session for your child.",
+        "Play a free interactive manners game from Ayah Academy, and sign up for a free trial session for your child.",
       keywords: [
         "Islamic educational games for kids",
         "kids manners game",

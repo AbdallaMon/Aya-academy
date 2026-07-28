@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Stack, Typography } from "@mui/material";
+import { Stack, TextField, Typography } from "@mui/material";
 import { FormDialog, CouponControl } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { initialCoupon, resolveCoupon } from "../../../shared/lib/couponPricing.js";
@@ -91,11 +91,15 @@ export default function CouponDialog({ open, onClose, subscription, txt, onChang
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const { codeToSend } = resolveCoupon(selectedPlan, billingPeriod, coupon);
+  // USAGE subs have no linked plan → CouponControl can't render (it prices
+  // against a plan). Fall back to the raw entered code so a plan-agnostic coupon
+  // can still be applied; the backend validates it (planId: null).
+  const effectiveCode = selectedPlan ? codeToSend : (coupon.code || "").trim();
 
   async function submit() {
     try {
       await applyReq.fetchData(`${subscription.id}/apply-coupon`, {
-        couponCode: codeToSend || "",
+        couponCode: effectiveCode || "",
       });
       onChanged?.();
       onClose();
@@ -119,12 +123,23 @@ export default function CouponDialog({ open, onClose, subscription, txt, onChang
         <Typography variant="body2" color="text.secondary">
           {txt.couponHint}
         </Typography>
-        {selectedPlan && (
+        {selectedPlan ? (
           <CouponControl
             plan={selectedPlan}
             billingPeriod={billingPeriod}
             coupon={coupon}
             onCoupon={setCoupon}
+          />
+        ) : (
+          // No linked plan (USAGE sub): plain code entry — the server validates.
+          <TextField
+            label={txt.coupon}
+            value={coupon.code || ""}
+            onChange={(e) =>
+              setCoupon({ status: "custom", code: e.target.value, quote: null, reason: null })
+            }
+            fullWidth
+            autoComplete="off"
           />
         )}
       </Stack>

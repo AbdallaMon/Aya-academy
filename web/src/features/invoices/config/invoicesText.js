@@ -12,6 +12,8 @@ export const invoicesText = {
     regenerate: "إعادة توليد الفاتورة",
     regenerateHint:
       "يعيد ضبط الفاتورة بالكامل من القالب والاشتراك (المبالغ، الملاحظات، تعليمات الدفع، فترة الفوترة والتواريخ) ويصفّر الرصيد/المديونية السابقة.",
+    regenerateConfirm:
+      "إعادة الفوترة ستجمع حصص شهر الاستهلاك من جديد، وتجعل الفاتورة غير مدفوعة، وتوقف الاشتراك مؤقتاً لحين تأكيد الدفع. هل تريد المتابعة؟",
     edit: "تعديل",
     print: "طباعة",
     markPaid: "تأكيد الدفع",
@@ -37,7 +39,7 @@ export const invoicesText = {
     email: "البريد",
     plan: "الباقة",
     description: "البيان",
-    hours: "عدد الساعات",
+    hours: "المدة",
     freeHours: "ساعات مجانية",
     hourlyRate: "سعر الساعة",
     amount: "المبلغ",
@@ -78,7 +80,7 @@ export const invoicesText = {
     paymentStatus: "حالة السداد",
     save: "حفظ",
     cancel: "إلغاء",
-    hoursLocked: "عدد الساعات والمبلغ يأتيان من الاشتراك ولا يمكن تعديلهما.",
+    hoursLocked: "المدة والمبلغ يأتيان من الاشتراك ولا يمكن تعديلهما.",
     // mark paid flow
     markPaidConfirm: "هل تريد تأكيد دفع هذه الفاتورة؟",
     activateConfirm:
@@ -92,6 +94,8 @@ export const invoicesText = {
     regenerate: "Regenerate invoice",
     regenerateHint:
       "Fully resets the invoice from the template and subscription (amounts, notes, payment instructions, billing period and dates) and clears previous credit/debt.",
+    regenerateConfirm:
+      "Rebilling recalculates the consumption month's sessions, resets the invoice to unpaid, and pauses the subscription until payment is confirmed. Continue?",
     edit: "Edit",
     print: "Print",
     markPaid: "Mark as paid",
@@ -116,7 +120,7 @@ export const invoicesText = {
     email: "Email",
     plan: "Plan",
     description: "Description",
-    hours: "Hours",
+    hours: "Duration",
     freeHours: "Free hours",
     hourlyRate: "Hourly rate",
     amount: "Amount",
@@ -155,7 +159,7 @@ export const invoicesText = {
     paymentStatus: "Payment",
     save: "Save",
     cancel: "Cancel",
-    hoursLocked: "Hours and amount come from the subscription and can't be edited.",
+    hoursLocked: "Duration and amount come from the subscription and can't be edited.",
     markPaidConfirm: "Mark this invoice as paid?",
     activateConfirm:
       "Payment confirmed. Activate the subscription now? (Yes = activate immediately, No = leave the subscription unchanged)",

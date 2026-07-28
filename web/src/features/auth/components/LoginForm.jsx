@@ -18,7 +18,7 @@ export default function LoginForm() {
   const { lng } = useTranslation();
   const { setAuthUser } = useAuth();
   const { control, handleSubmit } = useForm({
-    defaultValues: { email: "", password: "" },
+    defaultValues: { identifier: "", password: "" },
   });
 
   const { fetchData, isLoading } = useRequest({
@@ -59,14 +59,11 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack spacing={2.5}>
           <RHFTextField
-            name="email"
+            name="identifier"
             control={control}
-            label={txt.email}
-            type="email"
-            rules={{
-              required: txt.required,
-              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: txt.invalidEmail },
-            }}
+            label={txt.emailOrUsername}
+            type="text"
+            rules={{ required: txt.identityRequired }}
           />
           <RHFTextField
             name="password"

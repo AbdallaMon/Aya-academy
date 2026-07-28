@@ -13,7 +13,7 @@ import {
   ListSubheader,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { useAuth } from "../../../hooks/useAuth.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useTranslation } from "../../../i18n/client.js";

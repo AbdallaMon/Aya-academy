@@ -9,7 +9,7 @@ export async function seedBadges() {
       nameAr: "أول لعبة",
       nameEn: "First Game",
       descriptionAr: "لعبت أول لعبة لك في أكاديمية آية، أحسنت!",
-      descriptionEn: "You played your first game at Aya Academy!",
+      descriptionEn: "You played your first game at Ayah Academy!",
       icon: "🎮",
     },
     {

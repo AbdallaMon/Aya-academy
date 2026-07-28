@@ -1,11 +1,11 @@
 // Locale proxy (Next 16 `proxy` convention, formerly `middleware`) — guarantees
-// every page URL is prefixed with a supported locale (/ar or /en). Arabic is the
-// default. Detection on an unprefixed request: i18lng cookie → Accept-Language →
-// fallback (ar). It also keeps the i18lng cookie in sync with the URL so the
+// every page URL is prefixed with a supported locale (/ar or /en). English is the
+// default. An explicit i18lng cookie wins; otherwise unprefixed URLs use English.
+// It also keeps the i18lng cookie in sync with the URL so the
 // server layout first-paint and the client i18n context agree with the URL.
 
 import { NextResponse } from "next/server";
-import { cookieName, fallbackLng, languages } from "./i18n/settings.js";
+import { cookieName, defaultLng, languages } from "./i18n/settings.js";
 
 const PUBLIC_FILE = /\.(.*)$/;
 
@@ -13,12 +13,7 @@ function detectLocale(request) {
   const cookieLng = request.cookies.get(cookieName)?.value;
   if (languages.includes(cookieLng)) return cookieLng;
 
-  const accept = request.headers.get("accept-language") || "";
-  const preferred = accept
-    .split(",")
-    .map((part) => part.split(";")[0].trim().slice(0, 2).toLowerCase());
-  const match = preferred.find((code) => languages.includes(code));
-  return match || fallbackLng;
+  return defaultLng;
 }
 
 export default function proxy(request) {

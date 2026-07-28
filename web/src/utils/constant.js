@@ -1,11 +1,11 @@
 // Shared app-level constants (frontend). Mirrors the small set the foundation
-// hooks/components rely on. Pagination defaults come from @aya/shared so the
+// hooks/components rely on. Pagination defaults come from @ayah/shared so the
 // client agrees with the server.
 
 import {
   DEFAULT_PAGE_SIZE as SHARED_DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS as SHARED_PAGE_SIZE_OPTIONS,
-} from '@aya/shared';
+} from '@ayah/shared';
 import { stripLocale } from '../i18n/routing.js';
 
 export const DEFAULT_PAGE_SIZE = SHARED_DEFAULT_PAGE_SIZE ?? 25;

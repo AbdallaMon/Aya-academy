@@ -3,16 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
-  Chip,
   CircularProgress,
   Grid,
-  MenuItem,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
-import { MdEdit, MdDelete } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
@@ -21,18 +17,16 @@ import { useTranslation } from "../../../i18n/client.js";
 import {
   DataTable,
   EmptyState,
+  AsyncUserAutocomplete,
   PageHeader,
-  RowActionsMenu,
   useConfirm,
 } from "../../../shared/components/index.js";
 import {
   SESSION_LOGS_URL,
-  MY_STUDENTS_URL,
   currentMonth,
-  formatSessionDate,
-  studentLabel,
 } from "../config/constant.js";
 import { useSessionLogText } from "../config/sessionLogText.js";
+import { buildSessionLogColumns } from "../config/sessionLogColumns.js";
 import SessionLogFormDialog from "../components/SessionLogFormDialog.jsx";
 import SessionCard from "../components/SessionCard.jsx";
 
@@ -79,15 +73,6 @@ export default function SessionLogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Parent-only: the list of their children, used by the child (studentId) filter.
-  const myStudentsReq = useRequest({
-    url: MY_STUDENTS_URL,
-    method: "get",
-    autoFetch: canList && !isManagement,
-    syncToUrl: false,
-  });
-  const myStudents = myStudentsReq.data || [];
-
   const form = useOpen();
   const [selected, setSelected] = useState(null);
 
@@ -111,105 +96,13 @@ export default function SessionLogPage() {
   }
 
   const columns = useMemo(
-    () => [
-      {
-        field: "student",
-        headerName: txt.student,
-        width: 200,
-        renderCell: ({ row }) => (
-          <Typography fontWeight={700}>{studentLabel(row.student)}</Typography>
-        ),
-      },
-      {
-        field: "subjects",
-        headerName: txt.subjects,
-        width: 260,
-        renderCell: ({ row }) => {
-          const list = Array.isArray(row.subjectsJson) ? row.subjectsJson : [];
-          if (!list.length) return txt.dash;
-          const shown = list.slice(0, 2);
-          const rest = list.length - shown.length;
-          return (
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-              {shown.map((s) => (
-                <Chip key={s} size="small" label={txt[s] || s} />
-              ))}
-              {rest > 0 && (
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label={txt.moreItems.replace("{count}", rest)}
-                />
-              )}
-            </Stack>
-          );
-        },
-      },
-      {
-        field: "durationHours",
-        headerName: txt.hours,
-        width: 100,
-        renderCell: ({ row }) => Number(row.durationHours),
-      },
-      {
-        field: "rating",
-        headerName: txt.rating,
-        width: 120,
-        renderCell: ({ row }) => (row.rating ? txt[row.rating] || row.rating : txt.dash),
-      },
-      {
-        field: "attendance",
-        headerName: txt.attendance,
-        width: 120,
-        renderCell: ({ row }) => {
-          const present = row.attendance === "PRESENT";
-          return (
-            <Chip
-              size="small"
-              color={present ? "success" : "error"}
-              label={present ? txt.PRESENT : txt.ABSENT}
-            />
-          );
-        },
-      },
-      {
-        field: "sessionDate",
-        headerName: txt.date,
-        width: 150,
-        renderCell: ({ row }) => formatSessionDate(row.sessionDate, lng),
-      },
-      {
-        field: "teacher",
-        headerName: txt.teacher,
-        width: 160,
-        renderCell: ({ row }) => row.teacher?.name || txt.dash,
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: txt.actions,
-        width: 80,
-        renderCell: ({ row }) => (
-          <RowActionsMenu
-            actions={[
-              {
-                label: txt.edit,
-                icon: <MdEdit />,
-                onClick: () => onEdit(row),
-                hidden: !canEdit,
-              },
-              {
-                label: txt.delete,
-                icon: <MdDelete />,
-                color: "error",
-                onClick: () => onDelete(row),
-                hidden: !canDelete,
-              },
-            ]}
-          />
-        ),
-      },
-    ],
+    () =>
+      buildSessionLogColumns({
+        txt,
+        lng,
+        can: { edit: canEdit, delete: canDelete },
+        actions: { onEdit, onDelete },
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [txt, lng, canEdit, canDelete],
   );
@@ -217,8 +110,6 @@ export default function SessionLogPage() {
   if (!canList) return null;
 
   const monthValue = filters.month || "";
-  const studentValue = filters.studentId != null ? String(filters.studentId) : "";
-
   const toolbar = (
     <Stack
       direction={{ xs: "column", sm: "row" }}
@@ -237,27 +128,33 @@ export default function SessionLogPage() {
         size="small"
         sx={{ minWidth: 180 }}
       />
-      {!isManagement && (
-        <TextField
-          select
-          label={txt.studentFilterLabel}
-          value={studentValue}
-          onChange={(e) =>
+      <AsyncUserAutocomplete
+        role="STUDENT"
+        label={txt.studentFilterLabel}
+        value={filters.studentId ?? null}
+        onChange={(student) =>
+          setFilters((prev) => ({
+            ...prev,
+            studentId: student?.id || undefined,
+          }))
+        }
+        size="small"
+        sx={{ minWidth: 200 }}
+      />
+      {isManagement && (
+        <AsyncUserAutocomplete
+          role="PARENT"
+          label={txt.parentFilterLabel}
+          value={filters.parentId ?? null}
+          onChange={(parent) =>
             setFilters((prev) => ({
               ...prev,
-              studentId: e.target.value || undefined,
+              parentId: parent?.id || undefined,
             }))
           }
           size="small"
-          sx={{ minWidth: 200 }}
-        >
-          <MenuItem value="">{txt.allStudents}</MenuItem>
-          {myStudents.map((s) => (
-            <MenuItem key={s.id} value={String(s.id)}>
-              {studentLabel(s)}
-            </MenuItem>
-          ))}
-        </TextField>
+          sx={{ minWidth: 220 }}
+        />
       )}
     </Stack>
   );

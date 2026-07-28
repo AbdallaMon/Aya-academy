@@ -2,9 +2,9 @@
 // Subscription STATUS gate — the single place that answers "is this student
 // currently subscribed?". Orthogonal to role permissions. Built on the existing
 // activeSubscriptionWhere() (via subscriptionRepo) so "active" has one definition.
-import { messagesNames, subscriptionMessagesCodes } from "@aya/shared";
+import { messagesNames, subscriptionMessagesCodes } from "@ayah/shared";
 import { AppError } from "../errors/AppError.js";
-import { subscriptionRepo } from "../../modules/subscriptions/subscription.repo.js";
+import { subscriptionRepo } from "../../modules/finance/subscriptions/subscription.repo.js";
 
 /** True when the student has a currently-ACTIVE subscription. */
 export async function hasActiveSubscription(studentId) {

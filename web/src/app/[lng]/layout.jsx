@@ -1,17 +1,10 @@
 import {
   Cairo,
   Geist_Mono,
-  Amiri,
-  Scheherazade_New,
-  Reem_Kufi,
-  Aref_Ruqaa,
-  Noto_Naskh_Arabic,
 } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
 import '../globals.css';
 import 'react-toastify/dist/ReactToastify.css';
-import ThemeTogglerProvider from '@/providers/ThemeToggler';
 import AppProviders from '@/providers/AppProviders.jsx';
 import WhatsAppButton from '@/shared/components/feedback/WhatsAppButton.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
@@ -36,43 +29,6 @@ const cairo = Cairo({
 const geistMono = Geist_Mono({
   variable: '--font-mono',
   subsets: ['latin'],
-});
-
-// Certificate display fonts (the admin-pickable heading/name styles). SELF-HOSTED
-// via next/font so they load same-origin from /_next/static. This is what makes
-// them embeddable by html-to-image at PDF/PNG/print time: the previous Google
-// Fonts @import served them cross-origin (fonts.gstatic.com), which the exporter
-// cannot inline — so exported certificates silently fell back to a default font.
-// Each is exposed as a CSS variable consumed by FONT_STACKS (certificates config).
-// Reem Kufi + Noto Naskh Arabic are variable fonts (no explicit weight); the rest
-// are static and must declare their weights.
-const amiri = Amiri({
-  variable: '--font-amiri',
-  weight: ['400', '700'],
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const scheherazade = Scheherazade_New({
-  variable: '--font-scheherazade',
-  weight: ['400', '700'],
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const reemKufi = Reem_Kufi({
-  variable: '--font-reem-kufi',
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const arefRuqaa = Aref_Ruqaa({
-  variable: '--font-aref-ruqaa',
-  weight: ['400', '700'],
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
-});
-const notoNaskh = Noto_Naskh_Arabic({
-  variable: '--font-noto-naskh',
-  subsets: ['arabic', 'latin'],
-  display: 'swap',
 });
 
 export function generateStaticParams() {
@@ -115,31 +71,25 @@ export async function generateMetadata({ params }) {
 }
 
 // Root layout for every page. The active locale comes from the [lng] URL
-// segment (Arabic default, RTL). Light/dark mode is read from the cookie for a
-// flash-free first paint; the client ThemeToggler takes over after hydration.
+// segment; Ayah uses one stable light/green theme across marketing and dashboard.
 export default async function LocaleLayout({ children, params }) {
   const { lng } = await params;
   if (!languages.includes(lng)) notFound();
 
-  const cookieStore = await cookies();
-  const themeCookie = cookieStore.get('theme');
-  const pageTheme = themeCookie?.value === 'dark' ? 'dark' : 'light';
   const dir = getDirection(lng);
 
   return (
     <html lang={lng} dir={dir} suppressHydrationWarning>
       <body
-        className={`${cairo.variable} ${geistMono.variable} ${amiri.variable} ${scheherazade.variable} ${reemKufi.variable} ${arefRuqaa.variable} ${notoNaskh.variable}`}
+        className={`${cairo.variable} ${geistMono.variable}`}
       >
         {/* Site-wide structured data: who we are + the site/languages. */}
         <JsonLd data={[organizationSchema(lng), websiteSchema(lng)]} />
-        <ThemeTogglerProvider defaultTheme={pageTheme}>
-          {/* AppProviders: i18n -> theme(RTL cache) -> dates -> auth -> toast */}
-          <AppProviders lng={lng} mode={pageTheme}>
-            {children}
-            <WhatsAppButton />
-          </AppProviders>
-        </ThemeTogglerProvider>
+        {/* AppProviders: i18n -> fixed theme(RTL cache) -> dates -> auth -> toast */}
+        <AppProviders lng={lng}>
+          {children}
+          <WhatsAppButton />
+        </AppProviders>
       </body>
     </html>
   );

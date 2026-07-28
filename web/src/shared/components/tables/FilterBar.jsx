@@ -21,20 +21,22 @@ import {
 } from "@mui/material";
 import useDebounce from "../../../hooks/useDebounce.js";
 import { useTranslation } from "../../../i18n/client.js";
+import AsyncUserAutocomplete from "../forms/AsyncUserAutocomplete.jsx";
 
 function DebouncedSearch({ value, onChange, delay = 400, label }) {
   const [local, setLocal] = useState(value ?? "");
+  const [previousValue, setPreviousValue] = useState(value);
   const debounced = useDebounce(local, delay);
+
+  if (value !== previousValue) {
+    setPreviousValue(value);
+    setLocal(value ?? "");
+  }
 
   useEffect(() => {
     onChange(debounced);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced]);
-
-  // Sync external resets (e.g. clear filters).
-  useEffect(() => {
-    setLocal(value ?? "");
-  }, [value]);
 
   return (
     <TextField
@@ -102,6 +104,20 @@ export default function FilterBar({ filterConfig = [], filters = {}, setFilters,
                   ))}
                 </Select>
               </FormControl>
+            );
+          }
+
+          if (f.type === "asyncUser") {
+            return (
+              <AsyncUserAutocomplete
+                key={f.key}
+                role={f.role}
+                label={label}
+                value={filters[f.key] ?? null}
+                onChange={(user) => update(f.key, user?.id)}
+                size="small"
+                sx={{ minWidth: 220 }}
+              />
             );
           }
 

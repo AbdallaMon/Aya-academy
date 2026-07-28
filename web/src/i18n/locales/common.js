@@ -86,7 +86,7 @@ export const common = {
     createButton: "إضافة",
   },
   en: {
-    appName: "Aya Academy",
+    appName: "Ayah Academy",
     create: "Create",
     add: "Add",
     loading: "Loading...",

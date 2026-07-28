@@ -1,9 +1,23 @@
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { publicUserSelect } from "./auth.dto.js";
 
 class AuthRepo {
   findByEmail({ email, client } = {}) {
+    if (!email) return null;
     return (client ?? prisma).user.findUnique({ where: { email } });
+  }
+
+  findByUsername({ username, client } = {}) {
+    if (!username) return null;
+    return (client ?? prisma).user.findUnique({ where: { username } });
+  }
+
+  findByIdentifier({ identifier, client } = {}) {
+    if (!identifier) return null;
+    return (client ?? prisma).user.findFirst({
+      where: { OR: [{ email: identifier }, { username: identifier }] },
+      include: { avatar: { select: { id: true, url: true } } },
+    });
   }
 
   findPublicById({ id, client } = {}) {

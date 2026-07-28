@@ -1,14 +1,17 @@
 "use client";
 
-// Small dialog to adjust a subscription's hours: paid subscription hours and
-// remaining. Used from the subscriptions list page. Controlled-only: it owns the
-// form fields and hands a clean payload back via onSubmit; each caller wires its
-// own PUT request. The server recomputes priceCharged from subsHours on save
-// (price = subsHours × hourlyRate), so we don't compute the price here.
+// Small dialog to adjust a subscription's REMAINING hours only. The paid
+// subscription hours (subsHours) are no longer editable here — they're derived
+// from the plan / logged sessions on the server. This dialog only lets you
+// correct the remaining balance. Controlled-only: it owns the field and hands a
+// clean `{ remainingHours }` payload back via onSubmit; each caller wires its own
+// PUT request.
 
 import { useState } from "react";
-import { Stack, TextField } from "@mui/material";
+import { Stack, TextField, Typography } from "@mui/material";
 import { FormDialog } from "../../../shared/components/index.js";
+import { formatDurationMinutes } from "../../../shared/lib/money.js";
+import { useTranslation } from "../../../i18n/client.js";
 
 function toField(value) {
   return value === null || value === undefined ? "" : String(value);
@@ -22,50 +25,43 @@ export default function EditHoursDialog({
   loading,
   onSubmit,
 }) {
-  const [subsHours, setSubsHours] = useState("");
-  const [remainingHours, setRemainingHours] = useState("");
+  const { lng } = useTranslation();
+  const [remainingMinutes, setRemainingMinutes] = useState("");
   const [seededFor, setSeededFor] = useState(null);
 
-  // Reseed the fields when the dialog opens (or switches to a different
+  // Reseed the field when the dialog opens (or switches to a different
   // subscription) using React's "adjust state during render" pattern — an
   // effect here trips the project's set-state-in-effect rule.
   const target = open ? (initial?.id ?? "new") : null;
   if (target !== seededFor) {
     setSeededFor(target);
-    if (open) {
-      const subsVal = toField(initial?.subsHours);
-      setSubsHours(subsVal);
-      // Remaining inherits from subs hours: with no existing remaining value,
-      // default it to the subs hours so a fresh edit starts "full".
-      const hasRemaining =
-        initial?.remainingHours !== null &&
-        initial?.remainingHours !== undefined;
-      setRemainingHours(hasRemaining ? toField(initial.remainingHours) : subsVal);
-    }
+    if (open) setRemainingMinutes(toField(initial?.remainingMinutes));
   }
 
-  const subsNum = subsHours === "" ? null : Number(subsHours);
-  // A blank remaining inherits the subs hours value.
-  const effectiveRemaining = remainingHours === "" ? subsHours : remainingHours;
+  // subsHours stays the read-only ceiling: remaining can't exceed the
+  // subscription's total invoice hours. We read it, but never edit it.
+  const subsNum =
+    initial?.subsMinutes === null || initial?.subsMinutes === undefined
+      ? null
+      : Number(initial.subsMinutes);
   const remainingNum =
-    effectiveRemaining === "" ? null : Number(effectiveRemaining);
+    remainingMinutes === "" ? null : Number(remainingMinutes);
   const exceeds =
     subsNum !== null && remainingNum !== null && remainingNum > subsNum;
+  const invalid =
+    remainingNum !== null &&
+    (!Number.isInteger(remainingNum) || remainingNum < 0);
 
   async function handleSubmit() {
-    if (exceeds) return;
-    const payload = {};
-    if (subsHours !== "") payload.subsHours = Number(subsHours);
-    if (effectiveRemaining !== "")
-      payload.remainingHours = Number(effectiveRemaining);
-    await onSubmit(payload);
+    if (exceeds || invalid || remainingMinutes === "") return;
+    await onSubmit({ remainingMinutes: Number(remainingMinutes) });
   }
 
   return (
     <FormDialog
       open={open}
       onClose={onClose}
-      title={txt.editHoursTitle}
+      title={txt.editRemainingTitle || txt.editHoursTitle}
       maxWidth="xs"
       loading={loading}
       submitText={txt.save}
@@ -74,24 +70,26 @@ export default function EditHoursDialog({
     >
       <Stack spacing={2} sx={{ mt: 1 }}>
         <TextField
-          label={txt.subsHours}
+          label={txt.remainingHoursLabel || txt.remainingHours}
           type="number"
-          value={subsHours}
-          onChange={(e) => setSubsHours(e.target.value)}
+          value={remainingMinutes}
+          onChange={(e) => setRemainingMinutes(e.target.value)}
           fullWidth
-          inputProps={{ min: 0 }}
-          helperText={txt.subsHoursHint}
+          inputProps={{ min: 0, max: subsNum ?? undefined, step: 1 }}
+          error={exceeds || invalid}
+          helperText={
+            exceeds
+              ? txt.remainingExceedsSubs
+              : invalid
+                ? txt.remainingMinutesInvalid
+                : txt.remainingHoursHint
+          }
         />
-        <TextField
-          label={txt.remainingHours}
-          type="number"
-          value={remainingHours}
-          onChange={(e) => setRemainingHours(e.target.value)}
-          fullWidth
-          inputProps={{ min: 0 }}
-          error={exceeds}
-          helperText={exceeds ? txt.remainingExceedsSubs : undefined}
-        />
+        {subsNum !== null && (
+          <Typography variant="caption" color="text.secondary">
+            {txt.subsHours}: {formatDurationMinutes(subsNum, lng)}
+          </Typography>
+        )}
       </Stack>
     </FormDialog>
   );

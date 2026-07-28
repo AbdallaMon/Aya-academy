@@ -1,11 +1,14 @@
 # Transcribe the review video with faster-whisper; write WebVTT + JSON segments.
-import json, os
+import json
+from pathlib import Path
+
 from faster_whisper import WhisperModel
 
-SRC = r"C:/coding/aya-academy/web/public/videos/review.mp4"
-if not os.path.exists(SRC):
-    SRC = r"C:/coding/aya-academy/web/public/images/review.mp4"
-OUTDIR = r"C:/coding/aya-academy/web/public/videos"
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "web" / "public" / "videos" / "review.mp4"
+if not SRC.exists():
+    SRC = ROOT / "web" / "public" / "images" / "review.mp4"
+OUTDIR = ROOT / "web" / "public" / "videos"
 
 def ts(t):
     h = int(t // 3600); m = int((t % 3600) // 60); s = t % 60
@@ -29,8 +32,8 @@ for i, seg in enumerate(segments, 1):
     vtt.append("")
     print(f"[{seg.start:6.2f}-{seg.end:6.2f}] {text}")
 
-with open(os.path.join(OUTDIR, "review.vtt"), "w", encoding="utf-8") as f:
+with open(OUTDIR / "review.vtt", "w", encoding="utf-8") as f:
     f.write("\n".join(vtt))
-with open(os.path.join(OUTDIR, "review.transcript.json"), "w", encoding="utf-8") as f:
+with open(OUTDIR / "review.transcript.json", "w", encoding="utf-8") as f:
     json.dump({"language": lang, "segments": segs, "text": " ".join(s["text"] for s in segs)}, f, ensure_ascii=False, indent=2)
 print("TRANSCRIBE_DONE language=", lang, "segments=", len(segs))

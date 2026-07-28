@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { BackupsPage } from '@/features/backups';
 
 export const metadata = {
-  title: 'النسخ الاحتياطية | Aya Academy Backups',
+  title: 'النسخ الاحتياطية | Ayah Academy Backups',
   description:
     'إدارة النسخ الاحتياطية وحسابات Google Drive ومفاتيح التشفير واسترجاع قاعدة البيانات.',
 };

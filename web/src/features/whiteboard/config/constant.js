@@ -1,4 +1,4 @@
-import { WHITEBOARD_SESSION_STATUSES, WHITEBOARD_VISIBILITIES } from "@aya/shared";
+import { WHITEBOARD_SESSION_STATUSES, WHITEBOARD_VISIBILITIES } from "@ayah/shared";
 import { localePath } from "../../../i18n/routing.js";
 
 export const WHITEBOARD_URL = "whiteboard-sessions";

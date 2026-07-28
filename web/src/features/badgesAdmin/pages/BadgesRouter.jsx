@@ -7,7 +7,7 @@
 // Gating is on the permission code (BADGE.LIST is admin-only via the role
 // profiles), never on the raw role string.
 
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import BadgesPage from "../../badges/pages/BadgesPage.jsx";
 import BadgesAdminPage from "./BadgesAdminPage.jsx";

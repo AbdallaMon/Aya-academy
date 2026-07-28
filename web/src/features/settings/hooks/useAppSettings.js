@@ -6,7 +6,7 @@
 // drive price DISPLAY across the app and are not sensitive), so this hook is safe
 // on parent/student surfaces too. Only mutating the settings is admin-gated.
 
-import { DEFAULT_APP_SETTINGS } from "@aya/shared";
+import { DEFAULT_APP_SETTINGS } from "@ayah/shared";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { SETTINGS_URL } from "../config/constant.js";
 

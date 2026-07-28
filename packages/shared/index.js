@@ -1,4 +1,4 @@
-// @aya/shared — single source of truth for roles, permissions, enums and
+// @ayah/shared — single source of truth for roles, permissions, enums and
 // language-neutral message codes. Consumed by both `server` and `web`.
 
 export * from "./constants/roles.js";

@@ -1,8 +1,8 @@
 {
-  "name": "aya-academy",
+  "name": "ayah-academy",
   "version": "1.0.0",
   "private": true,
-  "description": "Aya Academy — Quran learning platform for kids (monorepo)",
+  "description": "Ayah Academy — Quran learning platform for kids (monorepo)",
   "workspaces": [
     "packages/*",
     "web",
@@ -10,23 +10,30 @@
   ],
   "scripts": {
     "install:web": "npm install -w web",
-    "install:server": "npm install -w @aya/db -w @aya/shared -w server",
+    "install:server": "npm install -w @ayah/db -w @ayah/shared -w server",
     "dev:web": "npm run dev -w web",
     "dev:server": "npm run dev -w server",
     "build:web": "npm run build -w web",
     "start:web": "npm run start -w web",
     "start:server": "npm run start -w server",
-    "db:generate": "npm run generate -w @aya/db",
-    "db:migrate": "npm run migrate:dev -w @aya/db",
-    "db:migrate:deploy": "npm run migrate:deploy -w @aya/db",
-    "db:migrate:reset": "npm run migrate:reset -w @aya/db",
-    "db:studio": "npm run studio -w @aya/db",
-    "db:seed": "npm run seed -w @aya/db"
+    "db:generate": "npm run generate -w @ayah/db",
+    "db:migrate": "npm run migrate:dev -w @ayah/db",
+    "db:migrate:deploy": "npm run migrate:deploy -w @ayah/db",
+    "db:migrate:reset": "npm run migrate:reset -w @ayah/db",
+    "db:studio": "npm run studio -w @ayah/db",
+    "db:seed": "npm run seed -w @ayah/db",
+    "usage:bill": "node scripts/run-usage-billing.js",
+    "usage:seed": "node scripts/seed-usage-subscriptions.js",
+    "migrate:minutes": "node scripts/migrate-duration-data-to-minutes.js",
+    "migrate:coupon-redemptions": "node scripts/migrate-coupon-redemptions.js",
+    "docs:build": "node scripts/generate-docs-site.mjs",
+    "docs:serve": "node scripts/docs-site-server.mjs"
   },
   "overrides": {
     "stylis": "4.3.6"
   },
   "dependencies": {
-    "@mui/stylis-plugin-rtl": "^9.1.1"
+    "@mui/stylis-plugin-rtl": "^9.1.1",
+    "dotenv": "^17.4.2"
   }
 }

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -e
 FF="C:/Users/AbdallaMon/AppData/Local/Programs/Python/Python310/lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe"
-SRC="C:/coding/aya-academy/web/public/images/review.mp4"
-OUTDIR="C:/coding/aya-academy/web/public/videos"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SRC="$ROOT/web/public/images/review.mp4"
+OUTDIR="$ROOT/web/public/videos"
 # Montage + exposure/colour fix + gentle sharpen + fades; web-optimised H.264 (faststart) with normalised loudness.
 "$FF" -y -hide_banner -loglevel error -i "$SRC" \
   -vf "eq=brightness=0.045:contrast=1.09:saturation=1.14:gamma=1.04,unsharp=5:5:0.4:5:5:0.0,fade=t=in:st=0:d=0.5,fade=t=out:st=42.4:d=0.6" \

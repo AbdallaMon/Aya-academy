@@ -2,7 +2,7 @@
 
 // RowActions — a compact per-row actions control (feature-local).
 //
-// Aya's shared component barrel has no RowActions, so this small helper is kept
+// Ayah's shared component barrel has no RowActions, so this small helper is kept
 // inside the backups feature. It mirrors the action shape the asmaa backups
 // feature relied on:
 //   action = { key, label, icon, color, hidden, disabled, primary, onClick(row) }

@@ -38,7 +38,8 @@ export function initialCoupon(plan, billingPeriod) {
 /**
  * Resolve what to charge and which code to send for the current coupon state.
  * @returns {{ base:number, net:number, currency:string, codeToSend:string|undefined,
- *             discountAmount:number, applied:'plan'|'custom'|null }}
+ *             applyPlanCoupon:boolean, discountAmount:number,
+ *             applied:'plan'|'custom'|null }}
  */
 export function resolveCoupon(plan, billingPeriod, coupon) {
   const cycle = cycleOf(plan, billingPeriod);
@@ -54,6 +55,7 @@ export function resolveCoupon(plan, billingPeriod, coupon) {
       net,
       currency,
       codeToSend: coupon.code?.trim() || undefined,
+      applyPlanCoupon: false,
       discountAmount: Math.max(0, base - net),
       applied: "custom",
     };
@@ -66,6 +68,7 @@ export function resolveCoupon(plan, billingPeriod, coupon) {
       net,
       currency,
       codeToSend: planCoupon.code,
+      applyPlanCoupon: true,
       discountAmount: Math.max(0, base - net),
       applied: "plan",
     };
@@ -77,6 +80,7 @@ export function resolveCoupon(plan, billingPeriod, coupon) {
     net: base,
     currency,
     codeToSend: undefined,
+    applyPlanCoupon: false,
     discountAmount: 0,
     applied: null,
   };

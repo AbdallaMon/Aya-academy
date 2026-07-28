@@ -1,4 +1,4 @@
-import { getPermissionsForRole } from "@aya/shared";
+import { getPermissionsForRole } from "@ayah/shared";
 import { AUTH_COOKIE, JwtService } from "../../infra/security/jwt.js";
 import { getAuthUserById } from "../../infra/auth/authUser.repo.js";
 import { forbidden, unauthorized } from "../errors/AppError.js";
@@ -33,10 +33,15 @@ class AuthMiddleware {
         id: user.id,
         name: user.name,
         email: user.email,
+        username: user.username,
+        phone: user.phone,
+        nickname: user.nickname,
         role: user.role,
         locale: user.locale,
         isActive: user.isActive,
         sessionVersion: user.sessionVersion,
+        avatarId: user.avatarId,
+        avatar: user.avatar,
         permissions: getPermissionsForRole(user.role),
       };
       return next();

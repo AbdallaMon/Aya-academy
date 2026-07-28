@@ -9,6 +9,9 @@ node_modules/
 # testing
 /coverage
 
+#backup 
+
+/server/backup/*
 # next.js
 /.next/
 /out/

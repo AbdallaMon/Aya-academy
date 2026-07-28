@@ -1,6 +1,6 @@
 "use client";
 
-// Reusable framer-motion animation library for the Aya game engine.
+// Reusable framer-motion animation library for the Ayah game engine.
 //
 // Exports 5 reusable animations as both variant objects (for `motion.*`
 // `variants`) and ready-to-use wrapper components:

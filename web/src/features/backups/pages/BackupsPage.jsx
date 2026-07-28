@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FiUploadCloud } from "react-icons/fi";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { LoadingOverlay } from "../../../shared/components/index.js";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";

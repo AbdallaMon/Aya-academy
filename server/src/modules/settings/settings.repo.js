@@ -3,7 +3,7 @@
 // (Reference idiom: single object args with optional `client`.)
 // ===========================================================================
 
-import { prisma } from "@aya/db/prisma.client.js";
+import { prisma } from "@ayah/db/prisma.client.js";
 import { appSettingSelect, toAppSetting } from "./settings.dto.js";
 
 class SettingsRepo {

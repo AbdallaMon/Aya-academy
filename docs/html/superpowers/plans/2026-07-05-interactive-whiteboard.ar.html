@@ -1,0 +1,1462 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 07 05 Interactive Whiteboard</title>
+    <link rel="stylesheet" href="../../shared.css" />
+  </head>
+  <body>
+    <div class="doc-topbar">
+      <div>
+        <p class="eyebrow">توثيق المشروع</p>
+        <h1>2026 07 05 Interactive Whiteboard</h1>
+        <p class="lead">create</p>
+      </div>
+      <div class="topbar-actions">
+        <input
+          id="docSearch"
+          class="doc-search"
+          type="search"
+          placeholder="ابحث داخل المستند..."
+        />
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="القائمة">
+          ☰ <span class="btn-label">القائمة</span>
+        </button>
+        <a class="home-btn" href="../../index.html">
+          ⌂ <span class="btn-label">الرئيسية</span>
+        </a>
+        <a class="ghost-btn" href="../index.html">
+          هذا القسم
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="doc-layout" id="docLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      <aside class="doc-sidebar" id="docSidebar">
+        
+    <div class="sidebar-group">
+      <p class="sidebar-label">Plans</p>
+      <ul class="sidebar-list"><li><a href="./2026-06-23-admin-dashboard-family-badges.ar.html">Admin Dashboard: Family Detail, Levels, Badges &amp; Points — Implementation Plan</a></li><li><a href="./2026-06-24-quran-progress-tracking.ar.html">Quran Progress Tracking + Lesson Next-Plan — Implementation Plan</a></li><li><a href="./2026-06-25-global-settings-and-billing-rework.ar.html">Global Settings &amp; Billing Rework — Implementation Plan</a></li><li><a href="./2026-06-27-register-family-wizard.ar.html">Family Registration Wizard — Implementation Plan</a></li><li><a href="./2026-06-28-subscription-renewal-invoice-flow.ar.html">Subscription Renewal &amp; Invoice Flow — Implementation Plan</a></li><li><a href="./2026-06-29-subscription-gating.ar.html">Subscription Gating Implementation Plan</a></li><li><a href="./2026-07-05-interactive-whiteboard.ar.html" class="active">Interactive Whiteboard Implementation Plan</a></li></ul>
+    </div>
+      </aside>
+      <aside class="doc-toc" id="docToc" aria-label="التنقل داخل الصفحة">
+        <p class="sidebar-label">في هذه الصفحة</p>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
+      <main class="doc-main">
+        <div class="doc-main-inner">
+          <nav class="breadcrumb"><a class="crumb" href="../index.html">Superpowers</a><span class="crumb-sep">›</span><a class="crumb" href="./index.html">Plans</a><span class="crumb-sep">›</span><span class="crumb current">Interactive Whiteboard Implementation Plan</span></nav>
+          <section class="doc-hero">
+            <h2>Interactive Whiteboard Implementation Plan</h2>
+            <div class="doc-meta">
+              <span class="meta-chip">
+                اللغة: العربية
+              </span>
+              <span class="meta-chip">
+                Documentation
+              </span>
+            </div>
+          </section>
+
+          
+
+          
+    <section class="doc-section" id="file-structure" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">1</span>
+          <h2>File Structure</h2>
+        </div>
+        <div class="content-block"><p><strong>Shared (<code>packages/</code>)</strong></p></div><div class="content-block"><ul><li>Modify <code>packages/db/prisma/schema.prisma</code> — 2 enums, 2 models, back-relations on <code>User</code>.</li><li>Modify <code>packages/shared/constants/enums.js</code> — mirror the 2 enums.</li><li>Modify <code>packages/shared/constants/permissions.js</code> — <code>WHITEBOARD_PERMISSIONS</code> + register in <code>PERMISSIONS</code>.</li><li>Create <code>packages/shared/messages-codes/whiteboard.js</code> — <code>whiteboardMessagesCodes</code>.</li><li>Modify <code>packages/shared/messages-names.js</code> — add <code>whiteboardMessages</code>.</li><li>Modify <code>packages/shared/index.js</code> (or the barrel that exports the above) — export the new code map.</li></ul></div><div class="content-block"><p><strong>Backend (<code>server/src/modules/whiteboardSessions/</code>)</strong></p></div><div class="content-block"><ul><li><code>whiteboardSession.dto.js</code> — output projections/select maps.</li><li><code>whiteboardSession.repo.js</code> — Prisma I/O.</li><li><code>whiteboardSession.usecase.js</code> — business logic, token gen/hash, scope.</li><li><code>whiteboardSession.validation.js</code> — Zod schemas.</li><li><code>whiteboardSession.controller.js</code> — thin controller.</li><li><code>whiteboardSession.route.js</code> — router (public token route first, then guarded).</li><li><code>whiteboardSession.messages.js</code> — re-export shared codes.</li><li>Modify <code>server/src/routes.js</code> — mount <code>/whiteboard-sessions</code>.</li></ul></div><div class="content-block"><p><strong>Frontend (<code>web/src/</code>)</strong></p></div><div class="content-block"><ul><li><code>features/whiteboard/config/constant.js</code>, <code>whiteboardText.js</code>, <code>whiteboardColumns.js</code></li><li><code>features/whiteboard/pages/WhiteboardListPage.jsx</code>, <code>WhiteboardSessionDetailPage.jsx</code></li><li><code>features/whiteboard/components/CreateWhiteboardDialog.jsx</code>, <code>SessionStudentsPanel.jsx</code></li><li><code>features/whiteboard/board/WhiteboardBoard.jsx</code>, <code>ReactionBar.jsx</code>, <code>ReactionOverlay.jsx</code></li><li><code>features/whiteboard/board/config/reactions.js</code></li><li><code>features/whiteboard/board/lib/boardChannel.js</code>, <code>useBoardPersistence.js</code>, <code>boardSounds.js</code></li><li><code>app/[lng]/dashboard/whiteboard/page.jsx</code>, <code>app/[lng]/dashboard/whiteboard/[id]/page.jsx</code></li><li><code>app/[lng]/board/[id]/page.jsx</code>, <code>app/[lng]/w/[token]/page.jsx</code></li><li>Modify <code>web/src/features/dashboard/config/navModel.js</code> — admin nav item.</li><li>Modify <code>web/src/utils/constant.js</code> — add <code>/board</code> to <code>PROTECTED_PREFIXES</code>.</li><li>Modify <code>web/src/i18n/locales/messagesCodes.js</code> — localize new codes.</li></ul></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-1-shared-constants-permission-message-codes" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">2</span>
+          <h2>Task 1: Shared constants, permission, message codes</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/shared/constants/enums.js</code></li><li>Modify: <code>packages/shared/constants/permissions.js</code></li><li>Create: <code>packages/shared/messages-codes/whiteboard.js</code></li><li>Modify: <code>packages/shared/messages-names.js</code></li><li>Modify: <code>packages/shared/index.js</code> (verify export barrel)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: <code>WHITEBOARD<em>SESSION</em>STATUSES = { DRAFT, ACTIVE, ENDED }</code>, <code>WHITEBOARD_VISIBILITIES = { PRIVATE, PUBLIC }</code>; <code>PERMISSIONS.WHITEBOARD = { MANAGE: &quot;whiteboard.manage&quot; }</code>; <code>whiteboardMessagesCodes</code>; <code>messagesNames.whiteboardMessages = &quot;whiteboard-messages&quot;</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add the enums to <code>packages/shared/constants/enums.js</code></strong> (append near the other enums)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Interactive whiteboard sessions (admin-run live board). Keep in sync with
+// packages/db/prisma/schema.prisma.
+export const WHITEBOARD_SESSION_STATUSES = {
+  DRAFT: &quot;DRAFT&quot;,
+  ACTIVE: &quot;ACTIVE&quot;,
+  ENDED: &quot;ENDED&quot;,
+};
+
+export const WHITEBOARD_VISIBILITIES = {
+  PRIVATE: &quot;PRIVATE&quot;,
+  PUBLIC: &quot;PUBLIC&quot;,
+};</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add the permission group in <code>packages/shared/constants/permissions.js</code></strong> (before the <code>export const PERMISSIONS = {</code> aggregation)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Interactive whiteboard sessions — admin-only management (create/attach
+// students/activate/share). ADMIN gets it automatically via getAllPermissions().
+export const WHITEBOARD_PERMISSIONS = {
+  MANAGE: &quot;whiteboard.manage&quot;,
+};</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Register it in the <code>PERMISSIONS</code> aggregate</strong> (same file) — add the line inside the object:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  WHITEBOARD: WHITEBOARD_PERMISSIONS,</code></pre></div></div><div class="content-block"><p>(No change needed to <code>ROLE_PERMISSIONS</code> — <code>ADMIN</code> already gets every code via <code>getAllPermissions()</code>, and PARENT/STUDENT must NOT get it.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Create <code>packages/shared/messages-codes/whiteboard.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Language-neutral message codes for the interactive whiteboard module.
+// Surfaced to the frontend via translationKey `messagesNames.whiteboardMessages`.
+export const whiteboardMessagesCodes = {
+  SESSION_NOT_FOUND: &quot;SESSION_NOT_FOUND&quot;,
+  SESSION_CREATED: &quot;SESSION_CREATED&quot;,
+  SESSION_DELETED: &quot;SESSION_DELETED&quot;,
+  SESSION_ACTIVATED: &quot;SESSION_ACTIVATED&quot;,
+  SESSION_ENDED: &quot;SESSION_ENDED&quot;,
+  SESSION_MADE_PUBLIC: &quot;SESSION_MADE_PUBLIC&quot;,
+  SESSION_MADE_PRIVATE: &quot;SESSION_MADE_PRIVATE&quot;,
+  STUDENT_ADDED: &quot;STUDENT_ADDED&quot;,
+  STUDENT_REMOVED: &quot;STUDENT_REMOVED&quot;,
+  STUDENT_ALREADY_ADDED: &quot;STUDENT_ALREADY_ADDED&quot;,
+  STUDENT_NOT_IN_SESSION: &quot;STUDENT_NOT_IN_SESSION&quot;,
+  NOT_A_STUDENT: &quot;NOT_A_STUDENT&quot;,
+  TITLE_REQUIRED: &quot;TITLE_REQUIRED&quot;,
+  STUDENT_ID_INVALID: &quot;STUDENT_ID_INVALID&quot;,
+};</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Register the namespace in <code>packages/shared/messages-names.js</code></strong> — add inside <code>messagesNames</code>:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>  whiteboardMessages: &quot;whiteboard-messages&quot;,</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Export the new code map from the shared barrel.</strong> Open <code>packages/shared/index.js</code>, find where the other <code>*MessagesCodes</code> are re-exported (e.g. <code>export { gameMessagesCodes } from &quot;./messages-codes/game.js&quot;;</code>) and add:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>export { whiteboardMessagesCodes } from &quot;./messages-codes/whiteboard.js&quot;;</code></pre></div></div><div class="content-block"><p>Also confirm <code>WHITEBOARD<em>SESSION</em>STATUSES</code>, <code>WHITEBOARD<em>VISIBILITIES</code>, and <code>WHITEBOARD</em>PERMISSIONS</code> are reachable through the barrel (they are if <code>index.js</code> does <code>export * from &quot;./constants/enums.js&quot;</code> / <code>permissions.js</code>; if it re-exports named symbols explicitly, add these three names).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 7: Verify the barrel resolves</strong></li></ul></div><div class="content-block"><p>Run: <code>node -e &quot;const s=require(&#39;@ayah/shared&#39;); console.log(s.PERMISSIONS.WHITEBOARD, s.WHITEBOARD<em>SESSION</em>STATUSES, s.whiteboardMessagesCodes.SESSION<em>CREATED, s.messagesNames.whiteboardMessages)&quot;</code> (from the repo root; if the package is ESM-only, use <code>node --input-type=module -e &quot;import(&#39;@ayah/shared&#39;).then(s=&gt;console.log(s.PERMISSIONS.WHITEBOARD, s.messagesNames.whiteboardMessages))&quot;</code>). Expected: prints the permission object, the statuses object, <code>SESSION</em>CREATED</code>, and <code>whiteboard-messages</code> with no import error.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 8: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/shared
+git commit -m &quot;feat(shared): add whiteboard enums, permission, and message codes&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-2-prisma-schema-—-whiteboard-session-models" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">3</span>
+          <h2>Task 2: Prisma schema — whiteboard session models</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>packages/db/prisma/schema.prisma</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: models <code>WhiteboardSession</code>, <code>WhiteboardSessionStudent</code>; enums <code>WhiteboardSessionStatus</code>, <code>WhiteboardVisibility</code>; <code>User.whiteboardSessionsCreated</code> and <code>User.whiteboardAttendances</code> back-relations.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Add the two enums</strong> near the other enum blocks at the top of <code>schema.prisma</code></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="prisma"><code>enum WhiteboardSessionStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
+enum WhiteboardVisibility {
+  PRIVATE
+  PUBLIC
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add the two models</strong> (place after the other feature models, e.g. near GameAssignment)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="prisma"><code>model WhiteboardSession {
+  id              Int                      @id @default(autoincrement())
+  title           String
+  status          WhiteboardSessionStatus  @default(DRAFT)
+  visibility      WhiteboardVisibility     @default(PRIVATE)
+  // SHA-256 hash of the raw share token; null while PRIVATE.
+  publicTokenHash String?                  @unique
+  createdById     Int
+  createdBy       User                     @relation(&quot;WhiteboardCreatedBy&quot;, fields: [createdById], references: [id])
+  students        WhiteboardSessionStudent[]
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([createdById])
+  @@index([status])
+}
+
+model WhiteboardSessionStudent {
+  id        Int               @id @default(autoincrement())
+  sessionId Int
+  studentId Int
+  session   WhiteboardSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   User              @relation(&quot;WhiteboardStudent&quot;, fields: [studentId], references: [id])
+  createdAt DateTime          @default(now())
+
+  @@unique([sessionId, studentId])
+  @@index([studentId])
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Add back-relations on the <code>User</code> model.</strong> Find <code>model User {</code> and add these two lines with the other relation fields:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="prisma"><code>  whiteboardSessionsCreated WhiteboardSession[]        @relation(&quot;WhiteboardCreatedBy&quot;)
+  whiteboardAttendances     WhiteboardSessionStudent[] @relation(&quot;WhiteboardStudent&quot;)</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Validate the schema (no DB write)</strong></li></ul></div><div class="content-block"><p>Run: <code>npx prisma validate --schema packages/db/prisma/schema.prisma</code> Expected: <code>The schema at ... is valid 🚀</code></p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Regenerate the Prisma client</strong> (safe — no migration)</li></ul></div><div class="content-block"><p>Run: <code>npx prisma generate --schema packages/db/prisma/schema.prisma</code> Expected: <code>Generated Prisma Client</code> success.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add packages/db/prisma/schema.prisma
+git commit -m &quot;feat(db): add WhiteboardSession + WhiteboardSessionStudent models&quot;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 7: Hand the migration command to Abdalla (do NOT run it).</strong> Output exactly:</li></ul></div><div class="content-block"><p>Schema updated. Run this yourself to create the migration + apply it: <code>npx prisma migrate dev --schema packages/db/prisma/schema.prisma --name whiteboard_sessions</code></p></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-3-backend-dto-repo" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">4</span>
+          <h2>Task 3: Backend DTO + repo</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.dto.js</code></li><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.repo.js</code></li><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.messages.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: Prisma client <code>@ayah/db/prisma.client.js</code>, <code>paginate</code> from <code>../../shared/utility/pagination.js</code>.</li><li>Produces: <code>whiteboardSessionRepo</code> with methods: <code>list({ where, page, limit })</code>, <code>getById({ id })</code>, <code>getByIdWithStudents({ id })</code>, <code>getByTokenHash({ tokenHash })</code>, <code>create({ title, createdById })</code>, <code>updateStatus({ id, status })</code>, <code>setPublic({ id, tokenHash })</code>, <code>setPrivate({ id })</code>, <code>remove({ id })</code>, <code>addStudent({ sessionId, studentId })</code>, <code>removeStudent({ sessionId, studentId })</code>, <code>findStudentLink({ sessionId, studentId })</code>. Plus selects <code>sessionListSelect</code>, <code>sessionDetailSelect</code>, <code>sessionPublicSelect</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create <code>whiteboardSession.messages.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Re-exported from @ayah/shared so the codes are a single source of truth
+// shared with the frontend (localized in web/src/i18n/locales/messagesCodes.js).
+export { whiteboardMessagesCodes } from &quot;@ayah/shared&quot;;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create <code>whiteboardSession.dto.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Output projections for the whiteboard-sessions module.
+
+const attendeeSelect = {
+  id: true,
+  studentId: true,
+  createdAt: true,
+  student: { select: { id: true, name: true, nickname: true } },
+};
+
+// List rows: meta + a count of attached students (no full student list).
+export const sessionListSelect = {
+  id: true,
+  title: true,
+  status: true,
+  visibility: true,
+  createdById: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: { select: { students: true } },
+};
+
+// Detail: meta + the attached students (identity only).
+export const sessionDetailSelect = {
+  id: true,
+  title: true,
+  status: true,
+  visibility: true,
+  createdById: true,
+  createdAt: true,
+  updatedAt: true,
+  students: { orderBy: { createdAt: &quot;asc&quot; }, select: attendeeSelect },
+};
+
+// Public payload (token link): NEVER expose ids of internal rows beyond what a
+// viewer needs — title, status, and student display names only.
+export function toPublicSession(session) {
+  if (!session) return null;
+  return {
+    id: session.id,
+    title: session.title,
+    status: session.status,
+    students: (session.students ?? []).map((s) =&gt; ({
+      id: s.student.id,
+      name: s.student.nickname || s.student.name,
+    })),
+  };
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>whiteboardSession.repo.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// ===========================================================================
+// whiteboardSession.repo — Prisma I/O only on WhiteboardSession /
+// WhiteboardSessionStudent. Single object args with an optional `client`.
+// ===========================================================================
+
+import { prisma } from &quot;@ayah/db/prisma.client.js&quot;;
+import { paginate } from &quot;../../shared/utility/pagination.js&quot;;
+import { sessionDetailSelect, sessionListSelect } from &quot;./whiteboardSession.dto.js&quot;;
+
+class WhiteboardSessionRepo {
+  async list({ where, page, limit, client } = {}) {
+    const db = client ?? prisma;
+    const { skip, take, page: currentPage } = paginate({ page, limit });
+    const [items, total] = await Promise.all([
+      db.whiteboardSession.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: &quot;desc&quot; },
+        select: sessionListSelect,
+      }),
+      db.whiteboardSession.count({ where }),
+    ]);
+    return { items, total, page: currentPage, pageSize: take };
+  }
+
+  getById({ id, client } = {}) {
+    return (client ?? prisma).whiteboardSession.findUnique({ where: { id } });
+  }
+
+  getByIdWithStudents({ id, client } = {}) {
+    return (client ?? prisma).whiteboardSession.findUnique({
+      where: { id },
+      select: sessionDetailSelect,
+    });
+  }
+
+  getByTokenHash({ tokenHash, client } = {}) {
+    return (client ?? prisma).whiteboardSession.findUnique({
+      where: { publicTokenHash: tokenHash },
+      select: sessionDetailSelect,
+    });
+  }
+
+  create({ title, createdById, client } = {}) {
+    return (client ?? prisma).whiteboardSession.create({
+      data: { title, createdById },
+      select: sessionDetailSelect,
+    });
+  }
+
+  updateStatus({ id, status, client } = {}) {
+    return (client ?? prisma).whiteboardSession.update({
+      where: { id },
+      data: { status },
+      select: sessionDetailSelect,
+    });
+  }
+
+  setPublic({ id, tokenHash, client } = {}) {
+    return (client ?? prisma).whiteboardSession.update({
+      where: { id },
+      data: { visibility: &quot;PUBLIC&quot;, publicTokenHash: tokenHash },
+      select: sessionDetailSelect,
+    });
+  }
+
+  setPrivate({ id, client } = {}) {
+    return (client ?? prisma).whiteboardSession.update({
+      where: { id },
+      data: { visibility: &quot;PRIVATE&quot;, publicTokenHash: null },
+      select: sessionDetailSelect,
+    });
+  }
+
+  remove({ id, client } = {}) {
+    return (client ?? prisma).whiteboardSession.delete({ where: { id } });
+  }
+
+  findStudentLink({ sessionId, studentId, client } = {}) {
+    return (client ?? prisma).whiteboardSessionStudent.findUnique({
+      where: { sessionId_studentId: { sessionId, studentId } },
+    });
+  }
+
+  addStudent({ sessionId, studentId, client } = {}) {
+    return (client ?? prisma).whiteboardSessionStudent.create({
+      data: { sessionId, studentId },
+    });
+  }
+
+  removeStudent({ sessionId, studentId, client } = {}) {
+    return (client ?? prisma).whiteboardSessionStudent.deleteMany({
+      where: { sessionId, studentId },
+    });
+  }
+}
+
+export const whiteboardSessionRepo = new WhiteboardSessionRepo();
+export { WhiteboardSessionRepo };</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Sanity-check the imports resolve</strong> (the app boots without this module yet; just lint the file)</li></ul></div><div class="content-block"><p>Run: <code>cd web &amp;&amp; npx eslint ../server/src/modules/whiteboardSessions/whiteboardSession.repo.js || true</code> — if eslint isn&#39;t wired for server, skip. Otherwise verify <code>paginate</code> path exists: <code>ls server/src/shared/utility/pagination.js</code> Expected: the file exists (import path valid).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/whiteboardSessions/whiteboardSession.dto.js server/src/modules/whiteboardSessions/whiteboardSession.repo.js server/src/modules/whiteboardSessions/whiteboardSession.messages.js
+git commit -m &quot;feat(whiteboard): add whiteboard-sessions dto + repo&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-4-backend-usecase-business-logic-token" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">5</span>
+          <h2>Task 4: Backend usecase (business logic + token)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.usecase.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>whiteboardSessionRepo</code> (Task 3); <code>userRepo.getById</code>/equivalent from <code>../users/user.repo.js</code> to verify a target is a STUDENT; <code>AppError</code> factories; <code>USER<em>ROLES</code>, <code>WHITEBOARD</em>SESSION<em>STATUSES</code>, <code>WHITEBOARD</em>VISIBILITIES</code> from <code>@ayah/shared</code>; <code>crypto</code> (node builtin); <code>ENV.appUrl</code> (config).</li><li>Produces: <code>whiteboardSessionUsecase</code> with: <code>list({ page, limit, filters, authUser })</code>, <code>getById({ id, authUser })</code>, <code>create({ title, authUser })</code>, <code>activate({ id, authUser })</code>, <code>end({ id, authUser })</code>, <code>makePublic({ id, authUser, locale })</code> → <code>{ session, token, url }</code>, <code>makePrivate({ id, authUser })</code>, <code>remove({ id, authUser })</code>, <code>addStudent({ id, studentId, authUser })</code>, <code>removeStudent({ id, studentId, authUser })</code>, <code>getPublicByToken({ token })</code> → public dto or throws notFound.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Confirm the student-lookup helper.</strong> Open <code>server/src/modules/users/user.repo.js</code> and note the method that fetches a user by id with their <code>role</code> (used to reject non-students). If it&#39;s <code>getById({ id })</code> returning <code>{ id, role, ... }</code>, use that. If the exact name differs, use the actual one — record it here before writing the usecase.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Confirm the app URL source.</strong> Grep for how the reset-password link builds its base: <code>grep -rn &quot;appUrl&quot; server/src/config server/src/modules/auth</code>. Use the same <code>ENV.appUrl</code> (e.g. <code>import { ENV } from &quot;../../config/env.js&quot;</code> — match the real path).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>whiteboardSession.usecase.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import crypto from &quot;node:crypto&quot;;
+import { prisma } from &quot;@ayah/db/prisma.client.js&quot;;
+import {
+  USER_ROLES,
+  WHITEBOARD_SESSION_STATUSES,
+  WHITEBOARD_VISIBILITIES,
+} from &quot;@ayah/shared&quot;;
+import { badRequest, conflict, notFound } from &quot;../../shared/errors/AppError.js&quot;;
+import { buildSearchQuery } from &quot;../../shared/utility/helper.js&quot;;
+import { ENV } from &quot;../../config/env.js&quot;; // adjust to the real config path (Step 2)
+import { userRepo } from &quot;../users/user.repo.js&quot;;
+import { whiteboardSessionRepo } from &quot;./whiteboardSession.repo.js&quot;;
+import { toPublicSession } from &quot;./whiteboardSession.dto.js&quot;;
+import { whiteboardMessagesCodes } from &quot;./whiteboardSession.messages.js&quot;;
+
+// Raw token shown once to the admin; only its SHA-256 hash is stored.
+function generateShareToken() {
+  return crypto.randomBytes(24).toString(&quot;hex&quot;); // 48 hex chars, unguessable
+}
+function hashShareToken(raw) {
+  return crypto.createHash(&quot;sha256&quot;).update(raw).digest(&quot;hex&quot;);
+}
+
+class WhiteboardSessionUsecase {
+  buildListWhere(authUser, { search } = {}) {
+    const where = {};
+    // ADMIN scope: for now admins manage every session. (Scope hook kept here
+    // so a future &quot;own sessions only&quot; rule slots in cleanly.)
+    const or = buildSearchQuery({
+      search: typeof search === &quot;string&quot; ? search : undefined,
+      keys: [&quot;title&quot;],
+    });
+    if (or) where.OR = or;
+    return where;
+  }
+
+  async list({ page, limit, filters = {}, authUser }) {
+    const where = this.buildListWhere(authUser, filters);
+    return whiteboardSessionRepo.list({ where, page, limit });
+  }
+
+  async getById({ id, authUser }) {
+    const session = await whiteboardSessionRepo.getByIdWithStudents({ id });
+    if (!session) throw notFound(whiteboardMessagesCodes.SESSION_NOT_FOUND);
+    return session;
+  }
+
+  async create({ title, authUser }) {
+    const clean = typeof title === &quot;string&quot; ? title.trim() : &quot;&quot;;
+    if (!clean) throw badRequest(whiteboardMessagesCodes.TITLE_REQUIRED);
+    return whiteboardSessionRepo.create({ title: clean, createdById: authUser.id });
+  }
+
+  async activate({ id, authUser }) {
+    await this.#assertExists(id);
+    return whiteboardSessionRepo.updateStatus({
+      id,
+      status: WHITEBOARD_SESSION_STATUSES.ACTIVE,
+    });
+  }
+
+  async end({ id, authUser }) {
+    await this.#assertExists(id);
+    return whiteboardSessionRepo.updateStatus({
+      id,
+      status: WHITEBOARD_SESSION_STATUSES.ENDED,
+    });
+  }
+
+  async makePublic({ id, authUser, locale = &quot;ar&quot; }) {
+    await this.#assertExists(id);
+    const token = generateShareToken();
+    const session = await whiteboardSessionRepo.setPublic({
+      id,
+      tokenHash: hashShareToken(token),
+    });
+    const url = `${ENV.appUrl}/${locale}/w/${token}`;
+    return { session, token, url };
+  }
+
+  async makePrivate({ id, authUser }) {
+    await this.#assertExists(id);
+    return whiteboardSessionRepo.setPrivate({ id });
+  }
+
+  async remove({ id, authUser }) {
+    await this.#assertExists(id);
+    await whiteboardSessionRepo.remove({ id });
+    return { id };
+  }
+
+  async addStudent({ id, studentId, authUser }) {
+    await this.#assertExists(id);
+    const student = await userRepo.getById({ id: studentId });
+    if (!student || student.role !== USER_ROLES.STUDENT) {
+      throw badRequest(whiteboardMessagesCodes.NOT_A_STUDENT);
+    }
+    const existing = await whiteboardSessionRepo.findStudentLink({
+      sessionId: id,
+      studentId,
+    });
+    if (existing) throw conflict(whiteboardMessagesCodes.STUDENT_ALREADY_ADDED);
+    await whiteboardSessionRepo.addStudent({ sessionId: id, studentId });
+    return whiteboardSessionRepo.getByIdWithStudents({ id });
+  }
+
+  async removeStudent({ id, studentId, authUser }) {
+    await this.#assertExists(id);
+    const result = await whiteboardSessionRepo.removeStudent({
+      sessionId: id,
+      studentId,
+    });
+    if (!result || result.count === 0) {
+      throw notFound(whiteboardMessagesCodes.STUDENT_NOT_IN_SESSION);
+    }
+    return whiteboardSessionRepo.getByIdWithStudents({ id });
+  }
+
+  // Public token viewer — returns a minimal payload ONLY for PUBLIC sessions.
+  async getPublicByToken({ token }) {
+    if (!token || typeof token !== &quot;string&quot;) {
+      throw notFound(whiteboardMessagesCodes.SESSION_NOT_FOUND);
+    }
+    const session = await whiteboardSessionRepo.getByTokenHash({
+      tokenHash: hashShareToken(token),
+    });
+    if (!session || session.visibility !== WHITEBOARD_VISIBILITIES.PUBLIC) {
+      throw notFound(whiteboardMessagesCodes.SESSION_NOT_FOUND);
+    }
+    return toPublicSession(session);
+  }
+
+  async #assertExists(id) {
+    const session = await whiteboardSessionRepo.getById({ id });
+    if (!session) throw notFound(whiteboardMessagesCodes.SESSION_NOT_FOUND);
+    return session;
+  }
+}
+
+export const whiteboardSessionUsecase = new WhiteboardSessionUsecase();
+export { WhiteboardSessionUsecase };</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Verify <code>conflict</code> exists in <code>AppError.js</code>.</strong> Run: <code>grep -n &quot;export function conflict&quot; server/src/shared/errors/AppError.js</code>. If it&#39;s absent but <code>badRequest</code>/<code>notFound</code> exist, either add a <code>conflict</code> factory (409) mirroring the others, or fall back to <code>badRequest</code>. Prefer adding <code>conflict</code> for the 409 semantics.</li></ul></div><div class="content-block"><p>Expected: a <code>conflict</code> factory is available.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Verify <code>sessionDetailSelect</code> supports <code><em>count</code> on list but not detail</strong> — the usecase uses <code>getByIdWithStudents</code> for detail (has <code>students</code>), <code>list</code> uses <code>sessionListSelect</code> (has <code></em>count</code>). No <code>_count</code> on detail. Confirm <code>buildSearchQuery</code> exists: <code>grep -n &quot;buildSearchQuery&quot; server/src/shared/utility/helper.js</code>.</li></ul></div><div class="content-block"><p>Expected: helper exists (matches the games usecase import).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/whiteboardSessions/whiteboardSession.usecase.js server/src/shared/errors/AppError.js
+git commit -m &quot;feat(whiteboard): add whiteboard-sessions usecase with share-token logic&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-5-validation-controller-route-registration" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">6</span>
+          <h2>Task 5: Validation, controller, route, registration</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.validation.js</code></li><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.controller.js</code></li><li>Create: <code>server/src/modules/whiteboardSessions/whiteboardSession.route.js</code></li><li>Modify: <code>server/src/routes.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>whiteboardSessionUsecase</code> (Task 4); <code>ok</code>/<code>created</code>/<code>deleted</code> from <code>../../shared/http/response.js</code>; <code>idParam</code> from <code>../../shared/http/params.js</code>; <code>messagesNames</code>, <code>whiteboardMessagesCodes</code>, <code>PERMISSIONS</code> from <code>@ayah/shared</code>; <code>validate</code>, <code>asyncHandler</code>, <code>authMiddleware</code>.</li><li>Produces: mounted router at <code>/whiteboard-sessions</code> (public token route first, then guarded routes).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create <code>whiteboardSession.validation.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { z } from &quot;zod&quot;;
+import { whiteboardMessagesCodes } from &quot;./whiteboardSession.messages.js&quot;;
+
+export class WhiteboardSessionValidation {
+  static createSchema = z.object({
+    title: z.string().trim().min(1, whiteboardMessagesCodes.TITLE_REQUIRED).max(120),
+  });
+
+  static addStudentSchema = z.object({
+    studentId: z
+      .number()
+      .int()
+      .positive(whiteboardMessagesCodes.STUDENT_ID_INVALID),
+  });
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create <code>whiteboardSession.controller.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { messagesNames, whiteboardMessagesCodes } from &quot;@ayah/shared&quot;;
+import { created, deleted, ok } from &quot;../../shared/http/response.js&quot;;
+import { idParam } from &quot;../../shared/http/params.js&quot;;
+import { whiteboardSessionUsecase } from &quot;./whiteboardSession.usecase.js&quot;;
+
+const TK = messagesNames.whiteboardMessages;
+
+class WhiteboardSessionController {
+  // ── public (no auth) ────────────────────────────────────
+  async getPublic(req, res) {
+    const session = await whiteboardSessionUsecase.getPublicByToken({
+      token: req.params.token,
+    });
+    return ok(res, session);
+  }
+
+  // ── authenticated (admin) ───────────────────────────────
+  async list(req, res) {
+    const { page, limit, ...filters } = req.query;
+    const result = await whiteboardSessionUsecase.list({
+      page,
+      limit,
+      filters,
+      authUser: req.auth,
+    });
+    return ok(res, result);
+  }
+
+  async getOne(req, res) {
+    const session = await whiteboardSessionUsecase.getById({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
+    return ok(res, session);
+  }
+
+  async create(req, res) {
+    const session = await whiteboardSessionUsecase.create({
+      title: req.body.title,
+      authUser: req.auth,
+    });
+    return created(res, session, whiteboardMessagesCodes.SESSION_CREATED, TK);
+  }
+
+  async activate(req, res) {
+    const session = await whiteboardSessionUsecase.activate({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
+    return ok(res, session, whiteboardMessagesCodes.SESSION_ACTIVATED, TK);
+  }
+
+  async end(req, res) {
+    const session = await whiteboardSessionUsecase.end({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
+    return ok(res, session, whiteboardMessagesCodes.SESSION_ENDED, TK);
+  }
+
+  async makePublic(req, res) {
+    const result = await whiteboardSessionUsecase.makePublic({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+      locale: req.auth.locale || &quot;ar&quot;,
+    });
+    return ok(res, result, whiteboardMessagesCodes.SESSION_MADE_PUBLIC, TK);
+  }
+
+  async makePrivate(req, res) {
+    const session = await whiteboardSessionUsecase.makePrivate({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
+    return ok(res, session, whiteboardMessagesCodes.SESSION_MADE_PRIVATE, TK);
+  }
+
+  async remove(req, res) {
+    await whiteboardSessionUsecase.remove({
+      id: idParam(req.params.id),
+      authUser: req.auth,
+    });
+    return deleted(res, whiteboardMessagesCodes.SESSION_DELETED, TK);
+  }
+
+  async addStudent(req, res) {
+    const session = await whiteboardSessionUsecase.addStudent({
+      id: idParam(req.params.id),
+      studentId: req.body.studentId,
+      authUser: req.auth,
+    });
+    return ok(res, session, whiteboardMessagesCodes.STUDENT_ADDED, TK);
+  }
+
+  async removeStudent(req, res) {
+    const session = await whiteboardSessionUsecase.removeStudent({
+      id: idParam(req.params.id),
+      studentId: idParam(req.params.studentId),
+      authUser: req.auth,
+    });
+    return ok(res, session, whiteboardMessagesCodes.STUDENT_REMOVED, TK);
+  }
+}
+
+export const whiteboardSessionController = new WhiteboardSessionController();
+export { WhiteboardSessionController };</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>whiteboardSession.route.js</code></strong> (public token route declared BEFORE the guarded <code>/:id</code> routes, mirroring the games module)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { Router } from &quot;express&quot;;
+import { PERMISSIONS } from &quot;@ayah/shared&quot;;
+import { whiteboardSessionController } from &quot;./whiteboardSession.controller.js&quot;;
+import { WhiteboardSessionValidation } from &quot;./whiteboardSession.validation.js&quot;;
+import { validate } from &quot;../../shared/middlewares/validate.middleware.js&quot;;
+import { asyncHandler } from &quot;../../shared/middlewares/async-handler.js&quot;;
+import { authMiddleware } from &quot;../../shared/middlewares/auth.middleware.js&quot;;
+
+const whiteboardSessionRoutes = Router();
+
+// PUBLIC — token viewer. Declared before authenticated routes; &quot;/public/:token&quot;
+// can never collide with &quot;/:id&quot; because &quot;public&quot; is a fixed segment.
+whiteboardSessionRoutes.get(
+  &quot;/public/:token&quot;,
+  asyncHandler(whiteboardSessionController.getPublic),
+);
+
+const requireManage = [
+  authMiddleware.requireAuth,
+  authMiddleware.requirePermissions([PERMISSIONS.WHITEBOARD.MANAGE]),
+];
+
+whiteboardSessionRoutes.get(&quot;/&quot;, ...requireManage, asyncHandler(whiteboardSessionController.list));
+whiteboardSessionRoutes.post(
+  &quot;/&quot;,
+  ...requireManage,
+  validate(WhiteboardSessionValidation.createSchema),
+  asyncHandler(whiteboardSessionController.create),
+);
+whiteboardSessionRoutes.get(&quot;/:id&quot;, ...requireManage, asyncHandler(whiteboardSessionController.getOne));
+whiteboardSessionRoutes.delete(&quot;/:id&quot;, ...requireManage, asyncHandler(whiteboardSessionController.remove));
+
+whiteboardSessionRoutes.post(&quot;/:id/actions/activate&quot;, ...requireManage, asyncHandler(whiteboardSessionController.activate));
+whiteboardSessionRoutes.post(&quot;/:id/actions/end&quot;, ...requireManage, asyncHandler(whiteboardSessionController.end));
+whiteboardSessionRoutes.post(&quot;/:id/actions/make-public&quot;, ...requireManage, asyncHandler(whiteboardSessionController.makePublic));
+whiteboardSessionRoutes.post(&quot;/:id/actions/make-private&quot;, ...requireManage, asyncHandler(whiteboardSessionController.makePrivate));
+
+whiteboardSessionRoutes.post(
+  &quot;/:id/students&quot;,
+  ...requireManage,
+  validate(WhiteboardSessionValidation.addStudentSchema),
+  asyncHandler(whiteboardSessionController.addStudent),
+);
+whiteboardSessionRoutes.delete(
+  &quot;/:id/students/:studentId&quot;,
+  ...requireManage,
+  asyncHandler(whiteboardSessionController.removeStudent),
+);
+
+export default whiteboardSessionRoutes;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Register the router in <code>server/src/routes.js</code>.</strong> Add the import with the others:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import whiteboardSessionRoutes from &quot;./modules/whiteboardSessions/whiteboardSession.route.js&quot;;</code></pre></div></div><div class="content-block"><p>and the mount line with the others:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>routes.use(&quot;/whiteboard-sessions&quot;, whiteboardSessionRoutes);</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Boot the server and verify the routes are wired</strong></li></ul></div><div class="content-block"><p>Run: <code>cd server &amp;&amp; npm run dev</code> (leave running in one terminal). In another terminal: <code>curl -s -i http://localhost:4000/api/v1/whiteboard-sessions/public/deadbeef</code> Expected: <code>HTTP/1.1 404</code> with a JSON envelope <code>{&quot;success&quot;:false,&quot;message&quot;:&quot;SESSION<em>NOT</em>FOUND&quot;,...}</code> (route resolves, token invalid → 404 — NOT a 404 &quot;route not found&quot; from Express; confirm <code>message</code> is <code>SESSION<em>NOT</em>FOUND</code>). <code>curl -s -i http://localhost:4000/api/v1/whiteboard-sessions</code> Expected: <code>HTTP/1.1 401</code> (guarded — no auth cookie).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: End-to-end smoke with an admin cookie.</strong> Log in as admin via the app or <code>curl</code> the login endpoint to capture the <code>ayah_access</code> cookie into a jar, then:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code># create
+curl -s -b cookies.txt -X POST http://localhost:4000/api/v1/whiteboard-sessions \
+  -H &#39;Content-Type: application/json&#39; -d &#39;{&quot;title&quot;:&quot;حصة تجريبية&quot;}&#39;
+# expect 201 + { data: { id, title, status:&quot;DRAFT&quot;, visibility:&quot;PRIVATE&quot;, students:[] } }
+# activate (use the returned id)
+curl -s -b cookies.txt -X POST http://localhost:4000/api/v1/whiteboard-sessions/1/actions/activate
+# make public → returns { data: { session, token, url } }
+curl -s -b cookies.txt -X POST http://localhost:4000/api/v1/whiteboard-sessions/1/actions/make-public
+# view via public token (paste the token from previous response)
+curl -s http://localhost:4000/api/v1/whiteboard-sessions/public/&lt;token&gt;
+# expect 200 + { data: { id, title, status, students:[...] } }</code></pre></div></div><div class="content-block"><p>Expected: each call returns the envelope described. <code>make-private</code> then re-viewing the token → 404.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 7: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add server/src/modules/whiteboardSessions server/src/routes.js
+git commit -m &quot;feat(whiteboard): add whiteboard-sessions controller, validation, routes&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-6-frontend-wiring-—-i18n-codes-nav-item-protected-prefix-feature-config" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">7</span>
+          <h2>Task 6: Frontend wiring — i18n codes, nav item, protected prefix, feature config</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/i18n/locales/messagesCodes.js</code></li><li>Modify: <code>web/src/features/dashboard/config/navModel.js</code></li><li>Modify: <code>web/src/utils/constant.js</code></li><li>Create: <code>web/src/features/whiteboard/config/constant.js</code></li><li>Create: <code>web/src/features/whiteboard/config/whiteboardText.js</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Produces: localized <code>whiteboard-messages</code> namespace (ar+en); admin nav item <code>whiteboard</code>; <code>/board</code> added to <code>PROTECTED<em>PREFIXES</code>; <code>WHITEBOARD</em>URL</code>, <code>STUDENTS<em>PICKER</em>URL</code>, <code>STUDENTS<em>PICKER</em>PARAMS</code>, <code>buildPrivateBoardPath</code>, <code>buildPublicBoardPath</code>, <code>WHITEBOARD<em>STATUS</code>, <code>WHITEBOARD</em>VISIBILITY</code>; <code>useWhiteboardText()</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Localize the message codes.</strong> Open <code>web/src/i18n/locales/messagesCodes.js</code>, find how a namespace like <code>game-messages</code> is structured (per project rule every code is <code>{ ar, en }</code> or a nested <code>{ &quot;game-messages&quot;: { CODE: { ar, en } } }</code> — match the exact shape used). Add a <code>whiteboard-messages</code> block with all codes from Task 1 Step 4:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>&quot;whiteboard-messages&quot;: {
+  SESSION_NOT_FOUND: { ar: &quot;الجلسة غير موجودة&quot;, en: &quot;Session not found&quot; },
+  SESSION_CREATED: { ar: &quot;تم إنشاء الجلسة&quot;, en: &quot;Session created&quot; },
+  SESSION_DELETED: { ar: &quot;تم حذف الجلسة&quot;, en: &quot;Session deleted&quot; },
+  SESSION_ACTIVATED: { ar: &quot;تم فتح الجلسة&quot;, en: &quot;Session opened&quot; },
+  SESSION_ENDED: { ar: &quot;تم إنهاء الجلسة&quot;, en: &quot;Session ended&quot; },
+  SESSION_MADE_PUBLIC: { ar: &quot;الجلسة أصبحت عامة&quot;, en: &quot;Session is now public&quot; },
+  SESSION_MADE_PRIVATE: { ar: &quot;الجلسة أصبحت خاصة&quot;, en: &quot;Session is now private&quot; },
+  STUDENT_ADDED: { ar: &quot;تمت إضافة الطالب&quot;, en: &quot;Student added&quot; },
+  STUDENT_REMOVED: { ar: &quot;تمت إزالة الطالب&quot;, en: &quot;Student removed&quot; },
+  STUDENT_ALREADY_ADDED: { ar: &quot;الطالب مضاف بالفعل&quot;, en: &quot;Student already added&quot; },
+  STUDENT_NOT_IN_SESSION: { ar: &quot;الطالب غير موجود في الجلسة&quot;, en: &quot;Student is not in the session&quot; },
+  NOT_A_STUDENT: { ar: &quot;الحساب المختار ليس طالبًا&quot;, en: &quot;Selected account is not a student&quot; },
+  TITLE_REQUIRED: { ar: &quot;عنوان الجلسة مطلوب&quot;, en: &quot;Session title is required&quot; },
+  STUDENT_ID_INVALID: { ar: &quot;معرّف الطالب غير صالح&quot;, en: &quot;Invalid student id&quot; },
+},</code></pre></div></div><div class="content-block"><p>(Match the exact nesting/quote style of the existing file — this block is the content, not the format.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Add the nav item.</strong> In <code>web/src/features/dashboard/config/navModel.js</code>: add an icon import (e.g. <code>MdDraw</code> from <code>react-icons/md</code>) to the icon import list and <code>whiteboard: MdDraw</code> to the <code>ICONS</code> map. Then find the ADMIN role&#39;s groups (the array built for <code>USER_ROLES.ADMIN</code>) and add an item to a suitable group (e.g. the teaching/content group that holds <code>games</code>/<code>sessionLog</code>):</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>{
+  key: &#39;whiteboard&#39;,
+  labelKey: &#39;whiteboard&#39;,
+  href: &#39;/dashboard/whiteboard&#39;,
+  icon: ICONS.whiteboard,
+  permission: PERMISSIONS.WHITEBOARD.MANAGE,
+},</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Add the nav label.</strong> The nav renders <code>labelKey</code> via the dashboard translations. Find the file that holds nav labels (grep for an existing <code>sessionLog:</code> or <code>games:</code> label: <code>grep -rn &quot;sessionLog&quot; web/src/i18n web/src/features/dashboard</code>). Add <code>whiteboard</code> label ar+en (e.g. ar: &quot;السبورة التفاعلية&quot;, en: &quot;Whiteboard&quot;) in the SAME file/namespace as the other nav labels.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Protect the <code>/board</code> prefix.</strong> In <code>web/src/utils/constant.js</code>, change <code>PROTECTED_PREFIXES</code> from <code>[&#39;/dashboard&#39;]</code> to:</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>export const PROTECTED_PREFIXES = [&#39;/dashboard&#39;, &#39;/board&#39;];</code></pre></div></div><div class="content-block"><p>(Leave <code>/w/</code> public — the public token board must open without auth. Verify <code>isPublicPath</code>/<code>isProtectedPath</code> logic still treats <code>/w/...</code> as non-protected; if <code>isPublicPath</code> is an allowlist, no change needed since anything not protected is allowed.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Create <code>web/src/features/whiteboard/config/constant.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { WHITEBOARD_SESSION_STATUSES, WHITEBOARD_VISIBILITIES } from &quot;@ayah/shared&quot;;
+import { localePath } from &quot;../../../i18n/routing.js&quot;;
+
+export const WHITEBOARD_URL = &quot;whiteboard-sessions&quot;;
+
+// Admin student picker (reuse the users endpoint filtered to STUDENT).
+export const STUDENTS_PICKER_URL = &quot;users&quot;;
+export const STUDENTS_PICKER_PARAMS = { role: &quot;STUDENT&quot;, limit: 100 };
+
+export const WHITEBOARD_STATUS = WHITEBOARD_SESSION_STATUSES;
+export const WHITEBOARD_VISIBILITY = WHITEBOARD_VISIBILITIES;
+
+// Full-screen board routes (outside the dashboard shell).
+export const buildPrivateBoardPath = (lng, id) =&gt; localePath(lng, `/board/${id}`);
+export const buildPublicBoardPath = (lng, token) =&gt; localePath(lng, `/w/${token}`);</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Create <code>web/src/features/whiteboard/config/whiteboardText.js</code></strong> (mirror an existing <code>useXText</code> hook, e.g. <code>certificatesText.js</code>)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { useTranslation } from &quot;../../../i18n/client.js&quot;;
+
+// Centralized localized strings for the whiteboard feature.
+export function useWhiteboardText() {
+  const { lng } = useTranslation();
+  const ar = lng === &quot;ar&quot;;
+  return {
+    pageTitle: ar ? &quot;السبورة التفاعلية&quot; : &quot;Interactive Whiteboard&quot;,
+    createBtn: ar ? &quot;جلسة جديدة&quot; : &quot;New session&quot;,
+    titleLabel: ar ? &quot;عنوان الجلسة&quot; : &quot;Session title&quot;,
+    status: ar ? &quot;الحالة&quot; : &quot;Status&quot;,
+    visibility: ar ? &quot;الظهور&quot; : &quot;Visibility&quot;,
+    studentsCount: ar ? &quot;الطلاب&quot; : &quot;Students&quot;,
+    openBoard: ar ? &quot;افتح السبورة (ملء الشاشة)&quot; : &quot;Open board (full screen)&quot;,
+    activate: ar ? &quot;فتح الجلسة&quot; : &quot;Open session&quot;,
+    end: ar ? &quot;إنهاء الجلسة&quot; : &quot;End session&quot;,
+    delete: ar ? &quot;حذف&quot; : &quot;Delete&quot;,
+    makePublic: ar ? &quot;جعلها عامة&quot; : &quot;Make public&quot;,
+    makePrivate: ar ? &quot;جعلها خاصة&quot; : &quot;Make private&quot;,
+    copyLink: ar ? &quot;نسخ الرابط العام&quot; : &quot;Copy public link&quot;,
+    linkCopied: ar ? &quot;تم نسخ الرابط&quot; : &quot;Link copied&quot;,
+    addStudent: ar ? &quot;إضافة طالب&quot; : &quot;Add student&quot;,
+    removeStudent: ar ? &quot;إزالة&quot; : &quot;Remove&quot;,
+    noStudents: ar ? &quot;لا يوجد طلاب بعد&quot; : &quot;No students yet&quot;,
+    unavailable: ar ? &quot;الجلسة غير متاحة&quot; : &quot;Session unavailable&quot;,
+    statusLabels: {
+      DRAFT: ar ? &quot;مسودة&quot; : &quot;Draft&quot;,
+      ACTIVE: ar ? &quot;مفتوحة&quot; : &quot;Open&quot;,
+      ENDED: ar ? &quot;منتهية&quot; : &quot;Ended&quot;,
+    },
+    visibilityLabels: {
+      PRIVATE: ar ? &quot;خاصة&quot; : &quot;Private&quot;,
+      PUBLIC: ar ? &quot;عامة&quot; : &quot;Public&quot;,
+    },
+  };
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 7: Verify nav + i18n load without runtime error</strong></li></ul></div><div class="content-block"><p>Run: <code>cd web &amp;&amp; npm run dev</code> then open <code>http://localhost:3008/ar/dashboard/whiteboard</code> while logged in as admin. Expected: the &quot;السبورة التفاعلية&quot; nav item appears; the route 404s for now (page not built until Task 7) but the nav label renders (no missing-key warning in console).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 8: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/i18n web/src/features/dashboard/config/navModel.js web/src/utils/constant.js web/src/features/whiteboard/config
+git commit -m &quot;feat(web): whiteboard i18n codes, nav item, protected prefix, feature config&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-7-list-page-create-dialog-route" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">8</span>
+          <h2>Task 7: List page + create dialog + route</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/whiteboard/config/whiteboardColumns.js</code></li><li>Create: <code>web/src/features/whiteboard/components/CreateWhiteboardDialog.jsx</code></li><li>Create: <code>web/src/features/whiteboard/pages/WhiteboardListPage.jsx</code></li><li>Create: <code>web/src/app/[lng]/dashboard/whiteboard/page.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>useRequest</code> (<code>{ url, method, isPaginated, autoFetch }</code> → <code>{ data, total, page, setPage, pageSize, setPageSize, isLoading, triggerRefetch }</code>), <code>DataTable</code>/<code>PageHeader</code> from <code>shared/components</code>, <code>usePermission</code>, <code>useOpen</code>, <code>useWhiteboardText</code>, <code>WHITEBOARD_URL</code>.</li><li>Produces: <code>WhiteboardListPage</code> default export; <code>buildWhiteboardColumns(txt)</code>; <code>CreateWhiteboardDialog</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create <code>whiteboardColumns.js</code></strong> (mirror <code>certificatesColumns.js</code> column-builder shape — confirm the DataTable column API by reading that file first)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Column builder for the whiteboard sessions list. `txt` is useWhiteboardText().
+export function buildWhiteboardColumns(txt) {
+  return [
+    { field: &quot;title&quot;, headerName: txt.titleLabel, flex: 1 },
+    {
+      field: &quot;status&quot;,
+      headerName: txt.status,
+      renderCell: (row) =&gt; txt.statusLabels[row.status] ?? row.status,
+    },
+    {
+      field: &quot;visibility&quot;,
+      headerName: txt.visibility,
+      renderCell: (row) =&gt; txt.visibilityLabels[row.visibility] ?? row.visibility,
+    },
+    {
+      field: &quot;students&quot;,
+      headerName: txt.studentsCount,
+      renderCell: (row) =&gt; row?._count?.students ?? 0,
+    },
+  ];
+}</code></pre></div></div><div class="content-block"><p>(Adjust <code>renderCell(row)</code> vs <code>renderCell(params)</code> to match the real DataTable contract in <code>certificatesColumns.js</code>.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create <code>CreateWhiteboardDialog.jsx</code></strong> (copy the structure of <code>CreateCertificateDialog.jsx</code> — same <code>AppForm</code>/RHF + <code>useRequest</code> mutation pattern; read it first for the exact form components)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useForm } from &quot;react-hook-form&quot;;
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from &quot;@mui/material&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { WHITEBOARD_URL } from &quot;../config/constant.js&quot;;
+import { useWhiteboardText } from &quot;../config/whiteboardText.js&quot;;
+
+export default function CreateWhiteboardDialog({ open, onClose, onCreated }) {
+  const txt = useWhiteboardText();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({ defaultValues: { title: &quot;&quot; } });
+  const { fetchData, isLoading } = useRequest({ url: WHITEBOARD_URL, method: &quot;post&quot;, autoFetch: false });
+
+  const submit = handleSubmit(async (values) =&gt; {
+    const res = await fetchData({ body: values }); // match useRequest&#39;s mutation call signature
+    if (res?.success) {
+      reset();
+      onClose?.();
+      onCreated?.(res.data);
+    }
+  });
+
+  return (
+    &lt;Dialog open={open} onClose={onClose} fullWidth maxWidth=&quot;xs&quot;&gt;
+      &lt;DialogTitle&gt;{txt.createBtn}&lt;/DialogTitle&gt;
+      &lt;form onSubmit={submit}&gt;
+        &lt;DialogContent&gt;
+          &lt;Stack spacing={2} sx={{ mt: 1 }}&gt;
+            &lt;TextField
+              label={txt.titleLabel}
+              autoFocus
+              fullWidth
+              error={Boolean(errors.title)}
+              {...register(&quot;title&quot;, { required: true })}
+            /&gt;
+          &lt;/Stack&gt;
+        &lt;/DialogContent&gt;
+        &lt;DialogActions&gt;
+          &lt;Button onClick={onClose}&gt;{txt.delete === &quot;حذف&quot; ? &quot;إلغاء&quot; : &quot;Cancel&quot;}&lt;/Button&gt;
+          &lt;Button type=&quot;submit&quot; variant=&quot;contained&quot; disabled={isLoading}&gt;{txt.createBtn}&lt;/Button&gt;
+        &lt;/DialogActions&gt;
+      &lt;/form&gt;
+    &lt;/Dialog&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(IMPORTANT: read <code>useRequest.js</code> to confirm the mutation trigger — whether it&#39;s <code>fetchData({ body })</code>, <code>fetchData(values)</code>, or a returned <code>mutate</code>. Use the real signature.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>WhiteboardListPage.jsx</code></strong> (mirror <code>CertificatesPage.jsx</code>)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useMemo } from &quot;react&quot;;
+import { useRouter } from &quot;next/navigation&quot;;
+import { Button } from &quot;@mui/material&quot;;
+import { MdAdd } from &quot;react-icons/md&quot;;
+import { PERMISSIONS } from &quot;@ayah/shared&quot;;
+import { usePermission } from &quot;../../../hooks/usePermission.js&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { useOpen } from &quot;../../../hooks/useOpen.js&quot;;
+import { useTranslation } from &quot;../../../i18n/client.js&quot;;
+import { localePath } from &quot;../../../i18n/routing.js&quot;;
+import { DataTable, PageHeader } from &quot;../../../shared/components/index.js&quot;;
+import { WHITEBOARD_URL } from &quot;../config/constant.js&quot;;
+import { buildWhiteboardColumns } from &quot;../config/whiteboardColumns.js&quot;;
+import { useWhiteboardText } from &quot;../config/whiteboardText.js&quot;;
+import CreateWhiteboardDialog from &quot;../components/CreateWhiteboardDialog.jsx&quot;;
+
+export default function WhiteboardListPage() {
+  const txt = useWhiteboardText();
+  const { lng } = useTranslation();
+  const router = useRouter();
+  const { hasPermission } = usePermission();
+  const canManage = hasPermission(PERMISSIONS.WHITEBOARD.MANAGE);
+  const createDialog = useOpen();
+
+  const { data, total, page, setPage, pageSize, setPageSize, isLoading, triggerRefetch } =
+    useRequest({ url: WHITEBOARD_URL, method: &quot;get&quot;, isPaginated: true, autoFetch: canManage });
+
+  const columns = useMemo(() =&gt; buildWhiteboardColumns(txt), [txt]);
+
+  if (!canManage) return null;
+
+  return (
+    &lt;&gt;
+      &lt;PageHeader
+        title={txt.pageTitle}
+        action={
+          &lt;Button variant=&quot;contained&quot; startIcon={&lt;MdAdd /&gt;} onClick={createDialog.open}&gt;
+            {txt.createBtn}
+          &lt;/Button&gt;
+        }
+      /&gt;
+      &lt;DataTable
+        rows={data ?? []}
+        columns={columns}
+        loading={isLoading}
+        total={total}
+        page={page}
+        onPageChange={setPage}
+        pageSize={pageSize}
+        onPageSizeChange={setPageSize}
+        onRowClick={(row) =&gt; router.push(localePath(lng, `/dashboard/whiteboard/${row.id}`))}
+      /&gt;
+      &lt;CreateWhiteboardDialog
+        open={createDialog.isOpen}
+        onClose={createDialog.close}
+        onCreated={() =&gt; triggerRefetch()}
+      /&gt;
+    &lt;/&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Align <code>DataTable</code> props — <code>rows</code>/<code>data</code>, <code>onRowClick</code>, pagination prop names — with the real <code>DataTable</code> API in <code>certificates</code>/another list page. Adjust to match.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Create the route <code>web/src/app/[lng]/dashboard/whiteboard/page.jsx</code></strong> (mirror <code>certificates/page.jsx</code>&#39;s thin Suspense wrapper)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { Suspense } from &quot;react&quot;;
+import WhiteboardListPage from &quot;../../../../../features/whiteboard/pages/WhiteboardListPage.jsx&quot;;
+
+export default function Page() {
+  return (
+    &lt;Suspense&gt;
+      &lt;WhiteboardListPage /&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Fix the relative depth to match the repo&#39;s other dashboard route files — copy an existing one and swap the import.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Verify the list page works end-to-end</strong></li></ul></div><div class="content-block"><p>Run: with <code>server</code> and <code>web</code> dev servers up, open <code>http://localhost:3008/ar/dashboard/whiteboard</code> as admin. Expected: page renders with header + empty table; &quot;جلسة جديدة&quot; opens the dialog; submitting a title shows a success toast, closes the dialog, and the new row appears (status &quot;مسودة&quot;, 0 students); clicking a row navigates to <code>/ar/dashboard/whiteboard/&lt;id&gt;</code> (404 until Task 8).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/whiteboard web/src/app/[lng]/dashboard/whiteboard/page.jsx
+git commit -m &quot;feat(web): whiteboard sessions list page + create dialog&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-8-session-detail-page-students-link-activate-route" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">9</span>
+          <h2>Task 8: Session detail page (students, link, activate) + route</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/whiteboard/components/SessionStudentsPanel.jsx</code></li><li>Create: <code>web/src/features/whiteboard/pages/WhiteboardSessionDetailPage.jsx</code></li><li>Create: <code>web/src/app/[lng]/dashboard/whiteboard/[id]/page.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>useRequest</code> for <code>GET /whiteboard-sessions/:id</code> and the action endpoints; the STUDENT picker (<code>STUDENTS<em>PICKER</em>URL</code>/<code>PARAMS</code>); <code>buildPrivateBoardPath</code>, <code>buildPublicBoardPath</code>.</li><li>Produces: <code>WhiteboardSessionDetailPage({ sessionId })</code> default export; <code>SessionStudentsPanel({ session, onChanged })</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create <code>SessionStudentsPanel.jsx</code></strong> — lists <code>session.students</code>, an autocomplete/select of STUDENT users to add, and a remove button per row.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useState } from &quot;react&quot;;
+import { Autocomplete, Box, Button, Chip, Stack, TextField, Typography } from &quot;@mui/material&quot;;
+import { MdClose } from &quot;react-icons/md&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { WHITEBOARD_URL, STUDENTS_PICKER_URL, STUDENTS_PICKER_PARAMS } from &quot;../config/constant.js&quot;;
+import { useWhiteboardText } from &quot;../config/whiteboardText.js&quot;;
+
+export default function SessionStudentsPanel({ session, onChanged }) {
+  const txt = useWhiteboardText();
+  const [picked, setPicked] = useState(null);
+
+  const { data: studentsData } = useRequest({
+    url: STUDENTS_PICKER_URL, method: &quot;get&quot;, isPaginated: true,
+    autoFetch: true, initialParams: STUDENTS_PICKER_PARAMS,
+  });
+  const addReq = useRequest({ url: `${WHITEBOARD_URL}/${session.id}/students`, method: &quot;post&quot;, autoFetch: false });
+
+  const options = (studentsData ?? []).filter(
+    (u) =&gt; !session.students.some((s) =&gt; s.studentId === u.id),
+  );
+
+  const add = async () =&gt; {
+    if (!picked) return;
+    const res = await addReq.fetchData({ body: { studentId: picked.id } });
+    if (res?.success) { setPicked(null); onChanged?.(res.data); }
+  };
+
+  const remove = async (studentId) =&gt; {
+    // one-shot delete; match useRequest&#39;s delete trigger signature
+    const res = await addReq.fetchData({ url: `${WHITEBOARD_URL}/${session.id}/students/${studentId}`, method: &quot;delete&quot; });
+    if (res?.success) onChanged?.(res.data);
+  };
+
+  return (
+    &lt;Box&gt;
+      &lt;Typography variant=&quot;h6&quot; sx={{ mb: 1 }}&gt;{txt.studentsCount}&lt;/Typography&gt;
+      &lt;Stack direction=&quot;row&quot; spacing={1} sx={{ mb: 2 }}&gt;
+        &lt;Autocomplete
+          sx={{ minWidth: 260 }}
+          options={options}
+          value={picked}
+          onChange={(_e, v) =&gt; setPicked(v)}
+          getOptionLabel={(o) =&gt; o?.nickname || o?.name || &quot;&quot;}
+          renderInput={(params) =&gt; &lt;TextField {...params} label={txt.addStudent} /&gt;}
+        /&gt;
+        &lt;Button variant=&quot;contained&quot; onClick={add} disabled={!picked}&gt;{txt.addStudent}&lt;/Button&gt;
+      &lt;/Stack&gt;
+      {session.students.length === 0 ? (
+        &lt;Typography color=&quot;text.secondary&quot;&gt;{txt.noStudents}&lt;/Typography&gt;
+      ) : (
+        &lt;Stack direction=&quot;row&quot; flexWrap=&quot;wrap&quot; gap={1}&gt;
+          {session.students.map((s) =&gt; (
+            &lt;Chip
+              key={s.id}
+              label={s.student?.nickname || s.student?.name}
+              onDelete={() =&gt; remove(s.studentId)}
+              deleteIcon={&lt;MdClose /&gt;}
+            /&gt;
+          ))}
+        &lt;/Stack&gt;
+      )}
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Confirm the STUDENT picker returns <code>{ id, name, nickname }</code> rows and the delete trigger signature; adjust <code>fetchData</code> calls to the real <code>useRequest</code> mutation API.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create <code>WhiteboardSessionDetailPage.jsx</code></strong> — loads the session, shows meta + status actions + public/private toggle with copy-link + the big &quot;Open board&quot; button + <code>SessionStudentsPanel</code>.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useState } from &quot;react&quot;;
+import { Box, Button, Chip, Stack, Typography } from &quot;@mui/material&quot;;
+import { MdOpenInFull, MdContentCopy, MdPlayArrow, MdStop, MdPublic, MdLock } from &quot;react-icons/md&quot;;
+import { PERMISSIONS } from &quot;@ayah/shared&quot;;
+import { usePermission } from &quot;../../../hooks/usePermission.js&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { useTranslation } from &quot;../../../i18n/client.js&quot;;
+import { config } from &quot;../../../config/config.js&quot;;
+import { WHITEBOARD_URL, WHITEBOARD_STATUS, WHITEBOARD_VISIBILITY, buildPrivateBoardPath } from &quot;../config/constant.js&quot;;
+import { useWhiteboardText } from &quot;../config/whiteboardText.js&quot;;
+import SessionStudentsPanel from &quot;../components/SessionStudentsPanel.jsx&quot;;
+
+export default function WhiteboardSessionDetailPage({ sessionId }) {
+  const txt = useWhiteboardText();
+  const { lng } = useTranslation();
+  const { hasPermission } = usePermission();
+  const canManage = hasPermission(PERMISSIONS.WHITEBOARD.MANAGE);
+  const [publicUrl, setPublicUrl] = useState(null);
+
+  const { data: session, refetch } = useRequest({
+    url: `${WHITEBOARD_URL}/${sessionId}`, method: &quot;get&quot;, autoFetch: canManage,
+  });
+  const action = useRequest({ url: WHITEBOARD_URL, method: &quot;post&quot;, autoFetch: false });
+
+  if (!canManage || !session) return null;
+
+  const run = async (path) =&gt; {
+    const res = await action.fetchData({ url: `${WHITEBOARD_URL}/${sessionId}/actions/${path}`, method: &quot;post&quot; });
+    if (res?.success) {
+      if (path === &quot;make-public&quot;) setPublicUrl(res.data?.url ?? null);
+      if (path === &quot;make-private&quot;) setPublicUrl(null);
+      refetch();
+    }
+  };
+
+  const copyLink = async () =&gt; {
+    const url = publicUrl ?? (session.visibility === WHITEBOARD_VISIBILITY.PUBLIC ? null : null);
+    if (url) await navigator.clipboard.writeText(url);
+  };
+
+  const openBoard = () =&gt; {
+    // open the full-screen private board in a new tab
+    window.open(buildPrivateBoardPath(lng, session.id), &quot;_blank&quot;);
+  };
+
+  return (
+    &lt;Box sx={{ p: 2 }}&gt;
+      &lt;Stack direction=&quot;row&quot; alignItems=&quot;center&quot; spacing={2} sx={{ mb: 2 }}&gt;
+        &lt;Typography variant=&quot;h5&quot;&gt;{session.title}&lt;/Typography&gt;
+        &lt;Chip label={txt.statusLabels[session.status]} color={session.status === WHITEBOARD_STATUS.ACTIVE ? &quot;success&quot; : &quot;default&quot;} /&gt;
+        &lt;Chip label={txt.visibilityLabels[session.visibility]} variant=&quot;outlined&quot; /&gt;
+      &lt;/Stack&gt;
+
+      &lt;Stack direction=&quot;row&quot; spacing={1} flexWrap=&quot;wrap&quot; gap={1} sx={{ mb: 3 }}&gt;
+        &lt;Button variant=&quot;contained&quot; size=&quot;large&quot; startIcon={&lt;MdOpenInFull /&gt;} onClick={openBoard}&gt;
+          {txt.openBoard}
+        &lt;/Button&gt;
+        {session.status !== WHITEBOARD_STATUS.ACTIVE ? (
+          &lt;Button startIcon={&lt;MdPlayArrow /&gt;} onClick={() =&gt; run(&quot;activate&quot;)}&gt;{txt.activate}&lt;/Button&gt;
+        ) : (
+          &lt;Button startIcon={&lt;MdStop /&gt;} onClick={() =&gt; run(&quot;end&quot;)}&gt;{txt.end}&lt;/Button&gt;
+        )}
+        {session.visibility === WHITEBOARD_VISIBILITY.PUBLIC ? (
+          &lt;Button startIcon={&lt;MdLock /&gt;} onClick={() =&gt; run(&quot;make-private&quot;)}&gt;{txt.makePrivate}&lt;/Button&gt;
+        ) : (
+          &lt;Button startIcon={&lt;MdPublic /&gt;} onClick={() =&gt; run(&quot;make-public&quot;)}&gt;{txt.makePublic}&lt;/Button&gt;
+        )}
+        {publicUrl &amp;&amp; (
+          &lt;Button startIcon={&lt;MdContentCopy /&gt;} onClick={copyLink}&gt;{txt.copyLink}&lt;/Button&gt;
+        )}
+      &lt;/Stack&gt;
+
+      &lt;SessionStudentsPanel session={session} onChanged={() =&gt; refetch()} /&gt;
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>Note: the public URL from <code>make-public</code> is shown once (returned by the API). Persisting/re-deriving it across reloads is out of scope — the admin re-generates by toggling. (If a stable copy-link across reloads is wanted later, add <code>visibility</code>-aware link retrieval; not now.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create the route <code>web/src/app/[lng]/dashboard/whiteboard/[id]/page.jsx</code></strong> (Next 16 async params, mirror <code>certificates/[id]/page.jsx</code>)</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { Suspense } from &quot;react&quot;;
+import WhiteboardSessionDetailPage from &quot;../../../../../../features/whiteboard/pages/WhiteboardSessionDetailPage.jsx&quot;;
+
+export default async function Page({ params }) {
+  const { id } = await params;
+  return (
+    &lt;Suspense&gt;
+      &lt;WhiteboardSessionDetailPage sessionId={id} /&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Fix relative depth against a real <code>[id]/page.jsx</code>.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Verify the detail page</strong></li></ul></div><div class="content-block"><p>Run: as admin, open a session from the list. Expected: meta + chips render; &quot;فتح الجلسة&quot; flips status to &quot;مفتوحة&quot;; &quot;جعلها عامة&quot; returns a URL and reveals &quot;نسخ الرابط العام&quot; (clipboard copy works); adding a student via the autocomplete adds a chip and the count updates; removing a chip removes it. &quot;افتح السبورة&quot; opens <code>/ar/board/&lt;id&gt;</code> in a new tab (blank until Task 9–11).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/whiteboard/pages/WhiteboardSessionDetailPage.jsx web/src/features/whiteboard/components/SessionStudentsPanel.jsx &quot;web/src/app/[lng]/dashboard/whiteboard/[id]/page.jsx&quot;
+git commit -m &quot;feat(web): whiteboard session detail page (students, link, activate)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-9-board-core-—-excalidraw-wrapper-persistence-fullscreen" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">10</span>
+          <h2>Task 9: Board core — Excalidraw wrapper, persistence, fullscreen</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/package.json</code> (add <code>@excalidraw/excalidraw</code>)</li><li>Create: <code>web/src/features/whiteboard/board/lib/boardChannel.js</code></li><li>Create: <code>web/src/features/whiteboard/board/lib/useBoardPersistence.js</code></li><li>Create: <code>web/src/features/whiteboard/board/WhiteboardBoard.jsx</code></li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>@excalidraw/excalidraw</code> (<code>Excalidraw</code> component, <code>serializeAsJSON</code>).</li><li>Produces: <code>boardChannel</code> (<code>saveScene(key, data)</code>, <code>loadScene(key)</code>, <code>emitReaction(reaction)</code> — local no-op stub for now); <code>useBoardPersistence(sessionKey)</code> → <code>{ initialData, onChange }</code>; <code>WhiteboardBoard({ sessionKey, title, students })</code> default export (renders Excalidraw + fullscreen + a slot for the reaction layer added in Task 10).</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Install Excalidraw</strong></li></ul></div><div class="content-block"><p>Run: <code>cd web &amp;&amp; npm install @excalidraw/excalidraw</code> Expected: installs without peer-dep errors (React 18/19 compatible). Confirm: <code>ls web/node_modules/@excalidraw/excalidraw/dist</code>.</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create <code>boardChannel.js</code></strong> — the seam. Today: <code>localStorage</code> for the scene; reactions are a local event emitter. Later: socket.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Thin transport seam for the whiteboard. Today it persists the drawing scene to
+// localStorage and dispatches reactions on a local event bus. Later, swap the
+// bodies to emit/subscribe over socket.io (session:&lt;id&gt; room) without touching
+// the board components that call these functions.
+
+const SCENE_PREFIX = &quot;whiteboard:&quot;;
+const reactionListeners = new Set();
+
+export const boardChannel = {
+  saveScene(sessionKey, data) {
+    try {
+      localStorage.setItem(SCENE_PREFIX + sessionKey, JSON.stringify(data));
+    } catch {
+      /* storage unavailable — board still works in-memory */
+    }
+  },
+  loadScene(sessionKey) {
+    try {
+      const raw = localStorage.getItem(SCENE_PREFIX + sessionKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
+  emitReaction(reaction) {
+    // reaction: { key, studentName? , id }
+    for (const fn of reactionListeners) fn(reaction);
+  },
+  onReaction(fn) {
+    reactionListeners.add(fn);
+    return () =&gt; reactionListeners.delete(fn);
+  },
+};</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>useBoardPersistence.js</code></strong> — debounced save on Excalidraw change, restore on mount.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>import { useCallback, useMemo, useRef } from &quot;react&quot;;
+import { boardChannel } from &quot;./boardChannel.js&quot;;
+
+// Restores the saved scene and returns a debounced onChange that persists
+// elements + a light appState subset. Keyed by sessionKey (session id or token).
+export function useBoardPersistence(sessionKey) {
+  const timer = useRef(null);
+
+  const initialData = useMemo(() =&gt; {
+    const saved = sessionKey ? boardChannel.loadScene(sessionKey) : null;
+    if (!saved) return null;
+    return {
+      elements: saved.elements ?? [],
+      appState: { ...(saved.appState ?? {}), collaborators: undefined },
+      scrollToContent: true,
+    };
+  }, [sessionKey]);
+
+  const onChange = useCallback(
+    (elements, appState) =&gt; {
+      if (!sessionKey) return;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() =&gt; {
+        boardChannel.saveScene(sessionKey, {
+          elements,
+          // Persist only stable view/theme bits, not transient UI/pointer state.
+          appState: {
+            viewBackgroundColor: appState?.viewBackgroundColor,
+            theme: appState?.theme,
+            zoom: appState?.zoom,
+            scrollX: appState?.scrollX,
+            scrollY: appState?.scrollY,
+          },
+        });
+      }, 500);
+    },
+    [sessionKey],
+  );
+
+  return { initialData, onChange };
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Create <code>WhiteboardBoard.jsx</code></strong> — dynamically import Excalidraw (SSR-unsafe), full-viewport, fullscreen toggle. Leave a placeholder <code>&lt;div&gt;</code> where the reaction layer mounts in Task 10.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useRef } from &quot;react&quot;;
+import dynamic from &quot;next/dynamic&quot;;
+import { Box, IconButton, Tooltip } from &quot;@mui/material&quot;;
+import { MdFullscreen } from &quot;react-icons/md&quot;;
+import &quot;@excalidraw/excalidraw/index.css&quot;;
+import { useBoardPersistence } from &quot;./lib/useBoardPersistence.js&quot;;
+
+// Excalidraw touches window/document — never SSR it.
+const Excalidraw = dynamic(
+  async () =&gt; (await import(&quot;@excalidraw/excalidraw&quot;)).Excalidraw,
+  { ssr: false },
+);
+
+export default function WhiteboardBoard({ sessionKey, title, students = [] }) {
+  const rootRef = useRef(null);
+  const { initialData, onChange } = useBoardPersistence(sessionKey);
+
+  const goFullscreen = () =&gt; {
+    const el = rootRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else el.requestFullscreen?.();
+  };
+
+  return (
+    &lt;Box ref={rootRef} sx={{ position: &quot;fixed&quot;, inset: 0, bgcolor: &quot;#fff&quot; }}&gt;
+      &lt;Box sx={{ position: &quot;absolute&quot;, inset: 0 }}&gt;
+        &lt;Excalidraw
+          initialData={initialData}
+          onChange={onChange}
+          langCode=&quot;ar&quot;
+          UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false } }}
+        /&gt;
+      &lt;/Box&gt;
+
+      {/* Fullscreen toggle (top-inline-start, above the canvas) */}
+      &lt;Box sx={{ position: &quot;absolute&quot;, top: 12, insetInlineEnd: 12, zIndex: 5 }}&gt;
+        &lt;Tooltip title={title || &quot;&quot;}&gt;
+          &lt;IconButton onClick={goFullscreen} sx={{ bgcolor: &quot;background.paper&quot;, boxShadow: 2 }}&gt;
+            &lt;MdFullscreen /&gt;
+          &lt;/IconButton&gt;
+        &lt;/Tooltip&gt;
+      &lt;/Box&gt;
+
+      {/* Reaction layer mounts here in Task 10 */}
+      &lt;div id=&quot;whiteboard-reaction-slot&quot; /&gt;
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Confirm the Excalidraw CSS import path for the installed version — recent versions use <code>@excalidraw/excalidraw/index.css</code>; older use <code>.../dist/excalidraw.min.css</code>. Use whichever exists under <code>node_modules</code>.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Temporary harness to verify the board in isolation.</strong> Create <code>web/src/app/[lng]/board/[id]/page.jsx</code> as a minimal wrapper for now (Task 11 finalizes data-loading):</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+import { use } from &quot;react&quot;;
+import WhiteboardBoard from &quot;../../../../features/whiteboard/board/WhiteboardBoard.jsx&quot;;
+export default function Page({ params }) {
+  const { id } = use(params);
+  return &lt;WhiteboardBoard sessionKey={`s-${id}`} title=&quot;Board&quot; students={[]} /&gt;;
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Verify the board renders + persists</strong></li></ul></div><div class="content-block"><p>Run: open <code>http://localhost:3008/ar/board/1</code> as admin. Expected: Excalidraw fills the screen; you can draw with the pen, type Arabic text, erase; the fullscreen button expands to true full-screen; after drawing, refresh the page → the drawing is restored from <code>localStorage</code> (key <code>whiteboard:s-1</code>).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 7: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/package.json web/package-lock.json web/src/features/whiteboard/board &quot;web/src/app/[lng]/board/[id]/page.jsx&quot;
+git commit -m &quot;feat(web): whiteboard board core (Excalidraw + localStorage persistence + fullscreen)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-10-reactions-—-config-bar-overlay-sounds" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">11</span>
+          <h2>Task 10: Reactions — config, bar, overlay, sounds</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Create: <code>web/src/features/whiteboard/board/lib/boardSounds.js</code></li><li>Create: <code>web/src/features/whiteboard/board/config/reactions.js</code></li><li>Create: <code>web/src/features/whiteboard/board/ReactionOverlay.jsx</code></li><li>Create: <code>web/src/features/whiteboard/board/ReactionBar.jsx</code></li><li>Modify: <code>web/src/features/whiteboard/board/WhiteboardBoard.jsx</code> (wire the bar + overlay)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>boardChannel.emitReaction</code>/<code>onReaction</code>; the session <code>students</code> (<code>[{ id, name }]</code>).</li><li>Produces: <code>playReactionSound(kind)</code>; <code>REACTIONS</code> array (<code>{ key, emoji, labelAr, labelEn, sound, praiseAr }</code>); <code>ReactionOverlay({ students })</code>; <code>ReactionBar({ students, onFire })</code>.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create <code>boardSounds.js</code></strong> — self-contained Web Audio playful tones (no asset files; works offline). If the games engine exposes a reusable sound util, prefer importing it; otherwise use this.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// Playful, asset-free sounds via Web Audio. One AudioContext, lazily created and
+// resumed on first user gesture (the reaction click itself is a gesture).
+let ctx = null;
+function ac() {
+  if (typeof window === &quot;undefined&quot;) return null;
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === &quot;suspended&quot;) ctx.resume();
+  return ctx;
+}
+function tone(freq, start, dur, type = &quot;sine&quot;, gain = 0.15) {
+  const a = ac();
+  if (!a) return;
+  const osc = a.createOscillator();
+  const g = a.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0, a.currentTime + start);
+  g.gain.linearRampToValueAtTime(gain, a.currentTime + start + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + start + dur);
+  osc.connect(g).connect(a.destination);
+  osc.start(a.currentTime + start);
+  osc.stop(a.currentTime + start + dur);
+}
+
+// Distinct little motifs per reaction kind.
+const MOTIFS = {
+  cheer: () =&gt; [523, 659, 784, 1046].forEach((f, i) =&gt; tone(f, i * 0.09, 0.25, &quot;triangle&quot;)),
+  pop: () =&gt; tone(880, 0, 0.12, &quot;square&quot;, 0.2),
+  clap: () =&gt; [300, 260, 320].forEach((f, i) =&gt; tone(f, i * 0.06, 0.08, &quot;sawtooth&quot;, 0.12)),
+  sparkle: () =&gt; [1200, 1600, 2000].forEach((f, i) =&gt; tone(f, i * 0.05, 0.18, &quot;sine&quot;, 0.1)),
+  firework: () =&gt; { tone(120, 0, 0.2, &quot;sine&quot;, 0.2); [800, 1000, 1300].forEach((f, i) =&gt; tone(f, 0.18 + i * 0.04, 0.2, &quot;triangle&quot;, 0.1)); },
+};
+
+export function playReactionSound(kind) {
+  (MOTIFS[kind] || MOTIFS.cheer)();
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Create <code>config/reactions.js</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="js"><code>// The playful reaction palette. Each fires a burst animation + a sound; some
+// carry an optional praise phrase that can be personalised with a student name.
+export const REACTIONS = [
+  { key: &quot;balloons&quot;, emoji: &quot;🎈&quot;, labelAr: &quot;بالونات&quot;, labelEn: &quot;Balloons&quot;, sound: &quot;pop&quot;, praiseAr: null },
+  { key: &quot;star&quot;, emoji: &quot;⭐&quot;, labelAr: &quot;شاطر&quot;, labelEn: &quot;Great&quot;, sound: &quot;cheer&quot;, praiseAr: &quot;شاطر&quot; },
+  { key: &quot;clap&quot;, emoji: &quot;👏&quot;, labelAr: &quot;تصفيق&quot;, labelEn: &quot;Clap&quot;, sound: &quot;clap&quot;, praiseAr: null },
+  { key: &quot;heart&quot;, emoji: &quot;❤️&quot;, labelAr: &quot;قلوب&quot;, labelEn: &quot;Hearts&quot;, sound: &quot;sparkle&quot;, praiseAr: null },
+  { key: &quot;firework&quot;, emoji: &quot;🎆&quot;, labelAr: &quot;ألعاب نارية&quot;, labelEn: &quot;Fireworks&quot;, sound: &quot;firework&quot;, praiseAr: null },
+  { key: &quot;mashallah&quot;, emoji: &quot;🌟&quot;, labelAr: &quot;ما شاء الله&quot;, labelEn: &quot;Bravo&quot;, sound: &quot;cheer&quot;, praiseAr: &quot;ما شاء الله&quot; },
+];
+
+// Number of floating emoji particles per burst.
+export const BURST_COUNT = 14;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>ReactionOverlay.jsx</code></strong> — listens to <code>boardChannel.onReaction</code>, renders bursts of floating emoji + optional centered praise text. Uses CSS keyframe animations (RTL-safe, pointer-events:none so it never blocks drawing).</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useEffect, useState } from &quot;react&quot;;
+import { Box, keyframes } from &quot;@mui/material&quot;;
+import { boardChannel } from &quot;./lib/boardChannel.js&quot;;
+import { REACTIONS, BURST_COUNT } from &quot;./config/reactions.js&quot;;
+
+const floatUp = keyframes`
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translateY(-90vh) scale(1.1); opacity: 0; }
+`;
+const popIn = keyframes`
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  20%  { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+`;
+
+export default function ReactionOverlay() {
+  const [bursts, setBursts] = useState([]); // { id, emoji, praise, particles:[{left,delay,dur,size}] }
+
+  useEffect(() =&gt; {
+    return boardChannel.onReaction((r) =&gt; {
+      const def = REACTIONS.find((x) =&gt; x.key === r.key);
+      if (!def) return;
+      const particles = Array.from({ length: BURST_COUNT }).map((_, i) =&gt; ({
+        left: 5 + ((i * 97) % 90), // spread across width, deterministic (no Math.random needed)
+        delay: (i % 7) * 0.12,
+        dur: 2.4 + (i % 5) * 0.3,
+        size: 26 + (i % 4) * 8,
+      }));
+      const praise = def.praiseAr
+        ? r.studentName ? `${def.praiseAr} يا ${r.studentName}` : def.praiseAr
+        : null;
+      const burst = { id: r.id, emoji: def.emoji, praise, particles };
+      setBursts((b) =&gt; [...b, burst]);
+      setTimeout(() =&gt; setBursts((b) =&gt; b.filter((x) =&gt; x.id !== burst.id)), 4200);
+    });
+  }, []);
+
+  return (
+    &lt;Box sx={{ position: &quot;absolute&quot;, inset: 0, pointerEvents: &quot;none&quot;, overflow: &quot;hidden&quot;, zIndex: 4 }}&gt;
+      {bursts.map((burst) =&gt; (
+        &lt;Box key={burst.id}&gt;
+          {burst.particles.map((p, i) =&gt; (
+            &lt;Box
+              key={i}
+              sx={{
+                position: &quot;absolute&quot;, bottom: 0, insetInlineStart: `${p.left}%`,
+                fontSize: p.size, animation: `${floatUp} ${p.dur}s ease-out ${p.delay}s forwards`,
+              }}
+            &gt;
+              {burst.emoji}
+            &lt;/Box&gt;
+          ))}
+          {burst.praise &amp;&amp; (
+            &lt;Box
+              sx={{
+                position: &quot;absolute&quot;, top: &quot;40%&quot;, insetInlineStart: &quot;50%&quot;,
+                transform: &quot;translate(-50%, -50%)&quot;, animation: `${popIn} 3.2s ease-out forwards`,
+                fontSize: { xs: 40, md: 72 }, fontWeight: 800, color: &quot;#ff7a00&quot;,
+                textShadow: &quot;0 3px 0 #fff, 0 6px 18px rgba(0,0,0,.25)&quot;, whiteSpace: &quot;nowrap&quot;,
+              }}
+            &gt;
+              {burst.praise}
+            &lt;/Box&gt;
+          )}
+        &lt;/Box&gt;
+      ))}
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Create <code>ReactionBar.jsx</code></strong> — collapsible bottom bar: an optional student selector (from session students) + a button per reaction. Firing calls <code>onFire(reactionKey, studentName)</code>.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { useState } from &quot;react&quot;;
+import { Box, Chip, IconButton, MenuItem, Select, Stack } from &quot;@mui/material&quot;;
+import { MdEmojiEmotions, MdExpandMore } from &quot;react-icons/md&quot;;
+import { REACTIONS } from &quot;./config/reactions.js&quot;;
+
+export default function ReactionBar({ students = [], onFire }) {
+  const [open, setOpen] = useState(true);
+  const [studentId, setStudentId] = useState(&quot;&quot;);
+
+  const nameFor = (id) =&gt; students.find((s) =&gt; String(s.id) === String(id))?.name || null;
+
+  return (
+    &lt;Box sx={{ position: &quot;absolute&quot;, insetInline: 0, bottom: 0, zIndex: 6, pointerEvents: &quot;none&quot; }}&gt;
+      &lt;Stack alignItems=&quot;center&quot; sx={{ pointerEvents: &quot;none&quot; }}&gt;
+        &lt;IconButton onClick={() =&gt; setOpen((v) =&gt; !v)} sx={{ pointerEvents: &quot;auto&quot;, bgcolor: &quot;background.paper&quot;, boxShadow: 2, mb: 1 }}&gt;
+          {open ? &lt;MdExpandMore /&gt; : &lt;MdEmojiEmotions /&gt;}
+        &lt;/IconButton&gt;
+        {open &amp;&amp; (
+          &lt;Stack
+            direction=&quot;row&quot; spacing={1} alignItems=&quot;center&quot;
+            sx={{ pointerEvents: &quot;auto&quot;, bgcolor: &quot;background.paper&quot;, borderRadius: 3, boxShadow: 4, px: 2, py: 1, mb: 2, flexWrap: &quot;wrap&quot;, maxWidth: &quot;95vw&quot; }}
+          &gt;
+            {students.length &gt; 0 &amp;&amp; (
+              &lt;Select
+                size=&quot;small&quot; displayEmpty value={studentId}
+                onChange={(e) =&gt; setStudentId(e.target.value)} sx={{ minWidth: 140 }}
+              &gt;
+                &lt;MenuItem value=&quot;&quot;&gt;&lt;em&gt;بدون اسم&lt;/em&gt;&lt;/MenuItem&gt;
+                {students.map((s) =&gt; &lt;MenuItem key={s.id} value={s.id}&gt;{s.name}&lt;/MenuItem&gt;)}
+              &lt;/Select&gt;
+            )}
+            {REACTIONS.map((r) =&gt; (
+              &lt;Chip
+                key={r.key} clickable label={`${r.emoji} ${r.labelAr}`}
+                onClick={() =&gt; onFire(r.key, nameFor(studentId))}
+                sx={{ fontSize: 18, py: 2.2 }}
+              /&gt;
+            ))}
+          &lt;/Stack&gt;
+        )}
+      &lt;/Stack&gt;
+    &lt;/Box&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Wire the bar + overlay into <code>WhiteboardBoard.jsx</code>.</strong> Replace the <code>&lt;div id=&quot;whiteboard-reaction-slot&quot; /&gt;</code> placeholder and add the fire handler + imports.</li></ul></div><div class="content-block"><p>Add imports at the top:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import ReactionOverlay from &quot;./ReactionOverlay.jsx&quot;;
+import ReactionBar from &quot;./ReactionBar.jsx&quot;;
+import { boardChannel } from &quot;./lib/boardChannel.js&quot;;
+import { playReactionSound } from &quot;./lib/boardSounds.js&quot;;
+import { REACTIONS } from &quot;./config/reactions.js&quot;;</code></pre></div></div><div class="content-block"><p>Add a counter ref + handler inside the component (before <code>return</code>):</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>const burstId = useRef(0);
+const fire = (key, studentName) =&gt; {
+  const def = REACTIONS.find((r) =&gt; r.key === key);
+  playReactionSound(def?.sound);
+  boardChannel.emitReaction({ id: ++burstId.current, key, studentName });
+};</code></pre></div></div><div class="content-block"><p>Replace the placeholder div with:</p></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&lt;ReactionOverlay /&gt;
+&lt;ReactionBar students={students} onFire={fire} /&gt;</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 6: Verify reactions</strong></li></ul></div><div class="content-block"><p>Run: open <code>http://localhost:3008/ar/board/1</code>. Expected: the bottom reaction bar shows; clicking 🎈/⭐/👏/❤️/🎆/🌟 launches a burst of floating emoji with a distinct sound; &quot;شاطر&quot; and &quot;ما شاء الله&quot; show big centered praise text; picking a student name from the selector makes praise read &quot;شاطر يا {اسم}&quot;; reactions never block drawing (you can draw through them).</p></div><div class="content-block"><ul><li>[ ] <strong>Step 7: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add web/src/features/whiteboard/board
+git commit -m &quot;feat(web): whiteboard playful reactions (bursts, praise, Web Audio sounds)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="task-11-finalize-board-routes-—-private-auth-by-id-public-token" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">12</span>
+          <h2>Task 11: Finalize board routes — private (auth by id) + public (token)</h2>
+        </div>
+        <div class="content-block"><p><strong>Files:</strong></p></div><div class="content-block"><ul><li>Modify: <code>web/src/app/[lng]/board/[id]/page.jsx</code> (load the real session)</li><li>Create: <code>web/src/features/whiteboard/board/BoardLoader.jsx</code> (shared data-loading wrapper)</li><li>Create: <code>web/src/app/[lng]/w/[token]/page.jsx</code> (public token board)</li></ul></div><div class="content-block"><p><strong>Interfaces:</strong></p></div><div class="content-block"><ul><li>Consumes: <code>useRequest</code> (private: <code>GET /whiteboard-sessions/:id</code>; public: <code>apiFetch.public</code> via <code>useRequest({ isPublic: true })</code> against <code>whiteboard-sessions/public/:token</code>), <code>WhiteboardBoard</code>.</li><li>Produces: <code>BoardLoader({ mode: &quot;private&quot;|&quot;public&quot;, idOrToken })</code> — fetches session meta, maps to <code>{ sessionKey, title, students:[{id,name}] }</code>, renders <code>WhiteboardBoard</code> or the unavailable state.</li></ul></div><div class="content-block"><ul><li>[ ] <strong>Step 1: Create <code>BoardLoader.jsx</code></strong> — normalizes both data sources into the <code>WhiteboardBoard</code> props and handles the &quot;unavailable&quot; state for a bad/expired public token.</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>&quot;use client&quot;;
+
+import { Box, CircularProgress, Typography } from &quot;@mui/material&quot;;
+import { useRequest } from &quot;../../../hooks/request/useRequest.js&quot;;
+import { WHITEBOARD_URL } from &quot;../config/constant.js&quot;;
+import { useWhiteboardText } from &quot;../config/whiteboardText.js&quot;;
+import WhiteboardBoard from &quot;./WhiteboardBoard.jsx&quot;;
+
+// mode: &quot;private&quot; (authed, by id) | &quot;public&quot; (token, no auth)
+export default function BoardLoader({ mode, idOrToken }) {
+  const txt = useWhiteboardText();
+  const isPublic = mode === &quot;public&quot;;
+  const url = isPublic
+    ? `${WHITEBOARD_URL}/public/${idOrToken}`
+    : `${WHITEBOARD_URL}/${idOrToken}`;
+
+  const { data, isLoading, error } = useRequest({
+    url, method: &quot;get&quot;, isPublic, autoFetch: true, shouldAutoToast: false,
+  });
+
+  if (isLoading) {
+    return &lt;Box sx={{ position: &quot;fixed&quot;, inset: 0, display: &quot;grid&quot;, placeItems: &quot;center&quot; }}&gt;&lt;CircularProgress /&gt;&lt;/Box&gt;;
+  }
+  if (error || !data) {
+    return (
+      &lt;Box sx={{ position: &quot;fixed&quot;, inset: 0, display: &quot;grid&quot;, placeItems: &quot;center&quot;, p: 3, textAlign: &quot;center&quot; }}&gt;
+        &lt;Typography variant=&quot;h5&quot;&gt;{txt.unavailable}&lt;/Typography&gt;
+      &lt;/Box&gt;
+    );
+  }
+
+  // Private detail returns students:[{ id, studentId, student:{ id, name, nickname }}];
+  // public returns students:[{ id, name }]. Normalize to [{ id, name }].
+  const students = (data.students ?? []).map((s) =&gt;
+    s.student ? { id: s.student.id, name: s.student.nickname || s.student.name } : { id: s.id, name: s.name },
+  );
+
+  return (
+    &lt;WhiteboardBoard
+      sessionKey={isPublic ? `t-${idOrToken}` : `s-${data.id}`}
+      title={data.title}
+      students={students}
+    /&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Confirm <code>useRequest</code> returns an <code>error</code> field and accepts <code>isPublic</code>/<code>shouldAutoToast</code> per the hook&#39;s real API; adjust names if different.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 2: Replace <code>web/src/app/[lng]/board/[id]/page.jsx</code></strong> with the real loader</li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { Suspense } from &quot;react&quot;;
+import BoardLoader from &quot;../../../../features/whiteboard/board/BoardLoader.jsx&quot;;
+
+export default async function Page({ params }) {
+  const { id } = await params;
+  return (
+    &lt;Suspense&gt;
+      &lt;BoardLoader mode=&quot;private&quot; idOrToken={id} /&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre></div></div><div class="content-block"><p>(Match the relative depth of other <code>[lng]/.../page.jsx</code> files.)</p></div><div class="content-block"><ul><li>[ ] <strong>Step 3: Create <code>web/src/app/[lng]/w/[token]/page.jsx</code></strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="jsx"><code>import { Suspense } from &quot;react&quot;;
+import BoardLoader from &quot;../../../../features/whiteboard/board/BoardLoader.jsx&quot;;
+
+export default async function Page({ params }) {
+  const { token } = await params;
+  return (
+    &lt;Suspense&gt;
+      &lt;BoardLoader mode=&quot;public&quot; idOrToken={token} /&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre></div></div><div class="content-block"><ul><li>[ ] <strong>Step 4: Full end-to-end verification</strong></li></ul></div><div class="content-block"><p>Run: with both dev servers up:</p></div><div class="content-block"><ol><li>As admin: create a session, add 2 students, activate, click &quot;افتح السبورة&quot; → <code>/ar/board/&lt;id&gt;</code> loads the board with the 2 students available in the reaction selector; draw + fire reactions; refresh → drawing restored.</li><li>Click &quot;جعلها عامة&quot;, copy the link → open the <code>/ar/w/&lt;token&gt;</code> URL in a private/incognito window (NOT logged in) → the board loads (public), student names present, drawing + reactions work; its localStorage key is <code>whiteboard:t-&lt;token&gt;</code> (separate from the private board&#39;s scene).</li><li>Back as admin: &quot;جعلها خاصة&quot; → reopen the same public link in incognito → shows &quot;الجلسة غير متاحة&quot;.</li><li>Log out entirely and visit <code>/ar/board/&lt;id&gt;</code> → redirected to <code>/ar/login</code> (the <code>/board</code> protected prefix works).</li></ol></div><div class="content-block"><ul><li>[ ] <strong>Step 5: Commit</strong></li></ul></div><div class="content-block"><div class="code-block-wrap"><button class="copy-btn" type="button">Copy</button><pre class="code-block" data-language="bash"><code>git add &quot;web/src/app/[lng]/board/[id]/page.jsx&quot; &quot;web/src/app/[lng]/w/[token]/page.jsx&quot; web/src/features/whiteboard/board/BoardLoader.jsx
+git commit -m &quot;feat(web): finalize whiteboard board routes (private by id, public by token)&quot;</code></pre></div></div><div class="content-block"><hr /></div>
+      </div>
+    </section>
+    <section class="doc-section" id="self-review-completed-during-authoring" data-searchable>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-num" aria-hidden="true">13</span>
+          <h2>Self-Review (completed during authoring)</h2>
+        </div>
+        <div class="content-block"><p><strong>Spec coverage:</strong></p></div><div class="content-block"><ul><li>Admin-only session CRUD → Tasks 1–5. ✓</li><li>Real-student attach/detach → Task 4 (<code>addStudent</code> rejects non-STUDENT), Task 8 (picker). ✓</li><li>Activate/end lifecycle → Tasks 4–5, 8. ✓</li><li>Public/private token link (hashed, public route before auth) → Tasks 2 (<code>publicTokenHash @unique</code>), 4 (<code>makePublic</code>/<code>getPublicByToken</code>), 5 (route order). ✓</li><li>Full-screen board outside dashboard shell → Tasks 9, 11 (<code>/board</code>, <code>/w</code> routes; <code>position:fixed inset:0</code>). ✓</li><li>Excalidraw professional drawing → Task 9. ✓</li><li>Playful reactions + sounds + optional student name → Task 10. ✓</li><li>localStorage-only drawing persistence → Task 9 (<code>boardChannel</code>/<code>useBoardPersistence</code>). ✓</li><li>Socket-ready seam (not built) → Task 9 (<code>boardChannel</code>). ✓</li><li>Nav item + permission gating + i18n codes → Tasks 1, 6. ✓</li><li><code>/board</code> protected, <code>/w</code> public → Task 6 (<code>PROTECTED_PREFIXES</code>), verified Task 11 Step 4. ✓</li></ul></div><div class="content-block"><p><strong>Type/name consistency:</strong> repo method names (<code>getByIdWithStudents</code>, <code>getByTokenHash</code>, <code>setPublic</code>/<code>setPrivate</code>, <code>findStudentLink</code>) are used identically across repo (Task 3) and usecase (Task 4); <code>boardChannel.emitReaction</code>/<code>onReaction</code>, <code>saveScene</code>/<code>loadScene</code> consistent across Tasks 9–11; <code>sessionKey</code> prop consistent (<code>WhiteboardBoard</code> ↔ <code>BoardLoader</code>); message codes identical between Task 1 (definition), Task 5 (controller use), Task 6 (localization).</p></div><div class="content-block"><p><strong>Assumptions the implementer must confirm against real files (flagged inline):</strong> exact <code>useRequest</code> mutation trigger signature; <code>DataTable</code> prop/column contract; <code>userRepo.getById</code> name + returned <code>role</code>; <code>ENV.appUrl</code> config path; <code>conflict</code> AppError factory presence; Excalidraw CSS import path for the installed version; <code>messagesCodes.js</code> nesting shape. Each is called out in the step where it matters.</p></div>
+      </div>
+    </section>
+
+          <footer class="doc-footer">
+            تم توليد هذه الصفحة تلقائياً من ملفات Markdown.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>window._TOC = [{"id":"file-structure","title":"File Structure"},{"id":"task-1-shared-constants-permission-message-codes","title":"Task 1: Shared constants, permission, message codes"},{"id":"task-2-prisma-schema-—-whiteboard-session-models","title":"Task 2: Prisma schema — whiteboard session models"},{"id":"task-3-backend-dto-repo","title":"Task 3: Backend DTO + repo"},{"id":"task-4-backend-usecase-business-logic-token","title":"Task 4: Backend usecase (business logic + token)"},{"id":"task-5-validation-controller-route-registration","title":"Task 5: Validation, controller, route, registration"},{"id":"task-6-frontend-wiring-—-i18n-codes-nav-item-protected-prefix-feature-config","title":"Task 6: Frontend wiring — i18n codes, nav item, protected prefix, feature config"},{"id":"task-7-list-page-create-dialog-route","title":"Task 7: List page + create dialog + route"},{"id":"task-8-session-detail-page-students-link-activate-route","title":"Task 8: Session detail page (students, link, activate) + route"},{"id":"task-9-board-core-—-excalidraw-wrapper-persistence-fullscreen","title":"Task 9: Board core — Excalidraw wrapper, persistence, fullscreen"},{"id":"task-10-reactions-—-config-bar-overlay-sounds","title":"Task 10: Reactions — config, bar, overlay, sounds"},{"id":"task-11-finalize-board-routes-—-private-auth-by-id-public-token","title":"Task 11: Finalize board routes — private (auth by id) + public (token)"},{"id":"self-review-completed-during-authoring","title":"Self-Review (completed during authoring)"}];</script>
+    <script src="../../interactive.js"></script>
+  </body>
+</html>

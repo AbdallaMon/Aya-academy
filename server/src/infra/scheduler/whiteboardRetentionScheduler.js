@@ -11,7 +11,7 @@
 
 import cron from "node-cron";
 import { settingsUsecase } from "../../modules/settings/settings.usecase.js";
-import { whiteboardSessionUsecase } from "../../modules/whiteboardSessions/whiteboardSession.usecase.js";
+import { whiteboardSessionUsecase } from "../../modules/sessions/whiteboardSessions/whiteboardSession.usecase.js";
 
 // 03:30 every day.
 const CRON_EXPR = "30 3 * * *";

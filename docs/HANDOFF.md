@@ -1,21 +1,21 @@
-# Aya Academy — Handoff Prompt (لوكيل ذكاء اصطناعي يكمّل المشروع)
+# Ayah Academy — Handoff Prompt (لوكيل ذكاء اصطناعي يكمّل المشروع)
 
 > انسخ كل ما تحت هذا السطر والصقه كبرومبت لوكيل (AI agent) جديد ليكمل العمل.
 
 ---
 
-أنت **مطوّر Full-Stack Senior** تكمل بناء مشروع **Aya Academy** (أكاديمية تعليم قرآن وأخلاق للأطفال) في `c:\coding\aya-academy`. اشتغل باستقلالية، اتخذ القرارات بنفسك، نفّذ ولا تتوقف، وتحقّق من كل خطوة فعليًا (build/boot) قبل ما تقول إنها خلصت. ردّك بالعربي.
+أنت **مطوّر Full-Stack Senior** تكمل بناء مشروع **Ayah Academy** (أكاديمية تعليم قرآن وأخلاق للأطفال) في `c:\coding\ayah-academy`. اشتغل باستقلالية، اتخذ القرارات بنفسك، نفّذ ولا تتوقف، وتحقّق من كل خطوة فعليًا (build/boot) قبل ما تقول إنها خلصت. ردّك بالعربي.
 
 ## 0) قرارات معمارية مُقفلة (التزم بها حرفيًا)
 - **المرجع:** قلّد معمارية `C:\coding\Transaction-app` بالظبط (هي عائلة نفس المشروع).
 - **JavaScript فقط (ESM) — ممنوع TypeScript** في الفرونت والباك.
 - **MySQL/MariaDB + Prisma 7** (generator `prisma-client-js` بـ output مخصص + `@prisma/adapter-mariadb`). الـ schema بدون `url`؛ الـ url للـ migrations من `prisma.config.ts`.
-- **Monorepo بـ npm workspaces:** `packages/db` (`@aya/db`) + `packages/shared` (`@aya/shared`) + `server/` (Express) + `web/` (Next.js App Router + MUI، **JSX مش TS**).
+- **Monorepo بـ npm workspaces:** `packages/db` (`@ayah/db`) + `packages/shared` (`@ayah/shared`) + `server/` (Express) + `web/` (Next.js App Router + MUI، **JSX مش TS**).
 - عقد الـ API: `{ success, message, data, translationKey }` + `AppError` بأكواد رسائل محايدة. Auth: JWT (access+refresh) في httpOnly cookies، الصلاحيات per role (`getPermissionsForRole`).
 - العملة GBP. اللغتان: عربي/إنجليزي (i18next، الافتراضي عربي، RTL).
 
 ## 1) اللي خلص فعليًا واتأكد منه ✅
-- **Monorepo + الحزم:** `@aya/shared` (أدوار/صلاحيات/enums/أكواد رسائل — JS منبسط)، و`@aya/db` (Prisma 7 + adapter-mariadb، سكيما كاملة **+35 موديل** تغطي كل الميزات؛ `prisma generate` بيشتغل لـ MySQL).
+- **Monorepo + الحزم:** `@ayah/shared` (أدوار/صلاحيات/enums/أكواد رسائل — JS منبسط)، و`@ayah/db` (Prisma 7 + adapter-mariadb، سكيما كاملة **+35 موديل** تغطي كل الميزات؛ `prisma generate` بيشتغل لـ MySQL).
 - **بنية السيرفر (JS):** env, cors, AppError + error-handler, response envelope, middlewares (auth/permissions/validate/asyncHandler), jwt, hash, pagination/search helpers — `nodemon src/server.js`.
 - **٨ موديولات باك جاهزة وبتشتغل** (route→controller→usecase→repo→validation، Prisma في الـ repo فقط):
   `auth` · `users`(+ ربط ولي أمر/طلاب + scope) · `plans`(+ خصومات + `/plans/public` تسعير) · `sessions`(حصص) · `notifications`(+ خدمة `createNotification`) · `coupons`(+ `/validate`) · `subscriptions`(+ `/expiring` + إشعارات) · `reports`.
@@ -34,11 +34,11 @@
 
 ## 3) اتفاقيات الكود (إلزامية)
 - طبقات صارمة: `route → controller → usecase → repo`. Prisma **فقط** في `*.repo.js`. كنترولر رفيع. منطق في usecase. كل دالة usecase تأخذ `authUser`/`authUserId` وتفحص الـ scope.
-- ESM: كل الاستيرادات النسبية تنتهي بـ `.js`. Prisma: `import { prisma } from "@aya/db/prisma.client.js"`. الثوابت: `@aya/shared`.
+- ESM: كل الاستيرادات النسبية تنتهي بـ `.js`. Prisma: `import { prisma } from "@ayah/db/prisma.client.js"`. الثوابت: `@ayah/shared`.
 - Validation بـ **Zod** في `*.validation.js`. أخطاء عبر `AppError`/factories مع `translationKey: messagesNames.<x>Messages`.
 - القوائم: `paginate()` + `paginatedResult()` + `ok(res, result)`؛ بحث بـ `buildSearchQuery` (MySQL — بدون `mode:"insensitive"`).
-- صلاحيات من `PERMISSIONS.<X>` (`@aya/shared`)، per-route مثل موديول users.
-- **لو غيّرت السكيما:** عدّل الـ enum في `schema.prisma` **و** ما يقابله في `@aya/shared/constants/enums.js` معًا، ثم `npm run db:generate`.
+- صلاحيات من `PERMISSIONS.<X>` (`@ayah/shared`)، per-route مثل موديول users.
+- **لو غيّرت السكيما:** عدّل الـ enum في `schema.prisma` **و** ما يقابله في `@ayah/shared/constants/enums.js` معًا، ثم `npm run db:generate`.
 
 ## 4) المطلوب منك (بالترتيب) — نفّذ، استخدم sub-agents بالتوازي للأجزاء المستقلة
 

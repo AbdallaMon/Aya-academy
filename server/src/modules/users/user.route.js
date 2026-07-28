@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { USER_PERMISSIONS } from "@aya/shared";
+import { USER_PERMISSIONS, messagesNames } from "@ayah/shared";
 import { userController } from "./user.controller.js";
 import { UserValidation } from "./user.validation.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
@@ -21,14 +21,18 @@ userRoutes.get("/my-students", asyncHandler(userController.myStudents));
 userRoutes.post(
   "/",
   authMiddleware.requirePermissions([USER_PERMISSIONS.CREATE]),
-  validate(UserValidation.createUserSchema),
+  validate(UserValidation.createUserSchema, "body", messagesNames.userMessages),
   asyncHandler(userController.create),
 );
 
 userRoutes.post(
   "/students",
   authMiddleware.requirePermissions([USER_PERMISSIONS.CREATE]),
-  validate(UserValidation.createStudentSchema),
+  validate(
+    UserValidation.createStudentSchema,
+    "body",
+    messagesNames.userMessages,
+  ),
   asyncHandler(userController.createStudent),
 );
 
@@ -53,14 +57,14 @@ userRoutes.get(
 userRoutes.patch(
   "/:id/level",
   authMiddleware.requirePermissions([USER_PERMISSIONS.SET_LEVEL]),
-  validate(UserValidation.setLevelSchema),
+  validate(UserValidation.setLevelSchema, "body", messagesNames.userMessages),
   asyncHandler(userController.setLevel),
 );
 
 userRoutes.post(
   "/:id/ban",
   authMiddleware.requirePermissions([USER_PERMISSIONS.BAN]),
-  validate(UserValidation.banSchema),
+  validate(UserValidation.banSchema, "body", messagesNames.userMessages),
   asyncHandler(userController.ban),
 );
 
@@ -70,20 +74,29 @@ userRoutes.post(
   asyncHandler(userController.unban),
 );
 
-// Avatar: auth-only; object scope (admin / self / parent-of-student) is enforced
-// in the usecase. The upload that produced the attachment was permission-gated.
+// Avatar changes require USER.EDIT; object scope (admin / self /
+// parent-of-student) and attachment ownership are enforced in the usecase.
 userRoutes.patch(
   "/:id/avatar",
-  validate(UserValidation.setAvatarSchema),
+  authMiddleware.requirePermissions([USER_PERMISSIONS.EDIT]),
+  validate(
+    UserValidation.setAvatarSchema,
+    "body",
+    messagesNames.userMessages,
+  ),
   asyncHandler(userController.setAvatar),
 );
 
-userRoutes.delete("/:id/avatar", asyncHandler(userController.removeAvatar));
+userRoutes.delete(
+  "/:id/avatar",
+  authMiddleware.requirePermissions([USER_PERMISSIONS.EDIT]),
+  asyncHandler(userController.removeAvatar),
+);
 
 userRoutes.put(
   "/:id",
   authMiddleware.requirePermissions([USER_PERMISSIONS.EDIT]),
-  validate(UserValidation.updateUserSchema),
+  validate(UserValidation.updateUserSchema, "body", messagesNames.userMessages),
   asyncHandler(userController.update),
 );
 
@@ -96,7 +109,7 @@ userRoutes.delete(
 userRoutes.post(
   "/:studentId/parents/:parentId",
   authMiddleware.requirePermissions([USER_PERMISSIONS.EDIT]),
-  validate(UserValidation.linkSchema),
+  validate(UserValidation.linkSchema, "body", messagesNames.userMessages),
   asyncHandler(userController.link),
 );
 

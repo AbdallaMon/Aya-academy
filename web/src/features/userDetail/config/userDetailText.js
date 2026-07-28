@@ -18,6 +18,7 @@ export const userDetailText = {
     noPhone: "لا يوجد هاتف",
     // tabs
     tabOverview: "نظرة عامة",
+    tabProfile: "بيانات الحساب",
     tabBadges: "الأوسمة",
     tabCertificates: "الشهادات",
     tabEvaluations: "التقييمات",
@@ -47,6 +48,34 @@ export const userDetailText = {
     contactTitle: "معلومات الاتصال",
     profileTitle: "الملف الشخصي",
     joinedOn: "تاريخ الانضمام",
+    accountDetailsTitle: "بيانات الحساب",
+    childAccountHint:
+      "يمكن لولي الأمر تعديل بيانات الطفل وصورته واسم المستخدم وكلمة المرور.",
+    parentAccountHint:
+      "حدّث بياناتك وصورتك واسم المستخدم وكلمة المرور.",
+    nameLabel: "الاسم",
+    usernameLabel: "اسم المستخدم",
+    usernameEditHint:
+      "يمكن تغييره بشرط ألا يكون مستخدمًا في حساب آخر.",
+    usernameAlreadyExists:
+      "اسم المستخدم مستخدم بالفعل، اختر اسم مستخدم آخر.",
+    nicknameLabel: "اللقب",
+    emailRecoveryHint:
+      "البريد اختياري إذا كان للحساب اسم مستخدم، لكنه مطلوب لاسترداد كلمة المرور.",
+    identityRequired: "يجب أن يحتوي الحساب على بريد إلكتروني أو اسم مستخدم على الأقل",
+    invalidEmail: "أدخل بريدًا إلكترونيًا صحيحًا",
+    invalidUsername:
+      "اسم المستخدم من 3 إلى 30 حرفًا، ويقبل الحروف والأرقام والنقطة والشرطة فقط",
+    newPassword: "كلمة مرور جديدة",
+    passwordLeaveBlank:
+      "اترك كلمة المرور فارغة إذا كنت لا تريد تغييرها.",
+    confirmPassword: "تأكيد كلمة المرور",
+    passwordShort: "كلمة المرور يجب ألا تقل عن 6 أحرف",
+    passwordsDontMatch: "كلمتا المرور غير متطابقتين",
+    saveAccount: "حفظ بيانات الحساب",
+    myProfileTitle: "ملفي الشخصي",
+    myProfileDescription:
+      "عدّل بيانات حسابك وصورتك واسم المستخدم وكلمة المرور.",
     // badges
     awardBadge: "منح وسام",
     revoke: "سحب",
@@ -147,6 +176,7 @@ export const userDetailText = {
     noEmail: "No email",
     noPhone: "No phone",
     tabOverview: "Overview",
+    tabProfile: "Account",
     tabBadges: "Badges",
     tabCertificates: "Certificates",
     tabEvaluations: "Evaluations",
@@ -174,6 +204,34 @@ export const userDetailText = {
     contactTitle: "Contact information",
     profileTitle: "Profile",
     joinedOn: "Joined on",
+    accountDetailsTitle: "Account details",
+    childAccountHint:
+      "A parent can update the child's details, photo, username, and password.",
+    parentAccountHint:
+      "Update your details, photo, username, and password.",
+    nameLabel: "Name",
+    usernameLabel: "Username",
+    usernameEditHint:
+      "You can change it as long as it is not used by another account.",
+    usernameAlreadyExists:
+      "This username is already in use. Choose another username.",
+    nicknameLabel: "Nickname",
+    emailRecoveryHint:
+      "Email is optional when the account has a username, but it is required for password recovery.",
+    identityRequired: "The account must keep an email or username",
+    invalidEmail: "Enter a valid email address",
+    invalidUsername:
+      "Username must be 3–30 characters using letters, numbers, dots, underscores or hyphens",
+    newPassword: "New password",
+    passwordLeaveBlank:
+      "Leave the password blank if you do not want to change it.",
+    confirmPassword: "Confirm password",
+    passwordShort: "Password must be at least 6 characters",
+    passwordsDontMatch: "Passwords do not match",
+    saveAccount: "Save account",
+    myProfileTitle: "My profile",
+    myProfileDescription:
+      "Update your account details, photo, username, and password.",
     awardBadge: "Award badge",
     revoke: "Revoke",
     revokeConfirm: "Revoke this badge from the student?",

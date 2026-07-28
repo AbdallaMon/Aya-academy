@@ -8,8 +8,8 @@
 
 import crypto from "crypto";
 
-const KEY_PEM_HEADER = "-----BEGIN AYA BACKUP KEY-----";
-const KEY_PEM_FOOTER = "-----END AYA BACKUP KEY-----";
+const KEY_PEM_HEADER = "-----BEGIN AYAH BACKUP KEY-----";
+const KEY_PEM_FOOTER = "-----END AYAH BACKUP KEY-----";
 
 /** Generates a random 32-byte key. */
 export function generateKeyBytes() {
@@ -45,7 +45,10 @@ export function decodeKeyMaterial(input) {
 /** Strips the .pem wrapper (BEGIN/END + blank lines) and returns clean base64. */
 export function stripPem(input) {
   const text = String(input || "").trim();
-  if (!text.includes(KEY_PEM_HEADER) && !text.includes(KEY_PEM_FOOTER)) {
+  const hasBackupKeyWrapper =
+    /-----BEGIN [A-Z]+ BACKUP KEY-----/.test(text) ||
+    /-----END [A-Z]+ BACKUP KEY-----/.test(text);
+  if (!hasBackupKeyWrapper) {
     return text.replace(/\s+/g, "");
   }
   return text

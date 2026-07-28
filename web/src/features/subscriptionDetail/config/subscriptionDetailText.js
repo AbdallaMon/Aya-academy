@@ -26,8 +26,8 @@ export const subscriptionDetailText = {
     yearly: "سنوي",
     startDate: "تاريخ البداية",
     endDate: "تاريخ النهاية",
-    subsHours: "عدد ساعات الفاتورة",
-    remainingHours: "الساعات المتبقية",
+    subsHours: "مدة الفاتورة",
+    remainingHours: "المدة المتبقية",
     priceBreakdown: "تفاصيل السعر",
     basePrice: "السعر قبل الخصم",
     discount: "الخصم",
@@ -52,6 +52,7 @@ export const subscriptionDetailText = {
     selectPlan: "اختر الخطة",
     // actions section
     actions: "إجراءات",
+    more: "المزيد",
     // renew
     renew: "تجديد",
     renewTitle: "تجديد الاشتراك",
@@ -62,6 +63,8 @@ export const subscriptionDetailText = {
     changePlan: "تعديل الخطة",
     changePlanTitle: "تعديل خطة الاشتراك",
     changePlanSubmit: "حفظ التغيير",
+    changePlanHint:
+      "بيعيد ربط الخطة بالاشتراك. المدة والسعر متتغيّرش إلا لو الاشتراك لسه مفيهوش حصص متسجّلة؛ لو فيه حصص، الحصص هي اللي بتحدّد المدة. عشان تزود المدة ضيف حصة بتاريخ الاشتراك.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "إضافة أو تغيير الكوبون",
     couponSubmit: "حفظ الكوبون",
@@ -83,15 +86,48 @@ export const subscriptionDetailText = {
     // cancel subscription
     cancelSub: "إلغاء الاشتراك",
     cancelSubTitle: "إلغاء الاشتراك",
-    cancelSubConfirm: "متأكد إنك عايز تلغي الاشتراك ده؟",
+    cancelSubConfirm:
+      "سيتم إلغاء الاشتراك وفاتورته غير المدفوعة. بعد الإلغاء، إضافة حصة في شهر الاستهلاك ستنشئ اشتراكاً جديداً للشهر التالي تلقائياً. هل تريد المتابعة؟",
+    // edit hours (remaining only)
+    editHours: "تعديل المدة المتبقية",
+    editHoursTitle: "تعديل مدة الفاتورة",
+    editRemainingTitle: "تعديل المدة المتبقية",
+    remainingHoursLabel: "الدقائق المتبقية",
+    remainingHoursHint: "أدخل المدة المتبقية بالدقائق، مثل 45 أو 60 أو 90.",
+    subsHoursHint: "الفاتورة بتتحسب على المدة دي",
+    remainingExceedsSubs: "المدة المتبقية لا يمكن أن تتجاوز مدة الاشتراك.",
+    remainingMinutesInvalid: "أدخل عدد دقائق صحيحًا.",
+    reasonEditHours: "لا يمكن تعديل مدة اشتراك منتهٍ أو ملغى.",
+    reasonEditHoursUsage:
+      "مدة الفاتورة الجارية بتتحسب تلقائياً من الحصص، ولا يمكن تعديلها الآن.",
     // disabled-action tooltips (why an action isn't available now)
     reasonRenew: "التجديد متاح فقط بعد انتهاء الاشتراك أو إلغائه",
     reasonChangePlan: "لا يمكن تغيير الخطة بعد تفعيل الاشتراك أو دفع الفاتورة",
     reasonCoupon: "لا يمكن تعديل الكوبون بعد الدفع أو التفعيل",
     reasonSend: "لا توجد فاتورة لإرسالها",
+    reasonViewInvoice: "لا توجد فاتورة لعرضها",
     reasonActivate: "الاشتراك غير قابل للتفعيل في حالته الحالية",
+    reasonActivateTooEarly:
+      "لسه بدري — التفعيل يفتح من آخر الشهر السابق لبداية الاشتراك",
     reasonMarkPaid: "لا توجد فاتورة غير مدفوعة",
     reasonCancel: "لا يمكن إلغاء اشتراك منتهٍ أو ملغى بالفعل",
+    // usage-based billing
+    phase: {
+      accumulating: "بتتجمّع",
+      awaitingPayment: "بانتظار الدفع",
+      upcoming: "قادم",
+      active: "نشط",
+      ended: "منتهي",
+    },
+    origin: "النوع",
+    originUsage: "حسب الحصص",
+    originManual: "يدوي",
+    accumulatingTitle: "فاتورة الشهر القادم (بتتجمّع)",
+    liveHint: "بيتجمّع من حصص الشهر الحالي، ويتفوتر الشهر الجاي",
+    frozenHint: "اتجمّد — جاهز للفاتورة",
+    usageManagedHint: "بيتحسب تلقائياً من الحصص، ويتقفل آخر الشهر",
+    noCurrent: "لا يوجد اشتراك حالي",
+    viewAll: "كل الاشتراكات",
   },
   en: {
     pageTitle: "Subscription details",
@@ -113,8 +149,8 @@ export const subscriptionDetailText = {
     yearly: "Yearly",
     startDate: "Start date",
     endDate: "End date",
-    subsHours: "Invoice hours",
-    remainingHours: "Remaining hours",
+    subsHours: "Invoice duration",
+    remainingHours: "Remaining duration",
     priceBreakdown: "Price breakdown",
     basePrice: "Base price",
     discount: "Discount",
@@ -137,6 +173,7 @@ export const subscriptionDetailText = {
     selectPlan: "Select plan",
     // actions section
     actions: "Actions",
+    more: "More",
     // renew
     renew: "Renew",
     renewTitle: "Renew subscription",
@@ -147,6 +184,8 @@ export const subscriptionDetailText = {
     changePlan: "Change plan",
     changePlanTitle: "Change subscription plan",
     changePlanSubmit: "Save change",
+    changePlanHint:
+      "Re-links the subscription's plan. Duration and price only change if the subscription has no logged sessions yet; once sessions are logged, they drive the duration. To add time, log a session dated within the subscription.",
     // coupon (add / change / remove on an existing subscription)
     couponTitle: "Add or change coupon",
     couponSubmit: "Save coupon",
@@ -168,15 +207,48 @@ export const subscriptionDetailText = {
     // cancel subscription
     cancelSub: "Cancel subscription",
     cancelSubTitle: "Cancel subscription",
-    cancelSubConfirm: "Are you sure you want to cancel this subscription?",
+    cancelSubConfirm:
+      "This cancels the subscription and its unpaid invoice. After cancellation, logging a session in the consumption month automatically creates a new subscription for the following month. Continue?",
+    // edit hours (remaining only)
+    editHours: "Edit remaining duration",
+    editHoursTitle: "Edit invoice duration",
+    editRemainingTitle: "Edit remaining duration",
+    remainingHoursLabel: "Remaining minutes",
+    remainingHoursHint: "Enter remaining minutes, such as 45, 60, or 90.",
+    subsHoursHint: "The invoice is calculated from this duration.",
+    remainingExceedsSubs: "Remaining duration can't exceed subscription duration.",
+    remainingMinutesInvalid: "Enter a whole number of minutes.",
+    reasonEditHours: "The duration of an expired or cancelled subscription can't be edited.",
+    reasonEditHoursUsage:
+      "The accumulating bill's duration is auto-computed from sessions and can't be edited now.",
     // disabled-action tooltips (why an action isn't available now)
     reasonRenew: "Renewal is only available after the subscription has expired or been cancelled.",
     reasonChangePlan: "The plan can't be changed after the subscription is active or the invoice is paid.",
     reasonCoupon: "The coupon can't be changed after payment or activation.",
     reasonSend: "There is no invoice to send.",
+    reasonViewInvoice: "There is no invoice to view.",
     reasonActivate: "The subscription can't be activated in its current state.",
+    reasonActivateTooEarly:
+      "Too early — activation opens from the last day of the month before the subscription starts.",
     reasonMarkPaid: "There is no unpaid invoice.",
     reasonCancel: "A subscription that's already expired or cancelled can't be cancelled.",
+    // usage-based billing
+    phase: {
+      accumulating: "Accumulating",
+      awaitingPayment: "Awaiting payment",
+      upcoming: "Upcoming",
+      active: "Active",
+      ended: "Ended",
+    },
+    origin: "Type",
+    originUsage: "Usage-based",
+    originManual: "Manual",
+    accumulatingTitle: "Next month's bill (building up)",
+    liveHint: "Builds up from this month's sessions, billed next month",
+    frozenHint: "Frozen — ready to invoice",
+    usageManagedHint: "Auto-computed from sessions; closes at month end",
+    noCurrent: "No current subscription",
+    viewAll: "All subscriptions",
   },
 };
 

@@ -2,7 +2,7 @@
 
 // ConfirmDialog — confirmation modal (feature-local).
 //
-// Aya's shared barrel has no ConfirmDialog, so this small helper lives inside the
+// Ayah's shared barrel has no ConfirmDialog, so this small helper lives inside the
 // backups feature. It mirrors the API the asmaa backups feature relied on:
 //   { open, intent: "danger"|"warning"|"info", title, description, confirmText,
 //     cancelText, loading, maxWidth, onCancel, onConfirm,

@@ -1,12 +1,14 @@
-// i18n settings. Arabic is the default (and RTL); English is the secondary LTR
-// locale. Locale is persisted in a cookie so the server layout can read it.
+// i18n settings. English is both the default and translation fallback.
+// Arabic remains available as an explicit RTL choice.
+// Locale is an interface preference persisted independently of the user account.
 
-export const fallbackLng = "ar";
-export const languages = [fallbackLng, "en"];
+export const defaultLng = "en";
+export const fallbackLng = "en";
+export const languages = [defaultLng, "ar"];
 export const defaultNS = "translation";
 export const cookieName = "i18lng";
 
-export function getOptions(lng = fallbackLng, ns = defaultNS) {
+export function getOptions(lng = defaultLng, ns = defaultNS) {
   return {
     supportedLngs: languages,
     fallbackLng,

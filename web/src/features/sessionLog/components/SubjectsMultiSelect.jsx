@@ -11,7 +11,7 @@ import {
   Select,
 } from "@mui/material";
 import { Controller } from "react-hook-form";
-import { SESSION_SUBJECT_GROUPS } from "@aya/shared";
+import { SESSION_SUBJECT_GROUPS } from "@ayah/shared";
 
 /**
  * RHF-bound, grouped multi-select of session subjects. The field VALUE is an

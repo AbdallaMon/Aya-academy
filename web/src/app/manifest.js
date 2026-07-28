@@ -2,23 +2,22 @@ import {
   BRAND,
   THEME_COLOR,
   BACKGROUND_COLOR,
-  fallbackLng,
+  defaultLng,
 } from '@/shared/lib/seo';
 
 // PWA / web app manifest, served at /manifest.webmanifest (wired in the root
-// layout). Arabic is the primary brand identity; the start_url points at the
-// default-locale homepage.
+// layout). English is the default identity; Arabic remains available in-app.
 export default function manifest() {
   return {
-    name: BRAND[fallbackLng],
-    short_name: BRAND[fallbackLng],
+    name: BRAND[defaultLng],
+    short_name: BRAND[defaultLng],
     description:
-      'رحلة مرحة وآمنة لتعليم الأطفال القرآن الكريم والأخلاق الجميلة.',
-    start_url: `/${fallbackLng}`,
+      'Online Quran memorization, Tajweed, Arabic, and Islamic studies for adults and children.',
+    start_url: `/${defaultLng}`,
     scope: '/',
     display: 'standalone',
-    dir: 'rtl',
-    lang: fallbackLng,
+    dir: 'ltr',
+    lang: defaultLng,
     categories: ['education', 'kids', 'books'],
     background_color: BACKGROUND_COLOR,
     theme_color: THEME_COLOR,

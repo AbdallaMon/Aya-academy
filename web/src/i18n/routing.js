@@ -1,13 +1,13 @@
 // Locale routing helpers — pure + isomorphic (safe on server and client).
 // The app uses URL-prefixed locales: every page lives under /ar/... or /en/...
-// Arabic is the default (and RTL).
+// English is the default; Arabic remains available as RTL.
 
-import { fallbackLng, languages } from "./settings.js";
+import { defaultLng, languages } from "./settings.js";
 
-// Read the locale from a pathname like "/ar/dashboard" → "ar" (or fallback).
+// Read the locale from a pathname like "/ar/dashboard" → "ar" (or default).
 export function getLocaleFromPathname(pathname = "/") {
   const seg = pathname.split("/")[1];
-  return languages.includes(seg) ? seg : fallbackLng;
+  return languages.includes(seg) ? seg : defaultLng;
 }
 
 // Strip the leading /{lng} from a pathname. "/ar/dashboard" → "/dashboard",
@@ -24,7 +24,7 @@ export function stripLocale(pathname = "/") {
 // Prefix a locale onto an app path. localePath("ar", "/dashboard") → "/ar/dashboard".
 // Pass-through for external/hash/absolute links so we never mangle them.
 export function localePath(lng, path = "/") {
-  const lang = languages.includes(lng) ? lng : fallbackLng;
+  const lang = languages.includes(lng) ? lng : defaultLng;
   if (!path) return `/${lang}`;
   // External, protocol-relative, mailto/tel, or pure hash → leave untouched.
   if (/^([a-z]+:)?\/\//i.test(path) || /^(mailto:|tel:|#)/i.test(path)) return path;

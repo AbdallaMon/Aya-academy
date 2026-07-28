@@ -9,15 +9,15 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 const review = (n) => ({
-  src: `/reviews/${n}.jpeg`,
+  src: `/reviews/review-${n}.jpeg`,
   alt: {
     ar: 'رسالة شكر حقيقية من ولي أمر لأكاديمية آية',
-    en: 'A real thank-you message from a parent to Aya Academy',
+    en: 'A real thank-you message from a parent to Ayah Academy',
   },
 });
 
 export const reviewScreenshots = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  1, 2, 3, 4, 5, 6, 7, 8, 9,
 ].map(review);
 
 // How many to show before the "show all" toggle.

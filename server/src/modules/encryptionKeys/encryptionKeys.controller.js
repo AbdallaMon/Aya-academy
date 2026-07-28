@@ -2,7 +2,7 @@
 // responds via helpers. No business logic.
 
 import { ok, created } from "../../shared/http/response.js";
-import { backupMessagesCodes, generalMessagesCodes, messagesNames } from "@aya/shared";
+import { backupMessagesCodes, generalMessagesCodes, messagesNames } from "@ayah/shared";
 import { idParam } from "../../shared/http/params.js";
 import { encryptionKeysUsecase } from "./encryptionKeys.usecase.js";
 

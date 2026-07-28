@@ -22,6 +22,8 @@ import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
 import { useOpen } from "../../../hooks/useOpen.js";
 import { EmptyState, PageHeader } from "../../../shared/components/index.js";
 import { useChildrenText } from "../config/childrenText.js";
+import { useSubscriptionsText } from "../../subscriptions/config/subscriptionsText.js";
+import UsageMeterCard from "../../subscriptionDetail/components/UsageMeterCard.jsx";
 import {
   MY_STUDENTS_URL,
   SUBSCRIPTIONS_URL,
@@ -30,9 +32,11 @@ import {
 } from "../config/constant.js";
 import PlanPickerDialog from "../components/PlanPickerDialog.jsx";
 import AddChildDialog from "../components/AddChildDialog.jsx";
+import { buildFileUrl } from "../../../shared/lib/fileUrl.js";
 
 export default function ChildrenPage() {
   const txt = useChildrenText();
+  const subsTxt = useSubscriptionsText();
   const { lng } = useTranslation();
   usePermission();
 
@@ -52,17 +56,24 @@ export default function ChildrenPage() {
   });
 
   const children = childrenReq.data || [];
-  const subs = subsReq.data || [];
+  const subs = useMemo(() => subsReq.data || [], [subsReq.data]);
 
-  // Best subscription per child: ACTIVE/UPCOMING > PENDING > most recent.
+  // The global subscriptions endpoint returns one summary per child:
+  // { studentId, current, next }. Keep the current and next buckets separate.
   const subByChild = useMemo(() => {
-    const rank = { ACTIVE: 4, UPCOMING: 3, PENDING: 2, EXPIRED: 1, CANCELLED: 0 };
     const map = {};
-    for (const s of subs) {
-      const cur = map[s.studentId];
-      if (!cur || (rank[s.status] ?? 0) > (rank[cur.status] ?? 0)) {
-        map[s.studentId] = s;
-      }
+    for (const summary of subs) {
+      map[summary.studentId] = summary.current ?? summary.next ?? null;
+    }
+    return map;
+  }, [subs]);
+
+  // The open, live-accumulating next-month USAGE bill per child (shown as a
+  // meter alongside the current subscription — multi-sub visibility).
+  const openByChild = useMemo(() => {
+    const map = {};
+    for (const summary of subs) {
+      if (summary.next) map[summary.studentId] = summary.next;
     }
     return map;
   }, [subs]);
@@ -89,6 +100,7 @@ export default function ChildrenPage() {
         planId: plan.id,
         billingPeriod: options.billingPeriod || "MONTHLY",
         ...(options.couponCode ? { couponCode: options.couponCode } : {}),
+        applyPlanCoupon: Boolean(options.applyPlanCoupon),
       });
       pickerDialog.close();
     } catch {
@@ -113,13 +125,17 @@ export default function ChildrenPage() {
       <Grid container spacing={2}>
         {children.map((child) => {
           const sub = subByChild[child.id];
+          const open = openByChild[child.id];
           return (
             <Grid key={child.id} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card variant="outlined" sx={{ height: "100%" }}>
                 <CardContent>
                   <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                    <Avatar sx={{ bgcolor: "primary.main", width: 52, height: 52 }}>
-                      <MdChildCare size={26} />
+                    <Avatar
+                      src={buildFileUrl(child.avatar) || undefined}
+                      sx={{ bgcolor: "primary.main", width: 52, height: 52 }}
+                    >
+                      {!child.avatar && <MdChildCare size={26} />}
                     </Avatar>
                     <Box>
                       <Typography variant="h6" fontWeight={800}>
@@ -133,6 +149,15 @@ export default function ChildrenPage() {
                       {child.email && (
                         <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: "break-all" }}>
                           {txt.emailLabel}: {child.email}
+                        </Typography>
+                      )}
+                      {child.username && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          {txt.usernameLabel}: @{child.username}
                         </Typography>
                       )}
                     </Box>
@@ -163,6 +188,13 @@ export default function ChildrenPage() {
                     <Typography variant="body2" mb={2}>
                       {sub.plan.titleAr}
                     </Typography>
+                  )}
+
+                  {/* Live-accumulating next-month usage bill (if any). */}
+                  {open && (
+                    <Box mb={2}>
+                      <UsageMeterCard sub={open} txt={subsTxt} />
+                    </Box>
                   )}
 
                   {/* A child that ALREADY has a subscription (any status) sends the

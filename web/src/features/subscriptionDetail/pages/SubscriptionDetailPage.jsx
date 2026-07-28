@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Box, Button, Chip, CircularProgress, Grid, Stack, Typography } from "@mui/material";
 import { MdArrowBack } from "react-icons/md";
 import Link from "next/link";
-import { PERMISSIONS } from "@aya/shared";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useTranslation } from "../../../i18n/client.js";
@@ -16,8 +16,10 @@ import {
   STATUS_COLOR,
   invoiceSubscriptionPath,
 } from "../config/constant.js";
+import { resolveSubscriptionView } from "../../subscriptions/config/subscriptionView.js";
 import { useSubscriptionDetailText } from "../config/subscriptionDetailText.js";
 import SubscriptionCard from "../components/SubscriptionCard.jsx";
+import UsageMeterCard from "../components/UsageMeterCard.jsx";
 import InvoiceCard from "../components/InvoiceCard.jsx";
 import SubscriptionActions from "../components/SubscriptionActions.jsx";
 
@@ -126,7 +128,11 @@ export default function SubscriptionDetailPage({ subscriptionId }) {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <SubscriptionCard subscription={subscription} invoice={invoice} txt={txt} />
+          {resolveSubscriptionView(subscription).isOpen ? (
+            <UsageMeterCard sub={subscription} txt={txt} />
+          ) : (
+            <SubscriptionCard subscription={subscription} invoice={invoice} txt={txt} />
+          )}
         </Grid>
         {canViewInvoice && (
           <Grid size={{ xs: 12, md: 6 }}>

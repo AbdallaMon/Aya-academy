@@ -11,13 +11,24 @@ import { useTranslation } from "../../../i18n/client.js";
 import { localePath } from "../../../i18n/routing.js";
 import AuthShell from "./AuthShell.jsx";
 import { useAuthText } from "../config/authText.js";
+import {
+  buildIdentityPayload,
+  EMAIL_PATTERN,
+  USERNAME_PATTERN,
+} from "../../../shared/lib/userIdentity.js";
 
 export default function RegisterForm() {
   const txt = useAuthText();
   const router = useRouter();
   const { lng } = useTranslation();
   const { control, handleSubmit } = useForm({
-    defaultValues: { name: "", email: "", password: "", phone: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      username: "",
+      password: "",
+      phone: "",
+    },
   });
 
   // Registration creates a PARENT account but does NOT set session cookies
@@ -37,7 +48,7 @@ export default function RegisterForm() {
   const onSubmit = (values) => {
     const payload = {
       name: values.name.trim(),
-      email: values.email.trim(),
+      ...buildIdentityPayload(values),
       password: values.password,
       phone: (values.phone || "").trim(),
       locale: lng === "en" ? "en" : "ar",
@@ -77,8 +88,26 @@ export default function RegisterForm() {
             label={txt.email}
             type="email"
             rules={{
-              required: txt.required,
-              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: txt.invalidEmail },
+              validate: (value, values) =>
+                !value && !values.username
+                  ? txt.identityRequired
+                  : !value ||
+                      EMAIL_PATTERN.test(value.trim()) ||
+                      txt.invalidEmail,
+            }}
+          />
+          <RHFTextField
+            name="username"
+            control={control}
+            label={txt.username}
+            helperText={txt.usernameHint}
+            rules={{
+              validate: (value, values) =>
+                !value && !values.email
+                  ? txt.identityRequired
+                  : !value ||
+                      USERNAME_PATTERN.test(value.trim()) ||
+                      txt.invalidUsername,
             }}
           />
           <RHFTextField

@@ -1,4 +1,4 @@
-import { generalMessagesCodes } from "@aya/shared";
+import { generalMessagesCodes } from "@ayah/shared";
 import { ok } from "../../shared/http/response.js";
 import { idParam } from "../../shared/http/params.js";
 import { notificationUsecase } from "./notification.usecase.js";

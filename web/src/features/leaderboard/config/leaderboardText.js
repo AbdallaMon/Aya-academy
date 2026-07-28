@@ -23,7 +23,7 @@ export const leaderboardText = {
     emptyBody: "بمجرد ما الأطفال يكمّلوا الاختبارات والألعاب هتظهر نجومهم هنا ✨",
   },
   en: {
-    pageTitle: "Aya Academy Champions",
+    pageTitle: "Ayah Academy Champions",
     pageDescription: "Meet our stars, their ranks and achievements 🌟",
     week: "This week",
     all: "All time",

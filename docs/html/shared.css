@@ -1,0 +1,1154 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Docs site theme — refined indigo / slate.
+   Layout (wide): [ left rail: pages ] [ content ] [ right rail: TOC ]
+   In-page nav (TOC) and cross-page nav (Documents) live in separate rails.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #f4f5fa;
+  --bg-tint: #eef0fb;
+  --surface: #ffffff;
+  --surface-soft: #f7f8fc;
+  --text: #1e2435;
+  --heading: #141a2b;
+  --muted: #69728a;
+  --border: #e9ebf3;
+  --border-strong: #dcdfeb;
+  --primary: #5048e5;
+  --primary-deep: #4038c9;
+  --primary-soft: #eeedfd;
+  --accent: #0ea5a3;
+  --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --warning: #b4791f;
+  --shadow: 0 14px 40px rgba(30, 36, 60, 0.08);
+  --shadow-soft: 0 4px 16px rgba(30, 36, 60, 0.05);
+  --shadow-badge: 0 6px 16px rgba(99, 102, 241, 0.32);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --content-width: 940px;
+  --sidebar-width: 274px;
+  --toc-width: 236px;
+  --topbar-height: 66px;
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-mono:
+    "SFMono-Regular", SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+    monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(
+      1200px 460px at 100% -8%,
+      rgba(139, 92, 246, 0.1),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 420px at -5% -6%,
+      rgba(80, 72, 229, 0.1),
+      transparent 58%
+    ),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+/* Subtle thin scrollbars for the rails */
+.doc-sidebar,
+.doc-toc {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.doc-sidebar::-webkit-scrollbar,
+.doc-toc::-webkit-scrollbar {
+  width: 8px;
+}
+.doc-sidebar::-webkit-scrollbar-thumb,
+.doc-toc::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+
+/* ── Landing / library pages ────────────────────────────────────────────── */
+
+.site-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 22px 60px;
+}
+
+.site-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 30px;
+  box-shadow: var(--shadow-soft);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.3;
+  color: var(--heading);
+}
+
+.site-header h1 {
+  font-size: 1.7rem;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin: 12px 0 0;
+  max-width: 760px;
+  color: var(--muted);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.header-actions,
+.topbar-actions,
+.topbar-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.primary-btn,
+.ghost-btn,
+.home-btn,
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.primary-btn {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(80, 72, 229, 0.28);
+}
+
+.primary-btn:hover {
+  background: var(--primary-deep);
+  border-color: var(--primary-deep);
+  text-decoration: none;
+}
+
+.home-btn {
+  background: var(--primary-soft);
+  border-color: rgba(80, 72, 229, 0.22);
+  color: var(--primary);
+}
+
+.home-btn:hover {
+  background: #e6e4fc;
+  text-decoration: none;
+}
+
+.ghost-btn:hover,
+.nav-toggle:hover {
+  background: var(--surface-soft);
+  border-color: var(--border-strong);
+  text-decoration: none;
+}
+
+/* ── Topbar ──────────────────────────────────────────────────────────────── */
+
+.doc-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: var(--topbar-height);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 22px;
+  box-shadow: 0 1px 0 rgba(30, 36, 60, 0.04);
+}
+
+.doc-topbar h1 {
+  font-size: 0.98rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
+}
+
+.doc-topbar .eyebrow,
+.doc-topbar .lead {
+  display: none;
+}
+
+/* ── Layout shell ────────────────────────────────────────────────────────── */
+
+.doc-layout {
+  display: block;
+  min-height: 100vh;
+}
+
+.doc-main {
+  margin-inline-start: var(--sidebar-width);
+  margin-inline-end: var(--toc-width);
+  padding-top: var(--topbar-height);
+  min-height: 100vh;
+  transition:
+    margin-inline-start 0.22s ease,
+    margin-inline-end 0.22s ease;
+}
+
+.doc-layout.is-nav-hidden .doc-main {
+  margin-inline-start: 0;
+}
+
+.doc-main-inner {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 34px 30px 52px;
+}
+
+/* ── Left rail: cross-page navigation (Documents) ───────────────────────── */
+
+.doc-sidebar {
+  position: fixed;
+  top: var(--topbar-height);
+  inset-inline-start: 0;
+  width: var(--sidebar-width);
+  height: calc(100vh - var(--topbar-height));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  z-index: 40;
+  background: var(--surface);
+  border-inline-end: 1px solid var(--border);
+  padding: 24px 16px 30px;
+  transition:
+    transform 0.24s ease,
+    width 0.24s ease;
+}
+
+.doc-layout.is-nav-hidden .doc-sidebar {
+  transform: translateX(-100%);
+}
+
+[dir="rtl"] .doc-layout.is-nav-hidden .doc-sidebar {
+  transform: translateX(100%);
+}
+
+[dir="rtl"] .doc-sidebar {
+  border-inline-end: none;
+  border-inline-start: 1px solid var(--border);
+}
+
+.sidebar-group + .sidebar-group {
+  margin-top: 22px;
+}
+
+.sidebar-label {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.sidebar-list,
+.toc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 3px;
+}
+
+.sidebar-list a {
+  position: relative;
+  display: block;
+  padding: 9px 13px;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.9rem;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.sidebar-list a:hover {
+  background: var(--surface-soft);
+  text-decoration: none;
+}
+
+.sidebar-list a.active {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  font-weight: 600;
+}
+
+.sidebar-list a.active::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--accent-grad);
+}
+
+/* ── Right rail: in-page navigation (On this page / TOC) ────────────────── */
+
+.doc-toc {
+  position: fixed;
+  top: var(--topbar-height);
+  inset-inline-end: 0;
+  width: var(--toc-width);
+  height: calc(100vh - var(--topbar-height));
+  overflow-y: auto;
+  padding: 28px 18px 30px;
+  z-index: 30;
+}
+
+.toc-list {
+  gap: 1px;
+  border-inline-start: 1px solid var(--border);
+  padding-inline-start: 8px;
+}
+
+[dir="rtl"] .toc-list {
+  border-inline-start: none;
+  border-inline-end: 1px solid var(--border);
+  padding-inline-start: 0;
+  padding-inline-end: 8px;
+}
+
+.toc-list a {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.45;
+  border-inline-start: 2px solid transparent;
+  margin-inline-start: -10px;
+  padding-inline-start: 12px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+[dir="rtl"] .toc-list a {
+  border-inline-start: none;
+  border-inline-end: 2px solid transparent;
+  margin-inline-start: 0;
+  margin-inline-end: -10px;
+  padding-inline-start: 10px;
+  padding-inline-end: 12px;
+}
+
+.toc-list a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.toc-list a.active {
+  color: var(--primary-deep);
+  font-weight: 600;
+  border-inline-start-color: var(--primary);
+}
+
+[dir="rtl"] .toc-list a.active {
+  border-inline-end-color: var(--primary);
+}
+
+/* ── Mobile drawer overlay ──────────────────────────────────────────────── */
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 26, 43, 0.4);
+  z-index: 39;
+  backdrop-filter: blur(2px);
+}
+
+@media (max-width: 768px) {
+  .doc-layout.is-nav-visible .sidebar-overlay {
+    display: block;
+  }
+}
+
+/* ── Hero + meta ─────────────────────────────────────────────────────────── */
+
+.doc-hero {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.doc-hero h2 {
+  font-size: 1.95rem;
+  letter-spacing: -0.025em;
+  line-height: 1.22;
+}
+
+.doc-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.84rem;
+  box-shadow: var(--shadow-soft);
+}
+
+/* ── Sections (the focus) ───────────────────────────────────────────────── */
+
+.doc-section {
+  scroll-margin-top: calc(var(--topbar-height) + 18px);
+}
+
+.doc-section + .doc-section {
+  margin-top: 22px;
+}
+
+.doc-preface.section-card {
+  margin-bottom: 22px;
+}
+
+.section-card {
+  position: relative;
+  padding: 28px 30px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.section-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-num {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: var(--shadow-badge);
+}
+
+.section-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+/* Inline code inside headings — tinted, sized to sit on the baseline nicely. */
+.section-header h2 code,
+.doc-hero h2 code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  padding: 0.08em 0.34em;
+  border-radius: 7px;
+}
+
+/* legacy kicker (no longer emitted) — kept harmless if present */
+.section-kicker {
+  display: none;
+}
+
+.section-description {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+/* ── Content blocks ─────────────────────────────────────────────────────── */
+
+.content-block + .content-block {
+  margin-top: 18px;
+}
+
+.content-block p,
+.content-block ul,
+.content-block ol,
+.content-block pre,
+.content-block table,
+.content-block blockquote {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.content-block p + p,
+.content-block p + ul,
+.content-block p + ol,
+.content-block ul + p,
+.content-block ol + p,
+.content-block pre + p,
+.content-block blockquote + p {
+  margin-top: 14px;
+}
+
+.content-block ul,
+.content-block ol {
+  padding-inline-start: 24px;
+}
+
+[dir="rtl"] .content-block ul,
+[dir="rtl"] .content-block ol {
+  padding-inline-start: 0;
+  padding-inline-end: 24px;
+}
+
+.content-block li + li {
+  margin-top: 7px;
+}
+
+.content-block li::marker {
+  color: var(--primary);
+}
+
+/* Code — always laid out left-to-right, even on RTL pages and even when the
+   code contains Arabic comments. Forcing direction:ltr + text-align:left keeps
+   mixed Arabic/English code from getting reordered/garbled by the bidi
+   algorithm. */
+.content-block pre {
+  padding: 18px 18px;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: #161b2e;
+  color: #e7eaf3;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  direction: ltr;
+  text-align: left;
+}
+
+/* LTR wrapper so the copy button (inset-inline-end) and the language label
+   (block start) sit on opposite physical sides regardless of page direction. */
+.code-block-wrap {
+  position: relative;
+  direction: ltr;
+  text-align: left;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 11px;
+  inset-inline-end: 11px;
+  padding: 4px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.09);
+  color: #aeb6cc;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  min-height: unset;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #f4f6fb;
+}
+
+.content-block pre[data-language]::before {
+  content: attr(data-language);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #8e97b4;
+  margin-bottom: 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.content-block code {
+  font-family: var(--font-mono);
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  padding: 0.13em 0.4em;
+  border-radius: 6px;
+  font-size: 0.87em;
+  /* Treat each inline code span as an isolated LTR run so identifiers like
+     `targetType: "x"` never reorder inside surrounding Arabic text. */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.content-block pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Tables */
+.table-wrapper {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.content-block table {
+  min-width: 600px;
+  width: max-content;
+  border-collapse: collapse;
+}
+
+.content-block table thead {
+  background: var(--surface-soft);
+}
+
+.content-block th,
+.content-block td {
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+  min-width: 150px;
+}
+
+.content-block th {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.content-block tbody tr:nth-child(even) {
+  background: var(--surface-soft);
+}
+
+.content-block tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Blockquote */
+.content-block blockquote {
+  padding: 14px 18px;
+  border-inline-start: 3px solid var(--primary);
+  border-radius: 0 10px 10px 0;
+  background: var(--primary-soft);
+  color: #3b3475;
+}
+
+[dir="rtl"] .content-block blockquote {
+  border-inline-start: none;
+  border-inline-end: 3px solid var(--primary);
+  border-radius: 10px 0 0 10px;
+}
+
+/* Subsections */
+.subsection-list {
+  display: grid;
+  gap: 14px;
+}
+
+.subsection-card {
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  overflow: auto;
+}
+
+.subsection-card > h3,
+.subsection-card > h4 {
+  margin-bottom: 10px;
+}
+
+.subsection-card > h3 {
+  color: var(--primary-deep);
+  font-size: 0.98rem;
+  font-weight: 700;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Note / warning */
+.note-box,
+.warning-box {
+  padding: 15px 17px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.note-box {
+  background: var(--primary-soft);
+  border-color: rgba(80, 72, 229, 0.16);
+}
+
+.warning-box {
+  background: rgba(180, 121, 31, 0.08);
+  border-color: rgba(180, 121, 31, 0.2);
+}
+
+.note-box p::before {
+  content: "ℹ ";
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.warning-box p::before {
+  content: "⚠ ";
+  color: var(--warning);
+  font-weight: 700;
+}
+
+/* ── Search ──────────────────────────────────────────────────────────────── */
+
+.doc-search {
+  min-width: 200px;
+  max-width: 300px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--text);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.doc-search::placeholder {
+  color: var(--muted);
+}
+
+.doc-search:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: rgba(80, 72, 229, 0.45);
+  box-shadow: 0 0 0 3px rgba(80, 72, 229, 0.13);
+}
+
+mark {
+  background: #fbe7a0;
+  color: inherit;
+  padding: 0.05em 0.2em;
+  border-radius: 4px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.doc-footer {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 1180px) {
+  .doc-toc {
+    display: none;
+  }
+  .doc-main {
+    margin-inline-end: 0;
+  }
+}
+
+@media (max-width: 1000px) {
+  :root {
+    --sidebar-width: 244px;
+  }
+}
+
+@media (max-width: 768px) {
+  .doc-sidebar {
+    transform: translateX(-100%);
+    z-index: 60;
+    box-shadow: var(--shadow);
+  }
+
+  [dir="rtl"] .doc-sidebar {
+    transform: translateX(100%);
+  }
+
+  .doc-layout.is-nav-visible .doc-sidebar {
+    transform: translateX(0);
+  }
+
+  .doc-main {
+    margin-inline-start: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-shell {
+    padding-inline: 14px;
+  }
+
+  .doc-main-inner,
+  .section-card {
+    padding: 20px;
+  }
+
+  .section-header {
+    gap: 11px;
+  }
+
+  .section-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    font-size: 0.88rem;
+  }
+
+  .doc-hero h2 {
+    font-size: 1.55rem;
+  }
+
+  .doc-topbar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .topbar-actions {
+    gap: 7px;
+  }
+
+  .home-btn .btn-label,
+  .nav-toggle .btn-label {
+    display: none;
+  }
+
+  .doc-search {
+    width: 130px;
+    min-width: unset;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Folder index pages (section root + every sub-folder) — breadcrumb + a grid
+   of folder cards (drill into a sub-folder) and doc cards (open a doc).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.breadcrumb .crumb {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.breadcrumb a.crumb:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.breadcrumb .crumb.current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.breadcrumb .crumb-sep {
+  color: var(--border-strong);
+}
+
+/* Doc-page breadcrumb sits above the hero, not in a card header. */
+.doc-main-inner > .breadcrumb {
+  margin-bottom: 18px;
+}
+
+.card-grid {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.doc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 22px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.doc-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+.doc-card-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.35;
+}
+
+.doc-card-title-ar {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.doc-card-desc {
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.doc-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.doc-card-actions a {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.btn-en {
+  background: var(--primary-soft);
+  border: 1px solid rgba(80, 72, 229, 0.2);
+  color: var(--primary-deep);
+}
+
+.btn-en:hover {
+  background: #e6e4fc;
+  text-decoration: none;
+}
+
+.btn-ar {
+  background: rgba(14, 165, 163, 0.08);
+  border: 1px solid rgba(14, 165, 163, 0.22);
+  color: #0c7c7a;
+}
+
+.btn-ar:hover {
+  background: rgba(14, 165, 163, 0.14);
+  text-decoration: none;
+}
+
+/* Folder card — drills into a sub-folder's own index page. */
+.folder-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 18px 20px;
+  text-decoration: none;
+  color: var(--heading);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.folder-card:hover {
+  border-color: rgba(80, 72, 229, 0.35);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+}
+
+.folder-card-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  font-size: 1.2rem;
+}
+
+.folder-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.folder-card-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.folder-card-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.folder-card-arrow {
+  color: var(--primary);
+  font-size: 1.1rem;
+  transition: transform 0.18s ease;
+}
+
+[dir="rtl"] .folder-card-arrow {
+  transform: scaleX(-1);
+}
+
+.folder-card:hover .folder-card-arrow {
+  transform: translateX(3px);
+}
+
+[dir="rtl"] .folder-card:hover .folder-card-arrow {
+  transform: scaleX(-1) translateX(3px);
+}
+
+@media (max-width: 640px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}

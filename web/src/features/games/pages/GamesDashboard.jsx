@@ -4,7 +4,7 @@
 // manager; STUDENT sees their own "ألعابي" list. Parents have no games surface,
 // so they get nothing (the route has no parent nav link).
 
-import { USER_ROLES } from "@aya/shared";
+import { USER_ROLES } from "@ayah/shared";
 import { useAuth } from "../../../hooks/useAuth.js";
 import GamesAdminPage from "./GamesAdminPage.jsx";
 import MyGamesPage from "./MyGamesPage.jsx";

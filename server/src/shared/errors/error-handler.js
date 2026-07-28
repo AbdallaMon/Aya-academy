@@ -1,4 +1,4 @@
-import { generalMessagesCodes, messagesNames } from "@aya/shared";
+import { generalMessagesCodes, messagesNames } from "@ayah/shared";
 import { AppError } from "./AppError.js";
 
 export function notFoundHandler(_req, res) {

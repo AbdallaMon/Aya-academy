@@ -60,7 +60,7 @@ export default function SplashScreen() {
         <Box
           component="img"
           src="/logos/logo.png"
-          alt="Aya Academy"
+          alt="Ayah Academy"
           sx={{
             width: 88,
             height: 88,

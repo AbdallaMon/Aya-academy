@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Box } from '@mui/material';
-import { navSections, navHref } from '@/shared/data/navigation/navbar';
+import { navbarSections, navHref } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
 import { localePath } from '@/i18n/routing.js';
 
@@ -19,7 +19,7 @@ export default function NavbarLinks() {
         gap: 3,
       }}
     >
-      {navSections.map((s) => (
+      {navbarSections.map((s) => (
         <Box
           key={s.id}
           component={Link}

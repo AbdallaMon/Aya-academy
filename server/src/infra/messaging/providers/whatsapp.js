@@ -7,7 +7,7 @@
 
 import { AppError } from "../../../shared/errors/AppError.js";
 import { ENV, isWhatsAppConfigured } from "../../../config/env.js";
-import { invoiceMessagesCodes, messagesNames } from "@aya/shared";
+import { invoiceMessagesCodes, messagesNames } from "@ayah/shared";
 
 const TK = messagesNames.invoiceMessages;
 

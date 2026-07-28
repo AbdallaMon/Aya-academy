@@ -10,7 +10,7 @@
 // them without pulling in server-only APIs.
 
 import { cookies } from "next/headers";
-import { cookieName, fallbackLng, languages } from "./settings.js";
+import { cookieName, defaultLng, languages } from "./settings.js";
 import translation from "./locales/translation.js";
 import { getLanguageResources, makeT } from "./resources.js";
 
@@ -19,7 +19,7 @@ export { getLanguageResources, makeT };
 export async function getTranslation() {
   const cookieStore = await cookies();
   const cookieLng = cookieStore.get(cookieName)?.value;
-  const lng = languages.includes(cookieLng) ? cookieLng : fallbackLng;
+  const lng = languages.includes(cookieLng) ? cookieLng : defaultLng;
 
   const resources = getLanguageResources(translation, lng);
 

@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Box, Chip, Grid, Stack, Typography } from "@mui/material";
-import { MdEdit, MdDelete, MdLocalOffer } from "react-icons/md";
-import { PERMISSIONS } from "@aya/shared";
+import { Box, Grid } from "@mui/material";
+import { PERMISSIONS } from "@ayah/shared";
 import { usePermission } from "../../../hooks/usePermission.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useMultiRequest } from "../../../hooks/request/useMultiRequest.js";
@@ -17,15 +16,15 @@ import {
   RHFTextField,
   RHFTextArea,
   RHFSwitch,
-  RowActionsMenu,
   applyApiErrorsToForm,
   useConfirm,
 } from "../../../shared/components/index.js";
 import { useToast } from "../../../providers/ToastProvider.jsx";
 import { PLANS_URL } from "../config/constant.js";
-import { formatMoney } from "../../../shared/lib/money.js";
 import { useAppSettings } from "../../settings/hooks/useAppSettings.js";
 import { usePlansText } from "../config/plansText.js";
+import { buildPlansColumns } from "../config/plansColumns.js";
+import { buildPlansFilters } from "../config/plansFilters.js";
 import PlanCouponsDialog from "../components/PlanCouponsDialog.jsx";
 import PlanPriceFields from "../components/PlanPriceFields.jsx";
 
@@ -167,95 +166,20 @@ export default function PlansPage() {
   }
 
   const columns = useMemo(
-    () => [
-      {
-        field: "title",
-        headerName: txt.title,
-        width: 240,
-        renderCell: ({ row }) => (
-          <Stack>
-            <Typography fontWeight={700}>
-              {lng === "en" ? row.titleEn : row.titleAr}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {lng === "en" ? row.titleAr : row.titleEn}
-            </Typography>
-          </Stack>
-        ),
-      },
-      { field: "hours", headerName: txt.hours, width: 90 },
-      {
-        field: "price",
-        headerName: txt.price,
-        width: 220,
-        renderCell: ({ row }) => {
-          const monthly = Number(row.hours) * Number(hourlyRate || 0);
-          return (
-            <Typography fontWeight={700} variant="body2">
-              {`${formatMoney(monthly, currency)} ${txt.perMonth}`}
-            </Typography>
-          );
-        },
-      },
-      {
-        field: "isFeatured",
-        headerName: txt.featured,
-        width: 100,
-        renderCell: ({ row }) =>
-          row.isFeatured ? <Chip size="small" color="warning" label={txt.yes} /> : "—",
-      },
-      {
-        field: "isActive",
-        headerName: txt.active,
-        width: 100,
-        renderCell: ({ row }) => (
-          <Chip
-            size="small"
-            color={row.isActive ? "success" : "default"}
-            label={row.isActive ? txt.yes : txt.no}
-          />
-        ),
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: txt.actions,
-        width: 80,
-        renderCell: ({ row }) => (
-          <RowActionsMenu
-            actions={[
-              {
-                label: txt.edit,
-                icon: <MdEdit />,
-                onClick: () => onEdit(row),
-                hidden: !canEdit,
-              },
-              {
-                label: (row._count?.coupons ?? 0)
-                  ? `${txt.discounts} (${row._count.coupons})`
-                  : txt.discounts,
-                icon: <MdLocalOffer />,
-                color: "secondary",
-                onClick: () => onDiscounts(row),
-                hidden: !canEdit,
-              },
-              {
-                label: txt.delete,
-                icon: <MdDelete />,
-                color: "error",
-                onClick: () => onDelete(row),
-                hidden: !canDelete,
-              },
-            ]}
-          />
-        ),
-      },
-    ],
+    () =>
+      buildPlansColumns({
+        txt,
+        lng,
+        hourlyRate,
+        currency,
+        can: { edit: canEdit, delete: canDelete },
+        actions: { onEdit, onDiscounts, onDelete },
+      }),
     [txt, lng, canEdit, canDelete, hourlyRate, currency],
   );
 
   const filterConfig = useMemo(
-    () => [{ type: "search", key: "search", label: txt.title }],
+    () => buildPlansFilters({ txt }),
     [txt],
   );
 

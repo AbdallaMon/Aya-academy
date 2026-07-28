@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FiRefreshCw, FiPlay } from "react-icons/fi";
-import { DRIVE_ACCOUNT_TYPES } from "@aya/shared";
+import { DRIVE_ACCOUNT_TYPES } from "@ayah/shared";
 import { FormDialog } from "../../../shared/components/index.js";
 import { useRequest } from "../../../hooks/request/useRequest.js";
 import { useBackupsText } from "../hooks/useBackupsText.js";

@@ -1,10 +1,8 @@
-'use client';
-
-import { getCurrentColorScheme } from '@/shared/utlis/constants';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { getCurrentColorScheme } from '@/shared/utils/constants';
 import { createTheme, alpha, darken, lighten } from '@mui/material/styles';
-export function buildTheme({ direction = 'ltr', mode = 'light' }) {
-  const base = getCurrentColorScheme(mode);
+export function buildTheme({ direction = 'ltr' } = {}) {
+  const mode = 'light';
+  const base = getCurrentColorScheme();
   const primaryMain = base.primary;
   const primaryLight = lighten(primaryMain, 0.15);
   const primaryDark = darken(primaryMain, 0.15);
@@ -65,6 +63,10 @@ export function buildTheme({ direction = 'ltr', mode = 'light' }) {
         secondary: textSecondary,
         disabled: alpha(textSecondary, 0.4),
       },
+      // Server-rendered marketing components cannot pass theme callback
+      // functions through a client boundary. Expose the already-calculated,
+      // accessible teal text tone as a palette token instead.
+      brandText: tealText,
       common: {
         white: base.white,
         black: base.black,
@@ -379,16 +381,4 @@ export function buildTheme({ direction = 'ltr', mode = 'light' }) {
       },
     },
   });
-}
-
-export function MUIThemeProvider({ children, locale = 'en', pageTheme }) {
-  const direction = locale === 'ar' ? 'rtl' : 'ltr';
-  const theme = buildTheme({ direction, mode: pageTheme });
-
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      {children}
-    </ThemeProvider>
-  );
 }

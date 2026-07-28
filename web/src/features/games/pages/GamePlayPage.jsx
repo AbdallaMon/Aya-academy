@@ -31,7 +31,7 @@ const MARKETING_COPY = {
   en: {
     title: "Interactive games you can try right now 🎮",
     subtitle:
-      "Try a game from Aya Academy for free — then sign up and get a free trial session.",
+      "Try a game from Ayah Academy for free — then sign up and get a free trial session.",
     cta: "Sign up and get a free session",
     rateTitle: "You've played a lot today! 🎉",
     rateBody: "Come back in about {min} minutes to play again 😊",
