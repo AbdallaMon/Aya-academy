@@ -21,8 +21,8 @@ export default function NavbarBrand({ height = { xs: 48, md: 60 }, onClick }) {
       sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
     >
       <Box sx={{ height, lineHeight: 0 }}>
-        <Box
-          component="img"
+        {/* eslint-disable-next-line @next/next/no-img-element -- tiny pre-compressed brand asset with explicit dimensions */}
+        <img
           src="/logos/logo-120.png"
           srcSet="/logos/logo-120.png 1x, /logos/logo-240.png 2x"
           alt={txt.brand}
@@ -30,7 +30,7 @@ export default function NavbarBrand({ height = { xs: 48, md: 60 }, onClick }) {
           height={60}
           loading="eager"
           decoding="async"
-          sx={{ display: 'block', width: 'auto', height: '100%' }}
+          style={{ display: 'block', width: 'auto', height: '100%' }}
         />
       </Box>
     </Box>

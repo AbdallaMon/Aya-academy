@@ -33,6 +33,7 @@ export default function NavbarActions() {
           <IconButton
             component={Link}
             href={localePath(lng, '/login')}
+            prefetch={false}
             aria-label={txt.login}
             size="medium"
             sx={{

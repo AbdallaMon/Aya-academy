@@ -50,6 +50,7 @@ export default function NavbarDrawer() {
         <IconButton
           component={Link}
           href={localePath(lng, '/login')}
+          prefetch={false}
           size="medium"
           aria-label={txt.login}
           color="inherit"
@@ -102,6 +103,7 @@ export default function NavbarDrawer() {
                 fullWidth
                 component={Link}
                 href={localePath(lng, '/login')}
+                prefetch={false}
                 onClick={close}
                 startIcon={<LoginIcon lng={lng} />}
               >

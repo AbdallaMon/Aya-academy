@@ -83,8 +83,8 @@ export default function SiteFooter() {
           {/* Brand */}
           <Box>
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-              <Box
-                component="img"
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny pre-compressed brand asset with explicit dimensions */}
+              <img
                 src="/logos/logo-120.png"
                 srcSet="/logos/logo-120.png 1x, /logos/logo-240.png 2x"
                 alt={t.brand}
@@ -92,7 +92,7 @@ export default function SiteFooter() {
                 height={52}
                 loading="lazy"
                 decoding="async"
-                sx={{ display: 'block', width: 'auto', height: 52 }}
+                style={{ display: 'block', width: 'auto', height: 52 }}
               />
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, lineHeight: 1.8 }}>

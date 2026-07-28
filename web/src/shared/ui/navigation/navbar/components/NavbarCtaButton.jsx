@@ -25,6 +25,7 @@ export default function NavbarCtaButton({ onClick, fullWidth = false, size = 'me
       size={size}
       component={Link}
       href={localePath(lng, href)}
+      prefetch={false}
       onClick={onClick}
       fullWidth={fullWidth}
       sx={{ whiteSpace: 'nowrap', ...sx }}

@@ -11,6 +11,7 @@ export default function HeroActions({ primaryHref, primaryLabel, secondaryHref, 
       <Button
         component={Link}
         href={primaryHref}
+        prefetch={false}
         variant="contained"
         size="large"
         startIcon={<GiStarShuriken />}
@@ -20,6 +21,7 @@ export default function HeroActions({ primaryHref, primaryLabel, secondaryHref, 
       <Button
         component={Link}
         href={secondaryHref}
+        prefetch={false}
         variant="outlinedYellow"
         size="large"
         startIcon={<MdSportsEsports />}

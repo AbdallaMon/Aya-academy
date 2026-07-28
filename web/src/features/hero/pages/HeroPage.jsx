@@ -60,8 +60,8 @@ export default function Hero({ lng = 'en' }) {
         }}
       >
         <source srcSet="/hero-bg-light.avif" type="image/avif" />
-        <Box
-          component="img"
+        {/* eslint-disable-next-line @next/next/no-img-element -- pre-compressed LCP asset with an AVIF source */}
+        <img
           src="/hero-bg-light.webp"
           alt=""
           width={1920}
@@ -69,7 +69,7 @@ export default function Hero({ lng = 'en' }) {
           loading="eager"
           fetchPriority="high"
           decoding="async"
-          sx={{
+          style={{
             display: 'block',
             width: '100%',
             height: '100%',
@@ -218,8 +218,8 @@ export default function Hero({ lng = 'en' }) {
               srcSet="/hero-light-480.avif 480w, /hero-light-750.avif 750w, /hero-light-1040.avif 1040w"
               sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) calc(100vw - 48px), 520px"
             />
-            <Box
-              component="img"
+            {/* eslint-disable-next-line @next/next/no-img-element -- pre-generated responsive sources avoid the production optimizer overhead */}
+            <img
               src="/hero-light-750.webp"
               srcSet="/hero-light-480.webp 480w, /hero-light-750.webp 750w, /hero-light.webp 1040w"
               alt={t.imgAlt}
@@ -227,8 +227,9 @@ export default function Hero({ lng = 'en' }) {
               height={heroDims.height}
               loading="eager"
               decoding="async"
+              fetchPriority={lng === 'en' ? 'high' : 'auto'}
               sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) calc(100vw - 48px), 520px"
-              sx={{
+              style={{
                 display: 'block',
                 width: '100%',
                 maxWidth: 520,
