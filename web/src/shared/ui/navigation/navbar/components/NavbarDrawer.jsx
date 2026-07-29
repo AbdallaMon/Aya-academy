@@ -84,6 +84,7 @@ export default function NavbarDrawer() {
                 key={s.id}
                 component={Link}
                 href={navHref(localePath, lng, s)}
+                prefetch={s.id === 'blog' ? false : undefined}
                 onClick={close}
                 sx={{ borderRadius: 2, fontWeight: 700 }}
               >

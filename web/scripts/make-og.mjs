@@ -16,6 +16,7 @@
 // Chromium/Edge — no bundled browser download. Override the binary with CHROME=.
 //
 // Run:  npm run og        (from web/)   ·   node scripts/make-og.mjs
+// Scope: OG_SCOPE=services renders only program cards (also: brand, blog, all).
 import { chromium } from 'playwright-core';
 import sharp from 'sharp';
 import fs from 'node:fs';
@@ -33,6 +34,10 @@ const H = 630;
 // regen without overwriting the live cards. Empty = write the live names.
 const SUFFIX = process.env.OG_SUFFIX || '';
 const withSuffix = (f) => (SUFFIX ? f.replace(/\.(png|jpg)$/, `${SUFFIX}.$1`) : f);
+const SCOPE = process.env.OG_SCOPE || 'all';
+if (!['all', 'brand', 'blog', 'services'].includes(SCOPE)) {
+  throw new Error(`Unsupported OG_SCOPE "${SCOPE}". Use all, brand, blog or services.`);
+}
 
 // Resolve a Chromium/Edge binary from CHROME or a list of common local installs.
 function resolveChrome() {
@@ -236,34 +241,36 @@ const EXE = resolveChrome();
 console.log(`engine → ${EXE}`);
 const browser = await chromium.launch({ executablePath: EXE, headless: true, args: ['--no-sandbox'] });
 try {
-  for (const L of LOCALES) {
-    // deviceScaleFactor 2 → render at 2× then downscale with sharp for crisp text.
-    const context = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
-    const page = await context.newPage();
-    await page.setContent(cardHtml(L), { waitUntil: 'load', timeout: 60000 });
-    await page.evaluate(async () => { await document.fonts.ready; });
-    const shot = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: W, height: H } });
-    await context.close();
+  if (SCOPE === 'all' || SCOPE === 'brand') {
+    for (const L of LOCALES) {
+      // deviceScaleFactor 2 → render at 2× then downscale with sharp for crisp text.
+      const context = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
+      const page = await context.newPage();
+      await page.setContent(cardHtml(L), { waitUntil: 'load', timeout: 60000 });
+      await page.evaluate(async () => { await document.fonts.ready; });
+      const shot = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: W, height: H } });
+      await context.close();
 
-    const png = await sharp(shot).resize(W, H).png({ compressionLevel: 9 }).toBuffer();
-    const pngName = withSuffix(L.png);
-    fs.writeFileSync(path.join(PUBLIC, pngName), png);
+      const png = await sharp(shot).resize(W, H).png({ compressionLevel: 9 }).toBuffer();
+      const pngName = withSuffix(L.png);
+      fs.writeFileSync(path.join(PUBLIC, pngName), png);
 
-    const jpg = await sharp(shot).resize(W, H).jpeg({ quality: 84, mozjpeg: true, chromaSubsampling: '4:4:4' }).toBuffer();
-    const jpgName = withSuffix(L.jpg);
-    fs.writeFileSync(path.join(PUBLIC, jpgName), jpg);
+      const jpg = await sharp(shot).resize(W, H).jpeg({ quality: 84, mozjpeg: true, chromaSubsampling: '4:4:4' }).toBuffer();
+      const jpgName = withSuffix(L.jpg);
+      fs.writeFileSync(path.join(PUBLIC, jpgName), jpg);
 
-    console.log(`${L.id} → public/${pngName} (${Math.round(png.length / 1024)}KB) + public/${jpgName} (${Math.round(jpg.length / 1024)}KB)`);
+      console.log(`${L.id} → public/${pngName} (${Math.round(png.length / 1024)}KB) + public/${jpgName} (${Math.round(jpg.length / 1024)}KB)`);
+    }
   }
   const detailCards = [
-    ...sortedArticles.flatMap((article) => LOCALES.map((locale) => ({
+    ...(SCOPE === 'all' || SCOPE === 'blog' ? sortedArticles : []).flatMap((article) => LOCALES.map((locale) => ({
       kind: 'blog',
       slug: article.slug,
       lng: locale.id,
       title: article.title[locale.id],
       description: article.description[locale.id],
     }))),
-    ...services.flatMap((service) => LOCALES.map((locale) => ({
+    ...(SCOPE === 'all' || SCOPE === 'services' ? services : []).flatMap((service) => LOCALES.map((locale) => ({
       kind: 'services',
       slug: service.slug,
       lng: locale.id,

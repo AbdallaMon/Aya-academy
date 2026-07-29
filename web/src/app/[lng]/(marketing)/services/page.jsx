@@ -1,6 +1,7 @@
 import ServicesPage from '@/features/services/pages/ServicesPage.jsx';
-import { buildMetadata } from '@/shared/lib/seo';
-import { getServicePageText } from '@/features/services/data.js';
+import JsonLd from '@/shared/components/seo/JsonLd.jsx';
+import { buildMetadata, serviceCourseListSchema } from '@/shared/lib/seo';
+import { getServicePageText, services } from '@/features/services/data.js';
 
 export async function generateMetadata({ params }) {
   const { lng } = await params;
@@ -15,5 +16,11 @@ export async function generateMetadata({ params }) {
 
 export default async function ServicesRoute({ params }) {
   const { lng } = await params;
-  return <ServicesPage lng={lng} />;
+  const language = lng === 'en' ? 'en' : 'ar';
+  return (
+    <>
+      <JsonLd data={serviceCourseListSchema({ services, lng: language })} />
+      <ServicesPage lng={language} />
+    </>
+  );
 }

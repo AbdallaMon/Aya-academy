@@ -107,7 +107,13 @@ export default function SiteFooter() {
             </Typography>
             <Stack spacing={1}>
               {navSections.map((s) => (
-                <Box key={s.id} component={Link} href={navHref(localePath, lng, s)} sx={linkSx}>
+                <Box
+                  key={s.id}
+                  component={Link}
+                  href={navHref(localePath, lng, s)}
+                  prefetch={s.id === 'blog' ? false : undefined}
+                  sx={linkSx}
+                >
                   {s[lng] || s.ar}
                 </Box>
               ))}

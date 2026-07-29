@@ -15,10 +15,20 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://ayah.academy"
 ).replace(/\/+$/, "");
 
+// One canonical entity name across every locale and every machine-readable
+// surface. Localized labels remain useful in visible page titles, but Google
+// should never see the same Organization/WebSite @id renamed by locale.
+export const SITE_NAME = "Ayah Academy";
+export const SITE_ALTERNATE_NAMES = [
+  "Ayah",
+  "أكاديمية آية",
+  "ayah.academy",
+];
+
 // Brand name per locale — appended to page titles via the title template.
 export const BRAND = {
   ar: "أكاديمية آية",
-  en: "Ayah Academy",
+  en: SITE_NAME,
 };
 
 // The cross-language name gives search engines one stable entity with two
@@ -29,14 +39,25 @@ export const BRAND_ALTERNATES = {
   en: "أكاديمية آية",
 };
 
-// Comma-separated official public profiles, configured at deploy time:
-// NEXT_PUBLIC_SOCIAL_PROFILE_URLS=https://www.facebook.com/...,https://www.instagram.com/...
+// Official profiles can be added here once the real handles are available.
+// Keep these examples commented: fake/placeholder URLs must never reach `sameAs`.
+const SOCIAL_PROFILE_URLS_FROM_CODE = [
+  // "https://www.facebook.com/REAL_AYAH_ACADEMY_HANDLE",
+  // "https://www.instagram.com/REAL_AYAH_ACADEMY_HANDLE",
+  // "https://www.youtube.com/@REAL_AYAH_ACADEMY_HANDLE",
+  // "https://www.tiktok.com/@REAL_AYAH_ACADEMY_HANDLE",
+];
+
+// Or configure the same official URLs at build time as a comma-separated list:
+// NEXT_PUBLIC_SOCIAL_PROFILE_URLS=https://www.facebook.com/REAL_HANDLE,https://www.instagram.com/REAL_HANDLE
 // `sameAs` is only emitted for valid absolute HTTP(S) URLs; no profile is ever
 // guessed or invented in source code.
 export const SOCIAL_PROFILE_URLS = [
   ...new Set(
-    (process.env.NEXT_PUBLIC_SOCIAL_PROFILE_URLS || "")
-      .split(",")
+    [
+      ...SOCIAL_PROFILE_URLS_FROM_CODE,
+      ...(process.env.NEXT_PUBLIC_SOCIAL_PROFILE_URLS || "").split(","),
+    ]
       .map((value) => value.trim())
       .filter((value) => {
         if (!value) return false;

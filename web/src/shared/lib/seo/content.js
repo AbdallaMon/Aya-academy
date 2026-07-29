@@ -32,10 +32,10 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Online Quran Classes for Kids & Adults | Ayah Academy",
+      title: "Ayah Academy | Online Quran Classes for Kids & Adults",
       titleAbsolute: true,
       description:
-        "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
+        "Ayah Academy offers live online Quran classes, Quran memorization, Tajweed, Arabic and Islamic studies for kids and adults with qualified teachers and a free trial.",
       keywords: [
         "online Quran memorization",
         "learn Quran online",
@@ -71,10 +71,10 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Online Quran Classes for Kids & Adults | Ayah Academy",
+      title: "Ayah Academy | Online Quran Classes for Kids & Adults",
       titleAbsolute: true,
       description:
-        "Learn Quran online with qualified teachers. Live Quran, Tajweed, Arabic and Islamic studies classes for kids and adults, with progress tracking and a free trial.",
+        "Ayah Academy offers live online Quran classes, Quran memorization, Tajweed, Arabic and Islamic studies for kids and adults with qualified teachers and a free trial.",
       keywords: [
         "online Quran memorization",
         "Quran classes for adults and kids",

@@ -5,7 +5,7 @@ import HeroActions from '../components/HeroActions.jsx';
 const HERO = {
   ar: {
     eyebrow: 'قرآن · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
-    title: 'رحلة مُحبّبة لتعلّم القرآن والأخلاق الجميلة',
+    title: 'أكاديمية آية: رحلة مُحبّبة لتعلّم القرآن والأخلاق الجميلة',
     subtitle:
       'في أكاديمية آية، نقدّم دروسًا ممتعة وآمنة للطلاب من ٥ سنوات فأكثر — تلاوة واضحة، معانٍ بسيطة، وألعاب تفاعلية تزرع الأخلاق وتجمع النجوم والأوسمة.',
     primary: 'احجز حصة مجانية',
@@ -16,7 +16,7 @@ const HERO = {
   },
   en: {
     eyebrow: 'Quran · Arabic · Islamic studies · Manners · Games',
-    title: 'Learn Quran online with qualified teachers',
+    title: 'Ayah Academy: Learn Quran online with qualified teachers',
     subtitle:
       'At Ayah Academy, students aged 5 and up learn through fun, safe lessons — clear recitation, simple meanings, and interactive games that grow good character.',
     primary: 'Book a free session',
@@ -49,10 +49,8 @@ export default function Hero({ lng = 'en' }) {
     >
       {/* A real image element makes the LCP background discoverable in the
           initial HTML instead of waiting for the CSS background declaration. */}
-      <Box
-        component="picture"
-        aria-hidden
-        sx={{
+      <picture
+        style={{
           position: 'absolute',
           inset: 0,
           zIndex: -2,
@@ -60,7 +58,6 @@ export default function Hero({ lng = 'en' }) {
         }}
       >
         <source srcSet="/hero-bg-light.avif" type="image/avif" />
-        {/* eslint-disable-next-line @next/next/no-img-element -- pre-compressed LCP asset with an AVIF source */}
         <img
           src="/hero-bg-light.webp"
           alt=""
@@ -77,7 +74,7 @@ export default function Hero({ lng = 'en' }) {
             objectPosition: 'center',
           }}
         />
-      </Box>
+      </picture>
       {/* Soft scrim so the copy stays readable over the artwork in both themes */}
       <Box
         aria-hidden
@@ -209,19 +206,15 @@ export default function Hero({ lng = 'en' }) {
           </Box>
 
           {/* Illustration */}
-          <Box
-            component="picture"
-            sx={{ display: 'flex', justifyContent: 'center', lineHeight: 0 }}
-          >
+          <picture style={{ display: 'flex', justifyContent: 'center', lineHeight: 0 }}>
             <source
               type="image/avif"
-              srcSet="/hero-light-480.avif 480w, /hero-light-750.avif 750w, /hero-light-1040.avif 1040w"
+              srcSet="/hero-light-480.avif 480w, /hero-light-520.avif 520w, /hero-light-750.avif 750w, /hero-light-1040.avif 1040w"
               sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 900px) calc(100vw - 48px), 520px"
             />
-            {/* eslint-disable-next-line @next/next/no-img-element -- pre-generated responsive sources avoid the production optimizer overhead */}
             <img
-              src="/hero-light-750.webp"
-              srcSet="/hero-light-480.webp 480w, /hero-light-750.webp 750w, /hero-light.webp 1040w"
+              src="/hero-light-520.webp"
+              srcSet="/hero-light-480.webp 480w, /hero-light-520.webp 520w, /hero-light-750.webp 750w, /hero-light.webp 1040w"
               alt={t.imgAlt}
               width={heroDims.width}
               height={heroDims.height}
@@ -238,7 +231,7 @@ export default function Hero({ lng = 'en' }) {
                 filter: 'drop-shadow(0 24px 48px rgba(20,30,60,0.28))',
               }}
             />
-          </Box>
+          </picture>
         </Box>
       </Container>
     </Box>

@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getService, serviceText } from './data.js';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { getService, services, serviceText } from './data.js';
 
 const expandedProgramSlugs = [
   'quran-memorization',
@@ -49,4 +51,26 @@ test('expanded program copy avoids unsupported result promises', () => {
       assert.doesNotMatch(copy, claim);
     }
   }
+});
+
+test('every program has complete bilingual search and sharing content', () => {
+  for (const service of services) {
+    for (const language of ['ar', 'en']) {
+      const copy = serviceText(service, language);
+      const ogImage = fileURLToPath(
+        new URL(`../../../public/og/services/${service.slug}-${language}.png`, import.meta.url),
+      );
+
+      assert.ok(copy.title.length >= 20, `${service.slug}/${language} needs a useful title`);
+      assert.ok(copy.description.length >= 80, `${service.slug}/${language} needs a useful description`);
+      assert.ok(copy.keywords.length >= 3, `${service.slug}/${language} needs focused topics`);
+      assert.ok(copy.faqs.length >= 3, `${service.slug}/${language} needs visible FAQs`);
+      assert.ok(fs.existsSync(ogImage), `${service.slug}/${language} is missing its OG image`);
+    }
+  }
+});
+
+test('the official English name is consistently spelled Ayah Academy', () => {
+  assert.doesNotMatch(JSON.stringify(services), /\bAya Academy\b/);
+  assert.match(JSON.stringify(services), /\bAyah Academy\b/);
 });

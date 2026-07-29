@@ -14,6 +14,7 @@ import { localePath } from "@/i18n/routing.js";
 import { defaultLng, languages } from "@/i18n/settings.js";
 import {
   SITE_URL,
+  SITE_NAME,
   ogImages,
   brand,
   ogLocale,
@@ -54,6 +55,11 @@ export function buildMetadata({
   };
   const brandName = brand(lng);
   const canonical = absoluteUrl(localePath(lng, path));
+  const socialTitle = [SITE_NAME, brandName].some((name) =>
+    seo.title.toLocaleLowerCase().includes(name.toLocaleLowerCase()),
+  )
+    ? seo.title
+    : `${seo.title} | ${brandName}`;
 
   // Per-item override (e.g. a blog article cover) → that one image; otherwise the
   // brand card for THIS locale (Arabic vs English), in both PNG (crisp) and JPEG
@@ -67,7 +73,7 @@ export function buildMetadata({
     width: 1200,
     height: 630,
     // Describe what the share card shows, not just the brand name.
-    alt: seo.description || brandName,
+    alt: socialTitle,
   }));
 
   // The homepage title already carries the brand; everything else gets the
@@ -88,8 +94,8 @@ export function buildMetadata({
     },
     openGraph: {
       type: "website",
-      siteName: brandName,
-      title: seo.title,
+      siteName: SITE_NAME,
+      title: socialTitle,
       description: seo.description,
       url: canonical,
       locale: ogLocale(lng),
@@ -98,7 +104,7 @@ export function buildMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: seo.title,
+      title: socialTitle,
       description: seo.description,
       images: ogImageList.map((i) => i.url),
     },

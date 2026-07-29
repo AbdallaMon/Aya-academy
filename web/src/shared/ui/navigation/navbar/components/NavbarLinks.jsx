@@ -24,6 +24,7 @@ export default function NavbarLinks() {
           key={s.id}
           component={Link}
           href={navHref(localePath, lng, s)}
+          prefetch={s.id === 'blog' ? false : undefined}
           sx={{
             color: 'text.primary',
             fontWeight: 700,

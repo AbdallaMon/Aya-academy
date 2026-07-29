@@ -1,7 +1,13 @@
 import { notFound } from 'next/navigation';
 import ServiceDetailsPage from '@/features/services/pages/ServiceDetailsPage.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
-import { breadcrumbSchema, buildMetadata, faqSchema, SITE_URL } from '@/shared/lib/seo';
+import {
+  breadcrumbSchema,
+  buildMetadata,
+  faqSchema,
+  serviceCourseSchema,
+  SITE_URL,
+} from '@/shared/lib/seo';
 import { getService, getServicePageText, services, serviceText } from '@/features/services/data.js';
 import { localePath } from '@/i18n/routing.js';
 
@@ -40,6 +46,7 @@ export default async function ServiceDetailsRoute({ params }) {
       { name: text.backToServices, url: absolute('/services') },
       { name: copy.title, url: absolute(`/services/${slug}`) },
     ]),
+    serviceCourseSchema({ service, lng: language }),
     ...(copy.faqs?.length ? [faqSchema(copy.faqs)] : []),
   ];
 

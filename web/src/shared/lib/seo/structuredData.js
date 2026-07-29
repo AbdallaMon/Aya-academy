@@ -14,9 +14,9 @@ import { localePath } from "@/i18n/routing.js";
 import { languages } from "@/i18n/settings.js";
 import {
   SITE_URL,
+  SITE_NAME,
+  SITE_ALTERNATE_NAMES,
   SOCIAL_PROFILE_URLS,
-  brand,
-  brandAlternate,
 } from "./config.js";
 
 const DESCRIPTION = {
@@ -27,7 +27,7 @@ const DESCRIPTION = {
 // A stable @id for the organization so other nodes can reference it.
 const ORG_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
-const COURSE_ID = `${SITE_URL}/#course`;
+const COURSE_ID = `${SITE_URL}/#course-catalog`;
 
 const CONTACT_EMAIL = "info@ayah.academy";
 // The same WhatsApp line the site exposes (see WhatsAppButton) — a verifiable
@@ -70,8 +70,8 @@ export function organizationSchema(lng) {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
     "@id": ORG_ID,
-    name: brand(lng),
-    alternateName: brandAlternate(lng),
+    name: SITE_NAME,
+    alternateName: SITE_ALTERNATE_NAMES,
     url: SITE_URL,
     logo: `${SITE_URL}/logos/logo.png`,
     image: `${SITE_URL}/og.png`,
@@ -93,13 +93,13 @@ export function organizationSchema(lng) {
   };
 }
 
-export function websiteSchema(lng) {
+export function websiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": WEBSITE_ID,
-    name: brand(lng),
-    alternateName: brandAlternate(lng),
+    name: SITE_NAME,
+    alternateName: SITE_ALTERNATE_NAMES,
     url: SITE_URL,
     inLanguage: languages,
     publisher: { "@id": ORG_ID },
@@ -151,7 +151,8 @@ const COURSE = {
 // makes the site eligible for Course understanding. We deliberately omit priced
 // `offers` (plan prices are dynamic) — the free trial is signalled instead.
 export function courseSchema(lng) {
-  const c = COURSE[lng === "en" ? "en" : "ar"];
+  const language = lng === "en" ? "en" : "ar";
+  const c = COURSE[language];
   return {
     "@context": "https://schema.org",
     "@type": "Course",
@@ -159,8 +160,8 @@ export function courseSchema(lng) {
     name: c.name,
     description: DESCRIPTION[lng === "en" ? "en" : "ar"],
     url: `${SITE_URL}${localePath(lng, "/")}`,
-    inLanguage: languages,
-    provider: { "@id": ORG_ID },
+    inLanguage: language,
+    provider: courseProvider(),
     teaches: c.teaches,
     educationalLevel: "Beginner to advanced",
     audience: {
@@ -171,10 +172,81 @@ export function courseSchema(lng) {
     hasCourseInstance: {
       "@type": "CourseInstance",
       courseMode: "online",
-      // One-hour live sessions (matches the FAQ answer).
-      courseWorkload: "PT1H",
-      inLanguage: languages,
+      inLanguage: language,
     },
+  };
+}
+
+function courseProvider() {
+  return {
+    "@type": "EducationalOrganization",
+    "@id": ORG_ID,
+    name: SITE_NAME,
+    url: SITE_URL,
+    ...(SOCIAL_PROFILE_URLS.length ? { sameAs: SOCIAL_PROFILE_URLS } : {}),
+  };
+}
+
+function serviceCourseNode({ service, lng }) {
+  const language = lng === "en" ? "en" : "ar";
+  const copy = service[language];
+  const url = `${SITE_URL}${localePath(language, `/services/${service.slug}`)}`;
+
+  return {
+    "@type": "Course",
+    "@id": `${url}#course`,
+    name: copy.title,
+    description: copy.description,
+    url,
+    inLanguage: language,
+    provider: courseProvider(),
+    teaches: copy.focusItems?.length ? copy.focusItems : [copy.focus],
+    educationalLevel: "Beginner to advanced",
+    audience: {
+      "@type": "EducationalAudience",
+      educationalRole: "student",
+      audienceType: copy.audience,
+    },
+    ...(copy.keywords?.length ? { keywords: copy.keywords.join(", ") } : {}),
+    image: `${SITE_URL}/og/services/${service.slug}-${language}.png`,
+    dateModified: service.dateModified,
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "online",
+      inLanguage: language,
+    },
+  };
+}
+
+// A unique Course entity for each visible program landing page.
+export function serviceCourseSchema({ service, lng }) {
+  return {
+    "@context": "https://schema.org",
+    ...serviceCourseNode({ service, lng }),
+  };
+}
+
+// Google Course lists require a summary ItemList containing at least three
+// courses. The services page visibly lists all programs, so the graph mirrors it.
+export function serviceCourseListSchema({ services = [], lng }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${SITE_URL}${localePath(lng, "/services")}#course-list`,
+    name: lng === "en"
+      ? "Ayah Academy online programs"
+      : "برامج أكاديمية آية أونلاين",
+    numberOfItems: services.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: services.map((service, index) => {
+      const course = serviceCourseNode({ service, lng });
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        url: course.url,
+        item: course,
+      };
+    }),
   };
 }
 
@@ -217,7 +289,7 @@ export function articleSchema({
     dateModified: dateModified || datePublished,
     image: image ? [image] : [`${SITE_URL}/og.png`],
     ...(keywords && keywords.length ? { keywords: keywords.join(", ") } : {}),
-    author: { "@type": "Organization", "@id": ORG_ID, name: brand(lng) },
+    author: { "@type": "Organization", "@id": ORG_ID, name: SITE_NAME },
     publisher: { "@id": ORG_ID },
     isPartOf: { "@id": WEBSITE_ID },
   };
