@@ -20,7 +20,7 @@ const CONTENT = {
     items: [
       { t: 'One dedicated teacher', d: 'A consistent teacher who guides the student every session, gently and patiently.' },
       { t: 'Safe, guided sessions', d: 'Calm, fully student-appropriate lessons.' },
-      { t: 'You stay in control', d: 'Follow along from the parent dashboard, cancel anytime.' },
+      { t: 'You stay in control', d: 'Follow progress from the parent dashboard and request plan changes through support.' },
     ],
   },
 };

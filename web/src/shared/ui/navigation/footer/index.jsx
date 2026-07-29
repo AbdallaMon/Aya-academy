@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Box, Container, Divider, Stack, Typography } from '@mui/material';
 import { MdEmail, MdFavorite } from 'react-icons/md';
+import { FaWhatsapp } from 'react-icons/fa';
 import { navSections, navHref } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
 import { useAuth } from '@/hooks/useAuth.js';
@@ -16,6 +17,10 @@ const FOOTER_TEXT = {
     explore: 'استكشف',
     account: 'حسابك',
     contact: 'تواصل معنا',
+    contactPage: 'صفحة التواصل',
+    whatsapp: 'واتساب',
+    privacy: 'سياسة الخصوصية',
+    terms: 'شروط الاستخدام',
     login: 'تسجيل الدخول',
     signup: 'إنشاء حساب',
     dashboard: 'لوحتي',
@@ -30,6 +35,10 @@ const FOOTER_TEXT = {
     explore: 'Explore',
     account: 'Account',
     contact: 'Contact',
+    contactPage: 'Contact Ayah Academy',
+    whatsapp: 'WhatsApp',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
     login: 'Login',
     signup: 'Sign up',
     dashboard: 'Dashboard',
@@ -152,8 +161,20 @@ export default function SiteFooter() {
               {t.contact}
             </Typography>
             <Stack spacing={1.5}>
+              <Box component={Link} href={localePath(lng, '/contact')} sx={linkSx}>
+                {t.contactPage}
+              </Box>
               <Box component="a" href="mailto:info@ayah.academy" sx={{ ...linkSx, display: 'inline-flex', alignItems: 'center', gap: 1 }}>
                 <MdEmail /> info@ayah.academy
+              </Box>
+              <Box
+                component="a"
+                href="https://wa.me/966582509655"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ ...linkSx, display: 'inline-flex', alignItems: 'center', gap: 1 }}
+              >
+                <FaWhatsapp /> {t.whatsapp}
               </Box>
               <LanguageSwitch size="sm" />
             </Stack>
@@ -162,9 +183,24 @@ export default function SiteFooter() {
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="body2" color="text.secondary" textAlign="center">
-          © {year} {t.brand}. {t.rights}
-        </Typography>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={{ xs: 1.25, sm: 2 }}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Typography variant="body2" color="text.secondary" textAlign="center">
+            © {year} {t.brand}. {t.rights}
+          </Typography>
+          <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" justifyContent="center">
+            <Box component={Link} href={localePath(lng, '/privacy')} sx={linkSx}>
+              {t.privacy}
+            </Box>
+            <Box component={Link} href={localePath(lng, '/terms')} sx={linkSx}>
+              {t.terms}
+            </Box>
+          </Stack>
+        </Stack>
 
         <Typography
           variant="body2"

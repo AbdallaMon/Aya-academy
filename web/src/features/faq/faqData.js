@@ -15,7 +15,7 @@ export const faqContent = {
       },
       {
         q: 'هل الحصص مباشرة أم مسجّلة؟',
-        a: 'الاثنان معًا: جلسات مباشرة مع معلّم، بالإضافة إلى دروس قصيرة موجّهة يمكن للطالب متابعتها في أي وقت.',
+        a: 'الحصص مباشرة وتفاعلية مع معلّم. وتوفّر لوحة التعلّم أيضًا أنشطة وألعابًا واختبارات وأدوات لمتابعة التقدم بين الحصص.',
       },
       {
         q: 'كم تستغرق الحصة؟',
@@ -35,7 +35,7 @@ export const faqContent = {
       },
       {
         q: 'هل يمكنني إلغاء الاشتراك في أي وقت؟',
-        a: 'نعم، يمكنك الإلغاء في أي وقت بسهولة ودون أي تعقيد.',
+        a: 'يمكنك طلب إلغاء الاشتراك في أي وقت عبر فريق الدعم. نوضّح لك أثر الطلب على الفاتورة والحصص المتبقية قبل تأكيد الإلغاء، وفق شروط الخطة المتفق عليها.',
       },
       {
         q: 'بأي لغة يتم الشرح؟',
@@ -54,7 +54,7 @@ export const faqContent = {
       },
       {
         q: 'Are lessons live or recorded?',
-        a: 'Both: live sessions with a teacher, plus short guided video lessons the student can follow anytime.',
+        a: 'Lessons are live and interactive with a teacher. The learning dashboard also provides activities, games, quizzes and progress tools between sessions.',
       },
       {
         q: 'How long is each session?',
@@ -74,7 +74,7 @@ export const faqContent = {
       },
       {
         q: 'Can I cancel anytime?',
-        a: 'Yes, you can cancel anytime, easily and with no hassle.',
+        a: 'You can request cancellation at any time through support. Before confirming it, we explain the effect on billing and remaining lessons under the agreed plan terms.',
       },
       {
         q: 'What language is the teaching in?',

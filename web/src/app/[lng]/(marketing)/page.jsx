@@ -9,6 +9,7 @@ import Testimonials from '@/features/reviews/pages/Testimonials.jsx';
 import SafetyStrip from '@/features/trust/pages/SafetyStrip.jsx';
 import FAQ from '@/features/faq/pages/FAQ.jsx';
 import FreeSessionPromo from '@/features/promo/pages/FreeSessionPromo.jsx';
+import ContactSection from '@/features/contact/components/ContactSection.jsx';
 import JsonLd from '@/shared/components/seo/JsonLd.jsx';
 import { buildMetadata, faqSchema, courseSchema, websiteSchema } from '@/shared/lib/seo';
 import { getFaq } from '@/features/faq/faqData.js';
@@ -45,6 +46,7 @@ export default async function Home({ params }) {
         <PricingSection lng={lng} />
       </Suspense>
       <FAQ lng={lng} />
+      <ContactSection lng={lng} />
       <FreeSessionPromo lng={lng} />
     </>
   );

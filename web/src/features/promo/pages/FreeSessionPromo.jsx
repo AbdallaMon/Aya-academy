@@ -17,7 +17,7 @@ const PROMO = {
     subtitle:
       'جرّب أكاديمية آية قبل أي اشتراك — حصة كاملة مع معلّم، بدون بطاقة دفع وبدون التزام.',
     primary: 'احجز حصة مجانية',
-    note: 'بدون بطاقة دفع · إلغاء في أي وقت',
+    note: 'بدون بطاقة دفع · بدون التزام للحصة التجريبية',
   },
   en: {
     badge: '🎁 Special offer',
@@ -25,7 +25,7 @@ const PROMO = {
     subtitle:
       'Try Ayah Academy before any subscription — a full session with a teacher, no card and no commitment.',
     primary: 'Book a free session',
-    note: 'No card required · Cancel anytime',
+    note: 'No card required · No trial commitment',
   },
 };
 

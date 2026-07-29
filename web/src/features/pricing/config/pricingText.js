@@ -19,7 +19,7 @@ export const pricingText = {
       "شرح بما يناسب لغة الطالب",
       "لوحة متابعة لولي الأمر",
       "نقاط وأوسمة ولوحة صدارة",
-      "إلغاء في أي وقت",
+      "اطلب الإلغاء في أي وقت عبر الدعم",
     ],
   },
   en: {
@@ -42,7 +42,7 @@ export const pricingText = {
       "Explanations in the student’s language",
       "Parent progress dashboard",
       "Points, badges & leaderboard",
-      "Cancel anytime",
+      "Request cancellation anytime through support",
     ],
   },
 };
