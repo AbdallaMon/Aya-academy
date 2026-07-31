@@ -228,7 +228,7 @@ export default function CompassTask({ question, onCorrect, onWrong, sounds }) {
           min={0}
           max={359}
           onChange={handleChange}
-          aria-label="compass"
+          aria-label={gd.compassLabel}
           sx={{ width: "100%", mt: 0.5, color: onTarget ? "#18c08f" : "#7c4dff" }}
         />
       </Box>

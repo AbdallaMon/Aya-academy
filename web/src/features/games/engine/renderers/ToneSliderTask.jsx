@@ -172,7 +172,7 @@ export default function ToneSliderTask({ question, onCorrect, onWrong, sounds })
           min={min}
           max={max}
           onChange={handleChange}
-          aria-label="tone"
+          aria-label={gd.toneSliderHint}
           sx={{ mt: 1, color: locked ? "#18c08f" : "#7c4dff" }}
         />
 

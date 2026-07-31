@@ -380,6 +380,7 @@ export default function GamePlayer({ game, demo = false }) {
         mood={mood}
         muted={sounds.muted}
         onToggleMute={sounds.toggleMute}
+        soundLabel={sounds.muted ? gd.soundOnLabel : gd.soundOffLabel}
         guideText={guideText}
         subtitle={pickText(game, "title", lng)}
         starLabel="⭐"

@@ -214,7 +214,7 @@ export default function DialpadTask({ question, onCorrect, onWrong, sounds }) {
                     background: "linear-gradient(180deg, #20cf99, #0fa377)",
                     fontFamily: "inherit",
                   }}
-                  aria-label="call"
+                  aria-label={gd.dialCall}
                 >
                   📞
                 </motion.button>

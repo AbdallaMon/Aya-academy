@@ -47,6 +47,7 @@ export default function GameShell({
   mood, // "good" | "bad" | null
   muted,
   onToggleMute,
+  soundLabel = "Sound",
   guideText,
   subtitle,
   starLabel = "⭐",
@@ -137,7 +138,7 @@ export default function GameShell({
         >
           <IconButton
             onClick={onToggleMute}
-            aria-label="sound"
+            aria-label={soundLabel}
             sx={{
               background: "rgba(255,255,255,0.2)", color: "#fff",
               width: 36, height: 36, fontSize: 16,

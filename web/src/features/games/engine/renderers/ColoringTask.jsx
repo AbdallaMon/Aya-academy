@@ -215,7 +215,7 @@ export default function ColoringTask({ question, onCorrect, sounds }) {
 
       {/* palette */}
       <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
-        {palette.map((c) => {
+        {palette.map((c, index) => {
           const selected = c === color;
           return (
             <motion.button
@@ -223,7 +223,7 @@ export default function ColoringTask({ question, onCorrect, sounds }) {
               type="button"
               whileTap={{ scale: 0.9 }}
               onClick={() => { sounds?.play("pick"); setColor(c); }}
-              aria-label={`color-${c}`}
+              aria-label={`${gd.colorLabel} ${index + 1}`}
               style={{
                 width: 38,
                 height: 38,

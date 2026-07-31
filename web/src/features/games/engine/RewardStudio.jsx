@@ -79,7 +79,7 @@ export default function RewardStudio({ studio, onContinue, onReplay, sounds, set
         <Box>
           <Typography sx={{ fontWeight: 800, fontSize: 13, my: 1, color: "#2b2350" }}>{gd.studioPickColor}</Typography>
           <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
-            {colors.map((c) => (
+            {colors.map((c, index) => (
               <motion.button
                 key={c}
                 type="button"
@@ -87,7 +87,7 @@ export default function RewardStudio({ studio, onContinue, onReplay, sounds, set
                 animate={c === color ? { scale: [1, 1.12, 1] } : { scale: 1 }}
                 transition={{ duration: 0.3 }}
                 onClick={() => { sounds?.play("pick"); setColor(c); }}
-                aria-label={`color ${c}`}
+                aria-label={`${gd.colorLabel} ${index + 1}`}
                 style={{
                   width: 30, height: 30, borderRadius: "50%", cursor: "pointer",
                   border: "3px solid #fff", boxShadow: c === color ? "0 0 0 3px #6536e0" : "0 0 0 2px #e6e2fb",
