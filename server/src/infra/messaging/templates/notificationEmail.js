@@ -51,13 +51,36 @@ export function buildNotificationUrl({ link, locale, appUrl }) {
 export function buildNotificationEmail({ recipient, notification, appUrl }) {
   const locale = recipient?.locale === "ar" ? "ar" : "en";
   const isArabic = locale === "ar";
+  const isFamilyEnrollment =
+    notification?.dataJson?.enrollmentType === "FAMILY";
+  const enrollmentStudents = isFamilyEnrollment &&
+    Array.isArray(notification?.dataJson?.students)
+    ? notification.dataJson.students
+        .map((student) => ({
+          name: student?.name,
+          url: buildNotificationUrl({
+            link: student?.link,
+            locale,
+            appUrl,
+          }),
+        }))
+        .filter((student) => student.name && student.url)
+    : [];
   const rawTitle =
-    localizedValue(notification, locale, "title") ||
+    (isFamilyEnrollment
+      ? isArabic
+        ? "طلب تسجيل جديد"
+        : "New enrollment"
+      : localizedValue(notification, locale, "title")) ||
     (isArabic
       ? "إشعار جديد من أكاديمية آية"
       : "A new notification from Ayah Academy");
   const title = String(rawTitle).replace(/[\r\n]+/g, " ").trim();
-  const body = localizedValue(notification, locale, "body");
+  const body = isFamilyEnrollment
+    ? isArabic
+      ? "تم تسجيل الطلاب التاليين. اضغط على زر التفاصيل لفتح ملف الطالب."
+      : "The following students were enrolled. Open each student's details below."
+    : localizedValue(notification, locale, "body");
   const actionUrl = buildNotificationUrl({
     link: notification?.link,
     locale,
@@ -69,6 +92,11 @@ export function buildNotificationEmail({ recipient, notification, appUrl }) {
         align: "right",
         greeting: recipient?.name ? `مرحبًا ${recipient.name}،` : "مرحبًا،",
         action: "عرض التفاصيل",
+        student: "الطالب",
+        details: "التفاصيل",
+        viewStudent: "عرض الطالب",
+        viewParent: "عرض ولي الأمر",
+        parentText: "ولي الأمر",
         footer: "هذه رسالة تلقائية من أكاديمية آية، يرجى عدم الرد عليها.",
       }
     : {
@@ -76,6 +104,11 @@ export function buildNotificationEmail({ recipient, notification, appUrl }) {
         align: "left",
         greeting: recipient?.name ? `Hi ${recipient.name},` : "Hi there,",
         action: "View details",
+        student: "Student",
+        details: "Details",
+        viewStudent: "View student",
+        viewParent: "View parent",
+        parentText: "Parent",
         footer:
           "This is an automated message from Ayah Academy. Please do not reply.",
       };
@@ -84,6 +117,26 @@ export function buildNotificationEmail({ recipient, notification, appUrl }) {
   const safeBody = escapeHtml(body);
   const safeGreeting = escapeHtml(copy.greeting);
   const safeActionUrl = actionUrl ? escapeHtml(actionUrl) : null;
+  const actionLabel = isFamilyEnrollment ? copy.viewParent : copy.action;
+  const enrollmentRowsHtml = enrollmentStudents
+    .map(
+      (student) => `<tr>
+        <td style="padding:12px;border-top:1px solid #e5e7eb;font-weight:700;">${escapeHtml(student.name)}</td>
+        <td style="padding:12px;border-top:1px solid #e5e7eb;text-align:${copy.align};">
+          <a href="${escapeHtml(student.url)}" style="display:inline-block;padding:9px 18px;border-radius:999px;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;">${copy.viewStudent}</a>
+        </td>
+      </tr>`,
+    )
+    .join("");
+  const enrollmentTableHtml = isFamilyEnrollment
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #e5e7eb;border-radius:12px;border-collapse:separate;border-spacing:0;overflow:hidden;">
+        <tr style="background:#f9fafb;">
+          <th style="padding:10px 12px;text-align:${copy.align};">${copy.student}</th>
+          <th style="padding:10px 12px;text-align:${copy.align};">${copy.details}</th>
+        </tr>
+        ${enrollmentRowsHtml}
+      </table>`
+    : "";
 
   const html = `<!doctype html>
 <html lang="${locale}" dir="${copy.dir}">
@@ -98,9 +151,10 @@ export function buildNotificationEmail({ recipient, notification, appUrl }) {
             <p style="margin:0 0 14px;font-size:15px;color:#374151;">${safeGreeting}</p>
             <h1 style="margin:0 0 14px;font-size:22px;line-height:1.5;">${safeTitle}</h1>
             ${safeBody ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.8;color:#374151;">${safeBody}</p>` : ""}
+            ${enrollmentTableHtml}
             ${
               safeActionUrl
-                ? `<a href="${safeActionUrl}" style="display:inline-block;padding:12px 26px;border-radius:999px;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;">${copy.action}</a>`
+                ? `<a href="${safeActionUrl}" style="display:inline-block;padding:12px 26px;border-radius:999px;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;">${actionLabel}</a>`
                 : ""
             }
           </td></tr>
@@ -111,7 +165,19 @@ export function buildNotificationEmail({ recipient, notification, appUrl }) {
   </body>
 </html>`;
 
-  const text = [copy.greeting, title, body, actionUrl]
+  const enrollmentText = enrollmentStudents
+    .map((student) => `${student.name}: ${student.url}`)
+    .join("\n");
+  const text = [
+    copy.greeting,
+    title,
+    body,
+    isFamilyEnrollment
+      ? [enrollmentText, actionUrl ? `${copy.parentText}: ${actionUrl}` : null]
+          .filter(Boolean)
+          .join("\n")
+      : actionUrl,
+  ]
     .filter(Boolean)
     .join("\n\n");
 

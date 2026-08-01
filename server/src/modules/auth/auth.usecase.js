@@ -1,6 +1,5 @@
 import {
   BILLING_PERIODS,
-  NOTIFICATION_TYPES,
   PARENT_RELATIONS,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
@@ -25,6 +24,7 @@ import { subscriptionUsecase } from "../finance/subscriptions/subscription.useca
 import { minutesFromHours } from "../../shared/utility/duration.js";
 import { invoiceUsecase } from "../finance/invoices/invoice.usecase.js";
 import { notificationUsecase } from "../notifications/notification.usecase.js";
+import { buildEnrollmentAdminNotification } from "./enrollmentNotifications.js";
 import { authRepo } from "./auth.repo.js";
 import { normalizeLoginIdentifier } from "../../shared/utility/userIdentity.js";
 
@@ -293,16 +293,17 @@ class AuthUsecase {
       rethrowIdentityConstraint(error, { child: true });
     }
 
-    // 7. Notify admins (the teacher) — best-effort, must not fail the request.
+    // 7. One in-app notification links to the parent profile; its JSON carries
+    // student links for the richer enrollment e-mail. Best-effort only.
     try {
       const adminIds = await userRepo.findAdminIds();
       if (adminIds.length) {
-        await notificationUsecase.createManyForUsers(adminIds, {
-          type: NOTIFICATION_TYPES.SUBSCRIPTION_CREATED,
-          titleAr: `طلب تسجيل جديد: ${children.length} طالب بانتظار المراجعة`,
-          titleEn: `New enrollment: ${children.length} student(s) pending review`,
-          link: "/dashboard/subscriptions",
+        const notification = buildEnrollmentAdminNotification({
+          parent,
+          children,
+          result,
         });
+        await notificationUsecase.createManyForUsers(adminIds, notification);
       }
     } catch {
       // swallow — notification is best-effort
