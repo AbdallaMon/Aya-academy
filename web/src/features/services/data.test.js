@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
+  getProgramFamily,
   getService,
   programFamilies,
   programFamilyText,
@@ -77,14 +78,21 @@ test('every program has complete bilingual search and sharing content', () => {
 });
 
 test('the official English name is consistently spelled Ayah Academy', () => {
-  assert.doesNotMatch(JSON.stringify(services), /\bAya Academy\b/);
-  assert.match(JSON.stringify(services), /\bAyah Academy\b/);
+  const publicProgramCopy = JSON.stringify({ services, programFamilies });
+  assert.doesNotMatch(publicProgramCopy, /\bAya Academy\b/);
+  assert.match(publicProgramCopy, /\bAyah Academy\b/);
 });
 
 test('the official curriculum is complete and bilingual', () => {
   assert.deepEqual(programFamilies.map((family) => family.key), ['quran', 'arabic', 'islamic']);
+  assert.deepEqual(
+    programFamilies.map((family) => family.slug),
+    ['quran-programs', 'arabic-programs', 'islamic-studies-programs'],
+  );
 
   for (const family of programFamilies) {
+    assert.equal(getProgramFamily(family.slug), family);
+    assert.match(family.dateModified, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(family.serviceKeys.length > 0);
     assert.ok(family.serviceKeys.every((key) => services.some((service) => service.key === key)));
 
@@ -92,8 +100,20 @@ test('the official curriculum is complete and bilingual', () => {
       const copy = programFamilyText(family, language);
       assert.ok(copy.title.length > 5);
       assert.ok(copy.description.length > 40);
+      assert.ok(copy.metaTitle.length >= 30);
+      assert.ok(copy.metaDescription.length >= 100);
+      assert.ok(copy.keywords.length >= 4);
+      assert.equal(copy.intro.length, 2);
       assert.ok(copy.topics.length > 0);
       assert.ok(copy.topics.every((topic) => topic.length > 4));
+      assert.equal(copy.benefits.length, 3);
+      assert.equal(copy.faqs.length, 3);
+      assert.ok(copy.faqs.every((item) => item.q && item.a));
+
+      const ogImage = fileURLToPath(
+        new URL(`../../../public/og/services/${family.slug}-${language}.png`, import.meta.url),
+      );
+      assert.ok(fs.existsSync(ogImage), `${family.slug}/${language} is missing its OG image`);
     }
   }
 

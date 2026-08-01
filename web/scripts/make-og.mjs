@@ -17,13 +17,14 @@
 //
 // Run:  npm run og        (from web/)   ·   node scripts/make-og.mjs
 // Scope: OG_SCOPE=services renders only program cards (also: brand, blog, all).
+// Optional OG_SLUGS=a,b limits detail-card generation to selected slugs.
 import { chromium } from 'playwright-core';
 import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sortedArticles } from '../src/features/blog/data/articles.js';
-import { services } from '../src/features/services/data.js';
+import { programFamilies, services } from '../src/features/services/data.js';
 
 const WEB_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PUBLIC = path.join(WEB_ROOT, 'public');
@@ -35,6 +36,12 @@ const H = 630;
 const SUFFIX = process.env.OG_SUFFIX || '';
 const withSuffix = (f) => (SUFFIX ? f.replace(/\.(png|jpg)$/, `${SUFFIX}.$1`) : f);
 const SCOPE = process.env.OG_SCOPE || 'all';
+const ONLY_SLUGS = new Set(
+  (process.env.OG_SLUGS || '')
+    .split(',')
+    .map((slug) => slug.trim())
+    .filter(Boolean),
+);
 if (!['all', 'brand', 'blog', 'services'].includes(SCOPE)) {
   throw new Error(`Unsupported OG_SCOPE "${SCOPE}". Use all, brand, blog or services.`);
 }
@@ -277,7 +284,14 @@ try {
       title: service[locale.id].title,
       description: service[locale.id].description,
     }))),
-  ];
+    ...(SCOPE === 'all' || SCOPE === 'services' ? programFamilies : []).flatMap((family) => LOCALES.map((locale) => ({
+      kind: 'services',
+      slug: family.slug,
+      lng: locale.id,
+      title: family[locale.id].title,
+      description: family[locale.id].metaDescription,
+    }))),
+  ].filter((card) => ONLY_SLUGS.size === 0 || ONLY_SLUGS.has(card.slug));
 
   for (const card of detailCards) {
     const dir = path.join(PUBLIC, 'og', card.kind);

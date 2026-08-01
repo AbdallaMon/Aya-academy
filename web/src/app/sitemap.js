@@ -1,7 +1,7 @@
 import { SITE_URL, languages, defaultLng } from '@/shared/lib/seo';
 import { localePath } from '@/i18n/routing.js';
 import { sortedArticles } from '@/features/blog';
-import { services } from '@/features/services/data.js';
+import { programFamilies, services } from '@/features/services/data.js';
 
 // PUBLIC, canonical, indexable routes only (the dashboard is auth-gated +
 // noindex). Service records are the source of truth, so every new public program
@@ -19,6 +19,12 @@ const PUBLIC_PATHS = [
   { path: '/contact', priority: 0.7, changeFrequency: 'monthly', lastModified: MARKETING_LAST_MODIFIED },
   { path: '/privacy', priority: 0.3, changeFrequency: 'yearly', lastModified: MARKETING_LAST_MODIFIED },
   { path: '/terms', priority: 0.3, changeFrequency: 'yearly', lastModified: MARKETING_LAST_MODIFIED },
+  ...programFamilies.map((family) => ({
+    path: `/services/${family.slug}`,
+    priority: 0.85,
+    changeFrequency: 'monthly',
+    lastModified: family.dateModified,
+  })),
   ...services.map((service) => ({
     path: `/services/${service.slug}`,
     priority: 0.8,

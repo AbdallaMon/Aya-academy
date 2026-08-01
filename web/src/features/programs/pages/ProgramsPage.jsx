@@ -78,7 +78,7 @@ export function Programs({ lng = 'ar' }) {
                 ))}
               </Stack>
               <Link
-                href={`${localePath(language, '/services')}#${family.key}-programs`}
+                href={localePath(language, `/services/${family.slug}`)}
                 style={{ alignSelf: 'flex-start', textDecoration: 'none' }}
               >
                 <Button variant="outlined" sx={{ color: style.color, borderColor: style.border }}>

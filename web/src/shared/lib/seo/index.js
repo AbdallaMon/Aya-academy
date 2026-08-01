@@ -8,6 +8,7 @@ export {
   courseSchema,
   serviceCourseSchema,
   serviceCourseListSchema,
+  programFamilyCollectionSchema,
   breadcrumbSchema,
   articleSchema,
 } from "./structuredData.js";

@@ -30,6 +30,11 @@ export default function ServicesPage({ lng }) {
                 <Typography color="text.secondary" sx={{ fontSize: 17, lineHeight: 1.8 }}>
                   {familyCopy.description}
                 </Typography>
+                <Link href={localePath(language, `/services/${family.slug}`)} style={{ display: 'inline-block', marginTop: 16, textDecoration: 'none' }}>
+                  <Button variant="contained">
+                    {text.familyCta}
+                  </Button>
+                </Link>
               </Box>
 
               <Box

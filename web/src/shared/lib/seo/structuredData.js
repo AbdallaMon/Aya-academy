@@ -274,6 +274,42 @@ export function serviceCourseListSchema({ services = [], lng }) {
   };
 }
 
+// A real indexable collection page for each program family. The visible page
+// lists the same topics and detailed course links represented in this graph.
+export function programFamilyCollectionSchema({ family, services = [], lng }) {
+  const language = lng === "en" ? "en" : "ar";
+  const copy = family[language];
+  const url = `${SITE_URL}${localePath(language, `/services/${family.slug}`)}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${url}#collection`,
+    name: copy.title,
+    description: copy.metaDescription,
+    url,
+    inLanguage: language,
+    isPartOf: { "@id": WEBSITE_ID },
+    publisher: { "@id": ORG_ID },
+    about: copy.topics,
+    mainEntity: {
+      "@type": "ItemList",
+      name: copy.title,
+      numberOfItems: services.length,
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      itemListElement: services.map((service, index) => {
+        const course = serviceCourseNode({ service, lng: language });
+        return {
+          "@type": "ListItem",
+          position: index + 1,
+          url: course.url,
+          item: course,
+        };
+      }),
+    },
+  };
+}
+
 // BreadcrumbList from an ordered [{ name, url }]. `url` should be absolute.
 export function breadcrumbSchema(items = []) {
   return {
