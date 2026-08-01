@@ -15,12 +15,14 @@ export const seoContent = {
       title: "أكاديمية آية | دروس القرآن أونلاين للأطفال والكبار",
       titleAbsolute: true,
       description:
-        "تقدّم أكاديمية آية حصصًا مباشرة أونلاين في القرآن وتحفيظه والتجويد واللغة العربية والدراسات الإسلامية للأطفال والكبار، مع معلّمين مؤهّلين وحصة تجريبية مجانية.",
+        "تقدّم أكاديمية آية حصصًا مباشرة أونلاين في القرآن والتجويد والعربية والدراسات الإسلامية للأطفال واليافعين والكبار، خاصة لغير الناطقين بالعربية.",
       keywords: [
         "تحفيظ القرآن أونلاين",
         "تعليم القرآن الكريم",
         "تحفيظ القرآن للكبار",
         "تحفيظ القرآن للأطفال",
+        "تعليم القرآن لليافعين",
+        "تعليم القرآن لغير الناطقين بالعربية",
         "دورات تجويد أونلاين",
         "تعليم العلوم الشرعية",
         "دراسة العلوم الشرعية أونلاين",
@@ -35,12 +37,14 @@ export const seoContent = {
       title: "Ayah Academy | Online Quran Classes for Kids & Adults",
       titleAbsolute: true,
       description:
-        "Ayah Academy offers live online Quran classes, Quran memorization, Tajweed, Arabic and Islamic studies for kids and adults with qualified teachers and a free trial.",
+        "Ayah Academy offers live online Quran, Tajweed, Arabic and Islamic Studies for children, teenagers and adults, especially non-Arabic speakers.",
       keywords: [
         "online Quran memorization",
         "learn Quran online",
         "Quran classes for adults",
         "Quran classes for kids",
+        "Quran classes for teenagers",
+        "Quran for non-Arabic speakers",
         "online Tajweed course",
         "Islamic studies online",
         "learn Arabic online",
@@ -58,10 +62,12 @@ export const seoContent = {
       title: "أكاديمية آية | دروس القرآن أونلاين للأطفال والكبار",
       titleAbsolute: true,
       description:
-        "تقدّم أكاديمية آية حصصًا مباشرة أونلاين في القرآن وتحفيظه والتجويد واللغة العربية والدراسات الإسلامية للأطفال والكبار، مع معلّمين مؤهّلين وحصة تجريبية مجانية.",
+        "تقدّم أكاديمية آية حصصًا مباشرة أونلاين في القرآن والتجويد والعربية والدراسات الإسلامية للأطفال واليافعين والكبار، خاصة لغير الناطقين بالعربية.",
       keywords: [
         "تحفيظ القرآن أونلاين",
         "تعليم القرآن للكبار والأطفال",
+        "تعليم القرآن لليافعين",
+        "تعليم القرآن لغير الناطقين بالعربية",
         "دورات تجويد أونلاين",
         "تعليم العلوم الشرعية أونلاين",
         "حصة قرآن تجريبية مجانية",
@@ -74,10 +80,12 @@ export const seoContent = {
       title: "Ayah Academy | Online Quran Classes for Kids & Adults",
       titleAbsolute: true,
       description:
-        "Ayah Academy offers live online Quran classes, Quran memorization, Tajweed, Arabic and Islamic studies for kids and adults with qualified teachers and a free trial.",
+        "Ayah Academy offers live online Quran, Tajweed, Arabic and Islamic Studies for children, teenagers and adults, especially non-Arabic speakers.",
       keywords: [
         "online Quran memorization",
         "Quran classes for adults and kids",
+        "Quran classes for teenagers",
+        "Quran for non-Arabic speakers",
         "online Tajweed course",
         "Islamic studies online",
         "free Quran trial class",

@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { getService, services, serviceText } from './data.js';
+import {
+  getService,
+  programFamilies,
+  programFamilyText,
+  services,
+  serviceText,
+} from './data.js';
 
 const expandedProgramSlugs = [
   'quran-memorization',
@@ -73,4 +79,26 @@ test('every program has complete bilingual search and sharing content', () => {
 test('the official English name is consistently spelled Ayah Academy', () => {
   assert.doesNotMatch(JSON.stringify(services), /\bAya Academy\b/);
   assert.match(JSON.stringify(services), /\bAyah Academy\b/);
+});
+
+test('the official curriculum is complete and bilingual', () => {
+  assert.deepEqual(programFamilies.map((family) => family.key), ['quran', 'arabic', 'islamic']);
+
+  for (const family of programFamilies) {
+    assert.ok(family.serviceKeys.length > 0);
+    assert.ok(family.serviceKeys.every((key) => services.some((service) => service.key === key)));
+
+    for (const language of ['ar', 'en']) {
+      const copy = programFamilyText(family, language);
+      assert.ok(copy.title.length > 5);
+      assert.ok(copy.description.length > 40);
+      assert.ok(copy.topics.length > 0);
+      assert.ok(copy.topics.every((topic) => topic.length > 4));
+    }
+  }
+
+  const englishTopics = programFamilies.flatMap((family) => family.en.topics);
+  assert.ok(englishTopics.includes("Noor Al-Bayan and Qa'idah"));
+  assert.ok(englishTopics.includes('Arabic Reading, Writing, Listening and Speaking'));
+  assert.ok(englishTopics.includes('Tafsir of Selected Surahs'));
 });

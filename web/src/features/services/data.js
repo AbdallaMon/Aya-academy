@@ -7,7 +7,7 @@ export const services = [
   {
     slug: 'quran-memorization',
     key: 'memorization',
-    dateModified: '2026-07-28',
+    dateModified: '2026-08-01',
     ar: {
       title: 'تحفيظ القرآن أونلاين للأطفال والكبار',
       description: 'يساعد برنامج تحفيظ القرآن في أكاديمية آية الطالب على بناء حفظ ثابت بخطة تناسب مستواه، تجمع بين الحفظ الجديد والمراجعة وتصحيح التلاوة مع معلّم مؤهّل.',
@@ -100,15 +100,15 @@ export const services = [
   {
     slug: 'quran-classes-for-kids',
     key: 'kidsQuran',
-    dateModified: '2026-07-25',
+    dateModified: '2026-08-01',
     ar: {
       title: 'دروس القرآن أونلاين للأطفال',
-      description: 'حصص قرآن مباشرة للأطفال من ٥ سنوات فأكثر، تجمع بين القراءة الواضحة والحفظ والمعاني المبسطة مع معلّم مخصّص.',
-      focus: 'القراءة والتلاوة، والحفظ والمراجعة، وأساسيات التجويد والمعاني المبسطة.',
+      description: 'حصص قرآن مباشرة للأطفال من ٥ سنوات فأكثر، تبدأ بالحروف وقراءة القرآن للمبتدئين عبر نور البيان والقاعدة، وتتدرّج إلى التلاوة والتجويد والحفظ والمعاني المبسطة مع معلّم مخصّص.',
+      focus: 'قراءة القرآن للمبتدئين عبر نور البيان والقاعدة، ثم التلاوة والحفظ والمراجعة وأساسيات التجويد والمعاني المبسطة.',
       audience: 'للأطفال من ٥ سنوات فأكثر، من المبتدئ تمامًا إلى الطالب الذي يريد تقوية تلاوته وحفظه.',
       format: 'جلسات مباشرة مع معلّم مخصّص، تدعمها دروس قصيرة موجّهة وتدريب يناسب عمر الطالب.',
       duration: 'مدة كل جلسة مباشرة ساعة واحدة.',
-      keywords: ['دروس قرآن للأطفال أونلاين', 'تحفيظ القرآن للأطفال', 'معلم قرآن للأطفال أونلاين'],
+      keywords: ['دروس قرآن للأطفال أونلاين', 'نور البيان والقاعدة', 'قراءة القرآن للمبتدئين', 'تحفيظ القرآن للأطفال'],
       sections: [
         {
           title: 'بداية تناسب عمر الطفل ومستواه',
@@ -144,12 +144,12 @@ export const services = [
     },
     en: {
       title: 'Online Quran Classes for Kids',
-      description: 'Live Quran classes for children aged 5 and up, combining clear reading, memorization and simple meanings with a dedicated teacher.',
-      focus: 'Quran reading and recitation, memorization and review, Tajweed foundations and simple meanings.',
+      description: "Live Quran classes for children aged 5 and up, from beginner reading with Noor Al-Bayan and Qa'idah to recitation, Tajweed, memorization and simple meanings with a dedicated teacher.",
+      focus: "Beginner Quran reading through Noor Al-Bayan and Qa'idah, followed by recitation, memorization, review, Tajweed foundations and simple meanings.",
       audience: 'Children aged 5 and up, from complete beginners to students building stronger recitation and memorization.',
       format: 'Live sessions with a dedicated teacher, supported by short guided lessons and age-appropriate practice.',
       duration: 'Each live session is one hour.',
-      keywords: ['online Quran classes for kids', 'Quran memorization for children', 'Quran teacher for kids online'],
+      keywords: ['online Quran classes for kids', "Noor Al-Bayan and Qa'idah", 'Quran reading for beginners', 'Quran memorization for children'],
       sections: [
         {
           title: 'A starting point that fits your child',
@@ -187,10 +187,10 @@ export const services = [
   {
     slug: 'quran-classes-for-adults',
     key: 'adultQuran',
-    dateModified: '2026-07-25',
+    dateModified: '2026-08-01',
     ar: {
       title: 'دروس القرآن أونلاين للكبار',
-      description: 'حصص قرآن مباشرة للكبار الراغبين في تحسين التلاوة أو بدء الحفظ والمراجعة أو تعلّم التجويد من المستوى المناسب لهم.',
+      description: 'حصص قرآن مباشرة للكبار تبدأ من قراءة القرآن للمبتدئين، وتمتد إلى تحسين التلاوة والتجويد والحفظ والمراجعة بخطة شخصية تناسب مستوى الطالب وهدفه.',
       focus: 'تصحيح القراءة والتلاوة، والحفظ والمراجعة، وأحكام التجويد بحسب هدف الطالب.',
       audience: 'للكبار في كل المستويات؛ من المبتدئ الذي يبدأ من الأساس إلى من يريد تقوية التلاوة أو تثبيت الحفظ.',
       format: 'جلسات مباشرة مع معلّم، بالإضافة إلى دروس قصيرة موجّهة يمكن للطالب الرجوع إليها في أي وقت.',
@@ -231,7 +231,7 @@ export const services = [
     },
     en: {
       title: 'Online Quran Classes for Adults',
-      description: 'Live Quran classes for adults who want to improve recitation, begin memorization and review, or study Tajweed from the right level.',
+      description: 'Live Quran classes for adults, from beginner Quran reading to stronger recitation, Tajweed, memorization and revision through a personalized plan for each learner.',
       focus: 'Quran reading and recitation, memorization and review, and Tajweed based on the student’s goal.',
       audience: 'Adults at every level, from complete beginners to students improving recitation or strengthening memorization.',
       format: 'Live sessions with a teacher, plus short guided lessons the student can revisit anytime.',
@@ -274,7 +274,7 @@ export const services = [
   {
     slug: 'tajweed-courses',
     key: 'tajweed',
-    dateModified: '2026-07-28',
+    dateModified: '2026-08-01',
     ar: {
       title: 'دورات التجويد أونلاين',
       description: 'تساعد دورة التجويد الطالب على فهم أحكام التلاوة وتطبيقها أثناء القراءة، مع تصحيح مباشر للمخارج والنطق على يد معلّم مؤهّل.',
@@ -359,32 +359,33 @@ export const services = [
   {
     slug: 'arabic-reading',
     key: 'reading',
-    dateModified: '2026-07-28',
+    dateModified: '2026-08-01',
     ar: {
       title: 'تعليم العربية للقراءة أونلاين',
-      description: 'يبني برنامج القراءة بالعربية مهارة الطالب خطوة بخطوة، من معرفة الحروف وأصواتها إلى قراءة الكلمات والجمل المناسبة لمستواه.',
-      audience: 'للمبتدئ الذي لا يعرف الحروف، ولمن يعرفها لكنه يحتاج إلى قراءة الكلمات والجمل بصورة أوضح.',
-      focus: 'الحروف وأصواتها، والحركات، وربط الحروف، ثم قراءة كلمات وجمل متدرّجة.',
+      description: 'يبني برنامج العربية لغير الناطقين بها مهارات القراءة والكتابة خطوة بخطوة، من معرفة الحروف وأصواتها إلى قراءة الكلمات والجمل وكتابتها بما يناسب مستوى الطالب.',
+      audience: 'للأطفال واليافعين والكبار من غير الناطقين بالعربية، من المبتدئ الذي لا يعرف الحروف إلى من يريد تقوية القراءة والكتابة.',
+      focus: 'الحروف وأصواتها، والحركات، وربط الحروف، ثم قراءة كلمات وجمل متدرّجة وكتابتها.',
       format: 'جلسات مباشرة مع معلّم، تعتمد على الشرح القصير والقراءة بصوت مسموع والتصحيح أثناء التدريب.',
       duration: 'مدة كل جلسة مباشرة ساعة واحدة.',
       audienceItems: [
         'المبتدئ الذي يبدأ تعلّم الحروف العربية وأصواتها.',
         'الطالب الذي يعرف الحروف لكنه يجد صعوبة في تركيب الكلمات.',
-        'من يقرأ ببطء ويريد تدريبًا منتظمًا على كلمات وجمل أوضح.',
+        'من يريد تقوية القراءة والكتابة بالعربية بتدريب منتظم.',
       ],
       focusItems: [
         'تمييز الحروف وأصواتها في مواضع مختلفة.',
         'قراءة الحركات والمقاطع القصيرة.',
         'ربط الحروف لتكوين كلمات.',
         'الانتقال تدريجيًا إلى جمل ونصوص تناسب المستوى.',
+        'تدريبات كتابة تناسب الحروف والكلمات التي يتعلّمها الطالب.',
       ],
       lessonSteps: [
         'مراجعة الحروف أو الكلمات التي تدرب عليها الطالب.',
         'شرح صوت أو تركيب قراءة جديد بأمثلة واضحة.',
         'قراءة الطالب للأمثلة مع تصحيح المعلّم.',
-        'تحديد تدريب قصير يراجعه قبل الحصة التالية.',
+        'تحديد تدريب قصير في القراءة أو الكتابة يراجعه قبل الحصة التالية.',
       ],
-      keywords: ['تعليم العربية للقراءة أونلاين', 'تعلم القراءة بالعربية', 'تعليم الحروف العربية'],
+      keywords: ['تعليم العربية لغير الناطقين بها', 'تعلم القراءة والكتابة بالعربية', 'تعليم الحروف العربية'],
       faqs: [
         {
           q: 'هل يمكنني البدء دون معرفة الحروف العربية؟',
@@ -398,33 +399,38 @@ export const services = [
           q: 'هل البرنامج مناسب للأطفال والكبار؟',
           a: 'نعم. البرامج متاحة للطلاب من ٥ سنوات فأكثر وللكبار، مع تدريب يناسب مستوى كل طالب.',
         },
+        {
+          q: 'هل يشمل البرنامج الكتابة بالعربية؟',
+          a: 'نعم. يتدرّب الطالب على كتابة الحروف والكلمات والجمل بصورة تدريجية بالتوازي مع تطوّر مهارة القراءة.',
+        },
       ],
     },
     en: {
       title: 'Online Arabic Reading Classes',
-      description: 'Online Arabic reading classes build the student’s skills step by step, from recognizing letters and sounds to reading words and sentences at the right level.',
-      audience: 'For complete beginners and students who know the Arabic letters but need clearer, more consistent reading practice.',
-      focus: 'Letters and sounds, short vowels, joining letters, then graded words and sentences.',
+      description: 'Online Arabic classes for non-Arabic speakers build reading and writing step by step, from recognizing letters and sounds to reading and writing level-appropriate words and sentences.',
+      audience: 'For children, teenagers and adults who are non-Arabic speakers, from complete beginners to students strengthening their reading and writing.',
+      focus: 'Letters and sounds, short vowels, joining letters, then reading and writing graded words and sentences.',
       format: 'Live sessions with a teacher using short explanations, reading aloud and direct correction during practice.',
       duration: 'Each live session is one hour.',
       audienceItems: [
         'Complete beginners learning Arabic letters and sounds.',
         'Students who know the letters but find it difficult to form words.',
-        'Slow readers who want regular practice with clearer words and sentences.',
+        'Learners who want regular practice to strengthen Arabic reading and writing.',
       ],
       focusItems: [
         'Recognizing letters and their sounds in different positions.',
         'Reading short vowels and simple sound combinations.',
         'Joining letters to form words.',
         'Moving gradually to sentences and texts that suit the student’s level.',
+        'Writing practice based on the letters and words the student is learning.',
       ],
       lessonSteps: [
         'Review letters or words practiced in the previous session.',
         'Explain a new sound or reading pattern with clear examples.',
         'Have the student read the examples with teacher correction.',
-        'Set a short reading practice for the next session.',
+        'Set a short reading or writing practice for the next session.',
       ],
-      keywords: ['learn Arabic reading online', 'Arabic reading classes', 'Arabic letters for beginners'],
+      keywords: ['Arabic for non-Arabic speakers', 'Arabic reading and writing online', 'Arabic letters for beginners'],
       faqs: [
         {
           q: 'Can I start without knowing the Arabic letters?',
@@ -438,16 +444,20 @@ export const services = [
           q: 'Are Arabic reading classes for children and adults?',
           a: 'Yes. Programs are available to students aged 5 and up and adults, with practice adjusted to each student’s level.',
         },
+        {
+          q: 'Does the program include Arabic writing?',
+          a: 'Yes. Students practice writing letters, words and sentences gradually alongside their reading development.',
+        },
       ],
     },
   },
   {
     slug: 'arabic-speaking',
     key: 'speaking',
-    dateModified: '2026-07-28',
+    dateModified: '2026-08-01',
     ar: {
       title: 'تعليم العربية للمحادثة أونلاين',
-      description: 'يدرّب برنامج المحادثة الطالب على استخدام العربية في مواقف يومية بسيطة من خلال الاستماع، وبناء الجمل، والحوار المباشر مع المعلّم.',
+      description: 'يدرّب برنامج العربية لغير الناطقين بها الطالب على مهارات الاستماع والمحادثة، واستخدام العربية في مواقف يومية من خلال بناء الجمل والحوار المباشر مع المعلّم.',
       audience: 'لمن يعرف بعض الكلمات ويريد استخدامها في جمل، وللمبتدئ الذي يحتاج إلى بداية منظّمة في الاستماع والتحدث.',
       focus: 'مفردات يومية، وبناء جمل قصيرة، وفهم الأسئلة، والتدرب على الحوار.',
       format: 'جلسات مباشرة تتضمن نماذج حوار قصيرة، وتدريبًا على الاستماع والإجابة، وتصحيحًا يساعد الطالب على التعبير بوضوح.',
@@ -487,7 +497,7 @@ export const services = [
     },
     en: {
       title: 'Online Arabic Speaking Classes',
-      description: 'Online Arabic speaking classes help students use Arabic in simple everyday situations through listening, sentence building and guided conversation with a teacher.',
+      description: 'Online Arabic classes for non-Arabic speakers strengthen listening and speaking through everyday situations, sentence building and guided conversation with a teacher.',
       audience: 'For beginners who need a structured start and students who know some words but want to use them in complete sentences.',
       focus: 'Everyday vocabulary, short sentences, understanding questions and guided conversation.',
       format: 'Live sessions with short dialogue models, listening and response practice, and correction that helps the student communicate more clearly.',
@@ -529,7 +539,7 @@ export const services = [
   {
     slug: 'quranic-arabic',
     key: 'quranicArabic',
-    dateModified: '2026-07-28',
+    dateModified: '2026-08-01',
     ar: {
       title: 'تعليم عربية القرآن أونلاين',
       description: 'يقدّم برنامج عربية القرآن مدخلًا لغويًا لفهم المفردات والتراكيب التي تظهر في الآيات، مع شرح تدريجي يناسب مستوى الطالب.',
@@ -614,24 +624,26 @@ export const services = [
   {
     slug: 'islamic-studies',
     key: 'islamicStudies',
-    dateModified: '2026-07-28',
+    dateModified: '2026-08-01',
     ar: {
       title: 'الدراسات الإسلامية أونلاين',
-      description: 'يقدّم برنامج الدراسات الإسلامية موضوعات في العقيدة والعبادات والأخلاق والسيرة بشرح واضح يناسب عمر الطالب ومستواه.',
-      audience: 'للأطفال من ٥ سنوات فأكثر وللكبار الذين يريدون دراسة أساسيات إسلامية بصورة منظّمة ومفهومة.',
-      focus: 'أساسيات العقيدة والعبادات، والأخلاق والآداب، ومواقف من السيرة النبوية.',
+      description: 'يقدّم برنامج الدراسات الإسلامية تعليمًا يناسب الأطفال واليافعين والكبار في العقيدة والعبادات والأدعية والأذكار والأخلاق وقصص الأنبياء والسيرة وتفسير سور مختارة.',
+      audience: 'للأطفال من ٥ سنوات فأكثر واليافعين والكبار والعائلات الذين يريدون دراسة الإسلام بصورة منظّمة ومفهومة.',
+      focus: 'العقيدة والعبادات، والأدعية والأذكار، والأخلاق، وقصص الأنبياء، والسيرة النبوية، وتفسير سور مختارة.',
       format: 'جلسات مباشرة مع معلّم، تتضمن شرح الموضوع ومناقشة أمثلة وأسئلة تناسب مستوى الطالب.',
       duration: 'مدة كل جلسة مباشرة ساعة واحدة.',
       audienceItems: [
         'الطفل الذي يحتاج إلى شرح مبسّط لموضوعات الدين والأخلاق.',
         'المبتدئ الذي يريد دراسة الأساسيات بترتيب واضح.',
-        'الكبار الذين يريدون مراجعة موضوعات العقيدة والعبادات والسيرة.',
+        'الكبار والعائلات الذين يريدون تعلّم العقيدة والعبادات والسيرة والتفسير.',
       ],
       focusItems: [
         'موضوعات أساسية في العقيدة.',
         'العبادات وما يرتبط بها من مفاهيم أولية.',
         'الأخلاق والآداب في المواقف اليومية.',
-        'أحداث وشخصيات من السيرة النبوية.',
+        'الأدعية والأذكار اليومية وربطها بحياة الطالب.',
+        'قصص الأنبياء وأحداث من السيرة النبوية.',
+        'تفسير سور مختارة بما يناسب العمر والمستوى.',
       ],
       lessonSteps: [
         'مراجعة الفكرة التي تناولتها الحصة السابقة.',
@@ -639,11 +651,11 @@ export const services = [
         'مناقشة أمثلة أو أسئلة مرتبطة بالموضوع.',
         'تلخيص النقاط التي يحتاج الطالب إلى مراجعتها.',
       ],
-      keywords: ['دراسات إسلامية أونلاين', 'تعليم العلوم الشرعية', 'تعلم السيرة والأخلاق'],
+      keywords: ['دراسات إسلامية أونلاين', 'الأدعية والأذكار للأطفال', 'قصص الأنبياء والسيرة', 'تفسير سور مختارة'],
       faqs: [
         {
           q: 'ما الموضوعات التي يشملها البرنامج؟',
-          a: 'يشمل موضوعات في العقيدة والعبادات والأخلاق والآداب والسيرة، ويُختار مستوى الشرح بحسب الطالب.',
+          a: 'يشمل العقيدة والعبادات والأدعية والأذكار والأخلاق وقصص الأنبياء والسيرة وتفسير سور مختارة، ويُختار مستوى الشرح بحسب الطالب.',
         },
         {
           q: 'هل البرنامج مناسب للأطفال والكبار؟',
@@ -657,21 +669,23 @@ export const services = [
     },
     en: {
       title: 'Online Islamic Studies',
-      description: 'Online Islamic Studies classes cover creed, worship, manners and the Prophetic biography with clear explanations suited to the student’s age and level.',
-      audience: 'For children aged 5 and up and adults who want to study Islamic foundations in a structured, understandable way.',
-      focus: 'Foundations of creed and worship, Islamic manners and lessons from the Prophetic biography.',
+      description: 'Online Islamic Studies for children, teenagers and adults covering creed, worship, Duas and Adhkar, manners, stories of the Prophets, Seerah and Tafsir of selected Surahs.',
+      audience: 'For children aged 5 and up, teenagers, adults and families who want to study Islam in a structured, understandable way.',
+      focus: 'Creed and worship, Duas and Adhkar, manners, stories of the Prophets, Seerah and Tafsir of selected Surahs.',
       format: 'Live sessions with a teacher, including an explanation of the topic and discussion of examples and questions at the student’s level.',
       duration: 'Each live session is one hour.',
       audienceItems: [
         'Children who need a simple explanation of Islamic topics and manners.',
         'Beginners who want to study the foundations in a clear order.',
-        'Adults who want to review topics in creed, worship and the Prophetic biography.',
+        'Adults and families learning creed, worship, Seerah and Tafsir.',
       ],
       focusItems: [
         'Foundational topics in Islamic creed.',
         'Worship and the basic concepts connected to it.',
         'Manners and character in everyday situations.',
-        'Events and people from the Prophetic biography.',
+        'Daily Duas and Adhkar connected to the student’s life.',
+        'Stories of the Prophets and events from the Seerah.',
+        'Tafsir of selected Surahs at an age-appropriate level.',
       ],
       lessonSteps: [
         'Review the main idea from the previous session.',
@@ -679,11 +693,11 @@ export const services = [
         'Discuss examples or questions connected to the topic.',
         'Summarize the points the student needs to review.',
       ],
-      keywords: ['Islamic studies online', 'learn Islamic studies', 'online Islamic education'],
+      keywords: ['Islamic studies online', 'Duas and Adhkar for children', 'Stories of the Prophets and Seerah', 'Tafsir of selected Surahs'],
       faqs: [
         {
           q: 'What topics does the program cover?',
-          a: 'It covers creed, worship, manners and the Prophetic biography, with the explanation level chosen for the student.',
+          a: 'It covers creed, worship, Duas and Adhkar, manners, stories of the Prophets, Seerah and Tafsir of selected Surahs at the right level for each student.',
         },
         {
           q: 'Is the program suitable for children and adults?',
@@ -706,12 +720,99 @@ export function serviceText(service, lng) {
   return service?.[lng === 'en' ? 'en' : 'ar'];
 }
 
+// The official curriculum supplied by Ayah Academy. These three families keep
+// the public catalogue easy to scan while the existing service pages retain
+// their stable, search-friendly URLs and provide the detailed learning paths.
+export const programFamilies = [
+  {
+    key: 'quran',
+    serviceKeys: ['memorization', 'kidsQuran', 'adultQuran', 'tajweed'],
+    ar: {
+      title: 'برامج القرآن الكريم',
+      description: 'مسارات تبدأ من القراءة الأولى وتصل إلى التلاوة المتقنة والحفظ والمراجعة، بخطة تناسب عمر الطالب ومستواه.',
+      topics: [
+        'قراءة القرآن للمبتدئين',
+        'نور البيان والقاعدة',
+        'تلاوة القرآن بالتجويد الصحيح',
+        'حفظ القرآن الكريم',
+        'مراجعة الحفظ وتثبيته',
+      ],
+    },
+    en: {
+      title: "Qur'an Programs",
+      description: 'Learning paths from first reading to confident recitation, memorization and revision, shaped around the student’s age and level.',
+      topics: [
+        "Qur'an Reading for Beginners",
+        "Noor Al-Bayan and Qa'idah",
+        "Qur'an Recitation with Proper Tajweed",
+        "Qur'an Memorization (Hifz)",
+        'Revision and Memorization Support',
+      ],
+    },
+  },
+  {
+    key: 'arabic',
+    serviceKeys: ['reading', 'speaking', 'quranicArabic'],
+    ar: {
+      title: 'برامج اللغة العربية',
+      description: 'تعليم متدرّج لغير الناطقين بالعربية ينمّي مهارات التواصل ويفتح بابًا أوسع لفهم لغة القرآن.',
+      topics: [
+        'اللغة العربية لغير الناطقين بها',
+        'القراءة والكتابة والاستماع والمحادثة باللغة العربية',
+      ],
+    },
+    en: {
+      title: 'Arabic Language Programs',
+      description: 'Step-by-step Arabic learning for non-Arabic speakers that builds communication skills and a stronger understanding of the Quran’s language.',
+      topics: [
+        'Arabic Language for Non-Arabic Speakers',
+        'Arabic Reading, Writing, Listening and Speaking',
+      ],
+    },
+  },
+  {
+    key: 'islamic',
+    serviceKeys: ['islamicStudies'],
+    ar: {
+      title: 'برامج الدراسات الإسلامية',
+      description: 'تعليم إسلامي موثوق يناسب العمر، ويربط المعرفة بالعبادة والأخلاق والحياة اليومية للطالب والأسرة.',
+      topics: [
+        'الدراسات الإسلامية',
+        'الأدعية والأذكار اليومية',
+        'الآداب الإسلامية وبناء الأخلاق',
+        'قصص الأنبياء',
+        'سيرة النبي محمد ﷺ',
+        'تفسير سور مختارة',
+        'التربية الإسلامية للأطفال والعائلات',
+      ],
+    },
+    en: {
+      title: 'Islamic Studies Programs',
+      description: 'Authentic, age-appropriate Islamic learning that connects knowledge with worship, character and everyday family life.',
+      topics: [
+        'Islamic Studies',
+        'Daily Duas and Adhkar',
+        'Islamic Manners and Character Building',
+        'Stories of the Prophets',
+        'Seerah of Prophet Muhammad ﷺ',
+        'Tafsir of Selected Surahs',
+        'Islamic Education for Children and Families',
+      ],
+    },
+  },
+];
+
+export function programFamilyText(family, lng) {
+  return family?.[lng === 'en' ? 'en' : 'ar'];
+}
+
 export const servicePageText = {
   ar: {
     indexTitle: 'برامج تعلّم القرآن والعربية والدراسات الإسلامية أونلاين',
-    indexDescription: 'استكشف برامج أكاديمية آية للصغار والكبار، مع خطة تناسب مستوى الطالب وحصص مباشرة ودروس موجّهة.',
+    indexDescription: 'استكشف برامج أكاديمية آية في القرآن والتجويد والعربية والدراسات الإسلامية للأطفال واليافعين والكبار، وخاصة لغير الناطقين بالعربية.',
     indexEyebrow: 'برامج أكاديمية آية',
     indexCta: 'اعرف تفاصيل البرنامج',
+    familyPathsTitle: 'مسارات التعلّم التفصيلية',
     audienceTitle: 'لمن يناسب هذا البرنامج؟',
     audience: 'برامج لكل الأعمار — للصغار والكبار — بخطة تناسب مستوى الطالب.',
     formatTitle: 'كيف نتعلّم؟',
@@ -730,9 +831,10 @@ export const servicePageText = {
   },
   en: {
     indexTitle: 'Online Quran, Arabic & Islamic Studies Programs',
-    indexDescription: 'Explore Ayah Academy programs for children and adults, with a plan that fits the student’s level, live sessions and guided lessons.',
+    indexDescription: 'Explore Ayah Academy Quran, Tajweed, Arabic and Islamic Studies programs for children, teenagers and adults, especially non-Arabic speakers.',
     indexEyebrow: 'Ayah Academy programs',
     indexCta: 'Explore the program',
+    familyPathsTitle: 'Detailed learning paths',
     audienceTitle: 'Who is this program for?',
     audience: 'Programs for all ages — from young learners to adults — on a plan that fits the student’s level.',
     formatTitle: 'How do we learn?',

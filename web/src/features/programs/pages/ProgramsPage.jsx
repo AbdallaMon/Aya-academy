@@ -1,140 +1,91 @@
 import Link from 'next/link';
-import { Box, Chip, Stack, Typography } from '@mui/material';
-import {
-  PiBookBookmark,
-  PiWaveform,
-  PiBookOpenText,
-  PiChatsCircle,
-  PiTranslate,
-  PiMosque,
-} from 'react-icons/pi';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import { PiBookOpenText, PiTranslate, PiMosque } from 'react-icons/pi';
 import MarketingSection from '@/shared/ui/sections/MarketingSection.jsx';
-import { services, serviceText } from '@/features/services/data.js';
+import { programFamilies, programFamilyText } from '@/features/services/data.js';
 import { localePath } from '@/i18n/routing.js';
 
 const ICONS = {
-  memorization: PiBookBookmark,
-  kidsQuran: PiBookBookmark,
-  adultQuran: PiBookOpenText,
-  tajweed: PiWaveform,
-  reading: PiBookOpenText,
-  speaking: PiChatsCircle,
-  quranicArabic: PiTranslate,
-  islamicStudies: PiMosque,
+  quran: PiBookOpenText,
+  arabic: PiTranslate,
+  islamic: PiMosque,
+};
+
+const STYLES = {
+  quran: { color: '#0f766e', border: '#99d5cb', soft: 'rgba(15, 118, 110, 0.08)' },
+  arabic: { color: '#7c3aed', border: '#cbb6f6', soft: 'rgba(124, 58, 237, 0.07)' },
+  islamic: { color: '#a21caf', border: '#e3afe8', soft: 'rgba(162, 28, 175, 0.07)' },
 };
 
 const CONTENT = {
   ar: {
     eyebrow: 'برامجنا',
-    title: 'المواد المتاحة للدراسة',
-    subtitle: 'برامج لكل الأعمار — للصغار والكبار — يقدّمها معلّمون مؤهّلون بخطة تناسب مستواك.',
-    families: { quran: 'برامج القرآن', arabic: 'اللغة العربية', islamic: 'التربية الإسلامية' },
+    title: 'تعلّم القرآن والعربية والإسلام في مكان واحد',
+    subtitle: 'برامج متكاملة للأطفال واليافعين والكبار، يقدّمها معلّمون مؤهّلون بخطة تناسب مستوى كل طالب.',
+    cta: 'استكشف المسارات',
   },
   en: {
     eyebrow: 'Our Programs',
-    title: 'Subjects you can study',
-    subtitle: 'Programs for all ages — from young learners to adults — taught by qualified teachers on a plan that fits your level.',
-    families: { quran: "Qur'an Programs", arabic: 'Arabic Language', islamic: 'Islamic Education' },
+    title: 'Learn Quran, Arabic and Islam in one place',
+    subtitle: 'Complete programs for children, teenagers and adults, taught by qualified teachers on a plan that fits every student’s level.',
+    cta: 'Explore learning paths',
   },
 };
 
-const FAMILY_BY_KEY = {
-  memorization: 'quran',
-  kidsQuran: 'quran',
-  adultQuran: 'quran',
-  tajweed: 'quran',
-  reading: 'arabic',
-  speaking: 'arabic',
-  quranicArabic: 'arabic',
-  islamicStudies: 'islamic',
-};
-
-const FAMILY_COLOR = { quran: 'primary', arabic: 'secondary', islamic: 'success' };
-
-const PROGRAM_STYLE = {
-  memorization: { color: '#0f766e', border: '#99d5cb' },
-  kidsQuran: { color: '#0e7490', border: '#9ccfdd' },
-  adultQuran: { color: '#4f46e5', border: '#bab7f4' },
-  tajweed: { color: '#1d4ed8', border: '#a9bff5' },
-  reading: { color: '#7c3aed', border: '#cbb6f6' },
-  speaking: { color: '#c2410c', border: '#f2b99d' },
-  quranicArabic: { color: '#0369a1', border: '#9dcce6' },
-  islamicStudies: { color: '#a21caf', border: '#e3afe8' },
-};
-
-// A pure Server Component: titles, descriptions and links are present in the
-// first HTML response. Only hover styling remains; there is no entrance motion.
+// Server-rendered curriculum: every official topic is present in the first HTML
+// response while three clear families keep the homepage concise and scannable.
 export function Programs({ lng = 'ar' }) {
   const language = lng === 'en' ? 'en' : 'ar';
-  const c = CONTENT[language];
+  const content = CONTENT[language];
 
   return (
-    <MarketingSection id="programs" alt eyebrow={c.eyebrow} title={c.title} subtitle={c.subtitle}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
-        {services.map((service) => {
-          const text = serviceText(service, language);
-          const family = FAMILY_BY_KEY[service.key];
-          const color = FAMILY_COLOR[family];
-          const Icon = ICONS[service.key];
-          const style = PROGRAM_STYLE[service.key];
+    <MarketingSection id="programs" eyebrow={content.eyebrow} title={content.title} subtitle={content.subtitle}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
+        {programFamilies.map((family) => {
+          const copy = programFamilyText(family, language);
+          const Icon = ICONS[family.key];
+          const style = STYLES[family.key];
 
           return (
-            <Link
-              key={service.slug}
-              href={localePath(language, `/services/${service.slug}`)}
-              style={{ color: 'inherit', display: 'block', height: '100%', textDecoration: 'none' }}
+            <Box
+              key={family.key}
+              component="article"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                p: { xs: 2.5, md: 3 },
+                borderRadius: 4,
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: style.border,
+                height: '100%',
+              }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 214,
-                  p: 2.5,
-                  borderRadius: 3.5,
-                  bgcolor: 'background.default',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  transition: 'box-shadow .2s ease, border-color .2s ease',
-                  '&:hover': { boxShadow: 3, borderColor: style.border },
-                  '&:focus-visible': { outline: '3px solid', outlineColor: `${color}.main`, outlineOffset: 3 },
-                }}
-              >
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      flexShrink: 0,
-                      borderRadius: 3,
-                      display: 'grid',
-                      placeItems: 'center',
-                      color: style.color,
-                      bgcolor: '#fff',
-                      border: '2px solid',
-                      borderColor: style.border,
-                      boxShadow: `0 5px 14px ${style.border}66`,
-                    }}
-                  >
-                    <Icon size={30} color="currentColor" strokeWidth={2.1} />
-                  </Box>
-                  <Chip
-                    size="small"
-                    label={c.families[family]}
-                    variant="outlined"
-                    sx={{
-                      height: 26,
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: style.color,
-                      bgcolor: '#fff',
-                      borderColor: style.border,
-                    }}
-                  />
-                </Stack>
-                <Typography variant="subtitle1" component="h3" fontWeight={800} sx={{ mb: 0.5 }}>{text.title}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>{text.description}</Typography>
+              <Box sx={{ width: 58, height: 58, mb: 2, borderRadius: 3, display: 'grid', placeItems: 'center', color: style.color, bgcolor: style.soft, border: '1px solid', borderColor: style.border }}>
+                <Icon size={30} aria-hidden />
               </Box>
-            </Link>
+              <Typography component="h3" variant="h5" sx={{ fontWeight: 900, mb: 1 }}>
+                {copy.title}
+              </Typography>
+              <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
+                {copy.description}
+              </Typography>
+              <Stack component="ul" spacing={1} sx={{ my: 2.5, paddingInlineStart: '20px', color: 'text.secondary', flex: 1 }}>
+                {copy.topics.map((topic) => (
+                  <Typography component="li" variant="body2" key={topic} sx={{ lineHeight: 1.6 }}>
+                    {topic}
+                  </Typography>
+                ))}
+              </Stack>
+              <Link
+                href={`${localePath(language, '/services')}#${family.key}-programs`}
+                style={{ alignSelf: 'flex-start', textDecoration: 'none' }}
+              >
+                <Button variant="outlined" sx={{ color: style.color, borderColor: style.border }}>
+                  {content.cta}
+                </Button>
+              </Link>
+            </Box>
           );
         })}
       </Box>

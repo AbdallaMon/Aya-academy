@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import Hero from '@/features/hero/pages/HeroPage.jsx';
 import HeroReviews from '@/features/reviews/pages/HeroReviews';
+import AboutTeaser from '@/features/about/components/AboutTeaser.jsx';
 import { WhyAyah } from '@/features/whyAyah/pages/WhyAyahPage.jsx';
 import { Programs } from '@/features/programs/pages/ProgramsPage.jsx';
 import { ChildDashboardHome } from '@/features/childDashboard/pages/ChildDashboardPage.jsx';
@@ -37,6 +38,7 @@ export default async function Home({ params }) {
       <JsonLd data={[websiteSchema(), faqSchema(faq.items), courseSchema(lng)]} />
       <Hero lng={lng} />
       <HeroReviews lng={lng} />
+      <AboutTeaser lng={lng} />
       <WhyAyah lng={lng} />
       <Programs lng={lng} />
       <ChildDashboardHome lng={lng} />
