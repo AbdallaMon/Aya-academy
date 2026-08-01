@@ -8,6 +8,8 @@ export const publicUserSelect = {
   locale: true,
   phone: true,
   isActive: true,
+  inAppNotificationsEnabled: true,
+  emailNotificationsEnabled: true,
   avatarId: true,
   avatar: { select: { id: true, url: true } },
   points: true,

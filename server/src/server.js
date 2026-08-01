@@ -1,9 +1,11 @@
 import app from "./app.js";
 import { ENV } from "./config/env.js";
+import { sendBootstrapEmail } from "./infra/messaging/bootstrapEmail.js";
 import { initRealtime } from "./infra/realtime/socket.js";
 
 const server = app.listen(ENV.PORT, () => {
   console.log(`Ayah Academy API running on http://localhost:${ENV.PORT}/api/v1`);
+  void sendBootstrapEmail();
 });
 
 // Attach the realtime (socket.io) server to the same HTTP server so notification

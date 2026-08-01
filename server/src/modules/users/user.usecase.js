@@ -315,6 +315,20 @@ class UserUsecase {
     }
   }
 
+  async updateNotificationPreferences({
+    authUser,
+    inAppNotificationsEnabled,
+    emailNotificationsEnabled,
+  }) {
+    return userRepo.updateNotificationPreferences({
+      id: authUser.id,
+      data: {
+        inAppNotificationsEnabled,
+        emailNotificationsEnabled,
+      },
+    });
+  }
+
   async remove({ id, authUser }) {
     if (authUser.role !== USER_ROLES.ADMIN) {
       throw forbidden(userMessagesCodes.CANNOT_MODIFY_USER);

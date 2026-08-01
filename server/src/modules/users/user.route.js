@@ -18,6 +18,16 @@ userRoutes.get(
 
 userRoutes.get("/my-students", asyncHandler(userController.myStudents));
 
+userRoutes.patch(
+  "/me/notification-preferences",
+  validate(
+    UserValidation.notificationPreferencesSchema,
+    "body",
+    messagesNames.userMessages,
+  ),
+  asyncHandler(userController.updateNotificationPreferences),
+);
+
 userRoutes.post(
   "/",
   authMiddleware.requirePermissions([USER_PERMISSIONS.CREATE]),

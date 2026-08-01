@@ -15,6 +15,8 @@ export function getAuthUserById(id) {
       locale: true,
       isActive: true,
       sessionVersion: true,
+      inAppNotificationsEnabled: true,
+      emailNotificationsEnabled: true,
       avatarId: true,
       avatar: { select: { id: true, url: true } },
     },

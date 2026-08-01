@@ -13,11 +13,30 @@ import { ENV, isSmtpConfigured } from "../../../config/env.js";
 
 let transporter = null;
 
+function transportTimeouts() {
+  return {
+    connectionTimeout: ENV.smtp.connectionTimeoutMs,
+    greetingTimeout: ENV.smtp.greetingTimeoutMs,
+    socketTimeout: ENV.smtp.socketTimeoutMs,
+  };
+}
+
+function smtpUrlWithTimeouts(value) {
+  const url = new URL(value);
+  const options = transportTimeouts();
+  for (const [key, optionValue] of Object.entries(options)) {
+    if (!url.searchParams.has(key)) {
+      url.searchParams.set(key, String(optionValue));
+    }
+  }
+  return url.toString();
+}
+
 function getTransporter() {
   if (transporter) return transporter;
   // A full connection string wins when provided; otherwise assemble from parts.
   if (ENV.smtp.url) {
-    transporter = nodemailer.createTransport(ENV.smtp.url);
+    transporter = nodemailer.createTransport(smtpUrlWithTimeouts(ENV.smtp.url));
   } else {
     transporter = nodemailer.createTransport({
       host: ENV.smtp.host,
@@ -25,6 +44,7 @@ function getTransporter() {
       secure: ENV.smtp.secure, // from env: true → implicit TLS; false → STARTTLS
       auth: { user: ENV.smtp.user, pass: ENV.smtp.pass },
       tls: { rejectUnauthorized: ENV.smtp.rejectUnauthorized },
+      ...transportTimeouts(),
     });
   }
   return transporter;
@@ -49,6 +69,12 @@ class Mailer {
     }
     const from = `"${ENV.smtp.fromName}" <${ENV.smtp.from}>`;
     return getTransporter().sendMail({ from, to, subject, html, text });
+  }
+
+  /** Abort an in-flight smoke test and lazily rebuild the transport next time. */
+  reset() {
+    transporter?.close?.();
+    transporter = null;
   }
 }
 

@@ -249,6 +249,8 @@ model User {
   locale         String      @default("en")
   isActive       Boolean     @default(true)
   sessionVersion Int         @default(0)
+  inAppNotificationsEnabled Boolean @default(true)
+  emailNotificationsEnabled Boolean @default(true)
   avatarId       Int?
   avatar         Attachment? @relation("UserAvatar", fields: [avatarId], references: [id])
 

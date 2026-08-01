@@ -133,6 +133,31 @@ class UserRepo {
     });
   }
 
+  updateNotificationPreferences({ id, data, client } = {}) {
+    return (client ?? prisma).user.update({
+      where: { id },
+      data,
+      select: {
+        inAppNotificationsEnabled: true,
+        emailNotificationsEnabled: true,
+      },
+    });
+  }
+
+  getNotificationRecipients({ userIds, client } = {}) {
+    return (client ?? prisma).user.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        locale: true,
+        inAppNotificationsEnabled: true,
+        emailNotificationsEnabled: true,
+      },
+    });
+  }
+
   deactivateUser({ id, client } = {}) {
     return (client ?? prisma).user.update({
       where: { id },

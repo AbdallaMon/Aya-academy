@@ -68,6 +68,14 @@ class UserController {
     return ok(res, user, generalMessagesCodes.UPDATED);
   }
 
+  async updateNotificationPreferences(req, res) {
+    const preferences = await userUsecase.updateNotificationPreferences({
+      authUser: req.auth,
+      ...req.body,
+    });
+    return ok(res, preferences, generalMessagesCodes.UPDATED);
+  }
+
   async remove(req, res) {
     const user = await userUsecase.remove({
       id: idParam(req.params.id),

@@ -83,6 +83,11 @@ const requireIdentity = (schema) =>
   });
 
 export class UserValidation {
+  static notificationPreferencesSchema = z.object({
+    inAppNotificationsEnabled: z.boolean(),
+    emailNotificationsEnabled: z.boolean(),
+  });
+
   // admin creating any user
   static createUserSchema = requireIdentity(
     z.object({

@@ -40,6 +40,8 @@ class AuthMiddleware {
         locale: user.locale,
         isActive: user.isActive,
         sessionVersion: user.sessionVersion,
+        inAppNotificationsEnabled: user.inAppNotificationsEnabled,
+        emailNotificationsEnabled: user.emailNotificationsEnabled,
         avatarId: user.avatarId,
         avatar: user.avatar,
         permissions: getPermissionsForRole(user.role),

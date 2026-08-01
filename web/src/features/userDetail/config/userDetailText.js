@@ -76,6 +76,17 @@ export const userDetailText = {
     myProfileTitle: "ملفي الشخصي",
     myProfileDescription:
       "عدّل بيانات حسابك وصورتك واسم المستخدم وكلمة المرور.",
+    notificationPreferencesTitle: "إعدادات الإشعارات",
+    notificationPreferencesDescription:
+      "اختر أين تريد استقبال إشعارات حسابك. الإعدادان مفعّلان تلقائيًا.",
+    inAppNotificationsLabel: "إشعارات داخل الموقع",
+    inAppNotificationsHint: "تظهر في مركز الإشعارات داخل حسابك.",
+    emailNotificationsLabel: "إشعارات البريد الإلكتروني",
+    emailNotificationsHint:
+      "تُرسل إلى بريدك المسجّل، وفشل الإرسال لن يؤثر على أي عملية.",
+    emailNotificationsNoEmailHint:
+      "أضف بريدًا إلكترونيًا لحسابك حتى تصلك إشعارات البريد.",
+    saveNotificationPreferences: "حفظ إعدادات الإشعارات",
     // badges
     awardBadge: "منح وسام",
     revoke: "سحب",
@@ -232,6 +243,18 @@ export const userDetailText = {
     myProfileTitle: "My profile",
     myProfileDescription:
       "Update your account details, photo, username, and password.",
+    notificationPreferencesTitle: "Notification settings",
+    notificationPreferencesDescription:
+      "Choose where you receive account notifications. Both options are enabled by default.",
+    inAppNotificationsLabel: "In-app notifications",
+    inAppNotificationsHint:
+      "Show notifications in your account notification center.",
+    emailNotificationsLabel: "Email notifications",
+    emailNotificationsHint:
+      "Send notifications to your registered email. Delivery failures never interrupt an operation.",
+    emailNotificationsNoEmailHint:
+      "Add an email address to your account to receive email notifications.",
+    saveNotificationPreferences: "Save notification settings",
     awardBadge: "Award badge",
     revoke: "Revoke",
     revokeConfirm: "Revoke this badge from the student?",
