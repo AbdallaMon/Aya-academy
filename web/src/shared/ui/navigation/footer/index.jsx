@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { Box, Container, Divider, Stack, Typography } from '@mui/material';
 import { MdEmail, MdFavorite } from 'react-icons/md';
-import { FaWhatsapp } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { navSections, navHref } from '@/shared/data/navigation/navbar';
 import { useTranslation } from '@/i18n/client.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { localePath } from '@/i18n/routing.js';
+import { SOCIAL_PROFILES } from '@/shared/lib/seo';
 import { LanguageSwitch } from '@/shared/ui/buttons/LanguageSwitch.jsx';
+
+const SOCIAL_PROFILE_ICONS = {
+  facebook: FaFacebookF,
+  instagram: FaInstagram,
+};
 
 const FOOTER_TEXT = {
   ar: {
@@ -19,6 +25,7 @@ const FOOTER_TEXT = {
     contact: 'تواصل معنا',
     contactPage: 'صفحة التواصل',
     whatsapp: 'واتساب',
+    followUs: 'تابعنا',
     privacy: 'سياسة الخصوصية',
     terms: 'شروط الاستخدام',
     login: 'تسجيل الدخول',
@@ -37,6 +44,7 @@ const FOOTER_TEXT = {
     contact: 'Contact',
     contactPage: 'Contact Ayah Academy',
     whatsapp: 'WhatsApp',
+    followUs: 'Follow us',
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
     login: 'Login',
@@ -175,6 +183,46 @@ export default function SiteFooter() {
                 sx={{ ...linkSx, display: 'inline-flex', alignItems: 'center', gap: 1 }}
               >
                 <FaWhatsapp /> {t.whatsapp}
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+                  {t.followUs}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  {SOCIAL_PROFILES.map(({ id, label, url }) => {
+                    const Icon = SOCIAL_PROFILE_ICONS[id];
+                    return (
+                      <Box
+                        key={id}
+                        component="a"
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${t.followUs}: ${label}`}
+                        title={label}
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          color: 'primary.contrastText',
+                          bgcolor: 'primary.main',
+                          transition: 'background-color .2s, transform .2s',
+                          '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-1px)' },
+                          '&:focus-visible': {
+                            outline: '2px solid',
+                            outlineColor: 'primary.main',
+                            outlineOffset: 3,
+                          },
+                        }}
+                      >
+                        <Icon aria-hidden />
+                      </Box>
+                    );
+                  })}
+                </Stack>
               </Box>
               <LanguageSwitch size="sm" />
             </Stack>
