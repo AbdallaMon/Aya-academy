@@ -15,9 +15,6 @@ export const ENV = {
   NODE_ENV,
   IS_PROD: NODE_ENV === "production",
   PORT: Number(process.env.PORT ?? 4000),
-  // Optional recipient for the best-effort SMTP smoke test sent after the API
-  // starts listening. Explicit opt-in: no e-mail is attempted when unset.
-  devEmail: process.env.DEV_EMAIL?.trim() || undefined,
   // Public URL of the WEB app (used to build links inside emails, OAuth redirects,
   // etc.). Falls back to NEXT_PUBLIC_APP_URL so a single value in .env drives both.
   appUrl: process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
@@ -119,9 +116,6 @@ export const ENV = {
     ),
     greetingTimeoutMs: Number(process.env.SMTP_GREETING_TIMEOUT_MS ?? 10000),
     socketTimeoutMs: Number(process.env.SMTP_SOCKET_TIMEOUT_MS ?? 20000),
-    bootstrapTimeoutMs: Number(
-      process.env.SMTP_BOOTSTRAP_TIMEOUT_MS ?? 15000,
-    ),
     // Reject invalid TLS certs by default; opt out only for self-signed servers.
     rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
   },
