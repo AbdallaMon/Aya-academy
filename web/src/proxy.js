@@ -34,10 +34,13 @@ export default function proxy(request) {
   );
 
   if (!hasLocale) {
-    const lng = detectLocale(request);
+    // The bare root has one stable canonical destination, so make that redirect
+    // permanent. Other unprefixed paths remain cookie-aware and temporary.
+    const isRoot = pathname === "/";
+    const lng = isRoot ? defaultLng : detectLocale(request);
     const url = request.nextUrl.clone();
-    url.pathname = `/${lng}${pathname === "/" ? "" : pathname}`;
-    const res = NextResponse.redirect(url);
+    url.pathname = `/${lng}${isRoot ? "" : pathname}`;
+    const res = NextResponse.redirect(url, isRoot ? 308 : 307);
     res.cookies.set(cookieName, lng, { path: "/", maxAge: 60 * 60 * 24 * 365 });
     return res;
   }
