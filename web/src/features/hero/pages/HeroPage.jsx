@@ -4,7 +4,7 @@ import HeroActions from '../components/HeroActions.jsx';
 
 const HERO = {
   ar: {
-    eyebrow: 'قرآن · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
+    eyebrow: 'أكاديمية آية لتعليم القرآن أونلاين · قرآن · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
     title: 'أكاديمية آية: تعلّم القرآن الكريم أونلاين مع معلّمين مؤهّلين',
     subtitle:
       'في أكاديمية آية، يتعلّم الطلاب من عمر ٥ سنوات فأكثر من خلال حصص ممتعة وآمنة — تلاوة واضحة، ومعانٍ مبسّطة، وألعاب تفاعلية تنمّي الأخلاق الحميدة.',
@@ -15,7 +15,7 @@ const HERO = {
     imgAlt: 'طلاب يتعلّمون القرآن بسعادة',
   },
   en: {
-    eyebrow: 'Quran · Arabic · Islamic studies · Manners · Games',
+    eyebrow: 'Ayah Online Quran Academy · Quran · Arabic · Islamic Studies · Manners · Games',
     title: 'Ayah Academy: Learn Quran online with qualified teachers',
     subtitle:
       'At Ayah Academy, students aged 5 and up learn through fun, safe lessons — clear recitation, simple meanings, and interactive games that grow good character.',

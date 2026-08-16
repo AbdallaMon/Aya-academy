@@ -2,7 +2,12 @@ import Link from 'next/link';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { PiBookOpenText, PiTranslate, PiMosque } from 'react-icons/pi';
 import MarketingSection from '@/shared/ui/sections/MarketingSection.jsx';
-import { programFamilies, programFamilyText } from '@/features/services/data.js';
+import {
+  programFamilies,
+  programFamilyText,
+  services,
+  serviceText,
+} from '@/features/services/data.js';
 import { localePath } from '@/i18n/routing.js';
 
 const ICONS = {
@@ -22,12 +27,14 @@ const CONTENT = {
     eyebrow: 'برامجنا',
     title: 'تعلّم القرآن والعربية والإسلام في مكان واحد',
     subtitle: 'برامج متكاملة للأطفال واليافعين والكبار، يقدّمها معلّمون مؤهّلون بخطة تناسب مستوى كل طالب.',
+    pathsLabel: 'صفحات البرامج التفصيلية',
     cta: 'استكشف المسارات',
   },
   en: {
     eyebrow: 'Our Programs',
     title: 'Learn Quran, Arabic and Islam in one place',
     subtitle: 'Complete programs for children, teenagers and adults, taught by qualified teachers on a plan that fits every student’s level.',
+    pathsLabel: 'Detailed program pages',
     cta: 'Explore learning paths',
   },
 };
@@ -43,6 +50,7 @@ export function Programs({ lng = 'ar' }) {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
         {programFamilies.map((family) => {
           const copy = programFamilyText(family, language);
+          const familyServices = services.filter((service) => family.serviceKeys.includes(service.key));
           const Icon = ICONS[family.key];
           const style = STYLES[family.key];
 
@@ -77,6 +85,30 @@ export function Programs({ lng = 'ar' }) {
                   </Typography>
                 ))}
               </Stack>
+              <Box
+                component="nav"
+                aria-label={`${copy.title}: ${content.pathsLabel}`}
+                sx={{ mb: 2.5 }}
+              >
+                <Typography component="p" variant="overline" sx={{ mb: 0.75, color: 'text.secondary', fontWeight: 800 }}>
+                  {content.pathsLabel}
+                </Typography>
+                <Stack component="ul" spacing={0.75} sx={{ m: 0, paddingInlineStart: '20px' }}>
+                  {familyServices.map((service) => {
+                    const serviceCopy = serviceText(service, language);
+                    return (
+                      <Box component="li" key={service.slug}>
+                        <Link
+                          href={localePath(language, `/services/${service.slug}`)}
+                          style={{ color: style.color, fontWeight: 700, textUnderlineOffset: '3px' }}
+                        >
+                          {serviceCopy.title}
+                        </Link>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </Box>
               <Link
                 href={localePath(language, `/services/${family.slug}`)}
                 style={{ alignSelf: 'flex-start', textDecoration: 'none' }}

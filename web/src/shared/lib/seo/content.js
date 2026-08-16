@@ -12,7 +12,7 @@ export const seoContent = {
   // Site-wide defaults (homepage + fallback for anything unspecified).
   site: {
     ar: {
-      title: "أكاديمية آية | دروس القرآن أونلاين للأطفال والكبار",
+      title: "أكاديمية آية لتعليم القرآن أونلاين | للأطفال والكبار",
       titleAbsolute: true,
       description:
         "تقدّم أكاديمية آية حصصًا مباشرة أونلاين في القرآن والتجويد والعربية والدراسات الإسلامية للأطفال واليافعين والكبار، خاصة لغير الناطقين بالعربية.",
@@ -34,7 +34,7 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Ayah Academy | Online Quran Classes for Kids & Adults",
+      title: "Ayah Online Quran Academy | Kids & Adult Classes",
       titleAbsolute: true,
       description:
         "Ayah Academy offers live online Quran, Tajweed, Arabic and Islamic Studies for children, teenagers and adults, especially non-Arabic speakers.",
@@ -59,7 +59,7 @@ export const seoContent = {
 
   home: {
     ar: {
-      title: "أكاديمية آية | دروس القرآن أونلاين للأطفال والكبار",
+      title: "أكاديمية آية لتعليم القرآن أونلاين | للأطفال والكبار",
       titleAbsolute: true,
       description:
         "تقدّم أكاديمية آية حصصًا مباشرة أونلاين في القرآن والتجويد والعربية والدراسات الإسلامية للأطفال واليافعين والكبار، خاصة لغير الناطقين بالعربية.",
@@ -77,7 +77,7 @@ export const seoContent = {
       ],
     },
     en: {
-      title: "Ayah Academy | Online Quran Classes for Kids & Adults",
+      title: "Ayah Online Quran Academy | Kids & Adult Classes",
       titleAbsolute: true,
       description:
         "Ayah Academy offers live online Quran, Tajweed, Arabic and Islamic Studies for children, teenagers and adults, especially non-Arabic speakers.",
