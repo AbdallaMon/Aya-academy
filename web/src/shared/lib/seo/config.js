@@ -20,12 +20,8 @@ export const SITE_URL = (
 // should never see the same Organization/WebSite @id renamed by locale.
 export const SITE_NAME = "Ayah Academy";
 export const SITE_ALTERNATE_NAMES = [
-  "Ayah Online Quran Academy",
-  "Ayah Quran Academy",
-  "أكاديمية آية لتعليم القرآن أونلاين",
-  "Ayah",
-  "أكاديمية آية",
   "ayah.academy",
+  "أكاديمية آية",
 ];
 
 // Brand name per locale — appended to page titles via the title template.

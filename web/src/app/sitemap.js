@@ -6,7 +6,7 @@ import { programFamilies, services } from '@/features/services/data.js';
 // PUBLIC, canonical, indexable routes only (the dashboard is auth-gated +
 // noindex). Service records are the source of truth, so every new public program
 // is included automatically on the very next deployment.
-const MARKETING_LAST_MODIFIED = '2026-08-16';
+const MARKETING_LAST_MODIFIED = '2026-08-23';
 const latestArticleDate = sortedArticles[0]?.dateModified
   || sortedArticles[0]?.datePublished;
 
