@@ -75,6 +75,13 @@ export default async function LocaleLayout({ children, params }) {
 
   return (
     <html lang={lng} dir={dir} suppressHydrationWarning>
+      <head>
+        <script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="lcabeiQqKJzBzAbgmPUO4A"
+          async
+        />
+      </head>
       <body className={cairo.variable}>
         {/* Stable organization entity; WebSite belongs on the homepage only. */}
         <JsonLd data={organizationSchema(lng)} />
