@@ -100,10 +100,10 @@ export const loginRateLimiter = rateLimit({
   },
 });
 
-// Public account creation is deliberately stricter than login. It protects both
-// the simple parent registration and the heavier family-enrollment endpoint.
+// Share a per-IP allowance across parent registration and family enrollment.
+// Allow retries and multiple families registering from the same connection.
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
-const REGISTRATION_MAX = 5;
+const REGISTRATION_MAX = 20;
 
 export const registrationRateLimiter = rateLimit({
   windowMs: REGISTRATION_WINDOW_MS,

@@ -1,28 +1,43 @@
-import { Box, Chip, Container, Stack, Typography } from '@mui/material';
+import { Box, Chip, Container, Typography } from '@mui/material';
 import { localePath } from '@/i18n/routing.js';
 import HeroActions from '../components/HeroActions.jsx';
 
 const HERO = {
   ar: {
-    eyebrow: 'أكاديمية آية · قرآن أونلاين · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
-    title: 'أكاديمية آية: تعلّم القرآن الكريم أونلاين مع معلّمين مؤهّلين',
+    eyebrow:
+      'أكاديمية آية · قرآن أونلاين · لغة عربية · دراسات إسلامية · أخلاق · ألعاب',
+    title:
+      'أكاديمية آية: تعلّم القرآن الكريم أونلاين مع معلّمين من خريجي الأزهر',
     subtitle:
       'في أكاديمية آية، يتعلّم الطلاب من عمر ٥ سنوات فأكثر من خلال حصص ممتعة وآمنة — تلاوة واضحة، ومعانٍ مبسّطة، وألعاب تفاعلية تنمّي الأخلاق الحميدة.',
     primary: 'احجز حصة مجانية',
-    secondary: 'جرّب ألعابنا التفاعلية 🎮',
+    pricing: 'عرض الأسعار والباقات',
+    secondary: 'جرّب ألعابنا التفاعلية',
     freeTrial: 'بدون بطاقة دفع · بدون التزام',
-    chips: ['معلّم مخصّص للطالب', 'تلاوة واضحة', 'متابعة لولي الأمر'],
+    chips: [
+      'معلّم مخصّص للطالب',
+      'تلاوة واضحة',
+      'متابعة لولي الأمر',
+      'معلّمون من خريجي الأزهر',
+    ],
     imgAlt: 'طلاب يتعلّمون القرآن بسعادة',
   },
   en: {
-    eyebrow: 'Ayah Academy · Online Quran · Arabic · Islamic Studies · Manners · Games',
-    title: 'Ayah Academy: Learn Quran online with qualified teachers',
+    eyebrow:
+      'Ayah Academy · Online Quran · Arabic · Islamic Studies · Manners · Games',
+    title: 'Ayah Academy: Learn Quran online with Al-Azhar graduate teachers',
     subtitle:
       'At Ayah Academy, students aged 5 and up learn through fun, safe lessons — clear recitation, simple meanings, and interactive games that grow good character.',
     primary: 'Book a free session',
-    secondary: 'Try our interactive games 🎮',
+    pricing: 'View pricing and plans',
+    secondary: 'Try our interactive games',
     freeTrial: 'No card · No trial commitment',
-    chips: ['The student’s own teacher', 'Clear recitation', 'Parent tracking'],
+    chips: [
+      'The student’s own teacher',
+      'Clear recitation',
+      'Parent tracking',
+      'Al-Azhar graduate teachers',
+    ],
     imgAlt: 'Students happily learning the Quran',
   },
 };
@@ -43,7 +58,7 @@ export default function Hero({ lng = 'en' }) {
         display: 'flex',
         alignItems: 'center',
         minHeight: { xs: 'auto', md: '84vh' },
-        pt: { xs: 5, md: 7 },
+        pt: { xs: 3.5, md: 7 },
         pb: { xs: 7, md: 10 },
       }}
     >
@@ -88,19 +103,45 @@ export default function Hero({ lng = 'en' }) {
       />
 
       {/* playful floating icons (vertical only → RTL-safe) */}
-      <Box aria-hidden sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+      <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
         <Box
-          sx={{ position: 'absolute', top: '14%', insetInlineStart: '5%', fontSize: 34, opacity: 0.85 }}
+          sx={{
+            position: 'absolute',
+            top: '14%',
+            insetInlineStart: '5%',
+            fontSize: 34,
+            opacity: 0.85,
+          }}
         >
           ⭐
         </Box>
         <Box
-          sx={{ position: 'absolute', top: '20%', insetInlineEnd: '7%', fontSize: 30, opacity: 0.85 }}
+          sx={{
+            position: 'absolute',
+            top: '20%',
+            insetInlineEnd: '7%',
+            fontSize: 30,
+            opacity: 0.85,
+          }}
         >
           🌙
         </Box>
         <Box
-          sx={{ position: 'absolute', bottom: '12%', insetInlineStart: '11%', fontSize: 26, opacity: 0.75 }}
+          sx={{
+            position: 'absolute',
+            bottom: '12%',
+            insetInlineStart: '11%',
+            fontSize: 26,
+            opacity: 0.75,
+          }}
         >
           📖
         </Box>
@@ -142,7 +183,11 @@ export default function Hero({ lng = 'en' }) {
             />
             <Typography
               variant="h1"
-              sx={{ fontSize: { xs: '2.1rem', sm: '2.7rem', md: '3.2rem' }, lineHeight: 1.15, mb: 2 }}
+              sx={{
+                fontSize: { xs: '2.1rem', sm: '2.7rem', md: '3.2rem' },
+                lineHeight: 1.15,
+                mb: 2,
+              }}
             >
               {t.title}
             </Typography>
@@ -164,36 +209,13 @@ export default function Hero({ lng = 'en' }) {
             <HeroActions
               primaryHref={localePath(lng, '/register')}
               primaryLabel={t.primary}
+              pricingLabel={t.pricing}
+              freeTrialLabel={t.freeTrial}
               secondaryHref={localePath(lng, '/free-game')}
               secondaryLabel={t.secondary}
             />
 
-            {/* Free-trial hook → drives registration before any subscription */}
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{
-                mt: 2.5,
-                px: 1.75,
-                py: 1,
-                borderRadius: 999,
-                width: 'fit-content',
-                maxWidth: '100%',
-                bgcolor: 'rgba(246, 196, 83, 0.28)',
-                border: '1px solid',
-                borderColor: 'rgba(246, 196, 83, 0.5)',
-              }}
-            >
-              <Box component="span" sx={{ fontSize: 16, lineHeight: 1 }}>
-                ✨
-              </Box>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                {t.freeTrial}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap', gap: 1, display: 'flex' }}>
+            <Box sx={{ mt: 3, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {t.chips.map((c) => (
                 <Chip
                   key={c}
@@ -202,11 +224,13 @@ export default function Hero({ lng = 'en' }) {
                   sx={{ fontWeight: 700, bgcolor: 'background.paper' }}
                 />
               ))}
-            </Stack>
+            </Box>
           </Box>
 
           {/* Illustration */}
-          <picture style={{ display: 'flex', justifyContent: 'center', lineHeight: 0 }}>
+          <picture
+            style={{ display: 'flex', justifyContent: 'center', lineHeight: 0 }}
+          >
             <source
               type="image/avif"
               srcSet="/hero-light-480.avif 480w, /hero-light-520.avif 520w, /hero-light-750.avif 750w, /hero-light-1040.avif 1040w"

@@ -3,54 +3,54 @@ import { prisma } from "../../../prisma.client.js";
 import { clearGameQuestions } from "./helpers.js";
 
 export async function seedPillarsBuild() {
+  const configJson = {
+    theme: {
+      primary: "#6536e0",
+      accent: "#ffa83d",
+      warn: "#ff6fa8",
+      bg: "#f7f3ff",
+    },
+    hero: {
+      emoji: "🕌",
+      nameAr: "بطل الأركان",
+      nameEn: "Pillars Champion",
+    },
+    stars: 6,
+    certificate: {
+      titleAr: "وسام بطل أركان الإسلام",
+      titleEn: "Pillars of Islam Champion Medal",
+      emoji: "🕌",
+      accent: "#6536e0",
+      background: "linear-gradient(135deg, #f7f3ff 0%, #e6dbff 100%)",
+      decoration: "crescent",
+    },
+    reward: {
+      giftNameAr: "مسجد ذهبي",
+      giftNameEn: "Golden Mosque",
+      emoji: "🌟",
+    },
+  };
   const game = await prisma.game.upsert({
     where: { slug: "pillars-build" },
     update: {
       titleAr: "ابنِ أركان الإسلام",
       titleEn: "Build the Pillars of Islam",
-      descriptionAr: "اكتشف أركان الإسلام الخمسة وابنِ المسجد خطوة بخطوة!",
-      descriptionEn:
-        "Discover the five pillars of Islam and build the mosque step by step!",
-      passThreshold: 3,
+      descriptionAr: "تعرّف إلى أركان الإسلام الخمسة من خلال أسئلة ممتعة!",
+      descriptionEn: "Learn the five pillars of Islam through fun questions!",
+      passThreshold: 6,
+      configJson,
     },
     create: {
       slug: "pillars-build",
       titleAr: "ابنِ أركان الإسلام",
       titleEn: "Build the Pillars of Islam",
-      descriptionAr: "اكتشف أركان الإسلام الخمسة وابنِ المسجد خطوة بخطوة!",
-      descriptionEn:
-        "Discover the five pillars of Islam and build the mosque step by step!",
+      descriptionAr: "تعرّف إلى أركان الإسلام الخمسة من خلال أسئلة ممتعة!",
+      descriptionEn: "Learn the five pillars of Islam through fun questions!",
       type: "INTERACTIVE",
       isPublic: false,
       isActive: true,
-      passThreshold: 3,
-      configJson: {
-        theme: {
-          primary: "#6536e0",
-          accent: "#ffa83d",
-          warn: "#ff6fa8",
-          bg: "#f7f3ff",
-        },
-        hero: {
-          emoji: "🕌",
-          nameAr: "بطل الأركان",
-          nameEn: "Pillars Champion",
-        },
-        stars: 5,
-        certificate: {
-          titleAr: "وسام بطل أركان الإسلام",
-          titleEn: "Pillars of Islam Champion Medal",
-          emoji: "🕌",
-          accent: "#6536e0",
-          background: "linear-gradient(135deg, #f7f3ff 0%, #e6dbff 100%)",
-          decoration: "crescent",
-        },
-        reward: {
-          giftNameAr: "مسجد ذهبي",
-          giftNameEn: "Golden Mosque",
-          emoji: "🌟",
-        },
-      },
+      passThreshold: 6,
+      configJson,
     },
   });
 
@@ -80,9 +80,9 @@ export async function seedPillarsBuild() {
           emoji: "🌙",
           isCorrect: false,
           feedbackAr:
-            "لا بأس! الصيام ركن لكنه الرابع. الأول هو الشهادتان. جرّب مرة أخرى 😊",
+            "لا بأس! الصيام ركن من أركان الإسلام، لكن أولها الشهادتان. جرّب مرة أخرى 😊",
           feedbackEn:
-            "No worries! Fasting is a pillar but it is the fourth. The first is the Testimonies. Try again 😊",
+            "No worries! Fasting is a pillar, but the Testimonies come first. Try again 😊",
         },
         {
           order: 2,
@@ -209,6 +209,74 @@ export async function seedPillarsBuild() {
           isCorrect: false,
           feedbackAr: "لا بأس! الصيام في رمضان. جرّب مرة أخرى 😊",
           feedbackEn: "No worries! Fasting is in Ramadan. Try again 😊",
+        },
+      ],
+    },
+    {
+      order: 4,
+      promptAr: "ما الركن الذي نؤدي فيه حقًا واجبًا من المال للمستحقين؟",
+      promptEn: "Which pillar gives a required share of wealth to those entitled to it?",
+      options: [
+        {
+          order: 0,
+          labelAr: "الصيام",
+          labelEn: "Fasting",
+          emoji: "🌙",
+          isCorrect: false,
+          feedbackAr: "لا بأس! الصيام امتناع عن الطعام والشراب في رمضان. جرّب مرة أخرى 😊",
+          feedbackEn: "No worries! Fasting means abstaining from food and drink in Ramadan. Try again 😊",
+        },
+        {
+          order: 1,
+          labelAr: "الحج",
+          labelEn: "Hajj",
+          emoji: "🕋",
+          isCorrect: false,
+          feedbackAr: "لا بأس! الحج إلى بيت الله الحرام، أما حق المال فهو الزكاة. جرّب مرة أخرى 😊",
+          feedbackEn: "No worries! Hajj is pilgrimage to the Sacred House; the wealth pillar is Zakat. Try again 😊",
+        },
+        {
+          order: 2,
+          labelAr: "الزكاة",
+          labelEn: "Zakat",
+          emoji: "💰",
+          isCorrect: true,
+          feedbackAr: "أحسنت! الزكاة حق واجب في المال إذا تحققت شروطها 💛",
+          feedbackEn: "Well done! Zakat is a required share of wealth when its conditions are met 💛",
+        },
+      ],
+    },
+    {
+      order: 5,
+      promptAr: "ما الركن الذي نحج فيه إلى بيت الله الحرام لمن استطاع؟",
+      promptEn: "Which pillar is pilgrimage to the Sacred House for those able to go?",
+      options: [
+        {
+          order: 0,
+          labelAr: "الزكاة",
+          labelEn: "Zakat",
+          emoji: "💰",
+          isCorrect: false,
+          feedbackAr: "لا بأس! الزكاة تتعلق بالمال، أما السفر إلى بيت الله فهو الحج. جرّب مرة أخرى 😊",
+          feedbackEn: "No worries! Zakat concerns wealth; pilgrimage to the Sacred House is Hajj. Try again 😊",
+        },
+        {
+          order: 1,
+          labelAr: "الحج",
+          labelEn: "Hajj",
+          emoji: "🕋",
+          isCorrect: true,
+          feedbackAr: "رائع! الحج إلى بيت الله الحرام ركن من أركان الإسلام لمن استطاع 🕋",
+          feedbackEn: "Great! Hajj to the Sacred House is a pillar of Islam for those able to go 🕋",
+        },
+        {
+          order: 2,
+          labelAr: "الصلاة",
+          labelEn: "Prayer",
+          emoji: "🤲",
+          isCorrect: false,
+          feedbackAr: "لا بأس! الصلاة نؤديها كل يوم، أما زيارة بيت الله للحج فهي الركن المقصود. جرّب مرة أخرى 😊",
+          feedbackEn: "No worries! Prayer is daily; the pilgrimage to the Sacred House is Hajj. Try again 😊",
         },
       ],
     },

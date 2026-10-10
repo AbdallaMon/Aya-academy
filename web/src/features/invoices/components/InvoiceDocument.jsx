@@ -5,7 +5,7 @@
 // colors, customer notes, footer). RTL/LTR aware. When `printable` is set the
 // root carries id="invoice-print" so the page's print stylesheet isolates it.
 
-import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
+import { Box, Chip, Divider, Typography } from "@mui/material";
 import { useTranslation } from "../../../i18n/client.js";
 import { useInvoicesText } from "../config/invoicesText.js";
 import {
@@ -45,7 +45,7 @@ const DOC_META_ALIGN_SX = {
 
 function TotalRow({ label, value, strong, headerColor, accent, textColor }) {
   return (
-    <Stack direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
+    <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, py: 0.5 }}>
       <Typography
         sx={{
           fontSize: strong ? 15 : 13,
@@ -64,7 +64,7 @@ function TotalRow({ label, value, strong, headerColor, accent, textColor }) {
       >
         {value}
       </Typography>
-    </Stack>
+    </Box>
   );
 }
 
@@ -128,7 +128,10 @@ export default function InvoiceDocument({ invoice, printable = false }) {
   const discount = cfg.discount || null;
   const hasDiscount = discount && Number(discount.amount) > 0;
   const discountCode = discount?.code;
-  const discountLabel = discountCode ? `${txt.discount} (${discountCode})` : txt.discount;
+  const discountLabel = discount?.source === 'MANUAL'
+    ? txt.manualDiscount
+    : discountCode ? `${txt.discount} (${discountCode})` : txt.discount;
+  const adjustment = cfg.invoiceAdjustment || null;
 
   const labelSx = { color: "text.secondary", fontSize: 12, fontWeight: 600 };
   const valueSx = { fontSize: 13, fontWeight: 700 };
@@ -160,7 +163,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
       <Box sx={{ bgcolor: headerColor, color: headerTextColor, px: 6, py: 3 }}>
         {/* Top row: logo + invoice title on the start, number + status on the end */}
         <Box sx={DOC_ROW_SX}>
-          <Stack spacing={0.5} alignItems="flex-start" sx={{ minWidth: 0 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5, minWidth: 0 }}>
             {logoSrc ? (
               <Box
                 component="img"
@@ -182,7 +185,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
             >
               {txt.invoiceTitle}
             </Typography>
-          </Stack>
+          </Box>
 
           <Box sx={DOC_META_ALIGN_SX}>
             <Typography sx={{ fontSize: 13, opacity: 0.9, color: headerTextColor }}>
@@ -234,37 +237,34 @@ export default function InvoiceDocument({ invoice, printable = false }) {
           </Box>
 
           <Box sx={{ minWidth: 200 }}>
-            <Stack direction="row" justifyContent="space-between" gap={2}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
               <Typography sx={labelSx}>{txt.issueDate}</Typography>
               <Typography sx={valueSx}>{fmtDate(invoice.issueDate, lng)}</Typography>
-            </Stack>
+            </Box>
             {invoice.dueDate ? (
-              <Stack direction="row" justifyContent="space-between" gap={2}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                 <Typography sx={labelSx}>{txt.dueDate}</Typography>
                 <Typography sx={valueSx}>{fmtDate(invoice.dueDate, lng)}</Typography>
-              </Stack>
+              </Box>
             ) : null}
             {billingPeriodLabel ? (
-              <Stack direction="row" justifyContent="space-between" gap={2}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                 <Typography sx={labelSx}>{txt.billingPeriod}</Typography>
                 <Typography sx={valueSx}>{billingPeriodLabel}</Typography>
-              </Stack>
+              </Box>
             ) : null}
           </Box>
         </Box>
 
         {/* Line item table */}
         <Box sx={{ border: `1px solid ${accent}55`, borderRadius: 1, overflow: "hidden", mb: 2 }}>
-          <Stack
-            direction="row"
-            sx={{ bgcolor: `${accent}22`, px: 1.5, py: 1, fontWeight: 800, fontSize: 12 }}
-          >
+          <Box sx={{ display: "flex", bgcolor: `${accent}22`, px: 1.5, py: 1, fontWeight: 800, fontSize: 12 }}>
             <Box sx={{ flex: 2 }}>{txt.description}</Box>
             <Box sx={{ flex: 1, textAlign: "center" }}>{txt.hours}</Box>
             <Box sx={{ flex: 1, textAlign: "center" }}>{txt.hourlyRate}</Box>
             <Box sx={{ flex: 1, textAlign: isEn ? "right" : "left" }}>{txt.amount}</Box>
-          </Stack>
-          <Stack direction="row" sx={{ px: 1.5, py: 1.25, fontSize: 13 }}>
+          </Box>
+          <Box sx={{ display: "flex", px: 1.5, py: 1.25, fontSize: 13 }}>
             <Box sx={{ flex: 2, fontWeight: 700 }}>{planTitle}</Box>
             <Box sx={{ flex: 1, textAlign: "center" }}>
               {formatDurationMinutes(invoice.minutes, lng)}
@@ -273,11 +273,11 @@ export default function InvoiceDocument({ invoice, printable = false }) {
             <Box sx={{ flex: 1, textAlign: isEn ? "right" : "left", fontWeight: 700 }}>
               {formatMoney(invoice.subtotal, currency)}
             </Box>
-          </Stack>
+          </Box>
         </Box>
 
         {/* Totals */}
-        <Stack direction="row" justifyContent={isEn ? "flex-end" : "flex-start"}>
+        <Box sx={{ display: "flex", justifyContent: isEn ? "flex-end" : "flex-start" }}>
           <Box sx={{ width: 300, maxWidth: "100%" }}>
             {hasDiscount ? (
               <>
@@ -286,14 +286,14 @@ export default function InvoiceDocument({ invoice, printable = false }) {
                   value={formatMoney(discount.base, currency)}
                   {...totalColors}
                 />
-                <Stack direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, py: 0.5 }}>
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: accent }}>
                     {discountLabel}
                   </Typography>
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: accent }}>
                     {`- ${formatMoney(discount.amount, currency)}`}
                   </Typography>
-                </Stack>
+                </Box>
               </>
             ) : null}
             <TotalRow label={txt.subtotal} value={formatMoney(invoice.subtotal, currency)} {...totalColors} />
@@ -304,10 +304,17 @@ export default function InvoiceDocument({ invoice, printable = false }) {
             {showPrevDebt && Number(invoice.previousDebt) ? (
               <TotalRow label={txt.previousDebt} value={formatMoney(invoice.previousDebt, currency)} {...totalColors} />
             ) : null}
+            {adjustment && Number(adjustment.amount) ? (
+              <TotalRow
+                label={`${txt.adjustment}${adjustment.reason ? `: ${adjustment.reason}` : ""}`}
+                value={`${Number(adjustment.amount) > 0 ? "+" : "−"} ${formatMoney(Math.abs(Number(adjustment.amount)), currency)}`}
+                {...totalColors}
+              />
+            ) : null}
             <Divider sx={{ my: 0.5 }} />
             <TotalRow label={txt.total} value={formatMoney(invoice.total, currency)} strong {...totalColors} />
           </Box>
-        </Stack>
+        </Box>
 
         {/* Notes — the per-invoice snapshot (inherited from the template at
             generation, then editable on the invoice itself). */}
@@ -316,7 +323,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
             <Typography sx={{ fontWeight: 900, fontSize: 13, color: accent, mb: 0.5 }}>
               {txt.notesTitle}
             </Typography>
-            <Stack component="ul" sx={{ m: 0, pl: 2.5, gap: 0.25 }}>
+            <Box component="ul" sx={{ display: "flex", flexDirection: "column", m: 0, pl: 2.5, gap: 0.25 }}>
               {notes.map((n, i) => {
                 const line = (isEn ? n.en : n.ar) || n.ar || n.en;
                 if (!line) return null;
@@ -326,7 +333,7 @@ export default function InvoiceDocument({ invoice, printable = false }) {
                   </Typography>
                 );
               })}
-            </Stack>
+            </Box>
           </Box>
         ) : null}
 

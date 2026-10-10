@@ -11,6 +11,10 @@ import {
 
 const app = express();
 
+// Coolify forwards public traffic through one reverse proxy. Keep the API port
+// private and trust only that nearest hop so req.ip identifies the visitor.
+app.set("trust proxy", 1);
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },

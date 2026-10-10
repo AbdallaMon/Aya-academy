@@ -7,6 +7,9 @@ import {
   invoiceMessagesCodes,
   messagesNames,
   subscriptionMessagesCodes,
+  calculateInvoicePricing,
+  calculateInvoiceTotals,
+  hasInvoicePricingChanges,
 } from "@ayah/shared";
 import { prisma } from "@ayah/db/prisma.client.js";
 import { AppError, badRequest, forbidden, notFound } from "../../../shared/errors/AppError.js";
@@ -344,6 +347,8 @@ class InvoiceUsecase {
     ]);
     if (!subscription || !existing) return null;
     if (existing.status !== INVOICE_STATUSES.UNPAID) return existing;
+    // An admin's invoice-only price must not be replaced by a subscription sync.
+    if (existing.configJson?.invoicePricingOverride) return existing;
 
     const amounts = await this.computeAmounts(
       subscription,
@@ -460,9 +465,8 @@ class InvoiceUsecase {
   }
 
   /**
-   * Admin edits the editable fields of an invoice: per-invoice config overrides,
-   * the admin figures, notes, billing label, due date and payment status.
-   * Hours / rate / subtotal are never editable (they come from the subscription).
+   * Admin edits the invoice snapshot. Pricing overrides are allowed only before
+   * its first send and never write to the linked subscription or session logs.
    *
    * When the status moves to PAID and `activateSubscription` is true, the linked
    * subscription is activated (PENDING/UPCOMING → resolved by its date window).
@@ -476,11 +480,13 @@ class InvoiceUsecase {
 
     const data = {};
     if (input.configJson !== undefined) {
-      // Keep the render-only discount snapshot even if the edit form omits it.
+      // Server-owned pricing metadata cannot be changed via template fields.
       data.configJson = {
         ...input.configJson,
-        discount:
-          input.configJson.discount ?? existing.configJson?.discount ?? null,
+        discount: existing.configJson?.discount ?? null,
+        invoiceDiscount: existing.configJson?.invoiceDiscount ?? null,
+        invoiceAdjustment: existing.configJson?.invoiceAdjustment ?? null,
+        invoicePricingOverride: existing.configJson?.invoicePricingOverride ?? false,
       };
     }
     if (input.notes !== undefined) data.notes = input.notes;
@@ -504,28 +510,76 @@ class InvoiceUsecase {
       data.status = input.status;
     }
 
+    const pricing = input.pricing;
+    const existingAdjustment = existing.configJson?.invoiceAdjustment ?? null;
+    const pricingChanged = pricing && (
+      hasInvoicePricingChanges(existing, pricing) ||
+      pricing.adjustmentAmount !== Number(existingAdjustment?.amount ?? 0) ||
+      pricing.adjustmentReason.trim() !== (existingAdjustment?.reason ?? "")
+    );
+    if (pricingChanged) {
+      if (existing.sentAt || existing.status !== INVOICE_STATUSES.UNPAID) {
+        throw badRequest(invoiceMessagesCodes.CANNOT_EDIT_PRICING, messagesNames.invoiceMessages);
+      }
+      if (pricing.adjustmentAmount !== 0 && !pricing.adjustmentReason.trim()) {
+        throw badRequest(invoiceMessagesCodes.INVALID_ADJUSTMENT, messagesNames.invoiceMessages);
+      }
+
+      const repriced = hasInvoicePricingChanges(existing, pricing);
+      const configJson = data.configJson ?? { ...(existing.configJson ?? {}) };
+      if (repriced) {
+        const result = calculateInvoicePricing(existing, pricing);
+        if (result.error) throw badRequest(result.error, messagesNames.invoiceMessages);
+        data.minutes = pricing.minutes;
+        data.hours = hoursFromMinutes(pricing.minutes);
+        data.hourlyRate = pricing.hourlyRate;
+        data.currency = pricing.currency;
+        data.subtotal = result.subtotal;
+        if (data.subtotal > 99_999_999.99) {
+          throw badRequest(invoiceMessagesCodes.INVALID_TOTAL, messagesNames.invoiceMessages);
+        }
+        configJson.discount = result.discount;
+        configJson.invoiceDiscount = result.invoiceDiscount;
+      }
+      configJson.invoicePricingOverride = true;
+      configJson.invoiceAdjustment = pricing.adjustmentAmount === 0
+        ? null
+        : {
+            amount: roundMoney(pricing.adjustmentAmount),
+            reason: pricing.adjustmentReason.trim(),
+          };
+      data.configJson = configJson;
+    }
+
     // If any financial figure changed, recompute the dependent amounts using the
-    // invoice's own (possibly overridden) fees and the immutable subtotal.
+    // invoice's own (possibly overridden) fees and subtotal.
     const figuresChanged =
       input.previousCredit !== undefined ||
       input.previousDebt !== undefined ||
-      input.configJson !== undefined;
+      input.configJson !== undefined ||
+      pricingChanged;
 
     if (figuresChanged) {
       const previousCredit = roundMoney(
         input.previousCredit ?? existing.previousCredit,
       );
       const previousDebt = roundMoney(input.previousDebt ?? existing.previousDebt);
-      const subtotal = roundMoney(existing.subtotal);
+      const subtotal = roundMoney(data.subtotal ?? existing.subtotal);
       const fees = (data.configJson ?? existing.configJson)?.fees ?? {};
-      const transferFee = roundMoney(
-        subtotal * (Number(fees.transferFeePercent) || 0) / 100 +
-          (Number(fees.transferFeeFixed) || 0),
-      );
+      const amounts = calculateInvoiceTotals({
+        subtotal,
+        fees,
+        previousCredit,
+        previousDebt,
+        adjustmentAmount: (data.configJson ?? existing.configJson)?.invoiceAdjustment?.amount ?? 0,
+      });
       data.previousCredit = previousCredit;
       data.previousDebt = previousDebt;
-      data.transferFee = transferFee;
-      data.total = roundMoney(subtotal + transferFee + previousDebt - previousCredit);
+      data.transferFee = amounts.transferFee;
+      data.total = amounts.total;
+      if (!Number.isFinite(data.total) || data.total < 0 || data.total > 99_999_999.99) {
+        throw badRequest(invoiceMessagesCodes.INVALID_TOTAL, messagesNames.invoiceMessages);
+      }
     }
 
     const becomingPaid =

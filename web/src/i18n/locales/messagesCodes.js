@@ -383,6 +383,18 @@ const ar = {
     [invoiceMessagesCodes.INVOICE_UPDATED]: 'تم تحديث الفاتورة',
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]:
       'لا يمكن تغيير حالة الفاتورة بهذا الشكل',
+    [invoiceMessagesCodes.CANNOT_EDIT_PRICING]:
+      'يمكن تعديل مبالغ الفاتورة قبل إرسالها فقط وهي غير مدفوعة',
+    [invoiceMessagesCodes.INVALID_ADJUSTMENT]:
+      'أضف سببًا للتسوية عند تغيير الإجمالي',
+    [invoiceMessagesCodes.INVALID_DISCOUNT]:
+      'أدخل خصمًا صحيحًا لا يتجاوز المبلغ قبل الخصم',
+    [invoiceMessagesCodes.DISCOUNT_UNAVAILABLE]:
+      'لا يوجد خصم اشتراك متاح لهذه الفاتورة',
+    [invoiceMessagesCodes.DISCOUNT_CURRENCY_MISMATCH]:
+      'اختر خصمًا يدويًا بالعملة الجديدة؛ خصم الاشتراك مبلغ ثابت بعملة مختلفة',
+    [invoiceMessagesCodes.INVALID_TOTAL]:
+      'الإجمالي المستحق لا يمكن أن يكون سالبًا',
     [invoiceMessagesCodes.INVOICE_SENT]: 'تم إرسال الفاتورة',
     [invoiceMessagesCodes.INVOICE_SEND_FAILED]: 'فشل إرسال الفاتورة',
     [invoiceMessagesCodes.NO_PARENT_LINKED]:
@@ -882,6 +894,18 @@ const en = {
     [invoiceMessagesCodes.INVOICE_UPDATED]: 'Invoice updated',
     [invoiceMessagesCodes.INVALID_STATUS_TRANSITION]:
       "This invoice status change isn't allowed",
+    [invoiceMessagesCodes.CANNOT_EDIT_PRICING]:
+      'Invoice amounts can only be edited before sending an unpaid invoice',
+    [invoiceMessagesCodes.INVALID_ADJUSTMENT]:
+      'Add a reason for the total adjustment',
+    [invoiceMessagesCodes.INVALID_DISCOUNT]:
+      'Enter a valid discount no greater than the pre-discount amount',
+    [invoiceMessagesCodes.DISCOUNT_UNAVAILABLE]:
+      'No subscription discount is available for this invoice',
+    [invoiceMessagesCodes.DISCOUNT_CURRENCY_MISMATCH]:
+      'Choose a manual discount in the new currency; the applied fixed discount uses a different currency',
+    [invoiceMessagesCodes.INVALID_TOTAL]:
+      'Total due cannot be negative',
     [invoiceMessagesCodes.INVOICE_SENT]: 'Invoice sent',
     [invoiceMessagesCodes.INVOICE_SEND_FAILED]: 'Failed to send the invoice',
     [invoiceMessagesCodes.NO_PARENT_LINKED]:

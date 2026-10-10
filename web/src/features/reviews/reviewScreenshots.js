@@ -18,6 +18,10 @@ const REVIEW_DIMENSIONS = {
   7: { width: 1080, height: 1077 },
   8: { width: 1079, height: 934 },
   9: { width: 1072, height: 580 },
+  10: { width: 1080, height: 1112 },
+  11: { width: 952, height: 1600 },
+  12: { width: 1080, height: 1020 },
+  13: { width: 1080, height: 1544 },
 };
 
 const review = (n) => ({
@@ -30,6 +34,7 @@ const review = (n) => ({
 });
 
 export const reviewScreenshots = [
+  10, 11, 12, 13,
   1, 2, 3, 4, 5, 6, 7, 8, 9,
 ].map(review);
 

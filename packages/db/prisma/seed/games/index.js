@@ -23,9 +23,9 @@ export async function seedGames() {
   // Two falling-from-the-sky catch games, right after "Catch the Good Deeds".
   // await seedDhikrTreasure();
   // await seedPrayerStars();
-  // await seedWuduSteps();
+  await seedWuduSteps();
   // await seedAzkarMatch();
-  // await seedPillarsBuild();
+  await seedPillarsBuild();
 
   // ── Phase D animation games ──
   // await seedLettersMatch();

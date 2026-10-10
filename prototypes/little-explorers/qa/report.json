@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "games": 2,
+  "roundsCompleted": 16,
+  "viewports": [
+    1440,
+    768,
+    390,
+    320
+  ],
+  "checks": [
+    "wrong answers and retries",
+    "hints",
+    "scene changes",
+    "reload and resume",
+    "repeat letters",
+    "edit and clear letters",
+    "completion and review",
+    "replay reset",
+    "sound toggle",
+    "help dialog and Escape",
+    "keyboard focus",
+    "reduced motion",
+    "malformed storage",
+    "file protocol and unavailable storage",
+    "no horizontal overflow",
+    "no browser errors",
+    "local assets load"
+  ],
+  "screenshots": [
+    "01-home-desktop.png",
+    "02-oasis-desktop.png",
+    "03-oasis-reward.png",
+    "04-train-desktop.png",
+    "05-train-reward.png",
+    "06-home-mobile.png",
+    "07-oasis-mobile.png",
+    "08-train-mobile.png"
+  ]
+}

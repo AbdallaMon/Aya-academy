@@ -727,7 +727,7 @@ export const programFamilies = [
   {
     key: 'quran',
     slug: 'quran-programs',
-    dateModified: '2026-08-01',
+    dateModified: '2026-10-10',
     serviceKeys: ['memorization', 'kidsQuran', 'adultQuran', 'tajweed'],
     ar: {
       title: 'برامج القرآن الكريم',
@@ -746,6 +746,7 @@ export const programFamilies = [
         'تلاوة القرآن بالتجويد الصحيح',
         'حفظ القرآن الكريم',
         'مراجعة الحفظ وتثبيته',
+        'الإجازات القرآنية',
       ],
       benefits: [
         { title: 'بداية صحيحة للمبتدئ', body: 'يتدرّج الطالب من الحروف والأصوات إلى قراءة الكلمات والآيات دون افتراض خبرة سابقة.' },
@@ -775,6 +776,7 @@ export const programFamilies = [
         "Qur'an Recitation with Proper Tajweed",
         "Qur'an Memorization (Hifz)",
         'Revision and Memorization Support',
+        'Quran Ijazah',
       ],
       benefits: [
         { title: 'A sound start for beginners', body: 'Students progress from letters and sounds to reading Quran words and verses without needing previous experience.' },

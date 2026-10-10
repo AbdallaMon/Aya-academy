@@ -15,6 +15,7 @@ import { certificateUsecase } from "../../learning/certificates/certificate.usec
 import { notificationUsecase } from "../../notifications/notification.usecase.js";
 import { rewardUsecase } from "../rewards/reward.usecase.js";
 import { gameRepo } from "./game.repo.js";
+import { shufflePracticeOptions } from "./shufflePracticeOptions.js";
 
 class GameUsecase {
   /**
@@ -113,8 +114,9 @@ class GameUsecase {
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     // ADMIN sees answers; STUDENT/PARENT do not.
-    if (authUser.role === USER_ROLES.ADMIN) return game;
-    return this.stripAnswers(game);
+    const shuffledGame = shufflePracticeOptions(game);
+    if (authUser.role === USER_ROLES.ADMIN) return shuffledGame;
+    return this.stripAnswers(shuffledGame);
   }
 
   /**
@@ -126,14 +128,14 @@ class GameUsecase {
     const game = await gameRepo.getBySlug({ slug });
     if (!game) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
-    if (authUser.role === USER_ROLES.ADMIN) return game;
+    if (authUser.role === USER_ROLES.ADMIN) return shufflePracticeOptions(game);
     if (!game.isActive) throw notFound(gameMessagesCodes.GAME_NOT_FOUND);
 
     // Students need an ACTIVE subscription to play — except the free game.
     if (authUser.role === USER_ROLES.STUDENT && !this.isFreeGame(game)) {
       await assertActiveForStudent(authUser.id);
     }
-    return this.stripAnswers(game);
+    return this.stripAnswers(shufflePracticeOptions(game));
   }
 
   // ── assign (admin-only by permission) ───────────────────
