@@ -8,7 +8,7 @@ import { planRepo } from "../plans/plan.repo.js";
 import { paymentTemplateUsecase } from "../paymentTemplates/paymentTemplate.usecase.js";
 import { settingsUsecase } from "../../settings/settings.usecase.js";
 import { InvoiceValidation } from "./invoice.validation.js";
-import { getInvoiceDiscountState } from '@ayah/shared';
+import { getInvoiceDiscountState, hasInvoicePricingChanges } from '@ayah/shared';
 import { buildInvoicePreview } from '../../../../../web/src/features/invoices/lib/invoiceEditPricing.js';
 
 test("invoice-only pricing is optional and rejects fractional cents", () => {
@@ -296,6 +296,144 @@ test("subscription refresh leaves a manually priced invoice intact", async (t) =
   });
 
   assert.equal(await subject.refreshAmountsForSubscription(3), invoice);
+});
+
+test("saving a note on a legacy invoice does not apply its linked coupon", async (t) => {
+  const subject = new InvoiceUsecase();
+  const existing = {
+    id: 8,
+    status: "UNPAID",
+    sentAt: null,
+    minutes: 120,
+    hourlyRate: 10,
+    currency: "USD",
+    subtotal: 20,
+    previousCredit: 0,
+    previousDebt: 0,
+    configJson: { fees: {} },
+    subscription: { currency: "USD", coupon: { code: "SAVE10", type: "PERCENT", value: 10 } },
+  };
+  let saved;
+  t.mock.method(invoiceRepo, "getById", async () => existing);
+  t.mock.method(invoiceRepo, "update", async ({ data }) => {
+    saved = data;
+    return { ...existing, ...data };
+  });
+  t.mock.method(subject, "runTransaction", async (work) => work({}));
+
+  const pricing = {
+    minutes: 120, hourlyRate: 10, currency: "USD", discountMode: "APPLIED",
+    manualDiscountAmount: 0, adjustmentAmount: 0, adjustmentReason: "",
+  };
+  assert.equal(hasInvoicePricingChanges(existing, pricing), false);
+  await subject.update({ role: "ADMIN" }, 8, { configJson: { fees: {}, notes: [{ ar: "ملاحظة" }] } });
+
+  assert.equal(saved.total, 20);
+  assert.equal(saved.subtotal, undefined);
+  assert.equal(saved.configJson.invoicePricingOverride, false);
+});
+
+test("coupon sync preserves manual invoice prices and adjusts only its discount", async (t) => {
+  const subject = new InvoiceUsecase();
+  const existing = {
+    id: 20,
+    subscriptionId: 3,
+    status: "UNPAID",
+    minutes: 90,
+    hourlyRate: 12,
+    currency: "USD",
+    subtotal: 18,
+    previousCredit: 1,
+    previousDebt: 0,
+    configJson: {
+      fees: { transferFeePercent: 10 },
+      invoicePricingOverride: true,
+      invoiceAdjustment: { amount: -2, reason: "Agreed reduction" },
+      invoiceDiscount: { mode: "MANUAL", manualAmount: 0, applied: null },
+    },
+  };
+  let saved;
+  t.mock.method(invoiceRepo, "getBySubscriptionId", async () => existing);
+  t.mock.method(invoiceRepo, "update", async ({ data }) => {
+    saved = data;
+    return { ...existing, ...data };
+  });
+
+  await subject.syncCouponForOverriddenInvoice({
+    id: 3,
+    currency: "USD",
+    coupon: { code: "SAVE10", type: "PERCENT", value: 10 },
+  }, { client: {} });
+
+  assert.equal(saved.minutes, undefined);
+  assert.equal(saved.hourlyRate, undefined);
+  assert.equal(saved.currency, undefined);
+  assert.equal(saved.subtotal, 16.2);
+  assert.equal(saved.transferFee, 1.62);
+  assert.equal(saved.total, 14.82);
+  assert.equal(saved.configJson.invoiceAdjustment.amount, -2);
+  assert.equal(saved.configJson.invoiceDiscount.mode, "APPLIED");
+  assert.equal(saved.configJson.discount.code, "SAVE10");
+});
+
+test("coupon removal clears only the overridden invoice discount", async (t) => {
+  const subject = new InvoiceUsecase();
+  const existing = {
+    id: 21,
+    status: "UNPAID",
+    minutes: 90,
+    hourlyRate: 12,
+    currency: "USD",
+    subtotal: 16.2,
+    previousCredit: 0,
+    previousDebt: 0,
+    configJson: {
+      fees: {},
+      invoicePricingOverride: true,
+      discount: { type: "PERCENT", value: 10, base: 18, amount: 1.8, code: "SAVE10" },
+      invoiceDiscount: { mode: "APPLIED", manualAmount: 0, applied: { type: "PERCENT", value: 10, code: "SAVE10" } },
+    },
+  };
+  let saved;
+  t.mock.method(invoiceRepo, "getBySubscriptionId", async () => existing);
+  t.mock.method(invoiceRepo, "update", async ({ data }) => {
+    saved = data;
+    return { ...existing, ...data };
+  });
+
+  await subject.syncCouponForOverriddenInvoice({ id: 3, currency: "USD", coupon: null }, { client: {} });
+
+  assert.equal(saved.subtotal, 18);
+  assert.equal(saved.total, 18);
+  assert.equal(saved.configJson.invoiceDiscount.applied, null);
+  assert.equal(saved.configJson.discount.amount, 0);
+});
+
+test("a fixed coupon in a different currency cannot leave an overridden invoice stale", async (t) => {
+  const subject = new InvoiceUsecase();
+  t.mock.method(invoiceRepo, "getBySubscriptionId", async () => ({
+    id: 22,
+    status: "UNPAID",
+    minutes: 60,
+    hourlyRate: 10,
+    currency: "GBP",
+    subtotal: 10,
+    previousCredit: 0,
+    previousDebt: 0,
+    configJson: { fees: {}, invoicePricingOverride: true },
+  }));
+  t.mock.method(invoiceRepo, "update", () => {
+    assert.fail("mismatched fixed coupon must not update the invoice");
+  });
+
+  await assert.rejects(
+    subject.syncCouponForOverriddenInvoice({
+      id: 3,
+      currency: "USD",
+      coupon: { code: "FIVE", type: "FIXED", value: 5 },
+    }, { client: {} }),
+    { code: "INVOICE_DISCOUNT_CURRENCY_MISMATCH" },
+  );
 });
 
 test("editing invoice notes keeps a prior adjustment in the total", async (t) => {

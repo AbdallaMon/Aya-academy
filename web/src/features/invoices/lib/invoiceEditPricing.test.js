@@ -39,6 +39,19 @@ test('unchanged legacy charges stay intact and fee-only edits update the total',
   assert.equal(result.total, 19.85);
 });
 
+test('a linked coupon without a saved discount does not reprice an untouched legacy invoice', () => {
+  const legacy = {
+    ...invoice,
+    currency: 'USD',
+    subtotal: 20,
+    configJson: {},
+    subscription: { currency: 'USD', coupon: { code: 'SAVE10', type: 'PERCENT', value: 10 } },
+  };
+  const result = buildInvoicePreview({ ...values, currency: 'USD' }, legacy);
+  assert.equal(result.subtotal, 20);
+  assert.equal(result.discountAmount, 0);
+});
+
 test('no coupon defaults to manual zero and an existing legacy amount is preserved', () => {
   assert.deepEqual(getInvoiceDiscountState({ ...invoice, configJson: {} }), {
     mode: 'MANUAL', applied: null, manualAmount: 0,

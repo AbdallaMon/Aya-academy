@@ -43,9 +43,7 @@ export function hasInvoicePricingChanges(invoice, pricing) {
     || pricing.hourlyRate !== (invoice?.hourlyRate == null ? null : Number(invoice.hourlyRate))
     || pricing.currency !== invoice?.currency
     || mode !== state.mode
-    || (mode === 'MANUAL' && manualAmount !== state.manualAmount)
-    // Legacy invoices can be missing the coupon snapshot despite a linked coupon.
-    || (mode === 'APPLIED' && !!state.applied && !invoice?.configJson?.discount?.type);
+    || (mode === 'MANUAL' && manualAmount !== state.manualAmount);
 }
 
 export function calculateInvoicePricing(invoice, pricing) {

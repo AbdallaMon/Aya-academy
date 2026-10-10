@@ -6,9 +6,43 @@ import { planRepo } from "../plans/plan.repo.js";
 import { settingsUsecase } from "../../settings/settings.usecase.js";
 import { couponRepo } from "../coupons/coupon.repo.js";
 import { invoiceRepo } from "../invoices/invoice.repo.js";
+import { invoiceUsecase } from "../invoices/invoice.usecase.js";
 import { notificationUsecase } from "../../notifications/notification.usecase.js";
 
 const usecase = new SubscriptionUsecase();
+
+test("coupon changes sync an overridden invoice within the subscription transaction", async (t) => {
+  const subject = new SubscriptionUsecase();
+  const tx = {};
+  const subscription = {
+    id: 3, studentId: 7, status: "PENDING", subsMinutes: 120,
+    couponId: null, currency: "USD", planId: null,
+  };
+  let syncSubscription;
+  let syncClient;
+  t.mock.method(subscriptionRepo, "getById", async () => subscription);
+  t.mock.method(invoiceRepo, "getBySubscriptionId", async () => ({
+    id: 20, status: "UNPAID", configJson: { invoicePricingOverride: true },
+  }));
+  t.mock.method(settingsUsecase, "getEffective", async () => ({ hourlyRate: 10 }));
+  t.mock.method(subject, "assertCanAccess", async () => {});
+  t.mock.method(subject, "computeUsagePricing", async () => ({ priceCharged: 18, couponId: 5 }));
+  t.mock.method(subject, "consumeCoupon", async () => {});
+  t.mock.method(subject, "runTransaction", async (work) => work(tx));
+  t.mock.method(subscriptionRepo, "updateSubscription", async () => ({
+    ...subscription, priceCharged: 18, coupon: { id: 5, code: "SAVE10", type: "PERCENT", value: 10 },
+  }));
+  t.mock.method(invoiceUsecase, "syncCouponForOverriddenInvoice", async (updated, { client }) => {
+    syncSubscription = updated;
+    syncClient = client;
+  });
+  t.mock.method(subject, "refreshOrEnsureInvoice", async () => {});
+
+  await subject.applyCoupon({ authUser: { role: "ADMIN" }, id: 3, couponCode: "SAVE10" });
+
+  assert.equal(syncSubscription.coupon.code, "SAVE10");
+  assert.equal(syncClient, tx);
+});
 
 test("PENDING and UPCOMING usage bills remain mutable while unpaid", () => {
   assert.equal(

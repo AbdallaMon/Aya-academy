@@ -1952,7 +1952,11 @@ class SubscriptionUsecase {
       }));
     }
 
-    // 4. Persist the link and permanently consume a newly attached coupon.
+    // 4. Persist the coupon and update a manually priced invoice in the same
+    // transaction, so a failed invoice recalculation cannot leave them apart.
+    const invoiceUsecase = invoice?.configJson?.invoicePricingOverride
+      ? (await import("../invoices/invoice.usecase.js")).invoiceUsecase
+      : null;
     const updated = await this.runTransaction(async (tx) => {
       await this.consumeCoupon({
         previousCouponId: existing.couponId,
@@ -1961,7 +1965,7 @@ class SubscriptionUsecase {
         subscriptionId: existing.id,
         tx,
       });
-      return subscriptionRepo.updateSubscription(
+      const subscription = await subscriptionRepo.updateSubscription(
         id,
         {
           priceCharged,
@@ -1971,12 +1975,14 @@ class SubscriptionUsecase {
         },
         tx,
       );
+      if (invoiceUsecase) {
+        await invoiceUsecase.syncCouponForOverriddenInvoice(subscription, { client: tx });
+      }
+      return subscription;
     });
 
-    // 5. Regenerate the demand invoice so its amounts AND discount snapshot match
-    //    the new coupon. Uses the system regenerate (no admin gate) so a PARENT
-    //    applying/removing a coupon also refreshes the invoice. Dynamic import
-    //    avoids the subscription<->invoice circular dependency. Best-effort.
+    // 5. Refresh a regular unpaid invoice. A manually priced invoice was already
+    //    updated in the transaction above, and its override guard leaves it intact.
     await this.refreshOrEnsureInvoice(updated);
 
     return updated;

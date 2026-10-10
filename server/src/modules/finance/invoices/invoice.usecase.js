@@ -375,6 +375,63 @@ class InvoiceUsecase {
     });
   }
 
+  /** Apply a subscription coupon change to an invoice with manual pricing.
+   * Keep its hours, rate, currency, fees, balances and adjustment intact. The
+   * explicit coupon action replaces the invoice's current discount only.
+   */
+  async syncCouponForOverriddenInvoice(subscription, { client } = {}) {
+    const existing = await invoiceRepo.getBySubscriptionId(subscription.id, client);
+    if (!existing || existing.status !== INVOICE_STATUSES.UNPAID || !existing.configJson?.invoicePricingOverride) {
+      return existing;
+    }
+
+    const applied = subscription.coupon
+      ? { ...subscription.coupon, currency: subscription.currency }
+      : null;
+    const mode = applied ? "APPLIED" : "MANUAL";
+    const configJson = {
+      ...existing.configJson,
+      // Exclude the old snapshot so a removed coupon cannot be picked up again.
+      discount: null,
+      invoiceDiscount: { mode, manualAmount: 0, applied },
+    };
+    const result = calculateInvoicePricing(
+      { ...existing, configJson, subscription: { ...existing.subscription, coupon: subscription.coupon } },
+      {
+        minutes: existing.minutes,
+        hourlyRate: Number(existing.hourlyRate),
+        currency: existing.currency,
+        discountMode: mode,
+        manualDiscountAmount: 0,
+      },
+    );
+    if (result.error) throw badRequest(result.error, messagesNames.invoiceMessages);
+    const totals = calculateInvoiceTotals({
+      subtotal: result.subtotal,
+      fees: configJson.fees,
+      previousCredit: existing.previousCredit,
+      previousDebt: existing.previousDebt,
+      adjustmentAmount: configJson.invoiceAdjustment?.amount ?? 0,
+    });
+    if (result.subtotal > 99_999_999.99 || !Number.isFinite(totals.total) || totals.total < 0 || totals.total > 99_999_999.99) {
+      throw badRequest(invoiceMessagesCodes.INVALID_TOTAL, messagesNames.invoiceMessages);
+    }
+    return invoiceRepo.update({
+      id: existing.id,
+      data: {
+        subtotal: result.subtotal,
+        transferFee: totals.transferFee,
+        total: totals.total,
+        configJson: {
+          ...configJson,
+          discount: result.discount,
+          invoiceDiscount: result.invoiceDiscount,
+        },
+      },
+      client,
+    });
+  }
+
   /**
    * System-initiated invoice creation (no admin gate) — used by the public
    * family-enrollment flow. Always creates a fresh UNPAID invoice for a
