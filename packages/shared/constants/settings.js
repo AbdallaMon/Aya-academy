@@ -9,7 +9,7 @@ export const DEFAULT_APP_SETTINGS = {
 };
 
 // Currencies the admin can pick from in the settings screen.
-export const CURRENCY_OPTIONS = ["USD", "GBP", "EUR", "EGP"];
+export const CURRENCY_OPTIONS = ["USD", "GBP", "EUR", "EGP", "AED", "OMR", "SAR"];
 
 // Bounds for the whiteboard image retention (days). Capped at ~6 months so
 // stored images can't accumulate indefinitely.

@@ -21,6 +21,9 @@ export const settingsText = {
     GBP: "جنيه إسترليني (£)",
     EUR: "يورو (€)",
     EGP: "جنيه مصري (ج.م)",
+    AED: "درهم إماراتي (AED)",
+    OMR: "ريال عماني (OMR)",
+    SAR: "ريال سعودي (SAR)",
   },
   en: {
     pageTitle: "General settings",
@@ -39,6 +42,9 @@ export const settingsText = {
     GBP: "British Pound (£)",
     EUR: "Euro (€)",
     EGP: "Egyptian Pound (ج.م)",
+    AED: "UAE Dirham (AED)",
+    OMR: "Omani Rial (OMR)",
+    SAR: "Saudi Riyal (SAR)",
   },
 };
 

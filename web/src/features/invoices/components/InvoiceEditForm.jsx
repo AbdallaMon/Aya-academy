@@ -181,8 +181,8 @@ export default function InvoiceEditForm({ open, onClose, invoice, txt, onSaved }
     [txt],
   );
   const currencyOptions = useMemo(
-    () => Object.fromEntries(CURRENCY_OPTIONS.map((code) => [code, code])),
-    [],
+    () => Object.fromEntries(CURRENCY_OPTIONS.map((code) => [code, txt[code] || code])),
+    [txt],
   );
   const canEditPricing = invoice?.status === "UNPAID" && !invoice?.sentAt;
 
